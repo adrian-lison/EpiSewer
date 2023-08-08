@@ -63,9 +63,12 @@ EpiSewer <- function(
     job = job,
     summary = summarize_fit(
       fitted, job$arguments$data, job$arguments_meta_info
-    ),
-    fitted = ifelse(fit_opts$fitted, fitted, NULL)
+    )
   )
+
+  if (fit_opts$fitted) {
+    result$fitted = fitted
+  }
 
   return(result)
 }
