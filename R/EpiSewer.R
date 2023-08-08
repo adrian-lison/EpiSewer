@@ -45,12 +45,12 @@ EpiSewer <- function(
   standata <- standata_combine(
     measurements, sampling, sewage, shedding, infections
   )
-  standata <- standata_validate(standata, model_def = model_def)
+  standata <- standata_validate(standata, model_def = model)
 
 
   job <- EpiSewerJob(
     job_name = paste("Job on", date()),
-    model_def = model_def,
+    model_def = model,
     standata = standata,
     fit_opts = fit_opts,
     overwrite = TRUE,

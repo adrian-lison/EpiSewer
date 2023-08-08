@@ -18,7 +18,7 @@
 get_stan_model <- function(
     model_filename = NULL,
     standata = NULL,
-    model_folder = "code",
+    model_folder = "stan",
     profile = TRUE,
     threads = FALSE,
     force_recompile = FALSE) {
@@ -117,10 +117,11 @@ update_compiled_stanmodel <- function(model_def, force_recompile = FALSE) {
   n_models <- length(model_def$model_filename)
 
   model_path_list <- lapply(1:n_models, function(i) {
-    here::here(model_def$model_folder, model_def$model_filename[[i]])
+    system.file(model_def$model_folder,
+                model_def$model_filename[[i]], package = "EpiSewer")
   })
   include_paths_list <- lapply(1:n_models, function(i) {
-    here::here(model_def$model_folder)
+    system.file(model_def$model_folder, package = "EpiSewer")
   }) # identical
 
   if (!model_def$profile) {
