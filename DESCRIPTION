@@ -1,0 +1,15 @@
+Package: EpiSewer
+Title: Estimating reproduction numbers from wastewater
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Adrian",
+           family = "Lison",
+           role = c("aut", "cre"),
+           email = "adrian.lison@bsse.ethz.ch",
+           comment = c(ORCID = "0000-0002-6822-8437"))
+Description: What the package does (one paragraph).
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
