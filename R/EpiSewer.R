@@ -25,16 +25,26 @@ EpiSewer <- function(
       flows = flows_observe(flows = data$flows)
     ),
     shedding = model_shedding(
-      incubation_dist = incubation_dist_assume(incubation_dist = assumptions$incubation_dist),
-      shedding_dist = shedding_dist_assume(shedding_dist = assumptions$shedding_dist),
-      load_per_case = load_per_case_assume(load_per_case = assumptions$load_per_case)
+      incubation_dist = incubation_dist_assume(
+        incubation_dist = assumptions$incubation_dist
+      ),
+      shedding_dist = shedding_dist_assume(
+        shedding_dist = assumptions$shedding_dist
+      ),
+      load_per_case = load_per_case_assume(
+        load_per_case = assumptions$load_per_case
+      )
     ),
     infections = model_infections(
-      generation_dist = generation_dist_assume(generation_dist = assumptions$generation_dist)
+      generation_dist = generation_dist_assume(
+        generation_dist = assumptions$generation_dist
+      )
     ),
     model = get_stan_model(standata = standata),
     fit_opts = set_fit_opts(sampler_opts = set_sampler_opts(), fitted = TRUE)) {
-  standata <- standata_combine(measurements, sampling, sewage, shedding, infections)
+  standata <- standata_combine(
+    measurements, sampling, sewage, shedding, infections
+  )
   standata <- standata_validate(standata, model_def = model_def)
 
 
@@ -51,7 +61,9 @@ EpiSewer <- function(
 
   result <- list(
     job = job,
-    summary = summarize_fit(fitted, job$arguments$data, job$arguments_meta_info),
+    summary = summarize_fit(
+      fitted, job$arguments$data, job$arguments_meta_info
+    ),
     fitted = ifelse(fit_opts$fitted, fitted, NULL)
   )
 
@@ -87,11 +99,19 @@ EpiSewerJob <- function(job_name,
   job_def[["model_def"]] <- model_def
 
   # ToDo rlang::flatten is deprecated, replace
-  data_arguments <- suppressWarnings(rlang::flatten(standata[!(names(standata) %in% c("init", "meta_info"))]))
-  data_arguments_raw <- data_arguments[stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)]
+  data_arguments <- suppressWarnings(
+    rlang::flatten(standata[!(names(standata) %in% c("init", "meta_info"))])
+  )
+  data_arguments_raw <- data_arguments[
+    stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
+  ]
   init_arguments <- standata$init
-  job_def[["arguments"]] <- c(list(data = data_arguments_raw), init = function() init_arguments, fit_opts$sampler_opts)
-  job_def[["priors_text"]] <- data_arguments[stringr::str_detect(names(data_arguments), "_prior_text")]
+  job_def[["arguments"]] <- c(list(data = data_arguments_raw),
+    init = function() init_arguments, fit_opts$sampler_opts
+  )
+  job_def[["priors_text"]] <- data_arguments[
+    stringr::str_detect(names(data_arguments), "_prior_text")
+  ]
   job_def[["arguments_meta_info"]] <- standata$meta_info
 
   job_def[["overwrite"]] <- overwrite

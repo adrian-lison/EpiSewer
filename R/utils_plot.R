@@ -13,9 +13,13 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL) {
     results <- list(results) # only one result object passed, wrap in list
   }
   if (draws) {
-    data_to_plot <- combine_samples(results, "infections_samples", draws, ndraws)
+    data_to_plot <- combine_samples(
+      results, "infections_samples", draws, ndraws
+    )
   } else {
-    data_to_plot <- combine_summaries(results, "infections")
+    data_to_plot <- combine_summaries(
+      results, "infections"
+    )
   }
   plot <- ggplot(data_to_plot, aes(x = date, color = model, fill = model)) +
     theme_bw() +
@@ -60,9 +64,13 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL) {
     results <- list(results) # only one result object passed, wrap in list
   }
   if (draws) {
-    data_to_plot <- combine_samples(results, "R_samples", draws, ndraws)
+    data_to_plot <- combine_samples(
+      results, "R_samples", draws, ndraws
+    )
   } else {
-    data_to_plot <- combine_summaries(results, "R")
+    data_to_plot <- combine_summaries(
+      results, "R"
+    )
   }
   plot <- ggplot(data_to_plot, aes(x = date, color = model, fill = model)) +
     theme_bw() +
@@ -119,16 +127,28 @@ plot_concentration <- function(results, ww_data, include_noise = T) {
       c("date", "concentration")
     ])
   }), .names_to = "model")
-  concentration_measured$model <- forcats::fct_inorder(as.character(concentration_measured$model), ordered = T)
+  concentration_measured$model <- forcats::fct_inorder(
+    as.character(concentration_measured$model),
+    ordered = T
+  )
 
   plot <- ggplot(ww_data, aes(x = date)) +
-    geom_line(aes(y = concentration), color = "grey", linetype = "dotted", size = 0.3) +
-    geom_ribbon(data = concentration_pred, aes(ymin = lower, ymax = upper, fill = model), alpha = 0.3) +
+    geom_line(
+      aes(y = concentration),
+      color = "grey", linetype = "dotted", size = 0.3
+    ) +
+    geom_ribbon(
+      data = concentration_pred,
+      aes(ymin = lower, ymax = upper, fill = model), alpha = 0.3
+    ) +
     geom_point(aes(y = concentration), color = "grey", shape = 4) +
     geom_point(data = concentration_measured, aes(y = concentration)) +
     geom_line(data = concentration_pred, aes(y = median, color = model)) +
     theme_bw() +
-    scale_x_date(expand = c(0, 0), date_breaks = "1 month", date_labels = "%b\n%Y") +
+    scale_x_date(
+      expand = c(0, 0),
+      date_breaks = "1 month", date_labels = "%b\n%Y"
+    ) +
     xlab("Date") +
     ylab("Concentration [gene copies / L]") +
     coord_cartesian(xlim = as.Date(c(
@@ -161,10 +181,16 @@ plot_load <- function(results, ww_data, include_noise = T) {
   load_pred <- combine_summaries(results, "expected_load")
 
   plot <- ggplot(ww_data, aes(x = date)) +
-    geom_ribbon(data = load_pred, aes(ymin = lower, ymax = upper, fill = model), alpha = 0.3) +
+    geom_ribbon(
+      data = load_pred,
+      aes(ymin = lower, ymax = upper, fill = model), alpha = 0.3
+    ) +
     geom_line(data = load_pred, aes(y = median, color = model)) +
     theme_bw() +
-    scale_x_date(expand = c(0, 0), date_breaks = "1 month", date_labels = "%b\n%Y") +
+    scale_x_date(
+      expand = c(0, 0),
+      date_breaks = "1 month", date_labels = "%b\n%Y"
+    ) +
     xlab("Date") +
     ylab("Load [gene copies / day]") +
     coord_cartesian(xlim = as.Date(c(
@@ -191,7 +217,10 @@ plot_load <- function(results, ww_data, include_noise = T) {
 plot_sample_date_effects <- function(result) {
   ggplot(result$summary$sample_date_effects, aes(y = variable)) +
     geom_vline(xintercept = 0, linetype = "dashed") +
-    geom_pointinterval(aes(x = median - 1, xmin = lower - 1, xmax = upper - 1), fatten_point = 5, ) +
+    geom_pointinterval(
+      aes(x = median - 1, xmin = lower - 1, xmax = upper - 1),
+      fatten_point = 5,
+    ) +
     theme_bw() +
     xlab("Percentage change") +
     ylab("Predictor") +

@@ -1,6 +1,9 @@
 get_R_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
   fit_draws <- spread_draws(fit, R[date], ndraws = ndraws)
-  date_mapping <- seq.Date(meta_info$T_start_date - T_shift, meta_info$T_end_date, by = "1 day")
+  date_mapping <- seq.Date(
+    meta_info$T_start_date - T_shift, meta_info$T_end_date,
+    by = "1 day"
+  )
   fit_draws$date <- date_mapping[fit_draws$date]
   fit_draws <- subset(fit_draws, select = -c(.chain, .iteration))
   return(fit_draws)
@@ -8,7 +11,10 @@ get_R_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
 
 get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
   fit_draws <- spread_draws(fit, I[date], ndraws = ndraws)
-  date_mapping <- seq.Date(meta_info$T_start_date - T_shift, meta_info$T_end_date, by = "1 day")
+  date_mapping <- seq.Date(meta_info$T_start_date - T_shift,
+    meta_info$T_end_date,
+    by = "1 day"
+  )
   fit_draws$date <- date_mapping[fit_draws$date]
   fit_draws <- subset(fit_draws, select = -c(.chain, .iteration))
   return(fit_draws)
@@ -31,21 +37,57 @@ summarize_fit <- function(fit, data_arguments, meta_info) {
   T_shift_onset <- with(data_arguments, S)
   T_shift_load <- with(data_arguments, 0)
 
-  summary[["R"]] <- get_summary_1d_date(fit, "R", T_shift = T_shift_R, meta_info = meta_info)
-  summary[["R_samples"]] <- get_R_trajectories(fit, T_shift = T_shift_R, meta_info = meta_info, ndraws = 30)
+  summary[["R"]] <- get_summary_1d_date(
+    fit, "R",
+    T_shift = T_shift_R, meta_info = meta_info
+  )
 
-  summary[["expected_infections"]] <- get_summary_1d_date(fit, "iota", T_shift = T_shift_latent, meta_info = meta_info)
+  summary[["R_samples"]] <- get_R_trajectories(
+    fit,
+    T_shift = T_shift_R, meta_info = meta_info, ndraws = 30
+  )
+
+  summary[["expected_infections"]] <- get_summary_1d_date(
+    fit, "iota",
+    T_shift = T_shift_latent, meta_info = meta_info
+  )
+
   if (data_arguments$I_sample) {
-    summary[["infections"]] <- get_summary_1d_date(fit, "I", T_shift = T_shift_latent, meta_info = meta_info)
-    summary[["infections_samples"]] <- get_I_trajectories(fit, T_shift = T_shift_latent, meta_info = meta_info, ndraws = 30)
+    summary[["infections"]] <- get_summary_1d_date(
+      fit, "I",
+      T_shift = T_shift_latent, meta_info = meta_info
+    )
+    summary[["infections_samples"]] <- get_I_trajectories(
+      fit,
+      T_shift = T_shift_latent, meta_info = meta_info, ndraws = 30
+    )
   }
-  summary[["expected_onsets"]] <- get_summary_1d_date_log(fit, "lambda_log", T_shift = T_shift_onset, meta_info = meta_info)
-  summary[["expected_load"]] <- get_summary_1d_date_log(fit, "kappa_log", T_shift = T_shift_load, meta_info = meta_info)
-  summary[["expected_concentration"]] <- get_summary_1d_date_log(fit, "pi_log", T_shift = T_shift_load, meta_info = meta_info)
-  summary[["concentration"]] <- get_summary_1d_date(fit, "predicted_concentration", T_shift = T_shift_load, meta_info = meta_info)
+
+  summary[["expected_onsets"]] <- get_summary_1d_date_log(
+    fit, "lambda_log",
+    T_shift = T_shift_onset, meta_info = meta_info
+  )
+
+  summary[["expected_load"]] <- get_summary_1d_date_log(
+    fit, "kappa_log",
+    T_shift = T_shift_load, meta_info = meta_info
+  )
+
+  summary[["expected_concentration"]] <- get_summary_1d_date_log(
+    fit, "pi_log",
+    T_shift = T_shift_load, meta_info = meta_info
+  )
+
+  summary[["concentration"]] <- get_summary_1d_date(
+    fit, "predicted_concentration",
+    T_shift = T_shift_load, meta_info = meta_info
+  )
 
   if (data_arguments$K > 0) {
-    summary[["sample_date_effects"]] <- get_summary_vector_log(fit, "eta", colnames(data_arguments$X)) # we exponentiate to get the multiplicative effect
+    # here we exponentiate to get the multiplicative effect
+    summary[["sample_date_effects"]] <- get_summary_vector_log(
+      fit, "eta", colnames(data_arguments$X)
+    )
   }
 
   return(summary)

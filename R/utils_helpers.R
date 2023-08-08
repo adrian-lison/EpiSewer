@@ -64,9 +64,13 @@ check_list_nested <- function(list_to_check, flat_var) {
 default_list_nested <- function(list_to_validate, levels, default, i = 1) {
   if (i < length(levels)) {
     if (!(levels[i] %in% names(list_to_validate))) {
-      list_to_validate[[levels[i]]] <- default_list_nested(list(), levels, default, i + 1)
+      list_to_validate[[levels[i]]] <- default_list_nested(
+        list(), levels, default, i + 1
+      )
     } else {
-      list_to_validate[[levels[i]]] <- default_list_nested(list_to_validate[[levels[i]]], levels, default, i + 1)
+      list_to_validate[[levels[i]]] <- default_list_nested(
+        list_to_validate[[levels[i]]], levels, default, i + 1
+      )
     }
   } else {
     if (!(levels[i] %in% names(list_to_validate))) {

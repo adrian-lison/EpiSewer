@@ -1,4 +1,5 @@
-holt_damped_process_noncentered <- function(alpha, beta_star, phi, l_start, b_start, increments) {
+holt_damped_process_noncentered <- function(
+    alpha, beta_star, phi, l_start, b_start, increments) {
   increments <- c(0, increments)
   n <- length(increments)
   beta <- alpha * beta_star
