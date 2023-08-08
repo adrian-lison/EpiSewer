@@ -312,9 +312,6 @@ standata_update <- function(standata, throw_error = TRUE) {
   # main standata
   all_vars <- setdiff(names(standata), c("init", "meta_info"))
   for (name in all_vars) {
-    if (name == "iota_log_ar_start_prior") {
-      print("now")
-    }
     if ("tbe" %in% class(standata[[name]])) {
       standata[[name]] <- solve(
         standata[[name]],
@@ -375,7 +372,7 @@ tbe <- function(r_expr, required = c(), calling_env = caller_env()) {
   if (standata_check(calling_env$standata, required, throw_error = F)) {
     return(r_expr)
   } else {
-    lazy_r <- lazy(r_expr)
+    lazy_r <- lazyeval::lazy(r_expr)
     # rm(ets_diff, envir = calling_env)
     lazy_r$env <- calling_env
     tbe_o <- list()
@@ -396,7 +393,7 @@ solve.tbe <- function(x, standata, throw_error = TRUE) {
     standata, x$required,
     calling_env = x$calling_f, throw_error = throw_error
   )) {
-    return(lazy_eval(x$lazy_r, list(standata = standata)))
+    return(lazyeval::lazy_eval(x$lazy_r, list(standata = standata)))
   } else {
     return(x)
   }
@@ -405,10 +402,10 @@ solve.tbe <- function(x, standata, throw_error = TRUE) {
 tbef <- function(f_name, f_expr, required = c(), calling_env = caller_env()) {
   calling_standata <- calling_env$standata
 
-  f_lazy <- lazy(f_expr)
+  f_lazy <- lazyeval::lazy(f_expr)
   f_func <- function(standata) {
     f_lazy$env$standata <- standata
-    lazy_eval(f_lazy)
+    lazyeval::lazy_eval(f_lazy)
     return(f_lazy$env$standata)
   }
   rm(standata, envir = calling_env)

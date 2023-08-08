@@ -13,3 +13,25 @@ License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
+Depends:
+    R (>= 3.5.0)
+Imports: 
+    cmdstanr,
+    extraDistr,
+    forcats,
+    ggplot2,
+    lazyeval,
+    lubridate,
+    rlang,
+    rstan,
+    scales,
+    splines,
+    stats,
+    stringr,
+    vctrs
+Suggests:
+    zoo
+Remotes:
+    stan-dev/cmdstanr
+SystemRequirements:
+    CmdStan (>=2.30)

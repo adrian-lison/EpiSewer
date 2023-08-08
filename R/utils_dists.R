@@ -71,14 +71,14 @@ get_discrete_gamma <- function(gamma_shape,
   if (include_zero) {
     probs <- c(
       # all except longest (discrete)
-      ddgamma(0:(maxX - 1), shape = gamma_shape, rate = gamma_rate),
+      extraDistr::ddgamma(0:(maxX - 1), shape = gamma_shape, rate = gamma_rate),
       longest
     )
   } else {
     probs <- c(
       shortest,
       # all except shortest and longest (discrete)
-      ddgamma(2:(maxX - 1), shape = gamma_shape, rate = gamma_rate),
+      extraDistr::ddgamma(2:(maxX - 1), shape = gamma_shape, rate = gamma_rate),
       longest
     )
   }
