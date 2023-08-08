@@ -1,5 +1,5 @@
 Package: EpiSewer
-Title: Estimating reproduction numbers from wastewater
+Title: Estimate Reproduction Numbers from Wastewater Measurements
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Adrian",
@@ -28,6 +28,7 @@ Imports:
     splines,
     stats,
     stringr,
+    tidybayes,
     vctrs
 Suggests:
     zoo

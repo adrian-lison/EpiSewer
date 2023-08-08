@@ -6,6 +6,7 @@
 #'
 #' @return
 #' @export
+#' @import ggplot2
 #'
 #' @examples
 plot_infections <- function(results, draws = FALSE, ndraws = NULL) {

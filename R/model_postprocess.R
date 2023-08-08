@@ -1,5 +1,5 @@
 get_R_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
-  fit_draws <- spread_draws(fit, R[date], ndraws = ndraws)
+  fit_draws <- tidybayes::spread_draws(fit, R[date], ndraws = ndraws)
   date_mapping <- seq.Date(
     meta_info$T_start_date - T_shift, meta_info$T_end_date,
     by = "1 day"
@@ -10,7 +10,7 @@ get_R_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
 }
 
 get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
-  fit_draws <- spread_draws(fit, I[date], ndraws = ndraws)
+  fit_draws <- tidybayes::spread_draws(fit, I[date], ndraws = ndraws)
   date_mapping <- seq.Date(meta_info$T_start_date - T_shift,
     meta_info$T_end_date,
     by = "1 day"
