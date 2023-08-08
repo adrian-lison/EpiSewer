@@ -20,7 +20,7 @@ get_stan_model <- function(model_filename = NULL, standata = NULL, model_folder 
 
   if (is.null(model_filename)) {
     if (is.null(standata)) {
-      abort(c("Please either provide ","`model_filename` and `model_folder` (i.e. the path to a stan model)","`standata` (so that a suitable stan model can be inferred)"))
+      abort(c("Please either provide ", "`model_filename` and `model_folder` (i.e. the path to a stan model)", "`standata` (so that a suitable stan model can be inferred)"))
     }
     if (standata$meta_info$R_estimate_approach == "splines") {
       model_filename <- "wastewater_Re_splines.stan"
@@ -107,17 +107,17 @@ update_compiled_stanmodel <- function(model_def, force_recompile = FALSE) {
     include_paths_list <- lapply(1:n_models, function(i) stan_no_profiling_list[[i]]$include_paths)
   }
 
-  cpp_options = list()
+  cpp_options <- list()
   if (model_def$threads) {
     cpp_options[["stan_threads"]] <- TRUE
   }
 
   stanmodel_list <- lapply(1:n_models, function(i) {
     try(cmdstan_model(model_path_list[[i]],
-                      include_paths = include_paths_list[[i]],
-                      dir = dirname(model_path_list[[i]]),
-                      cpp_options = cpp_options,
-                      force_recompile = force_recompile
+      include_paths = include_paths_list[[i]],
+      dir = dirname(model_path_list[[i]]),
+      cpp_options = cpp_options,
+      force_recompile = force_recompile
     ))
   })
 
@@ -170,7 +170,7 @@ standata_check <- function(standata,
       })
       error_msg <- paste0(
         "The following variables are required but currently not present in standata:\n\n",
-        paste(paste(" -", missing_vars_text),collapse = "\n"), "\n"
+        paste(paste(" -", missing_vars_text), collapse = "\n"), "\n"
       )
       if (!is.null(run_before)) {
         if (is.list(run_before)) {
@@ -179,7 +179,8 @@ standata_check <- function(standata,
         }
         run_before_msg <- paste(
           "You may need to apply some or all of the following functions first:",
-          paste(paste0(run_before), collapse = ", "))
+          paste(paste0(run_before), collapse = ", ")
+        )
       } else {
         run_before_msg <- NULL
       }
@@ -214,13 +215,12 @@ standata_check <- function(standata,
 #'   standata object is returned again, where optional variables have been
 #'   replaced by zero-length dimension defaults for stan.
 standata_validate <- function(standata, model_def, defaults = standata_defaults()) {
-
   standata <- standata_update(standata)
 
   for (standata_sub in list(standata$meta_info, standata, standata$init)) {
-    for (name in names(standata_sub)){
-      if (any(c("tbe","tbef") %in% class(standata_sub[[name]]))) {
-        abort(paste0("There is still information missing to compute ","`",name,"`"))
+    for (name in names(standata_sub)) {
+      if (any(c("tbe", "tbef") %in% class(standata_sub[[name]]))) {
+        abort(paste0("There is still information missing to compute ", "`", name, "`"))
       }
     }
   }
@@ -235,7 +235,7 @@ standata_validate <- function(standata, model_def, defaults = standata_defaults(
 
 standata_combine <- function(...) {
   standata_sets <- list(...)
-  standata_combined <- do.call(c, lapply(standata_sets, function(x) list_except(x, c("init","meta_info"))))
+  standata_combined <- do.call(c, lapply(standata_sets, function(x) list_except(x, c("init", "meta_info"))))
   standata_combined$init <- do.call(c, lapply(standata_sets, function(x) x$init))
   standata_combined$meta_info <- do.call(c, lapply(standata_sets, function(x) x$meta_info))
   standata_combined <- standata_update(standata_combined, throw_error = FALSE)
@@ -247,36 +247,33 @@ standata_update <- function(standata, throw_error = TRUE) {
 
   # meta info
   all_vars <- names(standata$meta_info)
-  for (name in all_vars){
+  for (name in all_vars) {
     if ("tbe" %in% class(standata$meta_info[[name]])) {
       standata$meta_info[[name]] <- solve(standata$meta_info[[name]], standata = standata, throw_error = throw_error)
-    }
-    else if ("tbef" %in% class(standata$meta_info[[name]])) {
+    } else if ("tbef" %in% class(standata$meta_info[[name]])) {
       standata <- solve(standata$meta_info[[name]], standata = standata, throw_error = throw_error)
     }
   }
 
   # main standata
-  all_vars <- setdiff(names(standata), c("init","meta_info"))
-  for (name in all_vars){
-    if (name == "iota_log_ar_start_prior"){
+  all_vars <- setdiff(names(standata), c("init", "meta_info"))
+  for (name in all_vars) {
+    if (name == "iota_log_ar_start_prior") {
       print("now")
     }
     if ("tbe" %in% class(standata[[name]])) {
       standata[[name]] <- solve(standata[[name]], standata = standata, throw_error = throw_error)
-    }
-    else if ("tbef" %in% class(standata[[name]])) {
+    } else if ("tbef" %in% class(standata[[name]])) {
       standata <- solve(standata[[name]], standata = standata, throw_error = throw_error)
     }
   }
 
   # init
   all_vars <- names(standata$init)
-  for (name in all_vars){
+  for (name in all_vars) {
     if ("tbe" %in% class(standata$init[[name]])) {
       standata$init[[name]] <- solve(standata$init[[name]], standata = standata, throw_error = throw_error)
-    }
-    else if ("tbef" %in% class(standata$init[[name]])) {
+    } else if ("tbef" %in% class(standata$init[[name]])) {
       standata <- solve(standata$init[[name]], standata = standata, throw_error = throw_error)
     }
   }
@@ -297,20 +294,20 @@ standata_update <- function(standata, throw_error = TRUE) {
 stan_prior <- function(param, dist = "normal", ...) {
   prior <- c(as.list(environment()), list(...))
   prior_data <- list()
-  prior_data[[paste0(param,"_prior_text")]] <- paste(names(prior), "=", prior, collapse=", ")
+  prior_data[[paste0(param, "_prior_text")]] <- paste(names(prior), "=", prior, collapse = ", ")
   prior$param <- NULL
   prior$dist <- NULL
   names(prior) <- NULL
-  prior_data[[paste0(param,"_prior")]] <- unlist(prior)
-  return (prior_data)
+  prior_data[[paste0(param, "_prior")]] <- unlist(prior)
+  return(prior_data)
 }
 
 tbe <- function(r_expr, required = c(), calling_env = caller_env()) {
-  if(standata_check(calling_env$standata, required, throw_error = F)) {
+  if (standata_check(calling_env$standata, required, throw_error = F)) {
     return(r_expr)
   } else {
     lazy_r <- lazy(r_expr)
-    #rm(ets_diff, envir = calling_env)
+    # rm(ets_diff, envir = calling_env)
     lazy_r$env <- calling_env
     tbe_o <- list()
     tbe_o$lazy_r <- lazy_r
@@ -325,7 +322,7 @@ print.tbe <- function(x) {
   print(paste("Waiting for meta-information:", expr_text(x$lazy_r$expr)))
 }
 
-solve.tbe <- function(x, standata, throw_error = TRUE){
+solve.tbe <- function(x, standata, throw_error = TRUE) {
   if (standata_check(standata, x$required, calling_env = x$calling_f, throw_error = throw_error)) {
     return(lazy_eval(x$lazy_r, list(standata = standata)))
   } else {
@@ -345,7 +342,7 @@ tbef <- function(f_name, f_expr, required = c(), calling_env = caller_env()) {
   rm(standata, envir = calling_env)
   calling_env$f_lazy <- f_lazy
   environment(f_func) <- calling_env
-  if(standata_check(calling_standata, required = required, throw_error = F)) {
+  if (standata_check(calling_standata, required = required, throw_error = F)) {
     new_standata <- f_func(calling_standata)
   } else {
     tbef_o <- list(name = f_name, func = f_func)
@@ -362,7 +359,7 @@ print.tbef <- function(x) {
   print(paste("Waiting for the following meta-information to compute values:", paste(x$required, collapse = ", ")))
 }
 
-solve.tbef <- function(x, standata, throw_error = TRUE){
+solve.tbef <- function(x, standata, throw_error = TRUE) {
   if (standata_check(standata, x$required, calling_env = x$calling_f, throw_error = throw_error)) {
     standata <- x$func(standata)
     standata[[x$name]] <- NULL

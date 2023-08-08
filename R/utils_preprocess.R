@@ -1,5 +1,5 @@
 #' Mark outlier spikes in a measurement time series
-#' 
+#'
 #' Uses a simple heuristic to detect positive outliers (i.e. unusually high
 #' spikes) in a time series. The approach is to compare a measurement with the
 #' median of measurements in a small centered window. If the measurements before
@@ -9,14 +9,14 @@
 #' (replicates), where each replicate is evaluated individually. However, this
 #' currently does not give more weight to days with more replicates, i.e.
 #' ignores potential differences in measurement uncertainty.
-#' 
+#'
 #' To determine how much deviation from the median is ' significant, a moving
-#median absolute deviation (as a more robust estimate than the standard
-#deviation of how much noise to expect) in measurements is used. This ' seems to
-#be more robust than just multiplying the median with a factor to ' determine
-#the threshold. The moving MAD is lagged by one day such that the current value
-#is ' not included. Moreover, note that because the window for the moving median
-#is centered. the last window_size/2 dates have no spike detection.
+# median absolute deviation (as a more robust estimate than the standard
+# deviation of how much noise to expect) in measurements is used. This ' seems to
+# be more robust than just multiplying the median with a factor to ' determine
+# the threshold. The moving MAD is lagged by one day such that the current value
+# is ' not included. Moreover, note that because the window for the moving median
+# is centered. the last window_size/2 dates have no spike detection.
 #'
 #' @param df A `data.frame` containing the time series of measurements.
 #' @param col The name of the column with the measurements. Use dplyr-style
@@ -37,15 +37,17 @@
 #'   `is_outlier`.
 #' @export
 mark_outlier_spikes_median <- function(df, col, date_col = date, window = 5, threshold_factor = 5, mad_window = 14, mad_lower_quantile = 0.05) {
-  median_info <- df %>% 
-    group_by({{date_col}}) %>% summarize(daily_median = median({{col}}), .groups = "drop") %>% 
-    transmute({{date_col}},
-              rolling_median = zoo::rollmedian(daily_median, window, align = "center", fill = NA),
-              rolling_mad = zoo::rollapply(lag(daily_median), mad_window, FUN = sd, align = "right", fill = NA),
-              lower_rolling_mad = quantile(rolling_mad, mad_lower_quantile, na.rm = T)
+  median_info <- df %>%
+    group_by({{ date_col }}) %>%
+    summarize(daily_median = median({{ col }}), .groups = "drop") %>%
+    transmute({{ date_col }},
+      rolling_median = zoo::rollmedian(daily_median, window, align = "center", fill = NA),
+      rolling_mad = zoo::rollapply(lag(daily_median), mad_window, FUN = sd, align = "right", fill = NA),
+      lower_rolling_mad = quantile(rolling_mad, mad_lower_quantile, na.rm = T)
     )
-  df <- df %>% left_join(median_info, by = rlang::as_string(ensym(date_col))) %>% 
-    mutate(is_outlier = {{col}} - rolling_median > threshold_factor * pmax(rolling_mad, lower_rolling_mad)) %>%
+  df <- df %>%
+    left_join(median_info, by = rlang::as_string(ensym(date_col))) %>%
+    mutate(is_outlier = {{ col }} - rolling_median > threshold_factor * pmax(rolling_mad, lower_rolling_mad)) %>%
     select(-c(rolling_median, rolling_mad, lower_rolling_mad))
   return(df)
 }

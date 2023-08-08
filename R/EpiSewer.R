@@ -34,17 +34,17 @@ EpiSewer <- function(
     ),
     model = get_stan_model(standata = standata),
     fit_opts = set_fit_opts(sampler_opts = set_sampler_opts(), fitted = TRUE)) {
-
   standata <- standata_combine(measurements, sampling, sewage, shedding, infections)
   standata <- standata_validate(standata, model_def = model_def)
 
 
-  job <- EpiSewerJob(job_name = paste("Job on", date()),
-                    model_def = model_def,
-                    standata = standata,
-                    fit_opts = fit_opts,
-                    overwrite = TRUE,
-                    results_exclude = c()
+  job <- EpiSewerJob(
+    job_name = paste("Job on", date()),
+    model_def = model_def,
+    standata = standata,
+    fit_opts = fit_opts,
+    overwrite = TRUE,
+    results_exclude = c()
   )
 
   fitted <- do.call(job$model_def$get_stan_model[[1]]()$sample, job$arguments)
@@ -52,7 +52,7 @@ EpiSewer <- function(
   result <- list(
     job = job,
     summary = summarize_fit(fitted, job$arguments$data, job$arguments_meta_info),
-    fitted = ifelse(fit_opts$fitted,fitted,NULL)
+    fitted = ifelse(fit_opts$fitted, fitted, NULL)
   )
 
   return(result)
@@ -87,10 +87,10 @@ EpiSewerJob <- function(job_name,
   job_def[["model_def"]] <- model_def
 
   # ToDo rlang::flatten is deprecated, replace
-  data_arguments <- suppressWarnings(rlang::flatten(standata[!(names(standata) %in% c("init","meta_info"))]))
+  data_arguments <- suppressWarnings(rlang::flatten(standata[!(names(standata) %in% c("init", "meta_info"))]))
   data_arguments_raw <- data_arguments[stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)]
   init_arguments <- standata$init
-  job_def[["arguments"]] <- c(list(data=data_arguments_raw), init=function() init_arguments, fit_opts$sampler_opts)
+  job_def[["arguments"]] <- c(list(data = data_arguments_raw), init = function() init_arguments, fit_opts$sampler_opts)
   job_def[["priors_text"]] <- data_arguments[stringr::str_detect(names(data_arguments), "_prior_text")]
   job_def[["arguments_meta_info"]] <- standata$meta_info
 
@@ -126,9 +126,9 @@ sewer_data <- function(measurements = NULL, flows = NULL) {
 #'
 #' @examples
 sewer_assumptions <- function(generation_dist = NULL,
-                             incubation_dist = NULL,
-                             shedding_dist = NULL,
-                             load_per_case = NULL) {
+                              incubation_dist = NULL,
+                              shedding_dist = NULL,
+                              load_per_case = NULL) {
   assumptions <- as.list(environment())
   return(assumptions)
 }

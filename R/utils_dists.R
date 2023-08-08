@@ -16,7 +16,7 @@ get_gamma_rate_alternative <- function(gamma_mean, gamma_sd) {
 
 #' Get scale of a Gamma distribution given its mean and sd
 get_gamma_scale_alternative <- function(gamma_mean, gamma_sd) {
-  return(1/get_gamma_rate_alternative(gamma_mean,gamma_sd))
+  return(1 / get_gamma_rate_alternative(gamma_mean, gamma_sd))
 }
 
 #' Get PMF of a discretized Gamma distribution.
@@ -97,8 +97,7 @@ get_discrete_gamma <- function(gamma_shape,
 #' @export
 #'
 #' @examples
-get_discrete_gamma_shifted <- function (gamma_mean = 4.8, gamma_sd = 2.3, maxX = 10)
-{
+get_discrete_gamma_shifted <- function(gamma_mean = 4.8, gamma_sd = 2.3, maxX = 10) {
   k <- 1:maxX
   if (gamma_sd < 0) {
     stop("gamma_sd must be >=0.")
@@ -106,11 +105,11 @@ get_discrete_gamma_shifted <- function (gamma_mean = 4.8, gamma_sd = 2.3, maxX =
   if (gamma_mean <= 1) {
     stop("gamma_mean must be >1")
   }
-  if (maxX<1) {
+  if (maxX < 1) {
     stop("Maximum period must be >=1.")
   }
-  a <- ((gamma_mean - 1)/gamma_sd)^2
-  b <- gamma_sd^2/(gamma_mean - 1)
+  a <- ((gamma_mean - 1) / gamma_sd)^2
+  b <- gamma_sd^2 / (gamma_mean - 1)
   cdf_gamma <- function(k, a, b) stats::pgamma(k, shape = a, scale = b)
   res <- k * cdf_gamma(k, a, b) + (k - 2) * cdf_gamma(k - 2, a, b) - 2 * (k - 1) * cdf_gamma(k - 1, a, b)
   res <- res + a * b * (2 * cdf_gamma(k - 1, a + 1, b) - cdf_gamma(k - 2, a + 1, b) - cdf_gamma(k, a + 1, b))

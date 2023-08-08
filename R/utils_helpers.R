@@ -35,14 +35,14 @@ compareNA <- function(v1, v2) {
 weighted.median <- function(x, w) {
   w <- w[order(x)]
   x <- x[order(x)]
-  
+
   prob <- cumsum(w) / sum(w)
   ps <- which.min(abs(prob - .5))
   return(x[ps])
 }
 
 check_list_nested <- function(list_to_check, flat_var) {
-  vars_levels <- stringr::str_split(flat_var,"\\$")
+  vars_levels <- stringr::str_split(flat_var, "\\$")
   presence <- sapply(vars_levels, function(levels) {
     check_l <- list_to_check
     for (l in levels) {
@@ -52,21 +52,21 @@ check_list_nested <- function(list_to_check, flat_var) {
         check_l <- check_l[[l]]
       }
     }
-    if (any(c("tbe","tbef") %in% class(check_l))) {
+    if (any(c("tbe", "tbef") %in% class(check_l))) {
       return(FALSE)
     } else {
       return(TRUE)
     }
   })
-return(presence)
+  return(presence)
 }
 
 default_list_nested <- function(list_to_validate, levels, default, i = 1) {
   if (i < length(levels)) {
     if (!(levels[i] %in% names(list_to_validate))) {
-      list_to_validate[[levels[i]]] <- default_list_nested(list(), levels, default, i+1)
+      list_to_validate[[levels[i]]] <- default_list_nested(list(), levels, default, i + 1)
     } else {
-      list_to_validate[[levels[i]]] <- default_list_nested(list_to_validate[[levels[i]]], levels, default, i+1)
+      list_to_validate[[levels[i]]] <- default_list_nested(list_to_validate[[levels[i]]], levels, default, i + 1)
     }
   } else {
     if (!(levels[i] %in% names(list_to_validate))) {
