@@ -516,7 +516,7 @@ infection_noise_none <- function(standata = standata_init()) {
 #' @examples
 infection_noise_estimate <-
   function(standata = standata_init(),
-           I_overdispersion = TRUE,
+           I_overdispersion = FALSE,
            I_xi_prior = stan_prior("I_xi", "normal", mu = 0, sigma = 1)) {
     new_standata <- as.list(environment())
     standata <-
