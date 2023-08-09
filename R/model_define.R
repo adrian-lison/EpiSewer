@@ -332,6 +332,7 @@ R_estimate_ets <- function(
     ets_beta_prior = c(50, 50),
     ets_phi_fixed = -1,
     ets_phi_prior = c(50, 5)) {
+
   standata$meta_info$R_estimate_approach <- "ets"
 
   standata$R_level_start_prior <- R_level_start_prior
@@ -418,7 +419,7 @@ R_estimate_splines <- function(
       standata$meta_info$R_knots <- knots
       standata$meta_info$B <- B
       standata$bs_n_basis <- ncol(B)
-      B_sparse <- rstan::extract_sparse_parts(B)
+      B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
       standata$bs_n_w <- length(B_sparse$w)
       standata$bs_w <- B_sparse$w
       standata$bs_v <- B_sparse$v

@@ -84,3 +84,29 @@ list_except <- function(l, except) {
   sel <- names(l)[!(names(l) %in% except)]
   return(l[sel])
 }
+
+suppress_warnings <- function(.expr, .f, ...) {
+  eval.parent(substitute(
+    withCallingHandlers( .expr, warning = function(w) {
+      cm <- conditionMessage(w)
+      cond <-
+        if(is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm,...)
+      if (cond) {
+        invokeRestart("muffleWarning")
+      }
+    })
+  ))
+}
+
+suppress_messages <- function(.expr, .f, ...) {
+  eval.parent(substitute(
+    withCallingHandlers( .expr, message = function(w) {
+      cm <- conditionMessage(w)
+      cond <-
+        if(is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm,...)
+      if (cond) {
+        invokeRestart("muffleMessage")
+      }
+    })
+  ))
+}

@@ -37,7 +37,7 @@ get_stan_model <- function(
     if (standata$meta_info$R_estimate_approach == "splines") {
       model_filename <- "wastewater_Re_splines.stan"
     } else if (standata$meta_info$R_estimate_approach == "ets") {
-      model_filename <- "wastewater_Re_ets.stan"
+      model_filename <- "wastewater_Re.stan"
     } else {
       abort(
         paste(
@@ -145,7 +145,7 @@ update_compiled_stanmodel <- function(model_def, force_recompile = FALSE) {
   }
 
   stanmodel_list <- lapply(1:n_models, function(i) {
-    try(cmdstan_model(model_path_list[[i]],
+    try(cmdstanr::cmdstan_model(model_path_list[[i]],
       include_paths = include_paths_list[[i]],
       dir = dirname(model_path_list[[i]]),
       cpp_options = cpp_options,
@@ -187,7 +187,7 @@ standata_check <- function(standata,
                            run_before = standata_var_requirements(),
                            advice = NULL,
                            throw_error = T,
-                           calling_env = caller_env()) {
+                           calling_env = rlang::caller_env()) {
   var_check <- check_list_nested(standata, required)
   if (throw_error) {
     if (!all(var_check)) {
@@ -368,7 +368,7 @@ stan_prior <- function(param, dist = "normal", ...) {
   return(prior_data)
 }
 
-tbe <- function(r_expr, required = c(), calling_env = caller_env()) {
+tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
   if (standata_check(calling_env$standata, required, throw_error = F)) {
     return(r_expr)
   } else {
@@ -377,7 +377,7 @@ tbe <- function(r_expr, required = c(), calling_env = caller_env()) {
     lazy_r$env <- calling_env
     tbe_o <- list()
     tbe_o$lazy_r <- lazy_r
-    tbe_o$calling_f <- tail(trace_back()$call, 2)[[1]]
+    tbe_o$calling_f <- tail(rlang::trace_back()$call, 2)[[1]]
     tbe_o$required <- required
     class(tbe_o) <- "tbe"
     return(tbe_o)
@@ -399,7 +399,8 @@ solve.tbe <- function(x, standata, throw_error = TRUE) {
   }
 }
 
-tbef <- function(f_name, f_expr, required = c(), calling_env = caller_env()) {
+tbef <- function(f_name, f_expr, required = c(),
+                 calling_env = rlang::caller_env()) {
   calling_standata <- calling_env$standata
 
   f_lazy <- lazyeval::lazy(f_expr)
@@ -415,7 +416,7 @@ tbef <- function(f_name, f_expr, required = c(), calling_env = caller_env()) {
     new_standata <- f_func(calling_standata)
   } else {
     tbef_o <- list(name = f_name, func = f_func)
-    tbef_o$calling_f <- tail(trace_back()$call, 2)[[1]]
+    tbef_o$calling_f <- tail(rlang::trace_back()$call, 2)[[1]]
     tbef_o$required <- required
     class(tbef_o) <- "tbef"
     new_standata <- calling_standata

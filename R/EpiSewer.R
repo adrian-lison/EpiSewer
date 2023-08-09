@@ -47,7 +47,6 @@ EpiSewer <- function(
   )
   standata <- standata_validate(standata, model_def = model)
 
-
   job <- EpiSewerJob(
     job_name = paste("Job on", date()),
     model_def = model,
@@ -57,7 +56,10 @@ EpiSewer <- function(
     results_exclude = c()
   )
 
-  fitted <- do.call(job$model_def$get_stan_model[[1]]()$sample, job$arguments)
+  fitted <- suppress_messages(
+    do.call(job$model_def$get_stan_model[[1]]()$sample, job$arguments),
+    "Registered S3 method overwritten by 'data.table'"
+  )
 
   result <- list(
     job = job,
