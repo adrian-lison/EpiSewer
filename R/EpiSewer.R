@@ -58,23 +58,7 @@ EpiSewer <- function(
     results_exclude = c()
   )
 
-  fitted <- suppress_messages(
-    do.call(job$model_def$get_stan_model[[1]]()$sample, job$arguments),
-    "Registered S3 method overwritten by 'data.table'"
-  )
-
-  result <- list(
-    job = job,
-    summary = summarize_fit(
-      fitted, job$arguments$data, job$arguments_meta_info
-    )
-  )
-
-  if (fit_opts$fitted) {
-    result$fitted = fitted
-  }
-
-  return(result)
+  return(run(job))
 }
 
 #' Title
@@ -98,12 +82,12 @@ EpiSewerJob <- function(job_name,
                         jobarray_size = 1,
                         overwrite = TRUE,
                         results_exclude = c()) {
-  job_def <- list()
+  job <- list()
 
-  job_def[["job_name"]] <- job_name
-  job_def[["jobarray_size"]] <- jobarray_size
+  job[["job_name"]] <- job_name
+  job[["jobarray_size"]] <- jobarray_size
 
-  job_def[["model_def"]] <- model_def
+  job[["model_def"]] <- model_def
 
   # ToDo rlang::flatten is deprecated, replace
   data_arguments <- suppressWarnings(
@@ -112,19 +96,54 @@ EpiSewerJob <- function(job_name,
   data_arguments_raw <- data_arguments[
     stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
   ]
-  init_arguments <- standata$init
-  job_def[["arguments"]] <- c(list(data = data_arguments_raw),
-    init = function() init_arguments, fit_opts$sampler_opts
-  )
-  job_def[["priors_text"]] <- data_arguments[
+  job[["data"]] <- data_arguments_raw
+  job[["init"]] <- standata$init
+  job[["fit_opts"]] <- fit_opts
+
+  job[["priors_text"]] <- data_arguments[
     stringr::str_detect(names(data_arguments), "_prior_text")
   ]
-  job_def[["arguments_meta_info"]] <- standata$meta_info
+  job[["meta_info"]] <- standata$meta_info
 
-  job_def[["overwrite"]] <- overwrite
-  job_def[["results_exclude"]] <- results_exclude
+  job[["overwrite"]] <- overwrite
+  job[["results_exclude"]] <- results_exclude
 
-  return(job_def)
+  class(job) <- "EpiSewerJob"
+
+  return(job)
+}
+
+setGeneric("run", function(x) UseMethod("run", x))
+
+run.EpiSewerJob = function(job){
+
+  arguments <- c(
+    list(data = job$data),
+    init = function() job$init,
+    job$fit_opts$sampler
+    )
+
+  fitted <- suppress_messages(
+    do.call(job$model_def$get_stan_model[[1]]()$sample, arguments),
+    "Registered S3 method overwritten by 'data.table'"
+  )
+
+  result <- list(
+    job = job,
+    summary = summarize_fit(
+      fitted, job$data, job$meta_info
+    )
+  )
+
+  if (job$fit_opts$fitted) {
+    fitted$draws()
+    try(fitted$sampler_diagnostics(), silent = TRUE)
+    try(fitted$init(), silent = TRUE)
+    try(fitted$profiles(), silent = TRUE)
+    result$fitted = fitted
+  }
+
+  return(result)
 }
 
 #' Title
