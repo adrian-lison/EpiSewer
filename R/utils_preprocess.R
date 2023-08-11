@@ -66,3 +66,100 @@ mark_outlier_spikes_median <- function(
 
   return(df)
 }
+
+
+#' Title
+#'
+#' @param measurements
+#' @param flows
+#' @param cases
+#' @param ascertainment_prop
+#' @param measurement_shift
+#' @param shift_weights
+#' @param date_col
+#' @param measurement_col
+#' @param case_col
+#' @param flow_col
+#'
+#' @return
+#' @export
+#' @import data.table
+#'
+#' @examples
+suggest_load_per_case <- function(measurements, flows, cases,
+                                  ascertainment_prop = 1,
+                                  measurement_shift = seq(-7,7),
+                                  shift_weights = 1/(abs(measurement_shift)+1),
+                                  date_col = "date",
+                                  measurement_col = "concentration",
+                                  flow_col = "flow",
+                                  case_col = "cases") {
+
+  required_data_cols <- c(date_col, measurement_col)
+  if (!all(required_data_cols %in% names(measurements))) {
+    abort(
+      paste(
+        "The following columns must be present",
+        "in the provided measurements `data.frame`:",
+        paste(required_data_cols, collapse = ", ")
+      )
+    )
+  }
+  measurements = as.data.table(measurements)
+  measurements[, (date_col) := as.Date(get(date_col))]
+
+  required_data_cols <- c(date_col, flow_col)
+  if (!all(required_data_cols %in% names(flows))) {
+    abort(
+      paste(
+        "The following columns must be present",
+        "in the provided measurements `data.frame`:",
+        paste(required_data_cols, collapse = ", ")
+      )
+    )
+  }
+  flows = as.data.table(flows)
+  flows[, (date_col) := as.Date(get(date_col))]
+
+  required_data_cols <- c(date_col, case_col)
+  if (!all(required_data_cols %in% names(cases))) {
+    abort(
+      paste(
+        "The following columns must be present",
+        "in the provided cases `data.frame`:",
+        paste(required_data_cols, collapse = ", ")
+      )
+    )
+  }
+  cases = as.data.table(cases)
+  cases[, (date_col) := as.Date(get(date_col))]
+
+  if (!(ascertainment_prop>0 && ascertainment_prop<=1)) {
+    abort(paste(
+      "The ascertainment proportion must be between 0 and 1,",
+      "e.g. 0.9 for 90%."
+    ))
+  }
+
+  measurements <- merge(measurements, flows, by = "date")
+  measurements[, load := get(measurement_col)*get(flow_col)]
+  cases[, (case_col) := get(case_col)/ascertainment_prop]
+  shift_weights <- shift_weights/sum(shift_weights)
+
+  measurements <- rbindlist(mapply(function(s, w){
+    measurements[, .(
+      date = date,
+      load = shift(load, s, NA, "lead"),
+      shift = s,
+      weight = w)]
+  }, s = measurement_shift, w = shift_weights, SIMPLIFY = FALSE))
+
+  measurements <- measurements[!is.na(get(date_col)) & !is.na(load)]
+  cases <- cases[!is.na(get(date_col)) & !is.na(get(case_col))]
+
+  combined <- merge(measurements, cases, by = "date")
+  lm_res <- lm(load ~ 0 + cases, combined, weights = combined$weight)
+  load_per_case <- unname(lm_res$coefficients["cases"])
+  load_per_case <- signif(load_per_case, 2) # round to 2 significant figures
+  return(load_per_case)
+}
