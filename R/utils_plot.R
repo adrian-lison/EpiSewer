@@ -9,7 +9,7 @@
 #' @import ggplot2
 #'
 #' @examples
-plot_infections <- function(results, draws = FALSE, ndraws = NULL) {
+plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -22,6 +22,11 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL) {
       results, "infections"
     )
   }
+
+  if (!seeding) {
+    data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
+  }
+
   plot <- ggplot(data_to_plot, aes(x = date, color = model, fill = model)) +
     theme_bw() +
     scale_x_date(
@@ -60,7 +65,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL) {
 #' @export
 #'
 #' @examples
-plot_R <- function(results, draws = FALSE, ndraws = NULL) {
+plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -73,6 +78,11 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL) {
       results, "R"
     )
   }
+
+  if (!seeding) {
+    data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
+  }
+
   plot <- ggplot(data_to_plot, aes(x = date, color = model, fill = model)) +
     theme_bw() +
     scale_x_date(
@@ -105,14 +115,14 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL) {
 #' Title
 #'
 #' @param results
-#' @param ww_data
+#' @param measurements
 #' @param include_noise
 #'
 #' @return
 #' @export
 #'
 #' @examples
-plot_concentration <- function(results, ww_data, include_noise = T) {
+plot_concentration <- function(results, measurements = NULL, include_noise = T) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -122,29 +132,75 @@ plot_concentration <- function(results, ww_data, include_noise = T) {
     concentration_pred <- combine_summaries(results, "expected_concentration")
   }
 
-  concentration_measured <- vctrs::vec_rbind(!!!lapply(results, function(res) {
-    return(ww_data[
-      ww_data$date %in% res$meta_info$measured_dates,
-      c("date", "concentration")
-    ])
-  }), .names_to = "model")
-  concentration_measured$model <- forcats::fct_inorder(
-    as.character(concentration_measured$model),
-    ordered = T
-  )
+  if (!is.null(measurements)) {
+    concentration_measured <- vctrs::vec_rbind(!!!lapply(results, function(res) {
+      return(measurements[
+        measurements$date %in% res$job$meta_info$measured_dates,
+        c("date", "concentration")
+      ])
+    }), .names_to = "model")
+    concentration_measured$model <- forcats::fct_inorder(
+      as.character(concentration_measured$model),
+      ordered = T
+    )
+  } else {
+    concentration_measured <- NULL
+  }
 
-  plot <- ggplot(ww_data, aes(x = date)) +
-    geom_line(
-      aes(y = concentration),
-      color = "grey", linetype = "dotted", size = 0.3
-    ) +
+  if (is.null(measurements)) {
+    first_date <- min(concentration_pred$date)
+    last_date <- max(concentration_pred$date)
+  } else {
+    first_date <- max(min(measurements$date), min(concentration_pred$date))
+    last_date <- min(max(measurements$date), max(concentration_pred$date))
+  }
+
+  if (!is.null(measurements)) {
+    measurements <- measurements[
+      !is.na(measurements$concentration),
+    ]
+    concentration_measured <- concentration_measured[
+      !is.na(concentration_measured$concentration),
+    ]
+  }
+  concentration_pred <- concentration_pred[
+    !is.na(concentration_pred$median),
+  ]
+
+  plot <- ggplot(concentration_pred, aes(x = date)) +
+    {
+      if (!is.null(measurements)) {
+        geom_line(
+          data = measurements,
+          aes(y = concentration),
+          color = "grey", linetype = "dotted", size = 0.3
+        )
+      }
+    } +
     geom_ribbon(
       data = concentration_pred,
       aes(ymin = lower, ymax = upper, fill = model), alpha = 0.3
     ) +
-    geom_point(aes(y = concentration), color = "grey", shape = 4) +
-    geom_point(data = concentration_measured, aes(y = concentration)) +
-    geom_line(data = concentration_pred, aes(y = median, color = model)) +
+    {
+      if (!is.null(measurements)) {
+        geom_point(
+          data = measurements,
+          aes(y = concentration), color = "grey", shape = 4
+        )
+      }
+    } +
+    {
+      if (!is.null(concentration_measured)) {
+        geom_point(
+          data = concentration_measured,
+          aes(y = concentration)
+        )
+      }
+    } +
+    geom_line(
+      data = concentration_pred,
+      aes(y = median, color = model)
+    ) +
     theme_bw() +
     scale_x_date(
       expand = c(0, 0),
@@ -152,10 +208,8 @@ plot_concentration <- function(results, ww_data, include_noise = T) {
     ) +
     xlab("Date") +
     ylab("Concentration [gene copies / L]") +
-    coord_cartesian(xlim = as.Date(c(
-      max(min(ww_data$date), min(concentration_pred$date)),
-      min(max(ww_data$date), max(concentration_pred$date))
-    )))
+    coord_cartesian(xlim = as.Date(c(first_date, last_date)))
+
   if (length(unique(concentration_pred$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
@@ -168,20 +222,28 @@ plot_concentration <- function(results, ww_data, include_noise = T) {
 #' Title
 #'
 #' @param results
-#' @param ww_data
+#' @param measurements
 #' @param include_noise
 #'
 #' @return
 #' @export
 #'
 #' @examples
-plot_load <- function(results, ww_data, include_noise = T) {
+plot_load <- function(results, measurements = NULL, include_noise = T) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
   load_pred <- combine_summaries(results, "expected_load")
 
-  plot <- ggplot(ww_data, aes(x = date)) +
+  if (is.null(measurements)) {
+    first_date <- min(load_pred$date)
+    last_date <- max(load_pred$date)
+  } else {
+    first_date <- max(min(measurements$date), min(load_pred$date))
+    last_date <- min(max(measurements$date), max(load_pred$date))
+  }
+
+  plot <- ggplot(load_pred, aes(x = date)) +
     geom_ribbon(
       data = load_pred,
       aes(ymin = lower, ymax = upper, fill = model), alpha = 0.3
@@ -194,10 +256,8 @@ plot_load <- function(results, ww_data, include_noise = T) {
     ) +
     xlab("Date") +
     ylab("Load [gene copies / day]") +
-    coord_cartesian(xlim = as.Date(c(
-      max(min(ww_data$date), min(load_pred$date)),
-      min(max(ww_data$date), max(load_pred$date))
-    )))
+    coord_cartesian(xlim = as.Date(c(first_date, last_date)))
+
   if (length(unique(load_pred$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
