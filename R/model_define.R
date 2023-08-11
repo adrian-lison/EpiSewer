@@ -251,7 +251,7 @@ generation_dist_assume <-
     }
     standata$G <- length(generation_dist)
     standata$generation_dist <- generation_dist
-    standata$meta_info$length_seeding <- length(generation_dist) - 1
+    standata$meta_info$length_seeding <- length(generation_dist)
     return(standata)
   }
 
@@ -326,14 +326,24 @@ R_estimate_ets <- function(
       stan_prior("R_sd", "half-normal", mu = 0, sigma = 0.05),
     ets_diff = FALSE,
     ets_noncentered = TRUE,
-    ets_alpha_fixed = -1,
+    ets_alpha_fixed = NULL,
     ets_alpha_prior = c(50, 50),
-    ets_beta_fixed = -1,
+    ets_beta_fixed = NULL,
     ets_beta_prior = c(50, 50),
-    ets_phi_fixed = -1,
+    ets_phi_fixed = 0.9,
     ets_phi_prior = c(50, 5)) {
 
   standata$meta_info$R_estimate_approach <- "ets"
+
+  if (is.null(ets_alpha_fixed)) {
+    ets_alpha_fixed <- -1
+  }
+  if (is.null(ets_beta_fixed)) {
+    ets_beta_fixed <- -1
+  }
+  if (is.null(ets_phi_fixed)) {
+    ets_phi_fixed <- -1
+  }
 
   standata$R_level_start_prior <- R_level_start_prior
   standata$R_trend_start_prior <- R_trend_start_prior
@@ -375,6 +385,28 @@ R_estimate_ets <- function(
   }
   standata$init$ets_phi <- 0.9
 
+  return(standata)
+}
+
+R_estimate_rw <- function(
+    standata = standata_init(),
+    R_start_prior =
+      stan_prior("R_level_start", "normal", mu = 1, sigma = 0.8),
+    R_sd_prior =
+      stan_prior("R_sd", "half-normal", mu = 0, sigma = 0.05),
+    rw_diff = FALSE,
+    rw_noncentered = TRUE) {
+
+  standata <- R_estimate_ets(
+    standata = standata,
+    R_level_start_prior = R_start_prior,
+    R_sd_prior = R_sd_prior,
+    ets_diff = rw_diff,
+    ets_noncentered = rw_noncentered,
+    ets_alpha_fixed = 1,
+    ets_beta_fixed = 0,
+    ets_phi_fixed = 0
+    )
   return(standata)
 }
 
@@ -481,7 +513,7 @@ seeding_estimate <- function(
   )
   standata$init$iota_log_ar_sd <- 1
   standata$init$iota_log_ar_noise <- tbe(
-    rep(0, standata$meta_info$length_seeding),
+    rep(0, standata$meta_info$length_seeding - 1),
     "meta_info$length_seeding"
   )
 

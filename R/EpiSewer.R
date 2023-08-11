@@ -246,7 +246,7 @@ model_shedding <- function(incubation_dist, shedding_dist, load_per_case) {
 #' @examples
 model_infections <- function(
     generation_dist,
-    R = R_estimate_splines(),
+    R = R_estimate_rw(),
     seeding = seeding_estimate(),
     infection_noise = infection_noise_estimate()) {
   return(standata_combine(generation_dist, R, seeding, infection_noise))
