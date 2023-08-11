@@ -23,19 +23,20 @@ get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
 #' Title
 #'
 #' @param fit
-#' @param data_arguments
+#' @param data
 #' @param meta_info
+#' @param ndraws
 #'
 #' @return
 #' @export
 #'
 #' @examples
-summarize_fit <- function(fit, data_arguments, meta_info) {
+summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
   summary <- list()
-  T_shift_R <- with(data_arguments, L + S - G)
-  T_shift_latent <- with(data_arguments, L + S)
-  T_shift_onset <- with(data_arguments, S)
-  T_shift_load <- with(data_arguments, 0)
+  T_shift_R <- with(data, L + S - G)
+  T_shift_latent <- with(data, L + S)
+  T_shift_onset <- with(data, S)
+  T_shift_load <- with(data, 0)
 
   summary[["R"]] <- get_summary_1d_date(
     fit, "R",
@@ -44,7 +45,7 @@ summarize_fit <- function(fit, data_arguments, meta_info) {
 
   summary[["R_samples"]] <- get_R_trajectories(
     fit,
-    T_shift = T_shift_R, meta_info = meta_info, ndraws = 30
+    T_shift = T_shift_R, meta_info = meta_info, ndraws = ndraws
   )
 
   summary[["expected_infections"]] <- get_summary_1d_date(
@@ -52,14 +53,14 @@ summarize_fit <- function(fit, data_arguments, meta_info) {
     T_shift = T_shift_latent, meta_info = meta_info
   )
 
-  if (data_arguments$I_sample) {
+  if (data$I_sample) {
     summary[["infections"]] <- get_summary_1d_date(
       fit, "I",
       T_shift = T_shift_latent, meta_info = meta_info
     )
     summary[["infections_samples"]] <- get_I_trajectories(
       fit,
-      T_shift = T_shift_latent, meta_info = meta_info, ndraws = 30
+      T_shift = T_shift_latent, meta_info = meta_info, ndraws = ndraws
     )
   }
 
@@ -83,10 +84,10 @@ summarize_fit <- function(fit, data_arguments, meta_info) {
     T_shift = T_shift_load, meta_info = meta_info
   )
 
-  if (data_arguments$K > 0) {
+  if (data$K > 0) {
     # here we exponentiate to get the multiplicative effect
     summary[["sample_date_effects"]] <- get_summary_vector_log(
-      fit, "eta", colnames(data_arguments$X)
+      fit, "eta", colnames(data$X)
     )
   }
 

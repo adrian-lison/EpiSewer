@@ -12,6 +12,8 @@
 #'
 #' @return
 #' @export
+#' @import data.table
+#' @import rlang
 #'
 #' @examples
 EpiSewer <- function(
@@ -41,7 +43,7 @@ EpiSewer <- function(
       )
     ),
     model = get_stan_model(standata = standata),
-    fit_opts = set_fit_opts(sampler_opts = set_sampler_opts(), fitted = TRUE)) {
+    fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE)) {
   standata <- standata_combine(
     measurements, sampling, sewage, shedding, infections
   )

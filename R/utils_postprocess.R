@@ -21,6 +21,7 @@ map_dates_1d_df <- function(fit_summary, date_mapping) {
   fit_summary <- extract_dims_df(fit_summary, "variable")
   fit_summary <- cbind(date = date_mapping[fit_summary$dim1], fit_summary)
   fit_summary <- subset(fit_summary, select = -c(var_name, dim1, variable))
+  setDT(fit_summary)
   return(fit_summary)
 }
 
@@ -36,6 +37,7 @@ get_summary_1d_date <- function(fit, var, T_shift, meta_info) {
     lower = function(x) unname(quantile(x, 0.025)),
     upper = function(x) unname(quantile(x, 0.975))
   ), date_mapping)
+  setDT(var_summary)
   return(var_summary)
 }
 
@@ -51,6 +53,7 @@ get_summary_1d_date_log <- function(fit, var, T_shift, meta_info) {
     lower = function(x) unname(quantile(exp(x), 0.025)),
     upper = function(x) unname(quantile(exp(x), 0.975))
   ), date_mapping)
+  setDT(var_summary)
   return(var_summary)
 }
 
@@ -67,6 +70,7 @@ get_summary_vector <- function(fit, var, varnames = NULL) {
     }
     fsummary$variable <- forcats::fct_inorder(varnames, ordered = T)
   }
+  setDT(fsummary)
   return(fsummary)
 }
 
@@ -83,6 +87,7 @@ get_summary_vector_log <- function(fit, var, varnames = NULL) {
     }
     fsummary$variable <- forcats::fct_inorder(varnames, ordered = T)
   }
+  setDT(fsummary)
   return(fsummary)
 }
 
@@ -117,5 +122,6 @@ combine_samples <- function(
     as.character(combined$model),
     ordered = T
   )
+  setDT(combined)
   return(combined)
 }

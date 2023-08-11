@@ -38,6 +38,8 @@ get_stan_model <- function(
       model_filename <- "wastewater_Re_splines.stan"
     } else if (standata$meta_info$R_estimate_approach == "ets") {
       model_filename <- "wastewater_Re.stan"
+    } else if (standata$meta_info$R_estimate_approach == "rw") {
+      model_filename <- "wastewater_Re.stan"
     } else {
       abort(
         paste(
@@ -69,7 +71,7 @@ get_stan_model <- function(
 #' @export
 #'
 #' @examples
-set_fit_opts <- function(sampler_opts = sampler_opts(), fitted = TRUE) {
+set_fit_opts <- function(sampler = sampler_stan_mcmc(), fitted = TRUE) {
   opts <- as.list(environment())
   return(opts)
 }
@@ -93,7 +95,7 @@ set_fit_opts <- function(sampler_opts = sampler_opts(), fitted = TRUE) {
 #' @export
 #'
 #' @examples
-set_sampler_opts <- function(
+sampler_stan_mcmc <- function(
     chains = 4,
     iter_warmup = 1000,
     iter_sampling = 1000,
@@ -104,7 +106,7 @@ set_sampler_opts <- function(
     threads_per_chain = 1,
     seed = 0,
     refresh = 200,
-    show_messages = T,
+    show_messages = F,
     ...) {
   opts <- c(as.list(environment()), list(...))
   if (opts$threads_per_chain == 1) {
