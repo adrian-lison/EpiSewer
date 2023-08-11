@@ -16,6 +16,7 @@ Depends:
     R (>= 3.5.0)
 Imports: 
     cmdstanr,
+    data.table,
     extraDistr,
     forcats,
     ggplot2,
@@ -36,3 +37,4 @@ Remotes:
     stan-dev/cmdstanr
 SystemRequirements:
     CmdStan (>=2.30)
+LazyData: true
