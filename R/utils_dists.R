@@ -57,7 +57,7 @@ get_discrete_gamma <- function(gamma_shape,
       if (missing(gamma_mean) || missing(gamma_sd)) {
         stop("No valid combination of parameters supplied", call. = F)
       }
-      gamma_rate <- get_gamma_rate_alternative(gamma_mean, gamma_sd^2)
+      gamma_rate <- get_gamma_rate_alternative(gamma_mean, gamma_sd)
     } else {
       gamma_rate <- 1 / gamma_scale
     }
