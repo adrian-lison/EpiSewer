@@ -10,7 +10,7 @@ standata_check(
   descriptions = standata_descriptions(),
   run_before = standata_var_requirements(),
   advice = NULL,
-  throw_error = T,
+  throw_error = TRUE,
   calling_env = rlang::caller_env()
 )
 }

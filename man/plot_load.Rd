@@ -4,7 +4,7 @@
 \alias{plot_load}
 \title{Title}
 \usage{
-plot_load(results, measurements = NULL, include_noise = T)
+plot_load(results, measurements = NULL, include_noise = TRUE)
 }
 \arguments{
 \item{include_noise}{}

@@ -15,7 +15,7 @@ sampler_stan_mcmc(
   threads_per_chain = 1,
   seed = 0,
   refresh = 200,
-  show_messages = F,
+  show_messages = TRUE,
   ...
 )
 }

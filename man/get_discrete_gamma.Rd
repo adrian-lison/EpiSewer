@@ -11,8 +11,8 @@ get_discrete_gamma(
   gamma_mean,
   gamma_sd,
   maxX,
-  include_zero = T,
-  print_params = F
+  include_zero = TRUE,
+  print_params = FALSE
 )
 }
 \arguments{

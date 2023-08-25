@@ -10,8 +10,8 @@ get_discrete_lognormal(
   unit_mean = NULL,
   unit_sd = NULL,
   maxX,
-  include_zero = T,
-  print_params = F
+  include_zero = TRUE,
+  print_params = FALSE
 )
 }
 \arguments{

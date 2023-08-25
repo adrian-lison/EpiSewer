@@ -4,7 +4,7 @@
 \alias{plot_concentration}
 \title{Title}
 \usage{
-plot_concentration(results, measurements = NULL, include_noise = T)
+plot_concentration(results, measurements = NULL, include_noise = TRUE)
 }
 \arguments{
 \item{include_noise}{}
