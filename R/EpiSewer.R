@@ -115,32 +115,48 @@ EpiSewerJob <- function(job_name,
 
 setGeneric("run", function(x) UseMethod("run", x))
 
-run.EpiSewerJob = function(job){
-
+run.EpiSewerJob <- function(job) {
   arguments <- c(
     list(data = job$data),
     init = function() job$init,
     job$fit_opts$sampler
-    )
-
-  fitted <- suppress_messages(
-    do.call(job$model_def$get_stan_model[[1]]()$sample, arguments),
-    "Registered S3 method overwritten by 'data.table'"
   )
 
-  result <- list(
-    job = job,
-    summary = summarize_fit(
-      fitted, job$data, job$meta_info
-    )
+  result <- list()
+  result$job <- job
+
+  fitting_successful <- FALSE
+  fit_res <- tryCatch(
+    {
+      fit_res <- suppress_messages(
+        do.call(job$model_def$get_stan_model[[1]]()$sample, arguments),
+        "Registered S3 method overwritten by 'data.table'"
+      )
+      fitting_successful <- TRUE
+      fit_res
+    },
+    error = function(err) {
+      rlang::warn(c(
+        "There was an error while fitting the model:",
+        "Only the model input is returned.",
+        err$message
+      ))
+      return(err)
+    }
   )
 
-  if (job$fit_opts$fitted) {
-    fitted$draws()
-    try(fitted$sampler_diagnostics(), silent = TRUE)
-    try(fitted$init(), silent = TRUE)
-    try(fitted$profiles(), silent = TRUE)
-    result$fitted = fitted
+  if (!fitting_successful) {
+    result$errors <- fit_res
+  } else {
+    result$summary <- summarize_fit(fit_res, job$data, job$meta_info)
+
+    if (job$fit_opts$fitted) {
+      fit_res$draws()
+      try(fit_res$sampler_diagnostics(), silent = TRUE)
+      try(fit_res$init(), silent = TRUE)
+      try(fit_res$profiles(), silent = TRUE)
+      result$fitted <- fit_res
+    }
   }
 
   return(result)
