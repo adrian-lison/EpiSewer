@@ -66,9 +66,9 @@ get_summary_vector <- function(fit, var, varnames = NULL) {
   )
   if (!is.null(varnames)) {
     if (nrow(fsummary) != length(varnames)) {
-      abort("Mismatch between model var and varnames", .internal = T)
+      abort("Mismatch between model var and varnames", .internal = TRUE)
     }
-    fsummary$variable <- forcats::fct_inorder(varnames, ordered = T)
+    fsummary$variable <- forcats::fct_inorder(varnames, ordered = TRUE)
   }
   setDT(fsummary)
   return(fsummary)
@@ -83,9 +83,9 @@ get_summary_vector_log <- function(fit, var, varnames = NULL) {
   )
   if (!is.null(varnames)) {
     if (nrow(fsummary) != length(varnames)) {
-      abort("Mismatch between model var and varnames", .internal = T)
+      abort("Mismatch between model var and varnames", .internal = TRUE)
     }
-    fsummary$variable <- forcats::fct_inorder(varnames, ordered = T)
+    fsummary$variable <- forcats::fct_inorder(varnames, ordered = TRUE)
   }
   setDT(fsummary)
   return(fsummary)
@@ -96,7 +96,7 @@ combine_summaries <- function(result_list, summary_name) {
   combined <- vctrs::vec_rbind(!!!summary_list, .names_to = "model")
   combined$model <- forcats::fct_inorder(
     as.character(combined$model),
-    ordered = T
+    ordered = TRUE
   )
   return(combined)
 }
@@ -120,7 +120,7 @@ combine_samples <- function(
   combined <- vctrs::vec_rbind(!!!summary_list, .names_to = "model")
   combined$model <- forcats::fct_inorder(
     as.character(combined$model),
-    ordered = T
+    ordered = TRUE
   )
   setDT(combined)
   return(combined)

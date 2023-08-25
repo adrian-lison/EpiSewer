@@ -122,7 +122,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE) {
 #' @export
 #'
 #' @examples
-plot_concentration <- function(results, measurements = NULL, include_noise = T) {
+plot_concentration <- function(results, measurements = NULL, include_noise = TRUE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -141,7 +141,7 @@ plot_concentration <- function(results, measurements = NULL, include_noise = T) 
     }), .names_to = "model")
     concentration_measured$model <- forcats::fct_inorder(
       as.character(concentration_measured$model),
-      ordered = T
+      ordered = TRUE
     )
   } else {
     concentration_measured <- NULL
@@ -229,7 +229,7 @@ plot_concentration <- function(results, measurements = NULL, include_noise = T) 
 #' @export
 #'
 #' @examples
-plot_load <- function(results, measurements = NULL, include_noise = T) {
+plot_load <- function(results, measurements = NULL, include_noise = TRUE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }

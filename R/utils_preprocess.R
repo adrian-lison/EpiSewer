@@ -54,7 +54,7 @@ mark_outlier_spikes_median <- function(
       ),
       lower_rolling_mad = quantile(
         rolling_mad, mad_lower_quantile,
-        na.rm = T
+        na.rm = TRUE
       )
     )
 

@@ -58,13 +58,13 @@ standata_init <- function() {
 standata_update_metainfo <- function(standata) {
   if (standata_check(standata,
     required = c("L", "S", "T"),
-    throw_error = F
+    throw_error = FALSE
   )) {
     standata$meta_info$length_I <- with(standata, L + S + T)
   }
   if (standata_check(standata,
     required = c("L", "S", "T", "G"),
-    throw_error = F
+    throw_error = FALSE
   )) {
     standata$meta_info$length_R <- with(standata, L + S + T - G)
   }
@@ -76,7 +76,7 @@ standata_update_metainfo <- function(standata) {
       "meta_info$composite_window",
       "meta_info$load_per_case"
     ),
-    throw_error = F
+    throw_error = FALSE
   )) {
     # crude descriptive estimate of cases at start of time series
     standata$meta_info$initial_cases_crude <-
@@ -446,7 +446,7 @@ R_estimate_splines <- function(
           1:standata$meta_info$length_R,
           knots = knots,
           degree = spline_degree,
-          intercept = F
+          intercept = FALSE
         )
       standata$meta_info$R_knots <- knots
       standata$meta_info$B <- B
@@ -657,7 +657,7 @@ sample_effects_estimate_weekday <-
             standata$meta_info$T_end_date,
             by = "1 day"
           ),
-          label = T
+          label = TRUE
         )
         design_matrix <- model.matrix(
           ~wday,

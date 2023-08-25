@@ -106,7 +106,7 @@ sampler_stan_mcmc <- function(
     threads_per_chain = 1,
     seed = 0,
     refresh = 200,
-    show_messages = F,
+    show_messages = TRUE,
     ...) {
   opts <- c(as.list(environment()), list(...))
   if (opts$threads_per_chain == 1) {
@@ -188,7 +188,7 @@ standata_check <- function(standata,
                            descriptions = standata_descriptions(),
                            run_before = standata_var_requirements(),
                            advice = NULL,
-                           throw_error = T,
+                           throw_error = TRUE,
                            calling_env = rlang::caller_env()) {
   var_check <- check_list_nested(standata, required)
   if (throw_error) {
@@ -371,7 +371,7 @@ stan_prior <- function(param, dist = "normal", ...) {
 }
 
 tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
-  if (standata_check(calling_env$standata, required, throw_error = F)) {
+  if (standata_check(calling_env$standata, required, throw_error = FALSE)) {
     return(r_expr)
   } else {
     lazy_r <- lazyeval::lazy(r_expr)
@@ -414,7 +414,9 @@ tbef <- function(f_name, f_expr, required = c(),
   rm(standata, envir = calling_env)
   calling_env$f_lazy <- f_lazy
   environment(f_func) <- calling_env
-  if (standata_check(calling_standata, required = required, throw_error = F)) {
+  if (standata_check(
+    calling_standata, required = required, throw_error = FALSE)
+    ) {
     new_standata <- f_func(calling_standata)
   } else {
     tbef_o <- list(name = f_name, func = f_func)

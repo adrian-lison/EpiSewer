@@ -44,18 +44,18 @@ get_discrete_gamma <- function(gamma_shape,
                                gamma_mean,
                                gamma_sd,
                                maxX,
-                               include_zero = T,
-                               print_params = F) {
+                               include_zero = TRUE,
+                               print_params = FALSE) {
   if (missing(gamma_shape)) {
     if (missing(gamma_mean) || missing(gamma_sd)) {
-      stop("No valid combination of parameters supplied", call. = F)
+      stop("No valid combination of parameters supplied", call. = FALSE)
     }
     gamma_shape <- get_gamma_shape_alternative(gamma_mean, gamma_sd)
   }
   if (missing(gamma_rate)) {
     if (missing(gamma_scale)) {
       if (missing(gamma_mean) || missing(gamma_sd)) {
-        stop("No valid combination of parameters supplied", call. = F)
+        stop("No valid combination of parameters supplied", call. = FALSE)
       }
       gamma_rate <- get_gamma_rate_alternative(gamma_mean, gamma_sd)
     } else {
@@ -143,8 +143,8 @@ get_discrete_gamma_shifted <- function(
 #' @return PMF of the discretized lognormal
 #' @export
 get_discrete_lognormal <- function(
-    meanlog, sdlog, unit_mean = NULL, unit_sd = NULL, maxX, include_zero = T,
-    print_params = F) {
+    meanlog, sdlog, unit_mean = NULL, unit_sd = NULL, maxX, include_zero = TRUE,
+    print_params = FALSE) {
   if (!is.null(unit_mean) && !is.null(unit_sd)) {
     sigma2 <- log((unit_sd / unit_mean)^2 + 1)
     meanlog <- log(unit_mean) - sigma2 / 2
