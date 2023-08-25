@@ -4,7 +4,7 @@
 \alias{generation_dist_assume}
 \title{Title}
 \usage{
-generation_dist_assume(standata = standata_init(), generation_dist)
+generation_dist_assume(generation_dist = NULL, modeldata = modeldata_init())
 }
 \arguments{
 \item{generation_dist}{}

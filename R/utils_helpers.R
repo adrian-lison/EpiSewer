@@ -52,7 +52,7 @@ check_list_nested <- function(list_to_check, flat_var) {
         check_l <- check_l[[l]]
       }
     }
-    if (any(c("tbe", "tbef") %in% class(check_l))) {
+    if (any(c("tbe", "tbc") %in% class(check_l))) {
       return(FALSE)
     } else {
       return(TRUE)

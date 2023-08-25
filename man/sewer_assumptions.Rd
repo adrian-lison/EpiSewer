@@ -8,7 +8,8 @@ sewer_assumptions(
   generation_dist = NULL,
   incubation_dist = NULL,
   shedding_dist = NULL,
-  load_per_case = NULL
+  load_per_case = NULL,
+  ...
 )
 }
 \arguments{

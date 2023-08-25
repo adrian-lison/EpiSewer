@@ -5,10 +5,10 @@
 \title{Title}
 \usage{
 flows_observe(
-  standata = standata_init(),
   flows,
   date_col = "date",
-  flow_col = "flow"
+  flow_col = "flow",
+  modeldata = modeldata_init()
 )
 }
 \arguments{

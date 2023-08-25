@@ -5,7 +5,7 @@
 \title{Title}
 \usage{
 model_infections(
-  generation_dist,
+  generation_dist = generation_dist_assume(),
   R = R_estimate_rw(),
   seeding = seeding_estimate(),
   infection_noise = infection_noise_estimate()

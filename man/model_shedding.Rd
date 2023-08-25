@@ -4,7 +4,11 @@
 \alias{model_shedding}
 \title{Title}
 \usage{
-model_shedding(incubation_dist, shedding_dist, load_per_case)
+model_shedding(
+  incubation_dist = incubation_dist_assume(),
+  shedding_dist = shedding_dist_assume(),
+  load_per_case = load_per_case_assume()
+)
 }
 \arguments{
 \item{load_per_case}{}

@@ -4,7 +4,7 @@
 \alias{load_per_case_assume}
 \title{Title}
 \usage{
-load_per_case_assume(standata = standata_init(), load_per_case)
+load_per_case_assume(load_per_case = NULL, modeldata = modeldata_init())
 }
 \arguments{
 \item{load_per_case}{}

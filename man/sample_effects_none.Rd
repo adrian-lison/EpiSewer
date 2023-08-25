@@ -4,10 +4,10 @@
 \alias{sample_effects_none}
 \title{Title}
 \usage{
-sample_effects_none(standata = standata_init())
+sample_effects_none(modeldata = modeldata_init())
 }
 \arguments{
-\item{standata}{}
+\item{modeldata}{}
 }
 \value{
 

@@ -5,8 +5,8 @@
 \title{Title}
 \usage{
 measurement_noise_estimate(
-  standata = standata_init(),
-  sigma_prior = stan_prior("sigma", "normal", mu = 0, sigma = 1)
+  sigma_prior = set_prior("sigma", "normal", mu = 0, sigma = 1),
+  modeldata = modeldata_init()
 )
 }
 \arguments{

@@ -4,10 +4,10 @@
 \alias{infection_noise_none}
 \title{Title}
 \usage{
-infection_noise_none(standata = standata_init())
+infection_noise_none(modeldata = modeldata_init())
 }
 \arguments{
-\item{standata}{}
+\item{modeldata}{}
 }
 \value{
 

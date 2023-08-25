@@ -42,17 +42,17 @@ EpiSewer <- function(
         generation_dist = assumptions$generation_dist
       )
     ),
-    model = get_stan_model(standata = standata),
+    model = get_stan_model(modeldata = modeldata),
     fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE)) {
-  standata <- standata_combine(
+  modeldata <- modeldata_combine(
     measurements, sampling, sewage, shedding, infections
   )
-  standata <- standata_validate(standata, model_def = model)
+  modeldata <- modeldata_validate(modeldata, model_def = model)
 
   job <- EpiSewerJob(
     job_name = paste("Job on", date()),
     model_def = model,
-    standata = standata,
+    modeldata = modeldata,
     fit_opts = fit_opts,
     overwrite = TRUE,
     results_exclude = c()
@@ -65,7 +65,7 @@ EpiSewer <- function(
 #'
 #' @param job_name
 #' @param model_def
-#' @param standata
+#' @param modeldata
 #' @param fit_opts
 #' @param jobarray_size
 #' @param overwrite
@@ -77,7 +77,7 @@ EpiSewer <- function(
 #' @examples
 EpiSewerJob <- function(job_name,
                         model_def,
-                        standata,
+                        modeldata,
                         fit_opts,
                         jobarray_size = 1,
                         overwrite = TRUE,
@@ -91,19 +91,19 @@ EpiSewerJob <- function(job_name,
 
   # ToDo rlang::flatten is deprecated, replace
   data_arguments <- suppressWarnings(
-    rlang::flatten(standata[!(names(standata) %in% c("init", "meta_info"))])
+    rlang::flatten(modeldata[!(names(modeldata) %in% c("init", "meta_info"))])
   )
   data_arguments_raw <- data_arguments[
     stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
   ]
   job[["data"]] <- data_arguments_raw
-  job[["init"]] <- standata$init
+  job[["init"]] <- modeldata$init
   job[["fit_opts"]] <- fit_opts
 
   job[["priors_text"]] <- data_arguments[
     stringr::str_detect(names(data_arguments), "_prior_text")
   ]
-  job[["meta_info"]] <- standata$meta_info
+  job[["meta_info"]] <- modeldata$meta_info
 
   job[["overwrite"]] <- overwrite
   job[["results_exclude"]] <- results_exclude
@@ -171,7 +171,7 @@ run.EpiSewerJob <- function(job) {
 #' @export
 #'
 #' @examples
-sewer_data <- function(measurements = NULL, flows = NULL) {
+sewer_data <- function(measurements = NULL, flows = NULL, ...) {
   data <- as.list(environment())
   return(data)
 }
@@ -190,7 +190,8 @@ sewer_data <- function(measurements = NULL, flows = NULL) {
 sewer_assumptions <- function(generation_dist = NULL,
                               incubation_dist = NULL,
                               shedding_dist = NULL,
-                              load_per_case = NULL) {
+                              load_per_case = NULL,
+                              ...) {
   assumptions <- as.list(environment())
   return(assumptions)
 }
@@ -207,7 +208,7 @@ sewer_assumptions <- function(generation_dist = NULL,
 model_measurements <- function(
     measurements,
     noise = measurement_noise_estimate()) {
-  return(standata_combine(measurements, noise))
+  return(modeldata_combine(measurements, noise))
 }
 
 #' Title
@@ -220,7 +221,7 @@ model_measurements <- function(
 #' @examples
 model_sampling <- function(
     sample_effects = sample_effects_none()) {
-  return(standata_combine(sample_effects))
+  return(modeldata_combine(sample_effects))
 }
 
 #' Title
@@ -232,7 +233,7 @@ model_sampling <- function(
 #'
 #' @examples
 model_sewage <- function(flows) {
-  return(standata_combine(flows))
+  return(modeldata_combine(flows))
 }
 
 #' Title
@@ -245,8 +246,11 @@ model_sewage <- function(flows) {
 #' @export
 #'
 #' @examples
-model_shedding <- function(incubation_dist, shedding_dist, load_per_case) {
-  return(standata_combine(incubation_dist, shedding_dist, load_per_case))
+model_shedding <- function(
+    incubation_dist = incubation_dist_assume(),
+    shedding_dist = shedding_dist_assume(),
+    load_per_case = load_per_case_assume()) {
+  return(modeldata_combine(incubation_dist, shedding_dist, load_per_case))
 }
 
 #' Title
@@ -261,9 +265,9 @@ model_shedding <- function(incubation_dist, shedding_dist, load_per_case) {
 #'
 #' @examples
 model_infections <- function(
-    generation_dist,
+    generation_dist = generation_dist_assume(),
     R = R_estimate_rw(),
     seeding = seeding_estimate(),
     infection_noise = infection_noise_estimate()) {
-  return(standata_combine(generation_dist, R, seeding, infection_noise))
+  return(modeldata_combine(generation_dist, R, seeding, infection_noise))
 }

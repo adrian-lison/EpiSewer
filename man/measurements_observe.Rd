@@ -5,11 +5,11 @@
 \title{Title}
 \usage{
 measurements_observe(
-  standata = standata_init(),
   measurements,
   composite_window = 1,
   date_col = "date",
-  measurement_col = "concentration"
+  measurement_col = "concentration",
+  modeldata = modeldata_init()
 )
 }
 \arguments{

@@ -4,7 +4,7 @@
 \alias{incubation_dist_assume}
 \title{Title}
 \usage{
-incubation_dist_assume(standata = standata_init(), incubation_dist)
+incubation_dist_assume(incubation_dist = NULL, modeldata = modeldata_init())
 }
 \arguments{
 \item{incubation_dist}{}

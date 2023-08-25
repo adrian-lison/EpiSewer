@@ -1,4 +1,4 @@
-standata_descriptions <- function() {
+modeldata_descriptions <- function() {
   descriptions <- list(
     "meta_info$composite_window" =
       "window length for composite samples in days",
@@ -16,7 +16,7 @@ standata_descriptions <- function() {
   return(descriptions)
 }
 
-standata_var_requirements <- function() {
+modeldata_var_requirements <- function() {
   requirements <- list(
     "meta_info$initial_cases_crude" = "flows_observe",
     "meta_info$length_seeding" = "generation_dist_assume",
@@ -30,7 +30,7 @@ standata_var_requirements <- function() {
   return(requirements)
 }
 
-standata_defaults <- function() {
+modeldata_defaults <- function() {
   defaults <- list(
     "K" = 0,
     "X" = numeric(0),
@@ -40,36 +40,36 @@ standata_defaults <- function() {
   return(defaults)
 }
 
-standata_init <- function() {
-  standata <- list()
-  standata$init <- list()
-  standata$meta_info <- list()
-  return(standata)
+modeldata_init <- function() {
+  modeldata <- list()
+  modeldata$init <- list()
+  modeldata$meta_info <- list()
+  return(modeldata)
 }
 
-#' Update meta information in standata based on available variables
+#' Update meta information in modeldata based on available variables
 #'
-#' This update function is for all meta information that depends on standata
+#' This update function is for all meta information that depends on modeldata
 #' from several functions. There are also functions which add meta information
 #' directly, in particular when this meta information cannot be solely inferred
-#' from standata. This function is designed such that calling it will never do
-#' harm to the standata object and not throw errors if something is missing in
-#' the standata object.
-standata_update_metainfo <- function(standata) {
-  if (standata_check(standata,
+#' from modeldata. This function is designed such that calling it will never do
+#' harm to the modeldata object and not throw errors if something is missing in
+#' the modeldata object.
+modeldata_update_metainfo <- function(modeldata) {
+  if (modeldata_check(modeldata,
     required = c("L", "S", "T"),
     throw_error = FALSE
   )) {
-    standata$meta_info$length_I <- with(standata, L + S + T)
+    modeldata$meta_info$length_I <- with(modeldata, L + S + T)
   }
-  if (standata_check(standata,
+  if (modeldata_check(modeldata,
     required = c("L", "S", "T", "G"),
     throw_error = FALSE
   )) {
-    standata$meta_info$length_R <- with(standata, L + S + T - G)
+    modeldata$meta_info$length_R <- with(modeldata, L + S + T - G)
   }
-  if (standata_check(
-    standata,
+  if (modeldata_check(
+    modeldata,
     required = c(
       "measured_concentrations",
       "flow",
@@ -79,19 +79,19 @@ standata_update_metainfo <- function(standata) {
     throw_error = FALSE
   )) {
     # crude descriptive estimate of cases at start of time series
-    standata$meta_info$initial_cases_crude <-
+    modeldata$meta_info$initial_cases_crude <-
       with(
-        standata,
+        modeldata,
         0.1 + measured_concentrations[1] *
           mean(flow[1:meta_info$composite_window]) / meta_info$load_per_case
       )
   }
-  return(standata)
+  return(modeldata)
 }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param measurements
 #' @param composite_window
 #' @param date_col
@@ -102,11 +102,11 @@ standata_update_metainfo <- function(standata) {
 #'
 #' @examples
 measurements_observe <-
-  function(standata = standata_init(),
-           measurements,
+  function(measurements,
            composite_window = 1,
            date_col = "date",
-           measurement_col = "concentration") {
+           measurement_col = "concentration",
+           modeldata = modeldata_init()) {
     if (is.null(measurements)) {
       abort("Please supply measurement data.")
     }
@@ -124,32 +124,32 @@ measurements_observe <-
 
     measurements[[date_col]] <- as.Date(measurements[[date_col]])
 
-    standata$T <-
+    modeldata$T <-
       as.integer(max(measurements[[date_col]]) -
         min(measurements[[date_col]]) + composite_window)
-    standata$meta_info$T_start_date <-
+    modeldata$meta_info$T_start_date <-
       min(measurements[[date_col]]) - composite_window + 1
-    standata$meta_info$T_end_date <- max(measurements[[date_col]])
+    modeldata$meta_info$T_end_date <- max(measurements[[date_col]])
 
-    standata$w <- composite_window
-    standata$meta_info$composite_window <- composite_window
+    modeldata$w <- composite_window
+    modeldata$meta_info$composite_window <- composite_window
 
     measured <- !is.na(measurements[[measurement_col]])
-    standata$n_measured <- sum(measured)
-    standata$measured_concentrations <-
+    modeldata$n_measured <- sum(measured)
+    modeldata$measured_concentrations <-
       measurements[[measurement_col]][measured]
-    standata$measured_dates <-
+    modeldata$measured_dates <-
       as.integer(measurements[[date_col]][measured] -
-        standata$meta_info$T_start_date + 1)
-    standata$meta_info$measured_dates <-
+        modeldata$meta_info$T_start_date + 1)
+    modeldata$meta_info$measured_dates <-
       measurements[[date_col]][measured]
 
-    return(standata)
+    return(modeldata)
   }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param load_per_case
 #'
 #' @return
@@ -157,18 +157,18 @@ measurements_observe <-
 #'
 #' @examples
 load_per_case_assume <-
-  function(standata = standata_init(), load_per_case) {
+  function(load_per_case = NULL, modeldata = modeldata_init()) {
     if (is.null(load_per_case)) {
       abort("Please supply an assumed average shedding load per person.")
     }
-    standata$meta_info$load_per_case <- load_per_case
-    return(standata)
+    modeldata$meta_info$load_per_case <- load_per_case
+    return(modeldata)
   }
 
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param flows
 #' @param date_col
 #' @param flow_col
@@ -178,10 +178,10 @@ load_per_case_assume <-
 #'
 #' @examples
 flows_observe <-
-  function(standata = standata_init(),
-           flows,
+  function(flows,
            date_col = "date",
-           flow_col = "flow") {
+           flow_col = "flow",
+           modeldata = modeldata_init()) {
     if (is.null(flows)) {
       abort("Please supply flow data.")
     }
@@ -203,13 +203,13 @@ flows_observe <-
       abort("Flow data is ambigious, duplicate dates found.")
     }
 
-    standata <- tbef(
+    modeldata <- tbc(
       "flow_data",
       {
         all_dates <-
           seq.Date(
-            standata$meta_info$T_start_date,
-            standata$meta_info$T_end_date,
+            modeldata$meta_info$T_start_date,
+            modeldata$meta_info$T_end_date,
             by = "1 day"
           )
         missing_flow_dates <-
@@ -224,20 +224,20 @@ flows_observe <-
           ))
         }
         flows <-
-          flows[flows[[date_col]] >= standata$meta_info$T_start_date &
-            flows[[date_col]] <= standata$meta_info$T_end_date, ]
+          flows[flows[[date_col]] >= modeldata$meta_info$T_start_date &
+            flows[[date_col]] <= modeldata$meta_info$T_end_date, ]
         flows <- flows[order(flows[[date_col]]), ]
-        standata$flow <- flows[[flow_col]]
+        modeldata$flow <- flows[[flow_col]]
       },
       required = c("meta_info$T_start_date", "meta_info$T_end_date")
     )
 
-    return(standata)
+    return(modeldata)
   }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param generation_dist
 #'
 #' @return
@@ -245,19 +245,19 @@ flows_observe <-
 #'
 #' @examples
 generation_dist_assume <-
-  function(standata = standata_init(), generation_dist) {
+  function(generation_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(generation_dist)) {
       abort("Please supply an assumed generation time distribution.")
     }
-    standata$G <- length(generation_dist)
-    standata$generation_dist <- generation_dist
-    standata$meta_info$length_seeding <- length(generation_dist)
-    return(standata)
+    modeldata$G <- length(generation_dist)
+    modeldata$generation_dist <- generation_dist
+    modeldata$meta_info$length_seeding <- length(generation_dist)
+    return(modeldata)
   }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param incubation_dist
 #'
 #' @return
@@ -265,18 +265,18 @@ generation_dist_assume <-
 #'
 #' @examples
 incubation_dist_assume <-
-  function(standata = standata_init(), incubation_dist) {
+  function(incubation_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(incubation_dist)) {
       abort("Please supply an assumed incubation period distribution.")
     }
-    standata$L <- length(incubation_dist) - 1
-    standata$incubation_dist <- incubation_dist
-    return(standata)
+    modeldata$L <- length(incubation_dist) - 1
+    modeldata$incubation_dist <- incubation_dist
+    return(modeldata)
   }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param shedding_dist
 #'
 #' @return
@@ -284,22 +284,22 @@ incubation_dist_assume <-
 #'
 #' @examples
 shedding_dist_assume <-
-  function(standata = standata_init(), shedding_dist) {
+  function(shedding_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(shedding_dist)) {
       abort("Please supply an assumed shedding load distribution.")
     }
-    standata$S <- length(shedding_dist) - 1
+    modeldata$S <- length(shedding_dist) - 1
     # here we account for the scaling factor from cases to load
-    standata$shedding_dist <-
-      tbe(shedding_dist * standata$meta_info$load_per_case,
+    modeldata$shedding_dist <-
+      tbe(shedding_dist * modeldata$meta_info$load_per_case,
         required = "meta_info$load_per_case"
       )
-    return(standata)
+    return(modeldata)
   }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param R_level_start_prior
 #' @param R_trend_start_prior
 #' @param R_sd_prior
@@ -317,13 +317,12 @@ shedding_dist_assume <-
 #'
 #' @examples
 R_estimate_ets <- function(
-    standata = standata_init(),
     R_level_start_prior =
-      stan_prior("R_level_start", "normal", mu = 1, sigma = 0.8),
+      set_prior("R_level_start", "normal", mu = 1, sigma = 0.8),
     R_trend_start_prior =
-      stan_prior("R_trend_start", "normal", mu = 0, sigma = 0.1),
+      set_prior("R_trend_start", "normal", mu = 0, sigma = 0.1),
     R_sd_prior =
-      stan_prior("R_sd", "half-normal", mu = 0, sigma = 0.05),
+      set_prior("R_sd", "half-normal", mu = 0, sigma = 0.05),
     ets_diff = FALSE,
     ets_noncentered = TRUE,
     ets_alpha_fixed = NULL,
@@ -331,9 +330,10 @@ R_estimate_ets <- function(
     ets_beta_fixed = NULL,
     ets_beta_prior = c(50, 50),
     ets_phi_fixed = 0.9,
-    ets_phi_prior = c(50, 5)) {
+    ets_phi_prior = c(50, 5),
+    modeldata = modeldata_init()) {
 
-  standata$meta_info$R_estimate_approach <- "ets"
+  modeldata$meta_info$R_estimate_approach <- "ets"
 
   if (is.null(ets_alpha_fixed)) {
     ets_alpha_fixed <- -1
@@ -345,60 +345,60 @@ R_estimate_ets <- function(
     ets_phi_fixed <- -1
   }
 
-  standata$R_level_start_prior <- R_level_start_prior
-  standata$R_trend_start_prior <- R_trend_start_prior
-  standata$R_sd_prior <- R_sd_prior
+  modeldata$R_level_start_prior <- R_level_start_prior
+  modeldata$R_trend_start_prior <- R_trend_start_prior
+  modeldata$R_sd_prior <- R_sd_prior
 
-  standata$init$R_level_start <-
+  modeldata$init$R_level_start <-
     R_level_start_prior$R_level_start_prior[1]
-  standata$init$R_trend_start <- 1e-4
-  standata$init$R_sd <- max(R_sd_prior$R_sd_prior[1], 0.1)
-  standata$init$R_noise <- tbe(
-    rep(0, standata$meta_info$length_R - 1),
+  modeldata$init$R_trend_start <- 1e-4
+  modeldata$init$R_sd <- max(R_sd_prior$R_sd_prior[1], 0.1)
+  modeldata$init$R_noise <- tbe(
+    rep(0, modeldata$meta_info$length_R - 1),
     "meta_info$length_R"
   )
 
-  standata$ets_diff <- ets_diff
-  standata$ets_noncentered <- ets_noncentered
+  modeldata$ets_diff <- ets_diff
+  modeldata$ets_noncentered <- ets_noncentered
 
-  standata$ets_alpha_fixed <- ets_alpha_fixed
+  modeldata$ets_alpha_fixed <- ets_alpha_fixed
   if (ets_alpha_fixed >= 0) {
-    standata$ets_alpha_prior <- numeric(0)
+    modeldata$ets_alpha_prior <- numeric(0)
   } else {
-    standata$ets_alpha_prior <- ets_alpha_prior
+    modeldata$ets_alpha_prior <- ets_alpha_prior
   }
-  standata$init$ets_alpha <- 0.5
+  modeldata$init$ets_alpha <- 0.5
 
-  standata$ets_beta_fixed <- ets_beta_fixed
+  modeldata$ets_beta_fixed <- ets_beta_fixed
   if (ets_beta_fixed >= 0) {
-    standata$ets_beta_prior <- numeric(0)
+    modeldata$ets_beta_prior <- numeric(0)
   } else {
-    standata$ets_beta_prior <- ets_beta_prior
+    modeldata$ets_beta_prior <- ets_beta_prior
   }
-  standata$init$ets_beta <- 0.5
+  modeldata$init$ets_beta <- 0.5
 
-  standata$ets_phi_fixed <- ets_phi_fixed
+  modeldata$ets_phi_fixed <- ets_phi_fixed
   if (ets_phi_fixed >= 0) {
-    standata$ets_phi_prior <- numeric(0)
+    modeldata$ets_phi_prior <- numeric(0)
   } else {
-    standata$ets_phi_prior <- ets_phi_prior
+    modeldata$ets_phi_prior <- ets_phi_prior
   }
-  standata$init$ets_phi <- 0.9
+  modeldata$init$ets_phi <- 0.9
 
-  return(standata)
+  return(modeldata)
 }
 
 R_estimate_rw <- function(
-    standata = standata_init(),
     R_start_prior =
-      stan_prior("R_level_start", "normal", mu = 1, sigma = 0.8),
+      set_prior("R_level_start", "normal", mu = 1, sigma = 0.8),
     R_sd_prior =
-      stan_prior("R_sd", "half-normal", mu = 0, sigma = 0.05),
+      set_prior("R_sd", "half-normal", mu = 0, sigma = 0.05),
     rw_diff = FALSE,
-    rw_noncentered = TRUE) {
+    rw_noncentered = TRUE,
+    modeldata = modeldata_init()) {
 
-  standata <- R_estimate_ets(
-    standata = standata,
+  modeldata <- R_estimate_ets(
+    modeldata = modeldata,
     R_level_start_prior = R_start_prior,
     R_sd_prior = R_sd_prior,
     ets_diff = rw_diff,
@@ -407,12 +407,12 @@ R_estimate_rw <- function(
     ets_beta_fixed = 0,
     ets_phi_fixed = 0
     )
-  return(standata)
+  return(modeldata)
 }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param knot_distance
 #' @param spline_degree
 #' @param bs_coeff_ar_start_prior
@@ -423,59 +423,59 @@ R_estimate_rw <- function(
 #'
 #' @examples
 R_estimate_splines <- function(
-    standata = standata_init(),
     knot_distance = 1,
     spline_degree = 3,
-    bs_coeff_ar_start_prior = stan_prior("bs_coeff_ar_start",
+    bs_coeff_ar_start_prior = set_prior("bs_coeff_ar_start",
       "normal",
       mu = 0,
       sigma = 0.5
     ),
-    bs_coeff_ar_sd_prior = stan_prior("bs_coeff_ar_sd",
+    bs_coeff_ar_sd_prior = set_prior("bs_coeff_ar_sd",
       "half-normal",
       mu = 0,
       sigma = 0.2
-    )) {
-  standata$meta_info$R_estimate_approach <- "splines"
+    ),
+    modeldata = modeldata_init()) {
+  modeldata$meta_info$R_estimate_approach <- "splines"
 
-  standata <- tbef("spline_definition",
+  modeldata <- tbc("spline_definition",
     {
-      knots <- seq(1, standata$meta_info$length_R, by = knot_distance)
+      knots <- seq(1, modeldata$meta_info$length_R, by = knot_distance)
       B <-
         splines::bs(
-          1:standata$meta_info$length_R,
+          1:modeldata$meta_info$length_R,
           knots = knots,
           degree = spline_degree,
           intercept = FALSE
         )
-      standata$meta_info$R_knots <- knots
-      standata$meta_info$B <- B
-      standata$bs_n_basis <- ncol(B)
+      modeldata$meta_info$R_knots <- knots
+      modeldata$meta_info$B <- B
+      modeldata$bs_n_basis <- ncol(B)
       B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
-      standata$bs_n_w <- length(B_sparse$w)
-      standata$bs_w <- B_sparse$w
-      standata$bs_v <- B_sparse$v
-      standata$bs_u <- B_sparse$u
+      modeldata$bs_n_w <- length(B_sparse$w)
+      modeldata$bs_w <- B_sparse$w
+      modeldata$bs_v <- B_sparse$v
+      modeldata$bs_u <- B_sparse$u
     },
     required = "meta_info$length_R"
   )
 
-  standata$bs_coeff_ar_start_prior <- bs_coeff_ar_start_prior
-  standata$bs_coeff_ar_sd_prior <- bs_coeff_ar_sd_prior
+  modeldata$bs_coeff_ar_start_prior <- bs_coeff_ar_start_prior
+  modeldata$bs_coeff_ar_sd_prior <- bs_coeff_ar_sd_prior
 
-  standata$init$bs_coeff_ar_start <- 0
-  standata$init$bs_coeff_ar_sd <- 0.1
-  standata$init$bs_coeff_noise <- tbe(
-    rep(0, standata$meta_info$length_R - 1),
+  modeldata$init$bs_coeff_ar_start <- 0
+  modeldata$init$bs_coeff_ar_sd <- 0.1
+  modeldata$init$bs_coeff_noise <- tbe(
+    rep(0, modeldata$meta_info$length_R - 1),
     "meta_info$length_R"
   )
 
-  return(standata)
+  return(modeldata)
 }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param iota_log_ar_start_prior
 #' @param iota_log_ar_sd_prior
 #'
@@ -484,61 +484,61 @@ R_estimate_splines <- function(
 #'
 #' @examples
 seeding_estimate <- function(
-    standata = standata_init(),
     iota_log_ar_start_prior = NULL,
-    iota_log_ar_sd_prior = stan_prior("iota_log_ar_sd",
+    iota_log_ar_sd_prior = set_prior("iota_log_ar_sd",
       "half-normal",
       mu = 0.05,
       sigma = 0.025
-    )) {
-  new_standata <- as.list(environment())
-  standata <-
-    c(standata, new_standata[names(new_standata) != "standata"])
+    ),
+    modeldata = modeldata_init()) {
+  new_modeldata <- as.list(environment())
+  modeldata <-
+    c(modeldata, new_modeldata[names(new_modeldata) != "modeldata"])
 
-  if (is.null(standata$iota_log_ar_start_prior)) {
-    standata$iota_log_ar_start_prior <- tbe(
-      stan_prior(
+  if (is.null(modeldata$iota_log_ar_start_prior)) {
+    modeldata$iota_log_ar_start_prior <- tbe(
+      set_prior(
         "iota_log_ar_start",
         "normal (mu based on crude empirical estimate of cases)",
-        mu = log(standata$meta_info$initial_cases_crude),
+        mu = log(modeldata$meta_info$initial_cases_crude),
         sigma = 1
       ),
       "meta_info$initial_cases_crude"
     )
   }
 
-  standata$init$iota_log_ar_start <- tbe(
-    log(standata$meta_info$initial_cases_crude),
+  modeldata$init$iota_log_ar_start <- tbe(
+    log(modeldata$meta_info$initial_cases_crude),
     "meta_info$initial_cases_crude"
   )
-  standata$init$iota_log_ar_sd <- 1
-  standata$init$iota_log_ar_noise <- tbe(
-    rep(0, standata$meta_info$length_seeding - 1),
+  modeldata$init$iota_log_ar_sd <- 1
+  modeldata$init$iota_log_ar_noise <- tbe(
+    rep(0, modeldata$meta_info$length_seeding - 1),
     "meta_info$length_seeding"
   )
 
-  return(standata)
+  return(modeldata)
 }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #'
 #' @return
 #' @export
 #'
 #' @examples
-infection_noise_none <- function(standata = standata_init()) {
-  standata$I_sample <- FALSE
-  standata$I_overdispersion <- FALSE
-  standata$init$I <- numeric(0)
-  standata$init$I_log <- numeric(0)
-  return(standata)
+infection_noise_none <- function(modeldata = modeldata_init()) {
+  modeldata$I_sample <- FALSE
+  modeldata$I_overdispersion <- FALSE
+  modeldata$init$I <- numeric(0)
+  modeldata$init$I_log <- numeric(0)
+  return(modeldata)
 }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param I_overdispersion
 #' @param I_xi_prior
 #'
@@ -547,57 +547,57 @@ infection_noise_none <- function(standata = standata_init()) {
 #'
 #' @examples
 infection_noise_estimate <-
-  function(standata = standata_init(),
-           I_overdispersion = FALSE,
-           I_xi_prior = stan_prior("I_xi", "normal", mu = 0, sigma = 1)) {
-    new_standata <- as.list(environment())
-    standata <-
-      c(standata, new_standata[names(new_standata) != "standata"])
-    standata$I_sample <- TRUE
-    standata$init$I <- tbe(
+  function(I_overdispersion = FALSE,
+           I_xi_prior = set_prior("I_xi", "normal", mu = 0, sigma = 1),
+           modeldata = modeldata_init()) {
+    new_modeldata <- as.list(environment())
+    modeldata <-
+      c(modeldata, new_modeldata[names(new_modeldata) != "modeldata"])
+    modeldata$I_sample <- TRUE
+    modeldata$init$I <- tbe(
       rep(
-        standata$meta_info$initial_cases_crude,
-        standata$meta_info$length_I
+        modeldata$meta_info$initial_cases_crude,
+        modeldata$meta_info$length_I
       ),
       c("meta_info$initial_cases_crude", "meta_info$length_I")
     )
-    standata$init$I_log <- tbe(
+    modeldata$init$I_log <- tbe(
       rep(
-        log(standata$meta_info$initial_cases_crude),
-        standata$meta_info$length_I
+        log(modeldata$meta_info$initial_cases_crude),
+        modeldata$meta_info$length_I
       ),
       c("meta_info$initial_cases_crude", "meta_info$length_I")
     )
 
-    if (standata$I_overdispersion) {
-      standata$init$I_xi <- 0.05
+    if (modeldata$I_overdispersion) {
+      modeldata$init$I_xi <- 0.05
     } else {
-      standata$I_xi_prior <- numeric(0)
-      standata$init$I_xi <- numeric(0)
+      modeldata$I_xi_prior <- numeric(0)
+      modeldata$init$I_xi <- numeric(0)
     }
 
-    return(standata)
+    return(modeldata)
   }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #'
 #' @return
 #' @export
 #'
 #' @examples
-sample_effects_none <- function(standata = standata_init()) {
-  standata$K <- 0
-  standata$X <- numeric(0)
-  standata$eta_prior <- numeric(0)
-  standata$init$eta <- numeric(0)
-  return(standata)
+sample_effects_none <- function(modeldata = modeldata_init()) {
+  modeldata$K <- 0
+  modeldata$X <- numeric(0)
+  modeldata$eta_prior <- numeric(0)
+  modeldata$init$eta <- numeric(0)
+  return(modeldata)
 }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param design_matrix
 #' @param eta_prior
 #'
@@ -606,17 +606,17 @@ sample_effects_none <- function(standata = standata_init()) {
 #'
 #' @examples
 sample_effects_estimate_matrix <-
-  function(standata = standata_init(),
-           design_matrix,
-           eta_prior = stan_prior("eta", "normal", mu = 0, sigma = 1)) {
-    standata <- tbef(
+  function(design_matrix,
+           eta_prior = set_prior("eta", "normal", mu = 0, sigma = 1),
+           modeldata = modeldata_init()) {
+    modeldata <- tbc(
       "check_design_matrix",
       {
-        if (!(standata$T == nrow(design_matrix))) {
+        if (!(modeldata$T == nrow(design_matrix))) {
           abort(
             paste(
               "Mismatch: Modeled time period has",
-              standata$T,
+              modeldata$T,
               "days, design matrix for sample date effects has",
               nrow(design_matrix),
               "rows."
@@ -626,19 +626,19 @@ sample_effects_estimate_matrix <-
       },
       required = "T"
     )
-    standata$K <- ncol(design_matrix)
-    standata$X <- design_matrix
+    modeldata$K <- ncol(design_matrix)
+    modeldata$X <- design_matrix
 
-    standata$eta_prior <- eta_prior
+    modeldata$eta_prior <- eta_prior
 
-    standata$init$eta <- rep(0, standata$K)
+    modeldata$init$eta <- rep(0, modeldata$K)
 
-    return(standata)
+    return(modeldata)
   }
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param eta_prior
 #'
 #' @return
@@ -646,15 +646,15 @@ sample_effects_estimate_matrix <-
 #'
 #' @examples
 sample_effects_estimate_weekday <-
-  function(standata = standata_init(),
-           eta_prior = stan_prior("eta", "normal", mu = 0, sigma = 1)) {
-    standata <- tbef(
+  function(eta_prior = set_prior("eta", "normal", mu = 0, sigma = 1),
+           modeldata = modeldata_init()) {
+    modeldata <- tbc(
       "weekday_design_matrix",
       {
         weekdays <- lubridate::wday(
           seq.Date(
-            standata$meta_info$T_start_date,
-            standata$meta_info$T_end_date,
+            modeldata$meta_info$T_start_date,
+            modeldata$meta_info$T_end_date,
             by = "1 day"
           ),
           label = TRUE
@@ -664,8 +664,8 @@ sample_effects_estimate_weekday <-
           data.frame(wday = weekdays),
           contrasts.arg = list(wday = "contr.treatment")
         )[, -1]
-        standata <-
-          sample_effects_estimate_matrix(standata, design_matrix, eta_prior)
+        modeldata <-
+          sample_effects_estimate_matrix(modeldata, design_matrix, eta_prior)
       },
       required = c("meta_info$T_start_date", "meta_info$T_end_date")
     )
@@ -673,7 +673,7 @@ sample_effects_estimate_weekday <-
 
 #' Title
 #'
-#' @param standata
+#' @param modeldata
 #' @param sigma_prior
 #'
 #' @return
@@ -681,14 +681,14 @@ sample_effects_estimate_weekday <-
 #'
 #' @examples
 measurement_noise_estimate <-
-  function(standata = standata_init(),
-           sigma_prior = stan_prior("sigma", "normal", mu = 0, sigma = 1)) {
-    new_standata <- as.list(environment())
-    standata <-
-      c(standata, new_standata[names(new_standata) != "standata"])
+  function(sigma_prior = set_prior("sigma", "normal", mu = 0, sigma = 1),
+           modeldata = modeldata_init()) {
+    new_modeldata <- as.list(environment())
+    modeldata <-
+      c(modeldata, new_modeldata[names(new_modeldata) != "modeldata"])
 
-    standata$init$sigma <-
+    modeldata$init$sigma <-
       0.1 # roughly corresponds to a 10% coefficient of variation
 
-    return(standata)
+    return(modeldata)
   }

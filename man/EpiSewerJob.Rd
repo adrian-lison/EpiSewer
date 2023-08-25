@@ -7,7 +7,7 @@
 EpiSewerJob(
   job_name,
   model_def,
-  standata,
+  modeldata,
   fit_opts,
   jobarray_size = 1,
   overwrite = TRUE,

@@ -17,7 +17,7 @@ EpiSewer(
     assumptions$load_per_case)),
   infections = model_infections(generation_dist =
     generation_dist_assume(generation_dist = assumptions$generation_dist)),
-  model = get_stan_model(standata = standata),
+  model = get_stan_model(modeldata = modeldata),
   fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE)
 )
 }

@@ -5,13 +5,13 @@
 \title{Title}
 \usage{
 R_estimate_splines(
-  standata = standata_init(),
   knot_distance = 1,
   spline_degree = 3,
-  bs_coeff_ar_start_prior = stan_prior("bs_coeff_ar_start", "normal", mu = 0, sigma =
+  bs_coeff_ar_start_prior = set_prior("bs_coeff_ar_start", "normal", mu = 0, sigma =
     0.5),
-  bs_coeff_ar_sd_prior = stan_prior("bs_coeff_ar_sd", "half-normal", mu = 0, sigma =
-    0.2)
+  bs_coeff_ar_sd_prior = set_prior("bs_coeff_ar_sd", "half-normal", mu = 0, sigma =
+    0.2),
+  modeldata = modeldata_init()
 )
 }
 \arguments{

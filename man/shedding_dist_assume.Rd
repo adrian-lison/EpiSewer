@@ -4,7 +4,7 @@
 \alias{shedding_dist_assume}
 \title{Title}
 \usage{
-shedding_dist_assume(standata = standata_init(), shedding_dist)
+shedding_dist_assume(shedding_dist = NULL, modeldata = modeldata_init())
 }
 \arguments{
 \item{shedding_dist}{}

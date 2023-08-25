@@ -5,7 +5,7 @@
 #' Title
 #'
 #' @param model_filename
-#' @param standata
+#' @param modeldata
 #' @param model_folder
 #' @param profile
 #' @param threads
@@ -17,7 +17,7 @@
 #' @examples
 get_stan_model <- function(
     model_filename = NULL,
-    standata = NULL,
+    modeldata = NULL,
     model_folder = "stan",
     profile = TRUE,
     threads = FALSE,
@@ -25,20 +25,20 @@ get_stan_model <- function(
   model_def <- list()
 
   if (is.null(model_filename)) {
-    if (is.null(standata)) {
+    if (is.null(modeldata)) {
       abort(
         c(
           "Please either provide ",
           "`model_filename` and `model_folder` (i.e. path to a stan model)",
-          "`standata` (so that a suitable stan model can be inferred)"
+          "to `modeldata` (so that a suitable stan model can be inferred)"
         )
       )
     }
-    if (standata$meta_info$R_estimate_approach == "splines") {
+    if (modeldata$meta_info$R_estimate_approach == "splines") {
       model_filename <- "wastewater_Re_splines.stan"
-    } else if (standata$meta_info$R_estimate_approach == "ets") {
+    } else if (modeldata$meta_info$R_estimate_approach == "ets") {
       model_filename <- "wastewater_Re.stan"
-    } else if (standata$meta_info$R_estimate_approach == "rw") {
+    } else if (modeldata$meta_info$R_estimate_approach == "rw") {
       model_filename <- "wastewater_Re.stan"
     } else {
       abort(
@@ -164,33 +164,33 @@ update_compiled_stanmodel <- function(model_def, force_recompile = FALSE) {
   return(model_def)
 }
 
-#' Check standata object for required variables
+#' Check modeldata object for required variables
 #'
-#' `standata_check` accepts various additional arguments which are turned into a
+#' `modeldata_check` accepts various additional arguments which are turned into a
 #' sophisticated error message about missing variables
 #'
-#' @inheritParams standata_validate
+#' @inheritParams modeldata_validate
 #' @param required Character vector of required variables
 #' @param descriptions Optional, a list with names corresponding to all or some
 #'   of the required variables, and values corresponding to additional
 #'   descriptions of the variables
 #' @param run_before Optional, either a character vector, or a `list` with names
 #'   corresponding to all of the required variables, and values
-#'   corresponding to functions that will add these variables to standata.
+#'   corresponding to functions that will add these variables to modeldata.
 #' @param advice Additional message with advice on how to solve error.
 #' @param throw_error Should an error be thrown (with verbatim error message),
 #'   or should `TRUE`/`FALSE` be returned. Default is `TRUE`.
 #'
 #' @return If throw_error is `TRUE`, nothing is returned, otherwise a logical is
 #'   returned (`TRUE` if all required variables are present)
-standata_check <- function(standata,
+modeldata_check <- function(modeldata,
                            required,
-                           descriptions = standata_descriptions(),
-                           run_before = standata_var_requirements(),
+                           descriptions = modeldata_descriptions(),
+                           run_before = modeldata_var_requirements(),
                            advice = NULL,
                            throw_error = TRUE,
                            calling_env = rlang::caller_env()) {
-  var_check <- check_list_nested(standata, required)
+  var_check <- check_list_nested(modeldata, required)
   if (throw_error) {
     if (!all(var_check)) {
       missing_vars <- required[!var_check]
@@ -204,7 +204,7 @@ standata_check <- function(standata,
       })
       error_msg <- paste0(
         "The following variables are required ",
-        "but currently not present in standata:\n\n",
+        "but currently not present in modeldata:\n\n",
         paste(paste(" -", missing_vars_text), collapse = "\n"), "\n"
       )
       if (!is.null(run_before)) {
@@ -229,7 +229,7 @@ standata_check <- function(standata,
   }
 }
 
-#' Ensure that standata contains all necessary variables
+#' Ensure that modeldata contains all necessary variables
 #'
 #' Throws an error if necessary variables are missing, and replaces optional
 #' variables with defaults indicating their absence in the stan model.
@@ -238,24 +238,24 @@ standata_check <- function(standata,
 #' stan does not explicitly allow default variables, so they are specified with
 #' a little hack by using zero-length dimensions.
 #'
-#' @param standata A `list` with all data variables (including priors) to be
+#' @param modeldata A `list` with all data variables (including priors) to be
 #'   passed on to stan, alongside additional meta information and descriptions.
 #' @param model_def A `list` with information about the stan model to be fitted
 #'   and a function that returns the CmdStanModel object.
-#' @param defaults A `list` with default values to be used for standata
-#'   variables if not supplied in standata. For example, `numeric(0)` will often
+#' @param defaults A `list` with default values to be used for modeldata
+#'   variables if not supplied in modeldata. For example, `numeric(0)` will often
 #'   be supplied for optional parameters.
 #'
 #' @return If no error is thrown due to missing mandatory variables, the same
-#'   standata object is returned again, where optional variables have been
+#'   modeldata object is returned again, where optional variables have been
 #'   replaced by zero-length dimension defaults for stan.
-standata_validate <- function(standata, model_def,
-                              defaults = standata_defaults()) {
-  standata <- standata_update(standata)
+modeldata_validate <- function(modeldata, model_def,
+                              defaults = modeldata_defaults()) {
+  modeldata <- modeldata_update(modeldata)
 
-  for (standata_sub in list(standata$meta_info, standata, standata$init)) {
-    for (name in names(standata_sub)) {
-      if (any(c("tbe", "tbef") %in% class(standata_sub[[name]]))) {
+  for (modeldata_sub in list(modeldata$meta_info, modeldata, modeldata$init)) {
+    for (name in names(modeldata_sub)) {
+      if (any(c("tbe", "tbc") %in% class(modeldata_sub[[name]]))) {
         abort(paste0(
           "There is still information missing to compute ",
           "`", name, "`"
@@ -266,84 +266,84 @@ standata_validate <- function(standata, model_def,
 
   for (i in seq_along(defaults)) {
     levels <- stringr::str_split(names(defaults)[[i]], "\\$")[[1]]
-    standata <- default_list_nested(
-      standata,
+    modeldata <- default_list_nested(
+      modeldata,
       levels = levels, default = defaults[[i]]
     )
   }
 
-  return(standata)
+  return(modeldata)
 }
 
-standata_combine <- function(...) {
-  standata_sets <- list(...)
-  standata_combined <- do.call(
-    c, lapply(standata_sets, function(x) {
+modeldata_combine <- function(...) {
+  modeldata_sets <- list(...)
+  modeldata_combined <- do.call(
+    c, lapply(modeldata_sets, function(x) {
       list_except(x, c("init", "meta_info"))
     })
   )
-  standata_combined$init <- do.call(
-    c, lapply(standata_sets, function(x) x$init)
+  modeldata_combined$init <- do.call(
+    c, lapply(modeldata_sets, function(x) x$init)
   )
-  standata_combined$meta_info <- do.call(
-    c, lapply(standata_sets, function(x) x$meta_info)
+  modeldata_combined$meta_info <- do.call(
+    c, lapply(modeldata_sets, function(x) x$meta_info)
   )
-  standata_combined <- standata_update(standata_combined, throw_error = FALSE)
-  return(standata_combined)
+  modeldata_combined <- modeldata_update(modeldata_combined, throw_error = FALSE)
+  return(modeldata_combined)
 }
 
-standata_update <- function(standata, throw_error = TRUE) {
-  standata <- standata_update_metainfo(standata)
+modeldata_update <- function(modeldata, throw_error = TRUE) {
+  modeldata <- modeldata_update_metainfo(modeldata)
 
   # meta info
-  all_vars <- names(standata$meta_info)
+  all_vars <- names(modeldata$meta_info)
   for (name in all_vars) {
-    if ("tbe" %in% class(standata$meta_info[[name]])) {
-      standata$meta_info[[name]] <- solve(
-        standata$meta_info[[name]],
-        standata = standata, throw_error = throw_error
+    if ("tbe" %in% class(modeldata$meta_info[[name]])) {
+      modeldata$meta_info[[name]] <- solve(
+        modeldata$meta_info[[name]],
+        modeldata = modeldata, throw_error = throw_error
       )
-    } else if ("tbef" %in% class(standata$meta_info[[name]])) {
-      standata <- solve(
-        standata$meta_info[[name]],
-        standata = standata, throw_error = throw_error
+    } else if ("tbc" %in% class(modeldata$meta_info[[name]])) {
+      modeldata <- solve(
+        modeldata$meta_info[[name]],
+        modeldata = modeldata, throw_error = throw_error
       )
     }
   }
 
-  # main standata
-  all_vars <- setdiff(names(standata), c("init", "meta_info"))
+  # main modeldata
+  all_vars <- setdiff(names(modeldata), c("init", "meta_info"))
   for (name in all_vars) {
-    if ("tbe" %in% class(standata[[name]])) {
-      standata[[name]] <- solve(
-        standata[[name]],
-        standata = standata, throw_error = throw_error
+    if ("tbe" %in% class(modeldata[[name]])) {
+      modeldata[[name]] <- solve(
+        modeldata[[name]],
+        modeldata = modeldata, throw_error = throw_error
       )
-    } else if ("tbef" %in% class(standata[[name]])) {
-      standata <- solve(
-        standata[[name]],
-        standata = standata, throw_error = throw_error
+    } else if ("tbc" %in% class(modeldata[[name]])) {
+      modeldata <- solve(
+        modeldata[[name]],
+        modeldata = modeldata, throw_error = throw_error
       )
     }
   }
 
   # init
-  all_vars <- names(standata$init)
+  all_vars <- names(modeldata$init)
   for (name in all_vars) {
-    if ("tbe" %in% class(standata$init[[name]])) {
-      standata$init[[name]] <- solve(
-        standata$init[[name]],
-        standata = standata, throw_error = throw_error
+    if ("tbe" %in% class(modeldata$init[[name]])) {
+      modeldata$init[[name]] <- solve(
+        modeldata$init[[name]],
+        modeldata = modeldata, throw_error = throw_error
       )
-    } else if ("tbef" %in% class(standata$init[[name]])) {
-      standata <- solve(
-        standata$init[[name]],
-        standata = standata, throw_error = throw_error
+    } else if ("tbc" %in% class(modeldata$init[[name]])) {
+      modeldata <- solve(
+        modeldata$init[[name]],
+        modeldata = modeldata, throw_error = throw_error
       )
     }
   }
 
-  return(standata)
+  return(modeldata)
 }
 
 #' Title
@@ -356,7 +356,7 @@ standata_update <- function(standata, throw_error = TRUE) {
 #' @export
 #'
 #' @examples
-stan_prior <- function(param, dist = "normal", ...) {
+set_prior <- function(param, dist = "normal", ...) {
   prior <- c(as.list(environment()), list(...))
   prior_data <- list()
   prior_data[[paste0(param, "_prior_text")]] <- paste(
@@ -370,12 +370,47 @@ stan_prior <- function(param, dist = "normal", ...) {
   return(prior_data)
 }
 
-tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
-  if (standata_check(calling_env$standata, required, throw_error = FALSE)) {
+
+#' To be assumed
+tba <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
+  if (required %in% calling_env$assumptions) {
     return(r_expr)
   } else {
     lazy_r <- lazyeval::lazy(r_expr)
-    # rm(ets_diff, envir = calling_env)
+    lazy_r$env <- calling_env
+    tba_o <- list()
+    tba_o$lazy_r <- lazy_r
+    tba_o$calling_f <- tail(rlang::trace_back()$call, 2)[[1]]
+    tba_o$required <- required
+    class(tba_o) <- "tba"
+    return(tba_o)
+  }
+}
+
+#' Title
+#'
+#' @param x
+#'
+#' @return
+#' @export
+print.tba <- function(x) {
+  print(paste("Requires assumption:", expr_text(x$lazy_r$expr)))
+}
+
+solve.tba <- function(x, assumptions) {
+  if (x$required %in% assumptions) {
+    return(lazyeval::lazy_eval(x$lazy_r, list(assumptions = assumptions)))
+  } else {
+    return(x)
+  }
+}
+
+#' To be evaluated
+tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
+  if (modeldata_check(calling_env$modeldata, required, throw_error = FALSE)) {
+    return(r_expr)
+  } else {
+    lazy_r <- lazyeval::lazy(r_expr)
     lazy_r$env <- calling_env
     tbe_o <- list()
     tbe_o$lazy_r <- lazy_r
@@ -386,64 +421,77 @@ tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
   }
 }
 
+#' Title
+#'
+#' @param x
+#'
+#' @return
+#' @export
 print.tbe <- function(x) {
   print(paste("Waiting for meta-information:", expr_text(x$lazy_r$expr)))
 }
 
-solve.tbe <- function(x, standata, throw_error = TRUE) {
-  if (standata_check(
-    standata, x$required,
+solve.tbe <- function(x, modeldata, throw_error = TRUE) {
+  if (modeldata_check(
+    modeldata, x$required,
     calling_env = x$calling_f, throw_error = throw_error
   )) {
-    return(lazyeval::lazy_eval(x$lazy_r, list(standata = standata)))
+    return(lazyeval::lazy_eval(x$lazy_r, list(modeldata = modeldata)))
   } else {
     return(x)
   }
 }
 
-tbef <- function(f_name, f_expr, required = c(),
+#' To be computed
+tbc <- function(f_name, f_expr, required = c(),
                  calling_env = rlang::caller_env()) {
-  calling_standata <- calling_env$standata
+  calling_modeldata <- calling_env$modeldata
 
   f_lazy <- lazyeval::lazy(f_expr)
-  f_func <- function(standata) {
-    f_lazy$env$standata <- standata
+  f_func <- function(modeldata) {
+    f_lazy$env$modeldata <- modeldata
     lazyeval::lazy_eval(f_lazy)
-    return(f_lazy$env$standata)
+    return(f_lazy$env$modeldata)
   }
-  rm(standata, envir = calling_env)
+  rm(modeldata, envir = calling_env)
   calling_env$f_lazy <- f_lazy
   environment(f_func) <- calling_env
-  if (standata_check(
-    calling_standata, required = required, throw_error = FALSE)
+  if (modeldata_check(
+    calling_modeldata, required = required, throw_error = FALSE)
     ) {
-    new_standata <- f_func(calling_standata)
+    new_modeldata <- f_func(calling_modeldata)
   } else {
-    tbef_o <- list(name = f_name, func = f_func)
-    tbef_o$calling_f <- tail(rlang::trace_back()$call, 2)[[1]]
-    tbef_o$required <- required
-    class(tbef_o) <- "tbef"
-    new_standata <- calling_standata
-    new_standata[[f_name]] <- tbef_o
+    tbc_o <- list(name = f_name, func = f_func)
+    tbc_o$calling_f <- tail(rlang::trace_back()$call, 2)[[1]]
+    tbc_o$required <- required
+    class(tbc_o) <- "tbc"
+    new_modeldata <- calling_modeldata
+    new_modeldata[[f_name]] <- tbc_o
   }
-  return(new_standata)
+  return(new_modeldata)
 }
 
-print.tbef <- function(x) {
+#' Title
+#'
+#' @param x
+#'
+#' @return
+#' @export
+print.tbc <- function(x) {
   print(paste(
     "Waiting for the following meta-information to compute values:",
     paste(x$required, collapse = ", ")
   ))
 }
 
-solve.tbef <- function(x, standata, throw_error = TRUE) {
-  if (standata_check(
-    standata, x$required,
+solve.tbc <- function(x, modeldata, throw_error = TRUE) {
+  if (modeldata_check(
+    modeldata, x$required,
     calling_env = x$calling_f,
     throw_error = throw_error
   )) {
-    standata <- x$func(standata)
-    standata[[x$name]] <- NULL
+    modeldata <- x$func(modeldata)
+    modeldata[[x$name]] <- NULL
   }
-  return(standata)
+  return(modeldata)
 }

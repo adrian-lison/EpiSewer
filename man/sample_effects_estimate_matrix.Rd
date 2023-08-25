@@ -5,9 +5,9 @@
 \title{Title}
 \usage{
 sample_effects_estimate_matrix(
-  standata = standata_init(),
   design_matrix,
-  eta_prior = stan_prior("eta", "normal", mu = 0, sigma = 1)
+  eta_prior = set_prior("eta", "normal", mu = 0, sigma = 1),
+  modeldata = modeldata_init()
 )
 }
 \arguments{

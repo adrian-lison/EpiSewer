@@ -5,9 +5,9 @@
 \title{Title}
 \usage{
 infection_noise_estimate(
-  standata = standata_init(),
   I_overdispersion = FALSE,
-  I_xi_prior = stan_prior("I_xi", "normal", mu = 0, sigma = 1)
+  I_xi_prior = set_prior("I_xi", "normal", mu = 0, sigma = 1),
+  modeldata = modeldata_init()
 )
 }
 \arguments{

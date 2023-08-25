@@ -4,7 +4,7 @@
 \alias{sewer_data}
 \title{Title}
 \usage{
-sewer_data(measurements = NULL, flows = NULL)
+sewer_data(measurements = NULL, flows = NULL, ...)
 }
 \arguments{
 \item{flows}{}

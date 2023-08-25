@@ -5,10 +5,10 @@
 \title{Title}
 \usage{
 seeding_estimate(
-  standata = standata_init(),
   iota_log_ar_start_prior = NULL,
-  iota_log_ar_sd_prior = stan_prior("iota_log_ar_sd", "half-normal", mu = 0.05, sigma =
-    0.025)
+  iota_log_ar_sd_prior = set_prior("iota_log_ar_sd", "half-normal", mu = 0.05, sigma =
+    0.025),
+  modeldata = modeldata_init()
 )
 }
 \arguments{
