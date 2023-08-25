@@ -98,6 +98,37 @@ data_zurich$measurements
 #> 151: 2022-05-31      418.8482
 ```
 
+To show the handling of missing data more clearly, we make our data
+artificially sparse by keeping only measurements that were made on
+Mondays and Thursdays. This data only has two measurements per week, but
+we can still use it to estimate reproduction numbers from it.
+
+``` r
+measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
+head(measurements_sparse, 20)
+#>           date concentration  weekday
+#>  1: 2022-01-03      455.7580   Monday
+#>  2: 2022-01-06      330.7298 Thursday
+#>  3: 2022-01-10      387.6885   Monday
+#>  4: 2022-01-13      791.1111 Thursday
+#>  5: 2022-01-17      551.7701   Monday
+#>  6: 2022-01-20      643.9910 Thursday
+#>  7: 2022-01-24      741.9150   Monday
+#>  8: 2022-01-27      770.1810 Thursday
+#>  9: 2022-01-31      627.1725   Monday
+#> 10: 2022-02-03      561.2913 Thursday
+#> 11: 2022-02-07      357.1349   Monday
+#> 12: 2022-02-10      540.7527 Thursday
+#> 13: 2022-02-14            NA   Monday
+#> 14: 2022-02-17      554.2492 Thursday
+#> 15: 2022-02-21      414.7324   Monday
+#> 16: 2022-02-24      784.3849 Thursday
+#> 17: 2022-02-28      732.9672   Monday
+#> 18: 2022-03-03     1376.6457 Thursday
+#> 19: 2022-03-07     1420.4823   Monday
+#> 20: 2022-03-10     2128.1925 Thursday
+```
+
 The flows data tracks the daily flow (in mL/day) at the treatment plant
 in Zurich. The flow data will be used to normalize the concentration
 measurements. This helps to account for environmental factors such as
@@ -120,15 +151,19 @@ data_zurich$flows
 #> 151: 2022-05-31 155315855550
 ```
 
+Note: In contrast to the concentration measurements, the flow data must
+not have missing values. If flow information is missing for certain
+days, make sure to impute it using a suitable method before passing it
+to `EpiSewer`.
+
 #### Gather the data
 
 If the measurements data and flow data are stored in separate variables,
-you can combine them using the helper function `sewer_data()`. In the
-present example, this would not be necessary, as they are already in the
-same list.
+we can combine them using the helper function `sewer_data()`. We here
+use our artificially sparse measurements.
 
 ``` r
-ww_data = sewer_data(measurements = data_zurich$measurements, flows = data_zurich$flows)
+ww_data <- sewer_data(measurements = measurements_sparse, flows = data_zurich$flows)
 ```
 
 ### Assumptions
@@ -153,9 +188,9 @@ specific functions to obtain discretized versions of popular continuous
 probability distributions.
 
 ``` r
-generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)
-incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)
-shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30)
+generation_dist <- get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)
+incubation_dist <- get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)
+shedding_dist <- get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30)
 ```
 
 #### Shedding load per case
@@ -184,9 +219,10 @@ cases (which is often not realistic).
 
 ``` r
 suggest_load_per_case(data_zurich$measurements,
-                      data_zurich$flows,
-                      data_zurich$cases,
-                      ascertainment_prop = 1)
+  data_zurich$flows,
+  data_zurich$cases,
+  ascertainment_prop = 1
+)
 #> [1] 6e+11
 ```
 
@@ -202,11 +238,12 @@ The above assumptions can be conveniently recorded in a list by using
 the function `sewer_assumptions()`.
 
 ``` r
-ww_assumptions = sewer_assumptions(
-            generation_dist = generation_dist,
-            incubation_dist = incubation_dist,
-            shedding_dist = shedding_dist,
-            load_per_case = load_per_case)
+ww_assumptions <- sewer_assumptions(
+  generation_dist = generation_dist,
+  incubation_dist = incubation_dist,
+  shedding_dist = shedding_dist,
+  load_per_case = load_per_case
+)
 ```
 
 ### Estimation
@@ -224,11 +261,11 @@ data, the complexity of the model used, and how well the model actually
 fits the data.
 
 ``` r
-options(mc.cores = 4) # allow stan to use 4 cores
+options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 500, iter_sampling = 1000, chains = 4, show_messages = T))
 )
 ```
 
@@ -242,10 +279,14 @@ model. Plots are a convenient way to get a quick overview.
 It is good practice to first assess how well the model actually fitted
 to the data. For this, we plot the observed concentration measurements
 against the ones predicted by the model. The ribbon shows the 95%
-credible interval.
+credible interval. The black dots show measurements that we have
+actually observed in our artificially sparse data set (only Mondays and
+Thursdays). The grey crosses show all the other measurements that were
+not available to the model. As we can see, the model still achieved a
+decent fit on these missing days.
 
 ``` r
-plot_concentration(ww_result, measurements = ww_data$measurements)
+plot_concentration(ww_result, measurements = data_zurich$measurements)
 ```
 
 <img src="man/figures/README-concentration-1.png" width="100%" />
@@ -256,7 +297,7 @@ see the predicted expected concentration without noise, set
 `include_noise = FALSE`.
 
 ``` r
-plot_concentration(ww_result, measurements = ww_data$measurements, include_noise = FALSE)
+plot_concentration(ww_result, measurements = data_zurich$measurements, include_noise = FALSE)
 ```
 
 <img src="man/figures/README-concentration_noise-1.png" width="100%" />
@@ -327,9 +368,9 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#> [1] "job_name"            "jobarray_size"       "model_def"          
-#> [4] "arguments"           "priors_text"         "arguments_meta_info"
-#> [7] "overwrite"
+#> [1] "job_name"      "jobarray_size" "model_def"     "data"         
+#> [5] "init"          "fit_opts"      "priors_text"   "meta_info"    
+#> [9] "overwrite"
 ```
 
 The `summary` attribute stores summarized results for important
@@ -347,18 +388,18 @@ number.
 
 ``` r
 ww_result$summary$R
-#>            date      mean    median     lower    upper seeding
-#>   1: 2021-12-04 0.9913800 0.9724195 0.6523075 1.456200    TRUE
-#>   2: 2021-12-05 0.9870268 0.9725485 0.6739850 1.399216    TRUE
-#>   3: 2021-12-06 0.9852909 0.9757340 0.6800632 1.378853    TRUE
-#>   4: 2021-12-07 0.9840326 0.9740435 0.6817820 1.357809    TRUE
-#>   5: 2021-12-08 0.9845468 0.9726190 0.6983733 1.345521    TRUE
-#>  ---                                                          
-#> 175: 2022-05-27 1.3893983 1.3704000 1.0500335 1.838418   FALSE
-#> 176: 2022-05-28 1.4069233 1.3814250 1.0367830 1.920013   FALSE
-#> 177: 2022-05-29 1.4163974 1.3853700 1.0264567 1.984677   FALSE
-#> 178: 2022-05-30 1.4235431 1.3884600 1.0048388 2.060693   FALSE
-#> 179: 2022-05-31 1.4329033 1.3860100 0.9633706 2.207298   FALSE
+#>            date     mean   median     lower    upper seeding
+#>   1: 2021-12-06 1.074035 1.073050 0.7035129 1.442790    TRUE
+#>   2: 2021-12-07 1.073385 1.072620 0.7169806 1.433125    TRUE
+#>   3: 2021-12-08 1.073732 1.071740 0.7304690 1.430257    TRUE
+#>   4: 2021-12-09 1.074019 1.073505 0.7473058 1.410519    TRUE
+#>   5: 2021-12-10 1.074774 1.073380 0.7559406 1.397295    TRUE
+#>  ---                                                        
+#> 172: 2022-05-26 1.342199 1.325245 1.0462802 1.733282   FALSE
+#> 173: 2022-05-27 1.348734 1.328010 1.0313458 1.775872   FALSE
+#> 174: 2022-05-28 1.352267 1.330245 1.0228650 1.786648   FALSE
+#> 175: 2022-05-29 1.352050 1.329705 1.0121513 1.812245   FALSE
+#> 176: 2022-05-30 1.352279 1.328110 1.0091880 1.838021   FALSE
 ```
 
 Finally, the `fitted` attribute provides access to all details of the
@@ -368,22 +409,27 @@ details.
 
 ``` r
 names(ww_result$fitted)
-#>  [1] ".__enclos_env__"            "runset"                    
-#>  [3] "num_chains"                 "inv_metric"                
-#>  [5] "diagnostic_summary"         "sampler_diagnostics"       
-#>  [7] "loo"                        "clone"                     
-#>  [9] "draws"                      "output"                    
-#> [11] "initialize"                 "code"                      
-#> [13] "profiles"                   "return_codes"              
-#> [15] "metadata"                   "time"                      
-#> [17] "data_file"                  "latent_dynamics_files"     
-#> [19] "profile_files"              "output_files"              
-#> [21] "save_data_file"             "save_profile_files"        
-#> [23] "save_latent_dynamics_files" "save_output_files"         
-#> [25] "cmdstan_diagnose"           "cmdstan_summary"           
-#> [27] "summary"                    "lp"                        
-#> [29] "init"                       "save_object"               
-#> [31] "print"                      "num_procs"
+#>  [1] ".__enclos_env__"            "functions"                 
+#>  [3] "runset"                     "num_chains"                
+#>  [5] "inv_metric"                 "diagnostic_summary"        
+#>  [7] "sampler_diagnostics"        "loo"                       
+#>  [9] "clone"                      "draws"                     
+#> [11] "output"                     "initialize"                
+#> [13] "code"                       "profiles"                  
+#> [15] "return_codes"               "metadata"                  
+#> [17] "time"                       "data_file"                 
+#> [19] "latent_dynamics_files"      "profile_files"             
+#> [21] "output_files"               "save_data_file"            
+#> [23] "save_profile_files"         "save_latent_dynamics_files"
+#> [25] "save_output_files"          "cmdstan_diagnose"          
+#> [27] "cmdstan_summary"            "summary"                   
+#> [29] "lp"                         "constrain_variables"       
+#> [31] "variable_skeleton"          "unconstrain_draws"         
+#> [33] "unconstrain_variables"      "hessian"                   
+#> [35] "grad_log_prob"              "log_prob"                  
+#> [37] "init_model_methods"         "init"                      
+#> [39] "save_object"                "expose_functions"          
+#> [41] "print"                      "num_procs"
 ```
 
 For example, we can use this to show sampler diagnostics for each chain:
@@ -397,5 +443,5 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.7917743 0.7617458 0.7900870 0.8342677
+#> [1] 0.8514579 0.7615325 0.8731199 0.8085602
 ```
