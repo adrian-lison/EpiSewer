@@ -159,7 +159,10 @@ measurements_observe <-
 load_per_case_assume <-
   function(load_per_case = NULL, modeldata = modeldata_init()) {
     if (is.null(load_per_case)) {
-      abort("Please supply an assumed average shedding load per person.")
+      load_per_case <- tryCatch(
+        get_from_env("assumptions", "load_per_case"),
+        error = abort_f("Please supply an assumed average shedding load per person.")
+      )
     }
     modeldata$meta_info$load_per_case <- load_per_case
     return(modeldata)
@@ -247,7 +250,10 @@ flows_observe <-
 generation_dist_assume <-
   function(generation_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(generation_dist)) {
-      abort("Please supply an assumed generation time distribution.")
+      generation_dist <- tryCatch(
+        get_from_env("assumptions", "generation_dist"),
+        error = abort_f("Please supply an assumed incubation period distribution.")
+      )
     }
     modeldata$G <- length(generation_dist)
     modeldata$generation_dist <- generation_dist
@@ -267,7 +273,10 @@ generation_dist_assume <-
 incubation_dist_assume <-
   function(incubation_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(incubation_dist)) {
-      abort("Please supply an assumed incubation period distribution.")
+      incubation_dist <- tryCatch(
+        get_from_env("assumptions", "incubation_dist"),
+        error = abort_f("Please supply an assumed incubation period distribution.")
+      )
     }
     modeldata$L <- length(incubation_dist) - 1
     modeldata$incubation_dist <- incubation_dist
@@ -286,7 +295,10 @@ incubation_dist_assume <-
 shedding_dist_assume <-
   function(shedding_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(shedding_dist)) {
-      abort("Please supply an assumed shedding load distribution.")
+      shedding_dist <- tryCatch(
+        get_from_env("assumptions", "shedding_dist"),
+        error = abort_f("Please supply an assumed shedding load distribution.")
+      )
     }
     modeldata$S <- length(shedding_dist) - 1
     # here we account for the scaling factor from cases to load
