@@ -14,6 +14,16 @@ and may be subject to breaking changes.
 remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE, auth_token = "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")
 ```
 
+`EpiSewer` also requires CmdStan to be installed on your system. This
+can be done using the `install_cmdstan()` function from `cmdstanr`. If
+you experience any problems installing CmdStan, see the [cmdstanr
+vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for help.
+
+``` r
+cmdstanr::check_cmdstan_toolchain()
+cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up
+```
+
 ## Introduction
 
 ### Loading the package
