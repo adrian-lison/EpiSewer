@@ -376,26 +376,31 @@ R_estimate_ets <- function(
   modeldata$ets_alpha_fixed <- ets_alpha_fixed
   if (ets_alpha_fixed >= 0) {
     modeldata$ets_alpha_prior <- numeric(0)
+    modeldata$init$ets_alpha <- numeric(0)
   } else {
     modeldata$ets_alpha_prior <- ets_alpha_prior
+    modeldata$init$ets_alpha <- 0.5
   }
-  modeldata$init$ets_alpha <- 0.5
+
 
   modeldata$ets_beta_fixed <- ets_beta_fixed
   if (ets_beta_fixed >= 0) {
     modeldata$ets_beta_prior <- numeric(0)
+    modeldata$init$ets_beta <- numeric(0)
   } else {
     modeldata$ets_beta_prior <- ets_beta_prior
+    modeldata$init$ets_beta <- 0.5
   }
-  modeldata$init$ets_beta <- 0.5
+
 
   modeldata$ets_phi_fixed <- ets_phi_fixed
   if (ets_phi_fixed >= 0) {
     modeldata$ets_phi_prior <- numeric(0)
+    modeldata$init$ets_phi <- numeric(0)
   } else {
     modeldata$ets_phi_prior <- ets_phi_prior
+    modeldata$init$ets_phi <- 0.9
   }
-  modeldata$init$ets_phi <- 0.9
 
   return(modeldata)
 }
