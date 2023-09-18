@@ -64,16 +64,18 @@ data {
   array[ets_phi_fixed < 0 ? 2 : 0] real<lower=0> ets_phi_prior;
 }
 transformed data {
-  vector[G] gi_rev;
-  vector[L + 1] inc_rev;
-  vector[S + 1] shed_rev_log;
-  vector[T] log_flow;
+  vector[G] gi_rev = reverse(generation_dist);
+  vector[L + 1] inc_rev = reverse(incubation_dist);
+  vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
+  vector[T] log_flow = log(flow);
 
-  gi_rev = reverse(generation_dist);
-  inc_rev = reverse(incubation_dist);
-  shed_rev_log = log(reverse(shedding_dist));
-
-  log_flow = log(flow);
+  array[n_measured - num_zeros(measured_concentrations)] int<lower=0> i_nonzero;
+  int i_nz = 0;
+  for (n in 1:n_measured) {
+    if (measured_concentrations[n] == 0) continue;
+    i_nz += 1;
+    i_nonzero[i_nz] = n;
+  }
 }
 parameters {
   // log(R) time series prior
@@ -182,7 +184,7 @@ model {
   sigma ~ normal(sigma_prior[1], sigma_prior[2]); // truncated normal
 
   // Likelihood
-  target += lognormal3_lpdf(measured_concentrations + 0.01 | rho_log, sigma);
+  target += lognormal3_lpdf(measured_concentrations[i_nonzero] | rho_log[i_nonzero], sigma);
 }
 generated quantities {
   // predicted measurements

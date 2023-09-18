@@ -128,3 +128,25 @@ Helper functions for primitive operations
   vector log_rolling_mean_r(vector x, int window_size) {
     return(log_rolling_sum_r(x, window_size) - log(window_size));
   }
+
+  /**
+  * Count number of zero entries in an array
+  */
+  int num_zeros(array[] int y) {
+    int sum = 0;
+    for (n in 1:size(y)) {
+      sum += (y[n] == 0);
+    }
+    return sum;
+  }
+
+  /**
+  * Count number of zero entries in a vector
+  */
+  int num_zeros(vector y) {
+    int sum = 0;
+    for (n in 1:num_elements(y)) {
+      sum += (y[n] == 0);
+    }
+    return sum;
+  }
