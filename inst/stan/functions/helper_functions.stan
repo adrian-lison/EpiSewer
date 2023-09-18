@@ -8,35 +8,35 @@ Helper functions for primitive operations
   vector cumulative_prod_column(vector x) {
     return exp(cumulative_sum(log(x)));
   }
-  
+
   /**
   * Cumulative product of 1-x for column vector
   */
   vector cumulative_prod1m_column(vector x) {
     return exp(cumulative_sum(log1m(x)));
   }
-  
+
   /**
   * Cumulative product for row vector
   */
   row_vector cumulative_prod_row(row_vector x) {
     return exp(cumulative_sum(log(x)));
   }
-  
+
   /**
   * Cumulative product of 1-x for row vector
   */
   row_vector cumulative_prod1m_row(row_vector x) {
     return exp(cumulative_sum(log1m(x)));
   }
-  
+
   /**
   * Softplus activation function
   */
   vector softplus(vector x, real k) {
     return(log1p_exp(k * x) / k);
   }
-  
+
   /**
   * Element-wise log_sum_exp between two vectors
   */
@@ -48,7 +48,7 @@ Helper functions for primitive operations
     }
     return(res);
   }
-  
+
   /**
   * Element-wise log_diff_exp between two vectors
   */
@@ -60,14 +60,14 @@ Helper functions for primitive operations
     }
     return(res);
   }
-  
+
   /**
   * Efficient dot product on log scale
   */
   real log_dot_product(vector x, vector y) {
     return(log_sum_exp(x + y));
   }
-  
+
   /**
   * Efficient cumulative sum on log scale
   */
@@ -97,7 +97,7 @@ Helper functions for primitive operations
       return(cx - cx_shifted);
     }
   }
-  
+
   /**
   * Vectorized rolling sum, right-aligned, on log scale
   */
@@ -114,14 +114,14 @@ Helper functions for primitive operations
       return(log_diff_exp_elementwise(cx, cx_shifted));
     }
   }
-  
+
   /**
   * Vectorized rolling mean, right-aligned
   */
   vector rolling_mean_r(vector x, int window_size) {
     return(rolling_sum_r(x, window_size) / window_size);
   }
-  
+
   /**
   * Vectorized rolling mean, right-aligned, on log scale
   */

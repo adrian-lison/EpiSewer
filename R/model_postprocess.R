@@ -43,21 +43,21 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
     T_shift = T_shift_R, meta_info = meta_info
   )
   summary[["R"]]$seeding <- FALSE
-  summary[["R"]][1 : (data$G), "seeding"] <- TRUE
+  summary[["R"]][1:(data$G), "seeding"] <- TRUE
 
   summary[["R_samples"]] <- get_R_trajectories(
     fit,
     T_shift = T_shift_R, meta_info = meta_info, ndraws = ndraws
   )
   summary[["R_samples"]]$seeding <- FALSE
-  summary[["R_samples"]][1 : (data$G*ndraws), "seeding"] <- TRUE
+  summary[["R_samples"]][1:(data$G * ndraws), "seeding"] <- TRUE
 
   summary[["expected_infections"]] <- get_summary_1d_date(
     fit, "iota",
     T_shift = T_shift_latent, meta_info = meta_info
   )
   summary[["expected_infections"]]$seeding <- FALSE
-  summary[["expected_infections"]][1 : (data$G*2), "seeding"] <- TRUE
+  summary[["expected_infections"]][1:(data$G * 2), "seeding"] <- TRUE
 
   if (data$I_sample) {
     summary[["infections"]] <- get_summary_1d_date(
@@ -65,7 +65,7 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
       T_shift = T_shift_latent, meta_info = meta_info
     )
     summary[["infections"]]$seeding <- FALSE
-    summary[["infections"]][1 : (data$G*2), "seeding"] <- TRUE
+    summary[["infections"]][1:(data$G * 2), "seeding"] <- TRUE
 
     summary[["infections_samples"]] <- get_I_trajectories(
       fit,
@@ -73,7 +73,8 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
     )
     summary[["infections_samples"]]$seeding <- FALSE
     summary[["infections_samples"]][
-      1 : (data$G*2*ndraws), "seeding"] <- TRUE
+      1:(data$G * 2 * ndraws), "seeding"
+    ] <- TRUE
   }
 
   summary[["expected_onsets"]] <- get_summary_1d_date_log(
