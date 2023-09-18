@@ -1,23 +1,23 @@
 get_R_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
-  fit_draws <- tidybayes::spread_draws(fit, R[date], ndraws = ndraws)
+  fit_draws <- get_draws_1d_date(fit, "R", ndraws)
   date_mapping <- seq.Date(
     meta_info$T_start_date - T_shift, meta_info$T_end_date,
     by = "1 day"
   )
-  fit_draws$date <- date_mapping[fit_draws$date]
-  fit_draws <- subset(fit_draws, select = -c(.chain, .iteration))
-  return(fit_draws)
+  fit_draws[, date := date_mapping[as.integer(date)]]
+  fit_draws[, c(".chain", ".iteration", "variable") := NULL]
+  return(fit_draws[])
 }
 
 get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
-  fit_draws <- tidybayes::spread_draws(fit, I[date], ndraws = ndraws)
-  date_mapping <- seq.Date(meta_info$T_start_date - T_shift,
-    meta_info$T_end_date,
+  fit_draws <- get_draws_1d_date(fit, "I", ndraws)
+  date_mapping <- seq.Date(
+    meta_info$T_start_date - T_shift, meta_info$T_end_date,
     by = "1 day"
   )
-  fit_draws$date <- date_mapping[fit_draws$date]
-  fit_draws <- subset(fit_draws, select = -c(.chain, .iteration))
-  return(fit_draws)
+  fit_draws[, date := date_mapping[as.integer(date)]]
+  fit_draws[, c(".chain", ".iteration", "variable") := NULL]
+  return(fit_draws[])
 }
 
 #' Title

@@ -57,6 +57,21 @@ get_summary_1d_date_log <- function(fit, var, T_shift, meta_info) {
   return(var_summary)
 }
 
+get_draws_1d_date <- function(fit, variable, ndraws = NULL) {
+  fit_draws <- fit$draws(variable, format = "df")
+  setDT(fit_draws)
+  if (!is.null(ndraws)) {
+    draw_ids <- sample.int(max(fit_draws$.draw), ndraws, replace = FALSE)
+    fit_draws <- fit_draws[ .draw %in% draw_ids,]
+  }
+  fit_draws <- melt(fit_draws,
+                    id.vars = c(".chain", ".iteration", ".draw"),
+                    value.name = variable
+  )
+  fit_draws[, date := stringr::str_extract(variable, "(?<=\\[)\\d+(?=\\])")]
+  return(fit_draws[])
+}
+
 get_summary_vector <- function(fit, var, varnames = NULL) {
   fsummary <- fit$summary(var,
     mean = mean,

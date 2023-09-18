@@ -29,7 +29,6 @@ Imports:
     splines,
     stats,
     stringr,
-    tidybayes,
     vctrs
 Suggests:
     zoo
