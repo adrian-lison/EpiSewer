@@ -7,8 +7,6 @@ Time series process functions
   * Note that if the first value of the process is already included in the
   * increments_standardized vector, then you can provide a start_value = 0
   */
-  vector random_walk(vector start_values, vector increments, int diff_order);
-  
   vector random_walk(vector start_values, vector increments, int diff_order) {
     if (diff_order == 0) {
        return cumulative_sum(append_row(start_values[1], increments));
@@ -25,8 +23,6 @@ Time series process functions
   * Note that if the first value of the process is already included in the
   * increments_standardized vector, then you can provide a start_value = 0
   */
-  vector simple_ma(vector start_values, vector increments, int Q, int diff_order);
-  
   vector simple_ma(vector start_values, vector increments, int Q, int diff_order) {
     if (diff_order == 0) {
       int n = num_elements(increments)+1;
@@ -46,8 +42,6 @@ Time series process functions
   * Damped Holt's method as an innovation state space model, vectorized implementation
   * Linear method with additive noise and without seasonality
   */
-  vector holt_damped_process(vector start_values, real alpha, real beta_star, real phi, vector noise, int diff_order);
-  
   vector holt_damped_process(vector start_values, real alpha, real beta_star, real phi, vector noise, int diff_order) {
     if (diff_order == 0) {
       int n = 1 + num_elements(noise); // n = 1 (for start value) + length of noise
