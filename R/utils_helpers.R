@@ -142,3 +142,18 @@ abort_f <- function(...) {
     )
   )
 }
+
+#' Collect warnings arising during computation of a result
+#'
+#' @param expr Expression with the computation to run
+#'
+#' @return A `list`, with two elements: value and warnings
+withWarnings <- function(expr) {
+  myWarnings <- NULL
+  wHandler <- function(w) {
+    myWarnings <<- c(myWarnings, list(w))
+    invokeRestart("muffleWarning")
+  }
+  val <- withCallingHandlers(expr, warning = wHandler)
+  list(value = val, warnings = myWarnings)
+}
