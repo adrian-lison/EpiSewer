@@ -9,6 +9,7 @@
 #' @param infections
 #' @param model
 #' @param fit_opts
+#' @param run_fit Run the model fitting immediately or return only the job without running it?
 #'
 #' @return
 #' @export
@@ -43,7 +44,8 @@ EpiSewer <- function(
       )
     ),
     model = get_stan_model(modeldata = modeldata),
-    fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE)) {
+    fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE),
+    run_fit = TRUE) {
   modeldata <- modeldata_combine(
     measurements, sampling, sewage, shedding, infections
   )
@@ -58,7 +60,11 @@ EpiSewer <- function(
     results_exclude = c()
   )
 
-  return(run(job))
+  if (run_fit) {
+    return(run(job))
+  } else {
+    return(list(job = job))
+  }
 }
 
 #' Title
@@ -128,14 +134,24 @@ run.EpiSewerJob <- function(job) {
   fitting_successful <- FALSE
   fit_res <- tryCatch(
     {
-      fit_res <- suppress_messages(
+      fit_res <- withWarnings(suppress_messages(
         do.call(job$model_def$get_stan_model[[1]]()$sample, arguments),
         "Registered S3 method overwritten by 'data.table'"
-      )
-      fitting_successful <- TRUE
+      ))
+      if (length(fit_res$warnings) == 0) {
+        fitting_successful <- TRUE
+        fit_res <- fit_res$value
+      } else {
+        cat("\n")
+        rlang::warn(c(
+          "There was an error while fitting the model:",
+          "Only the model input is returned."))
+        fit_res <- unlist(lapply(fit_res$warnings, function(x) stringr::str_remove(x$message, "\n")))
+      }
       fit_res
     },
     error = function(err) {
+      cat("\n")
       rlang::warn(c(
         "There was an error while fitting the model:",
         "Only the model input is returned.",
