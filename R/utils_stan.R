@@ -272,6 +272,10 @@ modeldata_validate <- function(modeldata, model_def,
     )
   }
 
+  for (check in modeldata$checks) {
+    check(modeldata)
+  }
+
   return(modeldata)
 }
 
@@ -279,7 +283,7 @@ modeldata_combine <- function(...) {
   modeldata_sets <- list(...)
   modeldata_combined <- do.call(
     c, lapply(modeldata_sets, function(x) {
-      list_except(x, c("init", "meta_info"))
+      list_except(x, c("init", "meta_info", "checks"))
     })
   )
   modeldata_combined$init <- do.call(
@@ -287,6 +291,9 @@ modeldata_combine <- function(...) {
   )
   modeldata_combined$meta_info <- do.call(
     c, lapply(modeldata_sets, function(x) x$meta_info)
+  )
+  modeldata_combined$checks <- do.call(
+    c, lapply(modeldata_sets, function(x) x$checks)
   )
   modeldata_combined <- modeldata_update(modeldata_combined, throw_error = FALSE)
   return(modeldata_combined)
@@ -312,7 +319,7 @@ modeldata_update <- function(modeldata, throw_error = TRUE) {
   }
 
   # main modeldata
-  all_vars <- setdiff(names(modeldata), c("init", "meta_info"))
+  all_vars <- setdiff(names(modeldata), c("init", "meta_info", "checks"))
   for (name in all_vars) {
     if ("tbe" %in% class(modeldata[[name]])) {
       modeldata[[name]] <- solve(
