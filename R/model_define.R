@@ -166,6 +166,19 @@ concentrations_observe <-
     return(modeldata)
   }
 
+droplets_observe <-
+  function(data,
+           composite_window = 1,
+           date_col = "date",
+           droplets_col = "droplets",
+           replicate_col = NULL,
+           modeldata = modeldata_init()) {
+    abort(paste(
+      "Specification of measurements via ddPCR droplet count",
+      "is not implemented yet."
+    ))
+  }
+
 #' Title
 #'
 #' @param modeldata
