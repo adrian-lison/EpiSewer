@@ -44,6 +44,7 @@ modeldata_init <- function() {
   modeldata <- list()
   modeldata$init <- list()
   modeldata$meta_info <- list()
+  modeldata$checks <- list()
   return(modeldata)
 }
 
@@ -92,27 +93,29 @@ modeldata_update_metainfo <- function(modeldata) {
 #' Title
 #'
 #' @param modeldata
-#' @param measurements
+#' @param data
 #' @param composite_window
 #' @param date_col
-#' @param measurement_col
+#' @param concentration_col
+#' @param replicate_col
 #'
 #' @return
 #' @export
 #'
 #' @examples
-measurements_observe <-
-  function(measurements,
+concentrations_observe <-
+  function(data,
            composite_window = 1,
            date_col = "date",
-           measurement_col = "concentration",
+           concentration_col = "concentration",
+           replicate_col = NULL,
            modeldata = modeldata_init()) {
-    if (is.null(measurements)) {
+    if (is.null(data)) {
       abort("Please supply measurement data.")
     }
 
-    required_data_cols <- c(date_col, measurement_col)
-    if (!all(required_data_cols %in% names(measurements))) {
+    required_data_cols <- c(date_col, concentration_col, replicate_col)
+    if (!all(required_data_cols %in% names(data))) {
       abort(
         paste(
           "The following columns must be present",
@@ -122,27 +125,43 @@ measurements_observe <-
       )
     }
 
-    measurements[[date_col]] <- as.Date(measurements[[date_col]])
+    data[[date_col]] <- as.Date(data[[date_col]])
+
+    if (is.null(replicate_col)) {
+      if (any(duplicated(data[[date_col]]))) {
+        abort(
+          paste(
+            "Duplicated dates found in measurements `data.frame`.",
+            "If your data contains replicate measurements, please add a column",
+            "with replicate IDs to your `data.frame` and provide its name via",
+            "the `replicate_col` argument."
+          )
+        )
+      }
+    }
 
     modeldata$T <-
-      as.integer(max(measurements[[date_col]]) -
-        min(measurements[[date_col]]) + composite_window)
+      as.integer(max(data[[date_col]]) -
+        min(data[[date_col]]) + composite_window)
+
     modeldata$meta_info$T_start_date <-
-      min(measurements[[date_col]]) - composite_window + 1
-    modeldata$meta_info$T_end_date <- max(measurements[[date_col]])
+      min(data[[date_col]]) - composite_window + 1
+    modeldata$meta_info$T_end_date <- max(data[[date_col]])
 
     modeldata$w <- composite_window
     modeldata$meta_info$composite_window <- composite_window
 
-    measured <- !is.na(measurements[[measurement_col]])
+    measured <- !is.na(data[[concentration_col]])
     modeldata$n_measured <- sum(measured)
-    modeldata$measured_concentrations <-
-      measurements[[measurement_col]][measured]
-    modeldata$measured_dates <-
-      as.integer(measurements[[date_col]][measured] -
-        modeldata$meta_info$T_start_date + 1)
-    modeldata$meta_info$measured_dates <-
-      measurements[[date_col]][measured]
+    modeldata$measured_concentrations <- data[[concentration_col]][measured]
+    modeldata$measured_dates <- as.integer(
+      data[[date_col]][measured] - modeldata$meta_info$T_start_date + 1
+    )
+    modeldata$meta_info$measured_dates <- data[[date_col]][measured]
+
+    if (!is.null(replicate_col)) {
+      modeldata$replicate_ids <- as.integer(data[[replicate_col]][measured])
+    }
 
     return(modeldata)
   }
@@ -172,7 +191,7 @@ load_per_case_assume <-
 #' Title
 #'
 #' @param modeldata
-#' @param flows
+#' @param data
 #' @param date_col
 #' @param flow_col
 #'
@@ -181,16 +200,16 @@ load_per_case_assume <-
 #'
 #' @examples
 flows_observe <-
-  function(flows,
+  function(data,
            date_col = "date",
            flow_col = "flow",
            modeldata = modeldata_init()) {
-    if (is.null(flows)) {
+    if (is.null(data)) {
       abort("Please supply flow data.")
     }
 
     required_data_cols <- c(date_col, flow_col)
-    if (!all(required_data_cols %in% names(flows))) {
+    if (!all(required_data_cols %in% names(data))) {
       abort(
         paste(
           "The following columns must be present",
@@ -200,9 +219,9 @@ flows_observe <-
       )
     }
 
-    flows[[date_col]] <- as.Date(flows[[date_col]])
+    data[[date_col]] <- as.Date(data[[date_col]])
 
-    if (any(duplicated(flows[[date_col]]))) {
+    if (any(duplicated(data[[date_col]]))) {
       abort("Flow data is ambigious, duplicate dates found.")
     }
 
@@ -217,7 +236,7 @@ flows_observe <-
           )
         missing_flow_dates <-
           as.Date(
-            setdiff(all_dates, flows[[date_col]][!is.na(flows[[flow_col]])]),
+            setdiff(all_dates, data[[date_col]][!is.na(data[[flow_col]])]),
             origin = lubridate::origin
           )
         if (length(missing_flow_dates) > 0) {
@@ -226,11 +245,11 @@ flows_observe <-
             paste(missing_flow_dates, collapse = ", ")
           ))
         }
-        flows <-
-          flows[flows[[date_col]] >= modeldata$meta_info$T_start_date &
-            flows[[date_col]] <= modeldata$meta_info$T_end_date, ]
-        flows <- flows[order(flows[[date_col]]), ]
-        modeldata$flow <- flows[[flow_col]]
+        data <-
+          data[data[[date_col]] >= modeldata$meta_info$T_start_date &
+            data[[date_col]] <= modeldata$meta_info$T_end_date, ]
+        data <- data[order(data[[date_col]]), ]
+        modeldata$flow <- data[[flow_col]]
       },
       required = c("meta_info$T_start_date", "meta_info$T_end_date")
     )
@@ -311,119 +330,150 @@ shedding_dist_assume <-
 
 #' Title
 #'
+#' @param level_prior_mu
+#' @param level_prior_sigma
+#' @param trend_prior_mu
+#' @param trend_prior_sigma
+#' @param sd_prior_mu
+#' @param sd_prior_sigma
+#' @param smooth_fixed
+#' @param smooth_prior_shapes
+#' @param trend_smooth_fixed
+#' @param trend_smooth_prior_shapes
+#' @param dampen_prior_shapes
+#' @param dampen_fixed
+#' @param differenced
+#' @param noncentered
 #' @param modeldata
-#' @param R_level_start_prior
-#' @param R_trend_start_prior
-#' @param R_sd_prior
-#' @param ets_diff
-#' @param ets_noncentered
-#' @param ets_alpha_fixed
-#' @param ets_alpha_prior
-#' @param ets_beta_fixed
-#' @param ets_beta_prior
-#' @param ets_phi_fixed
-#' @param ets_phi_prior
 #'
 #' @return
 #' @export
 #'
 #' @examples
 R_estimate_ets <- function(
-    R_level_start_prior =
-      set_prior("R_level_start", "normal", mu = 1, sigma = 0.8),
-    R_trend_start_prior =
-      set_prior("R_trend_start", "normal", mu = 0, sigma = 0.1),
-    R_sd_prior =
-      set_prior("R_sd", "half-normal", mu = 0, sigma = 0.05),
-    ets_diff = FALSE,
-    ets_noncentered = TRUE,
-    ets_alpha_fixed = NULL,
-    ets_alpha_prior = c(50, 50),
-    ets_beta_fixed = NULL,
-    ets_beta_prior = c(50, 50),
-    ets_phi_fixed = 0.9,
-    ets_phi_prior = c(50, 5),
+    level_prior_mu = 1,
+    level_prior_sigma = 0.8,
+    trend_prior_mu = 0,
+    trend_prior_sigma = 0.1,
+    sd_prior_mu = 0,
+    sd_prior_sigma = 0.05,
+    smooth_fixed = NULL,
+    smooth_prior_shapes = c(50, 50),
+    trend_smooth_fixed = NULL,
+    trend_smooth_prior_shapes = c(50, 50),
+    dampen_fixed = 0.9,
+    dampen_prior_shapes = c(50, 5),
+    differenced = FALSE,
+    noncentered = TRUE,
     modeldata = modeldata_init()) {
-
   modeldata$meta_info$R_estimate_approach <- "ets"
 
-  if (is.null(ets_alpha_fixed)) {
-    ets_alpha_fixed <- -1
-  }
-  if (is.null(ets_beta_fixed)) {
-    ets_beta_fixed <- -1
-  }
-  if (is.null(ets_phi_fixed)) {
-    ets_phi_fixed <- -1
-  }
+  modeldata$R_level_start_prior <- set_prior(
+    "R_level_start", "normal",
+    mu = level_prior_mu, sigma = level_prior_sigma
+  )
 
-  modeldata$R_level_start_prior <- R_level_start_prior
-  modeldata$R_trend_start_prior <- R_trend_start_prior
-  modeldata$R_sd_prior <- R_sd_prior
+  modeldata$R_trend_start_prior <- set_prior(
+    "R_trend_start", "normal",
+    mu = trend_prior_mu, sigma = trend_prior_sigma
+  )
+
+  modeldata$R_sd_prior <- set_prior(
+    "R_sd", "truncated normal",
+    mu = sd_prior_mu, sigma = sd_prior_sigma
+  )
 
   modeldata$init$R_level_start <-
-    R_level_start_prior$R_level_start_prior[1]
+    modeldata$R_level_start_prior$R_level_start_prior[1]
   modeldata$init$R_trend_start <- 1e-4
-  modeldata$init$R_sd <- max(R_sd_prior$R_sd_prior[1], 0.1)
+  modeldata$init$R_sd <- max(modeldata$R_sd_prior$R_sd_prior[1], 0.1)
   modeldata$init$R_noise <- tbe(
     rep(0, modeldata$meta_info$length_R - 1),
     "meta_info$length_R"
   )
 
-  modeldata$ets_diff <- ets_diff
-  modeldata$ets_noncentered <- ets_noncentered
-
-  modeldata$ets_alpha_fixed <- ets_alpha_fixed
-  if (ets_alpha_fixed >= 0) {
+  if (is.null(smooth_fixed)) {
+    smooth_fixed <- -1
+  }
+  modeldata$ets_alpha_fixed <- smooth_fixed
+  if (smooth_fixed >= 0) {
     modeldata$ets_alpha_prior <- numeric(0)
     modeldata$init$ets_alpha <- numeric(0)
   } else {
-    modeldata$ets_alpha_prior <- ets_alpha_prior
+    modeldata$ets_alpha_prior <- set_prior("ets_alpha", "beta",
+      alpha = smooth_prior_shapes[1], beta = smooth_prior_shapes[2]
+    )
     modeldata$init$ets_alpha <- 0.5
   }
 
-
-  modeldata$ets_beta_fixed <- ets_beta_fixed
-  if (ets_beta_fixed >= 0) {
+  if (is.null(trend_smooth_fixed)) {
+    trend_smooth_fixed <- -1
+  }
+  modeldata$ets_beta_fixed <- trend_smooth_fixed
+  if (trend_smooth_fixed >= 0) {
     modeldata$ets_beta_prior <- numeric(0)
     modeldata$init$ets_beta <- numeric(0)
   } else {
-    modeldata$ets_beta_prior <- ets_beta_prior
+    modeldata$ets_beta_prior <- set_prior("ets_beta", "beta",
+      alpha = trend_smooth_prior_shapes[1], beta = trend_smooth_prior_shapes[2]
+    )
     modeldata$init$ets_beta <- 0.5
   }
 
-
-  modeldata$ets_phi_fixed <- ets_phi_fixed
-  if (ets_phi_fixed >= 0) {
+  if (is.null(dampen_fixed)) {
+    dampen_fixed <- -1
+  }
+  modeldata$ets_phi_fixed <- dampen_fixed
+  if (dampen_fixed >= 0) {
     modeldata$ets_phi_prior <- numeric(0)
     modeldata$init$ets_phi <- numeric(0)
   } else {
-    modeldata$ets_phi_prior <- ets_phi_prior
+    modeldata$ets_phi_prior <- set_prior("ets_phi", "beta",
+      alpha = dampen_prior_shapes[1], beta = dampen_prior_shapes[2]
+    )
     modeldata$init$ets_phi <- 0.9
   }
+
+  modeldata$ets_diff <- differenced
+  modeldata$ets_noncentered <- noncentered
 
   return(modeldata)
 }
 
+#' Title
+#'
+#' @param level_prior_mu
+#' @param level_prior_sigma
+#' @param sd_prior_mu
+#' @param sd_prior_sigma
+#' @param differenced
+#' @param noncentered
+#' @param modeldata
+#'
+#' @return
+#' @export
+#'
+#' @examples
 R_estimate_rw <- function(
-    R_start_prior =
-      set_prior("R_level_start", "normal", mu = 1, sigma = 0.8),
-    R_sd_prior =
-      set_prior("R_sd", "half-normal", mu = 0, sigma = 0.05),
-    rw_diff = FALSE,
-    rw_noncentered = TRUE,
+    intercept_prior_mu = 1,
+    intercept_prior_sigma = 0.8,
+    sd_prior_mu = 0,
+    sd_prior_sigma = 0.05,
+    differenced = FALSE,
+    noncentered = TRUE,
     modeldata = modeldata_init()) {
-
   modeldata <- R_estimate_ets(
-    modeldata = modeldata,
-    R_level_start_prior = R_start_prior,
-    R_sd_prior = R_sd_prior,
-    ets_diff = rw_diff,
-    ets_noncentered = rw_noncentered,
-    ets_alpha_fixed = 1,
-    ets_beta_fixed = 0,
-    ets_phi_fixed = 0
-    )
+    level_prior_mu = intercept_prior_mu,
+    level_prior_sigma = intercept_prior_sigma,
+    sd_prior_mu = sd_prior_mu,
+    sd_prior_sigma = sd_prior_sigma,
+    smooth_fixed = 1,
+    trend_smooth_fixed = 0,
+    dampen_fixed = 0,
+    differenced = differenced,
+    noncentered = noncentered,
+    modeldata = modeldata
+  )
   return(modeldata)
 }
 
@@ -442,16 +492,10 @@ R_estimate_rw <- function(
 R_estimate_splines <- function(
     knot_distance = 1,
     spline_degree = 3,
-    bs_coeff_ar_start_prior = set_prior("bs_coeff_ar_start",
-      "normal",
-      mu = 0,
-      sigma = 0.5
-    ),
-    bs_coeff_ar_sd_prior = set_prior("bs_coeff_ar_sd",
-      "half-normal",
-      mu = 0,
-      sigma = 0.2
-    ),
+    coef_intercept_prior_mu = 0,
+    coef_intercept_prior_sigma = 0.5,
+    coef_sd_prior_mu = 0,
+    coef_sd_prior_sigma = 0.2,
     modeldata = modeldata_init()) {
   modeldata$meta_info$R_estimate_approach <- "splines"
 
@@ -473,18 +517,23 @@ R_estimate_splines <- function(
       modeldata$bs_w <- B_sparse$w
       modeldata$bs_v <- B_sparse$v
       modeldata$bs_u <- B_sparse$u
+
+      modeldata$init$bs_coeff_ar_start <- 0
+      modeldata$init$bs_coeff_ar_sd <- 0.1
+      modeldata$init$bs_coeff_noise <- rep(0, modeldata$bs_n_basis - 1)
     },
     required = "meta_info$length_R"
   )
 
-  modeldata$bs_coeff_ar_start_prior <- bs_coeff_ar_start_prior
-  modeldata$bs_coeff_ar_sd_prior <- bs_coeff_ar_sd_prior
-
-  modeldata$init$bs_coeff_ar_start <- 0
-  modeldata$init$bs_coeff_ar_sd <- 0.1
-  modeldata$init$bs_coeff_noise <- tbe(
-    rep(0, modeldata$meta_info$length_R - 1),
-    "meta_info$length_R"
+  modeldata$bs_coeff_ar_start_prior <- set_prior("bs_coeff_ar_start",
+    "normal",
+    mu = coef_intercept_prior_mu,
+    sigma = coef_intercept_prior_sigma
+  )
+  modeldata$bs_coeff_ar_sd_prior <- set_prior("bs_coeff_ar_sd",
+    "truncated normal",
+    mu = coef_sd_prior_mu,
+    sigma = coef_sd_prior_sigma
   )
 
   return(modeldata)
@@ -492,25 +541,37 @@ R_estimate_splines <- function(
 
 #' Title
 #'
+#' @param intercept_prior_mu
+#' @param intercept_prior_sigma
+#' @param sd_prior_mu
+#' @param sd_prior_sigma
 #' @param modeldata
-#' @param iota_log_ar_start_prior
-#' @param iota_log_ar_sd_prior
 #'
 #' @return
 #' @export
 #'
 #' @examples
 seeding_estimate <- function(
-    iota_log_ar_start_prior = NULL,
-    iota_log_ar_sd_prior = set_prior("iota_log_ar_sd",
-      "half-normal",
-      mu = 0.05,
-      sigma = 0.025
-    ),
+    intercept_prior_mu = NULL,
+    intercept_prior_sigma = NULL,
+    sd_prior_mu = 0.05,
+    sd_prior_sigma = 0.025,
     modeldata = modeldata_init()) {
-  new_modeldata <- as.list(environment())
-  modeldata <-
-    c(modeldata, new_modeldata[names(new_modeldata) != "modeldata"])
+  if (!(is.null(intercept_prior_mu) || is.null(intercept_prior_sigma))) {
+    modeldata$iota_log_ar_start_prior <- set_prior(
+      "iota_log_ar_start",
+      "normal",
+      mu = intercept_prior_mu,
+      sigma = intercept_prior_sigma
+    )
+  }
+
+  modeldata$iota_log_ar_sd_prior <- set_prior(
+    "iota_log_ar_sd",
+    "truncated normal",
+    mu = sd_prior_mu,
+    sigma = sd_prior_sigma
+  )
 
   if (is.null(modeldata$iota_log_ar_start_prior)) {
     modeldata$iota_log_ar_start_prior <- tbe(
@@ -555,21 +616,25 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 
 #' Title
 #'
+#' @param overdispersion
+#' @param overdispersion_prior_mu
+#' @param overdispersion_prior_sigma
 #' @param modeldata
-#' @param I_overdispersion
-#' @param I_xi_prior
 #'
 #' @return
 #' @export
 #'
 #' @examples
 infection_noise_estimate <-
-  function(I_overdispersion = FALSE,
-           I_xi_prior = set_prior("I_xi", "normal", mu = 0, sigma = 1),
+  function(overdispersion = FALSE,
+           overdispersion_prior_mu = 0,
+           overdispersion_prior_sigma = 1,
            modeldata = modeldata_init()) {
-    new_modeldata <- as.list(environment())
-    modeldata <-
-      c(modeldata, new_modeldata[names(new_modeldata) != "modeldata"])
+    modeldata$I_overdispersion <- overdispersion
+    modeldata$I_xi_prior <- set_prior("I_xi", "normal",
+      mu = overdispersion_prior_mu, sigma = overdispersion_prior_sigma
+    )
+
     modeldata$I_sample <- TRUE
     modeldata$init$I <- tbe(
       rep(
@@ -615,97 +680,131 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
 #' Title
 #'
 #' @param modeldata
+#' @param effect_prior_mu
+#' @param effect_prior_sigma
 #' @param design_matrix
-#' @param eta_prior
 #'
 #' @return
 #' @export
 #'
 #' @examples
-sample_effects_estimate_matrix <-
-  function(design_matrix,
-           eta_prior = set_prior("eta", "normal", mu = 0, sigma = 1),
-           modeldata = modeldata_init()) {
-    modeldata <- tbc(
-      "check_design_matrix",
-      {
-        if (!(modeldata$T == nrow(design_matrix))) {
-          abort(
-            paste(
-              "Mismatch: Modeled time period has",
-              modeldata$T,
-              "days, design matrix for sample date effects has",
-              nrow(design_matrix),
-              "rows."
-            )
+sample_effects_estimate_matrix <- function(
+    design_matrix,
+    effect_prior_mu = 0,
+    effect_prior_sigma = 1,
+    modeldata = modeldata_init()) {
+  eta_prior <- set_prior(
+    "eta", "normal",
+    mu = effect_prior_mu, sigma = effect_prior_sigma
+  )
+
+  modeldata <- tbc(
+    "check_design_matrix",
+    {
+      if (!(modeldata$T == nrow(design_matrix))) {
+        abort(
+          paste(
+            "Mismatch: Modeled time period has",
+            modeldata$T,
+            "days, design matrix for sample date effects has",
+            nrow(design_matrix),
+            "rows."
           )
-        }
-      },
-      required = "T"
-    )
-    modeldata$K <- ncol(design_matrix)
-    modeldata$X <- design_matrix
-
-    modeldata$eta_prior <- eta_prior
-
-    modeldata$init$eta <- rep(0, modeldata$K)
-
-    return(modeldata)
-  }
-
-#' Title
-#'
-#' @param modeldata
-#' @param eta_prior
-#'
-#' @return
-#' @export
-#'
-#' @examples
-sample_effects_estimate_weekday <-
-  function(eta_prior = set_prior("eta", "normal", mu = 0, sigma = 1),
-           modeldata = modeldata_init()) {
-    modeldata <- tbc(
-      "weekday_design_matrix",
-      {
-        weekdays <- lubridate::wday(
-          seq.Date(
-            modeldata$meta_info$T_start_date,
-            modeldata$meta_info$T_end_date,
-            by = "1 day"
-          ),
-          label = TRUE
         )
-        design_matrix <- model.matrix(
-          ~wday,
-          data.frame(wday = weekdays),
-          contrasts.arg = list(wday = "contr.treatment")
-        )[, -1]
-        modeldata <-
-          sample_effects_estimate_matrix(modeldata, design_matrix, eta_prior)
-      },
-      required = c("meta_info$T_start_date", "meta_info$T_end_date")
-    )
-  }
+      }
+    },
+    required = "T"
+  )
+  modeldata$K <- ncol(design_matrix)
+  modeldata$X <- design_matrix
+
+  modeldata$eta_prior <- eta_prior
+
+  modeldata$init$eta <- rep(0, modeldata$K)
+
+  return(modeldata)
+}
 
 #' Title
 #'
+#' @param effect_prior_mu
+#' @param effect_prior_sigma
 #' @param modeldata
-#' @param sigma_prior
 #'
 #' @return
 #' @export
 #'
 #' @examples
-measurement_noise_estimate <-
-  function(sigma_prior = set_prior("sigma", "normal", mu = 0, sigma = 1),
-           modeldata = modeldata_init()) {
-    new_modeldata <- as.list(environment())
-    modeldata <-
-      c(modeldata, new_modeldata[names(new_modeldata) != "modeldata"])
+sample_effects_estimate_weekday <- function(
+    effect_prior_mu = 0,
+    effect_prior_sigma = 1,
+    modeldata = modeldata_init()) {
+  modeldata <- tbc(
+    "weekday_design_matrix",
+    {
+      weekdays <- lubridate::wday(
+        seq.Date(
+          modeldata$meta_info$T_start_date,
+          modeldata$meta_info$T_end_date,
+          by = "1 day"
+        ),
+        label = TRUE
+      )
+      design_matrix <- model.matrix(
+        ~wday,
+        data.frame(wday = weekdays),
+        contrasts.arg = list(wday = "contr.treatment")
+      )[, -1]
+      modeldata <-
+        sample_effects_estimate_matrix(
+          design_matrix, effect_prior_mu, effect_prior_sigma, modeldata
+        )
+    },
+    required = c("meta_info$T_start_date", "meta_info$T_end_date")
+  )
+}
 
-    modeldata$init$sigma <-
-      0.1 # roughly corresponds to a 10% coefficient of variation
+#' Title
+#'
+#' @param replicates
+#' @param sd_prior_mu
+#' @param sd_prior_sigma
+#' @param replicate_sd_prior_mu
+#' @param replicate_sd_prior_sigma
+#' @param modeldata
+#'
+#' @return
+#' @export
+#'
+#' @examples
+noise_estimate <-
+  function(replicates = FALSE,
+           sd_prior_mu = 0,
+           sd_prior_sigma = 1,
+           replicate_sd_prior_mu = 0,
+           replicate_sd_prior_sigma = 1,
+           modeldata = modeldata_init()) {
+    modeldata$replicate_noise <- replicates
+    if (modeldata$replicate_noise) {
+      modeldata$checks$check_replicate_ids <- function(d) {
+        if (!"replicate_ids" %in% names(d)) {
+          abort(paste(
+            "Replication noise can only be estimated with",
+            "replicate measurements. Please specify a column `replicate_col`",
+            "with replicate IDs in your data."
+            ))
+        }
+      }
+    }
+
+    modeldata$sigma_prior <- set_prior("sigma", "truncated normal",
+      mu = sd_prior_mu, sigma = sd_prior_sigma
+    )
+    modeldata$tau_prior <- set_prior("tau", "truncated normal",
+      mu = replicate_sd_prior_mu, sigma = replicate_sd_prior_sigma
+    )
+
+    modeldata$init$sigma <- 0.1 # roughly 10% coefficient of variation
 
     return(modeldata)
   }

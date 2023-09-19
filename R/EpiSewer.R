@@ -21,11 +21,11 @@ EpiSewer <- function(
     data = sewer_data(),
     assumptions = sewer_assumptions(),
     measurements = model_measurements(
-      measurements = measurements_observe(measurements = data$measurements)
+      concentrations = concentrations_observe(data = data$measurements)
     ),
     sampling = model_sampling(),
     sewage = model_sewage(
-      flows = flows_observe(flows = data$flows)
+      flows = flows_observe(data = data$flows)
     ),
     shedding = model_shedding(
       incubation_dist = incubation_dist_assume(
@@ -97,7 +97,7 @@ EpiSewerJob <- function(job_name,
 
   # ToDo rlang::flatten is deprecated, replace
   data_arguments <- suppressWarnings(
-    rlang::flatten(modeldata[!(names(modeldata) %in% c("init", "meta_info"))])
+    rlang::flatten(modeldata[!(names(modeldata) %in% c("init", "meta_info", "checks"))])
   )
   data_arguments_raw <- data_arguments[
     stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
@@ -222,9 +222,9 @@ sewer_assumptions <- function(generation_dist = NULL,
 #'
 #' @examples
 model_measurements <- function(
-    measurements,
-    noise = measurement_noise_estimate()) {
-  return(modeldata_combine(measurements, noise))
+    concentrations,
+    noise = noise_estimate()) {
+  return(modeldata_combine(concentrations, noise))
 }
 
 #' Title
