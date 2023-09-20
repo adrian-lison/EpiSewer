@@ -151,12 +151,19 @@ concentrations_observe <-
     modeldata$w <- composite_window
     modeldata$meta_info$composite_window <- composite_window
 
+
     measured <- !is.na(data[[concentration_col]])
     modeldata$n_measured <- sum(measured)
-    modeldata$measured_concentrations <- data[[concentration_col]][measured]
-    modeldata$measured_dates <- as.integer(
+    modeldata$n_samples <- length(unique(data[[date_col]][measured]))
+    measured_dates <- as.integer(
       data[[date_col]][measured] - modeldata$meta_info$T_start_date + 1
     )
+    modeldata$sample_to_date <- sort(unique(measured_dates))
+    modeldata$measure_to_sample <- sapply(
+      measured_dates,
+      function(x) which(x == modeldata$sample_to_date)[[1]]
+    )
+    modeldata$measured_concentrations <- data[[concentration_col]][measured]
     modeldata$meta_info$measured_dates <- data[[date_col]][measured]
 
     if (!is.null(replicate_col)) {
@@ -798,24 +805,36 @@ noise_estimate <-
            replicate_sd_prior_sigma = 1,
            modeldata = modeldata_init()) {
     modeldata$replicate_noise <- replicates
+
+    modeldata$sigma_prior <- set_prior("sigma", "truncated normal",
+      mu = sd_prior_mu, sigma = sd_prior_sigma
+    )
+
     if (modeldata$replicate_noise) {
+      modeldata$tau_prior <- set_prior("tau", "truncated normal",
+        mu = replicate_sd_prior_mu, sigma = replicate_sd_prior_sigma
+      )
+      modeldata$init$tau <- as.array(0.1)
+
+      modeldata$init$psi <- tbe(
+        rep(1e-4, modeldata$n_samples),
+        "n_samples"
+      )
+
       modeldata$checks$check_replicate_ids <- function(d) {
         if (!"replicate_ids" %in% names(d)) {
           abort(paste(
             "Replication noise can only be estimated with",
             "replicate measurements. Please specify a column `replicate_col`",
             "with replicate IDs in your data."
-            ))
+          ))
         }
       }
+    } else {
+      modeldata$tau_prior <- numeric(0)
+      modeldata$init$tau <- numeric(0)
+      modeldata$init$psi <- numeric(0)
     }
-
-    modeldata$sigma_prior <- set_prior("sigma", "truncated normal",
-      mu = sd_prior_mu, sigma = sd_prior_sigma
-    )
-    modeldata$tau_prior <- set_prior("tau", "truncated normal",
-      mu = replicate_sd_prior_mu, sigma = replicate_sd_prior_sigma
-    )
 
     modeldata$init$sigma <- 0.1 # roughly 10% coefficient of variation
 

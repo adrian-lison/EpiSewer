@@ -7,12 +7,13 @@ functions {
 }
 data {
   int<lower=0> T; // number of total days in measured time span
-
-  int<lower=0> n_measured; // number of different measurements
+  int<lower=0> n_samples; // number of samples from different dates
+  int<lower=0> n_measured; // number of different measurements (including replicates)
+  array[n_samples] int<lower=1, upper=T> sample_to_date; // index mapping samples to dates
+  array[n_measured] int<lower=1, upper=n_samples> measure_to_sample; // index mapping measurements to samples
   vector<lower=0>[n_measured] measured_concentrations; // measured concentrations
-  array[n_measured] int<lower=1, upper=T> measured_dates; // when these concentrations where measured
   int<lower=1> w; // composite window: how many past days the samples cover,
-  // e.g. 1 for individual day samples, 7 for a weekly composite sample, ...
+  // e.g. 1 for individual day samples, 7 for weekly composite samples, ...
 
   vector<lower=0>[T] flow; // flow rate for normalization of measurements
 
@@ -21,8 +22,10 @@ data {
   matrix[T, K] X; // sample date predictor design matrix
   array[K > 0 ? 2 : 0] real eta_prior; // prior for sample date effects
 
-  // Prior for scale of lognormal likelihood for measurements
-  array[2] real sigma_prior;
+  // Noise
+  int<lower=0, upper=1> replicate_noise; // Model variation before replication step?
+  array[replicate_noise ? 2 : 0] real tau_prior; // Prior on variation
+  array[2] real sigma_prior; // Prior for scale of lognormal likelihood for measurements
 
   // Shedding load distribution
   int<lower=0> S; // last day of shedding
@@ -100,6 +103,8 @@ parameters {
   vector[K] eta;
 
   // Scale of lognormal likelihood for measurements
+  array[replicate_noise ? 1 : 0] real<lower=0> tau; // pre-replicaton variation
+  vector<multiplier = (replicate_noise ? tau[1] : 1)>[replicate_noise ? n_samples : 0] psi; // realized noise before replication step
   real<lower=0> sigma;
 }
 transformed parameters {
@@ -108,7 +113,7 @@ transformed parameters {
   vector[S + T] lambda_log; // log expected number of symptom onsets
   vector[T] kappa_log; // log expected daily loads
   vector[T] pi_log; // log expected daily concentrations
-  vector[n_measured] rho_log; // log expected concentrations in composite samples
+  vector[n_samples] rho_log; // log expected concentrations in (composite) samples
 
   // ETS/Innovations state space process on log scale, starting value 1 on unit scale
   R = softplus(
@@ -145,9 +150,15 @@ transformed parameters {
     pi_log = kappa_log - log_flow;
   }
 
-  // calculation of concentrations in composite samples
-  for (i in 1 : n_measured) {
-    rho_log[i] = log_sum_exp(pi_log[(measured_dates[i] - w + 1) : measured_dates[i]]) - log(w);
+  // concentrations in (composite) samples
+  if (w > 1) { // multi-day composite samples
+    for (i in 1 : n_samples) {
+        rho_log[i] = log_sum_exp(pi_log[(sample_to_date[i] - w + 1) : sample_to_date[i]]) - log(w);
+    }
+  } else { // individual day samples
+     for (i in 1 : n_samples) {
+        rho_log[i] = pi_log[sample_to_date[i]];
+     }
   }
 }
 model {
@@ -181,14 +192,35 @@ model {
   }
 
   // Prior on scale of lognormal likelihood for measurements
+  if (replicate_noise) {
+    tau[1] ~ normal(tau_prior[1], tau_prior[2]); // truncated normal
+    psi ~ normal(0, tau[1]);
+  }
   sigma ~ normal(sigma_prior[1], sigma_prior[2]); // truncated normal
 
+
   // Likelihood
-  target += lognormal3_lpdf(measured_concentrations[i_nonzero] | rho_log[i_nonzero], sigma);
+  if (replicate_noise) {
+    target += lognormal3_lpdf(
+      measured_concentrations[i_nonzero] | (rho_log+psi)[measure_to_sample][i_nonzero],
+      sigma
+      );
+  } else {
+    target += lognormal3_lpdf(
+      measured_concentrations[i_nonzero] | rho_log[measure_to_sample][i_nonzero],
+      sigma
+      );
+  }
 }
 generated quantities {
   // predicted measurements
   // note that we here assume the same measurement variance as from composite samples,
   // which may be smaller than that of hypothetical daily measurements
-  array[T] real predicted_concentration = lognormal3_rng(pi_log, sigma);
+  array[T] real predicted_concentration;
+  if (replicate_noise) {
+    vector[T] pre_repl = to_vector(normal_rng(pi_log, tau[1])); // pre-replication
+    predicted_concentration = lognormal3_rng(pre_repl, sigma);
+  } else {
+    predicted_concentration = lognormal3_rng(pi_log, sigma);
+  }
 }
