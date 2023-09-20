@@ -789,8 +789,8 @@ sample_effects_estimate_weekday <- function(
 #' @param replicates
 #' @param sd_prior_mu
 #' @param sd_prior_sigma
-#' @param replicate_sd_prior_mu
-#' @param replicate_sd_prior_sigma
+#' @param pre_replicate_sd_prior_mu
+#' @param pre_replicate_sd_prior_sigma
 #' @param modeldata
 #'
 #' @return
@@ -801,18 +801,18 @@ noise_estimate <-
   function(replicates = FALSE,
            sd_prior_mu = 0,
            sd_prior_sigma = 1,
-           replicate_sd_prior_mu = 0,
-           replicate_sd_prior_sigma = 1,
+           pre_replicate_sd_prior_mu = 0,
+           pre_replicate_sd_prior_sigma = 1,
            modeldata = modeldata_init()) {
-    modeldata$replicate_noise <- replicates
+    modeldata$pre_replicate_noise <- replicates
 
     modeldata$sigma_prior <- set_prior("sigma", "truncated normal",
       mu = sd_prior_mu, sigma = sd_prior_sigma
     )
 
-    if (modeldata$replicate_noise) {
+    if (modeldata$pre_replicate_noise) {
       modeldata$tau_prior <- set_prior("tau", "truncated normal",
-        mu = replicate_sd_prior_mu, sigma = replicate_sd_prior_sigma
+        mu = pre_replicate_sd_prior_mu, sigma = pre_replicate_sd_prior_sigma
       )
       modeldata$init$tau <- as.array(0.1)
 
@@ -824,7 +824,7 @@ noise_estimate <-
       modeldata$checks$check_replicate_ids <- function(d) {
         if (!"replicate_ids" %in% names(d)) {
           abort(paste(
-            "Replication noise can only be estimated with",
+            "Pre-replicate noise can only be estimated with",
             "replicate measurements. Please specify a column `replicate_col`",
             "with replicate IDs in your data."
           ))

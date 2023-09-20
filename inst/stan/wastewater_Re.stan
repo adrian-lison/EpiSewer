@@ -23,8 +23,8 @@ data {
   array[K > 0 ? 2 : 0] real eta_prior; // prior for sample date effects
 
   // Noise
-  int<lower=0, upper=1> replicate_noise; // Model variation before replication step?
-  array[replicate_noise ? 2 : 0] real tau_prior; // Prior on variation
+  int<lower=0, upper=1> pre_replicate_noise; // Model variation before replication step?
+  array[pre_replicate_noise ? 2 : 0] real tau_prior; // Prior on variation
   array[2] real sigma_prior; // Prior for scale of lognormal likelihood for measurements
 
   // Shedding load distribution
@@ -103,8 +103,8 @@ parameters {
   vector[K] eta;
 
   // Scale of lognormal likelihood for measurements
-  array[replicate_noise ? 1 : 0] real<lower=0> tau; // pre-replicaton variation
-  vector<multiplier = (replicate_noise ? tau[1] : 1)>[replicate_noise ? n_samples : 0] psi; // realized noise before replication step
+  array[pre_replicate_noise ? 1 : 0] real<lower=0> tau; // pre-replicaton variation
+  vector<multiplier = (pre_replicate_noise ? tau[1] : 1)>[pre_replicate_noise ? n_samples : 0] psi; // realized noise before replication step
   real<lower=0> sigma;
 }
 transformed parameters {
@@ -192,7 +192,7 @@ model {
   }
 
   // Prior on scale of lognormal likelihood for measurements
-  if (replicate_noise) {
+  if (pre_replicate_noise) {
     tau[1] ~ normal(tau_prior[1], tau_prior[2]); // truncated normal
     psi ~ normal(0, tau[1]);
   }
@@ -200,7 +200,7 @@ model {
 
 
   // Likelihood
-  if (replicate_noise) {
+  if (pre_replicate_noise) {
     target += lognormal3_lpdf(
       measured_concentrations[i_nonzero] | (rho_log+psi)[measure_to_sample][i_nonzero],
       sigma
@@ -217,7 +217,7 @@ generated quantities {
   // note that we here assume the same measurement variance as from composite samples,
   // which may be smaller than that of hypothetical daily measurements
   array[T] real predicted_concentration;
-  if (replicate_noise) {
+  if (pre_replicate_noise) {
     vector[T] pre_repl = to_vector(normal_rng(pi_log, tau[1])); // pre-replication
     predicted_concentration = lognormal3_rng(pre_repl, sigma);
   } else {
