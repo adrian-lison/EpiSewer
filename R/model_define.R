@@ -207,6 +207,33 @@ load_per_case_assume <-
     return(modeldata)
   }
 
+#' Title
+#'
+#' @param constant_flow
+#' @param modeldata
+#'
+#' @return
+#' @export
+#'
+#' @examples
+flows_assume <- function(
+    constant_flow,
+    modeldata = modeldata_init()) {
+  modeldata <- tbc(
+    "flow_data",
+    {
+      all_dates <-
+        seq.Date(
+          modeldata$meta_info$T_start_date,
+          modeldata$meta_info$T_end_date,
+          by = "1 day"
+        )
+      modeldata$flow <- rep(constant_flow, length(all_dates))
+    },
+    required = c("meta_info$T_start_date", "meta_info$T_end_date")
+  )
+  return(modeldata)
+}
 
 #' Title
 #'
