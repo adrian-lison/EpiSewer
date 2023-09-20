@@ -5,13 +5,14 @@
 \title{Title}
 \usage{
 infection_noise_estimate(
-  I_overdispersion = FALSE,
-  I_xi_prior = set_prior("I_xi", "normal", mu = 0, sigma = 1),
+  overdispersion = FALSE,
+  overdispersion_prior_mu = 0,
+  overdispersion_prior_sigma = 1,
   modeldata = modeldata_init()
 )
 }
 \arguments{
-\item{I_xi_prior}{}
+\item{modeldata}{}
 }
 \value{
 

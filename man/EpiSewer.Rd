@@ -7,10 +7,10 @@
 EpiSewer(
   data = sewer_data(),
   assumptions = sewer_assumptions(),
-  measurements = model_measurements(measurements = measurements_observe(measurements =
+  measurements = model_measurements(concentrations = concentrations_observe(data =
     data$measurements)),
   sampling = model_sampling(),
-  sewage = model_sewage(flows = flows_observe(flows = data$flows)),
+  sewage = model_sewage(flows = flows_observe(data = data$flows)),
   shedding = model_shedding(incubation_dist = incubation_dist_assume(incubation_dist =
     assumptions$incubation_dist), shedding_dist = shedding_dist_assume(shedding_dist =
     assumptions$shedding_dist), load_per_case = load_per_case_assume(load_per_case =
@@ -18,11 +18,12 @@ EpiSewer(
   infections = model_infections(generation_dist =
     generation_dist_assume(generation_dist = assumptions$generation_dist)),
   model = get_stan_model(modeldata = modeldata),
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE)
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE),
+  run_fit = TRUE
 )
 }
 \arguments{
-\item{fit_opts}{}
+\item{run_fit}{Run the model fitting immediately or return only the job without running it?}
 }
 \value{
 

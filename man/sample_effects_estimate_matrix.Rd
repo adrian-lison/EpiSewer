@@ -6,12 +6,13 @@
 \usage{
 sample_effects_estimate_matrix(
   design_matrix,
-  eta_prior = set_prior("eta", "normal", mu = 0, sigma = 1),
+  effect_prior_mu = 0,
+  effect_prior_sigma = 1,
   modeldata = modeldata_init()
 )
 }
 \arguments{
-\item{eta_prior}{}
+\item{design_matrix}{}
 }
 \value{
 

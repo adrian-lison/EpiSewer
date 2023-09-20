@@ -5,7 +5,7 @@
 \title{Title}
 \usage{
 flows_observe(
-  flows,
+  data,
   date_col = "date",
   flow_col = "flow",
   modeldata = modeldata_init()

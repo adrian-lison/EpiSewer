@@ -7,10 +7,10 @@
 R_estimate_splines(
   knot_distance = 1,
   spline_degree = 3,
-  bs_coeff_ar_start_prior = set_prior("bs_coeff_ar_start", "normal", mu = 0, sigma =
-    0.5),
-  bs_coeff_ar_sd_prior = set_prior("bs_coeff_ar_sd", "half-normal", mu = 0, sigma =
-    0.2),
+  coef_intercept_prior_mu = 0,
+  coef_intercept_prior_sigma = 0.5,
+  coef_sd_prior_mu = 0,
+  coef_sd_prior_sigma = 0.2,
   modeldata = modeldata_init()
 )
 }

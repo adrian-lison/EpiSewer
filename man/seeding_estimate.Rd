@@ -5,14 +5,15 @@
 \title{Title}
 \usage{
 seeding_estimate(
-  iota_log_ar_start_prior = NULL,
-  iota_log_ar_sd_prior = set_prior("iota_log_ar_sd", "half-normal", mu = 0.05, sigma =
-    0.025),
+  intercept_prior_mu = NULL,
+  intercept_prior_sigma = NULL,
+  sd_prior_mu = 0.05,
+  sd_prior_sigma = 0.025,
   modeldata = modeldata_init()
 )
 }
 \arguments{
-\item{iota_log_ar_sd_prior}{}
+\item{modeldata}{}
 }
 \value{
 

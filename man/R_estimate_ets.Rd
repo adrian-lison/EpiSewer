@@ -5,22 +5,25 @@
 \title{Title}
 \usage{
 R_estimate_ets(
-  R_level_start_prior = set_prior("R_level_start", "normal", mu = 1, sigma = 0.8),
-  R_trend_start_prior = set_prior("R_trend_start", "normal", mu = 0, sigma = 0.1),
-  R_sd_prior = set_prior("R_sd", "half-normal", mu = 0, sigma = 0.05),
-  ets_diff = FALSE,
-  ets_noncentered = TRUE,
-  ets_alpha_fixed = NULL,
-  ets_alpha_prior = c(50, 50),
-  ets_beta_fixed = NULL,
-  ets_beta_prior = c(50, 50),
-  ets_phi_fixed = 0.9,
-  ets_phi_prior = c(50, 5),
+  level_prior_mu = 1,
+  level_prior_sigma = 0.8,
+  trend_prior_mu = 0,
+  trend_prior_sigma = 0.1,
+  sd_prior_mu = 0,
+  sd_prior_sigma = 0.05,
+  smooth_fixed = NULL,
+  smooth_prior_shapes = c(50, 50),
+  trend_smooth_fixed = NULL,
+  trend_smooth_prior_shapes = c(50, 50),
+  dampen_fixed = 0.9,
+  dampen_prior_shapes = c(50, 5),
+  differenced = FALSE,
+  noncentered = TRUE,
   modeldata = modeldata_init()
 )
 }
 \arguments{
-\item{ets_phi_prior}{}
+\item{modeldata}{}
 }
 \value{
 
