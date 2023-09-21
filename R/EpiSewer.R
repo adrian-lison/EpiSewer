@@ -222,7 +222,7 @@ sewer_assumptions <- function(generation_dist = NULL,
 #'
 #' @examples
 model_measurements <- function(
-    concentrations,
+    concentrations = concentrations_observe(),
     noise = noise_estimate()) {
   return(modeldata_combine(concentrations, noise))
 }

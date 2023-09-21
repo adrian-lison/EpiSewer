@@ -117,14 +117,16 @@ get_from_env <- function(obj, arg = NULL, max_levels = 10) {
   max_levels = min(max_levels + 1, nframe)
   level <- 1
   while (level < max_levels) {
-    if (exists(obj, envir = sys.frames()[[nframe - level]])) {
+    if (obj %in% names(sys.frames()[[nframe - level]])) {
       obj_env <- get(obj, envir = sys.frames()[[nframe - level]])
-      if (is.null(arg)) {
-        return(obj_env)
-      } else if (arg %in% names(obj_env) && !is.null(obj_env[[arg]])) {
-        return(obj_env[[arg]])
-      } else {
-        stop(obj, "$", arg, " not found.")
+      if (!is.null(obj_env)) {
+        if (is.null(arg)) {
+          return(obj_env)
+        } else if (arg %in% names(obj_env) && !is.null(obj_env[[arg]])) {
+          return(obj_env[[arg]])
+        } else {
+          stop(obj, "$", arg, " not found.")
+        }
       }
     }
     level <- level + 1

@@ -104,14 +104,18 @@ modeldata_update_metainfo <- function(modeldata) {
 #'
 #' @examples
 concentrations_observe <-
-  function(data,
+  function(data = NULL,
            composite_window = 1,
            date_col = "date",
            concentration_col = "concentration",
            replicate_col = NULL,
            modeldata = modeldata_init()) {
+
     if (is.null(data)) {
-      abort("Please supply measurement data.")
+      data <- tryCatch(
+        get_from_env("data", "measurements"),
+        error = abort_f("Please supply measurement data.")
+      )
     }
 
     required_data_cols <- c(date_col, concentration_col, replicate_col)
@@ -247,12 +251,16 @@ flows_assume <- function(
 #'
 #' @examples
 flows_observe <-
-  function(data,
+  function(data = NULL,
            date_col = "date",
            flow_col = "flow",
            modeldata = modeldata_init()) {
+
     if (is.null(data)) {
-      abort("Please supply flow data.")
+      data <- tryCatch(
+        get_from_env("data", "flows"),
+        error = abort_f("Please supply flow data.")
+      )
     }
 
     required_data_cols <- c(date_col, flow_col)
