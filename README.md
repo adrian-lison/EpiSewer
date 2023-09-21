@@ -218,7 +218,8 @@ account for underdetection of infections. For simplicity, we here assume
 cases (which is often not realistic).
 
 ``` r
-suggest_load_per_case(data_zurich$measurements,
+suggest_load_per_case(
+  data_zurich$measurements,
   data_zurich$flows,
   data_zurich$cases,
   ascertainment_prop = 1
