@@ -146,8 +146,8 @@ run.EpiSewerJob <- function(job) {
         fit_res <- fit_res$value
       } else {
         cat("\n")
-        rlang::warn(c(
-          "There was an error while fitting the model:",
+        rlang::warn(
+          paste("There was an error while fitting the model.",
           "Only the model input is returned."))
         fit_res <- unlist(lapply(fit_res$warnings, function(x) stringr::str_remove(x$message, "\n")))
       }
@@ -156,8 +156,8 @@ run.EpiSewerJob <- function(job) {
     error = function(err) {
       cat("\n")
       rlang::warn(c(
-        "There was an error while fitting the model:",
-        "Only the model input is returned.",
+        paste("There was an error while fitting the model.",
+        "Only the model input is returned."),
         err$message
       ))
       return(err)
