@@ -322,6 +322,7 @@ generation_dist_assume <-
       )
     }
     modeldata$G <- length(generation_dist)
+    generation_dist <- check_dist(generation_dist, "generation time distribution")
     modeldata$generation_dist <- generation_dist
     modeldata$meta_info$length_seeding <- length(generation_dist)
     return(modeldata)
@@ -345,6 +346,7 @@ incubation_dist_assume <-
       )
     }
     modeldata$L <- length(incubation_dist) - 1
+    incubation_dist <- check_dist(incubation_dist, "incubation period distribution")
     modeldata$incubation_dist <- incubation_dist
     return(modeldata)
   }
@@ -367,6 +369,7 @@ shedding_dist_assume <-
       )
     }
     modeldata$S <- length(shedding_dist) - 1
+    shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
     # here we account for the scaling factor from cases to load
     modeldata$shedding_dist <-
       tbe(shedding_dist * modeldata$meta_info$load_per_case,
