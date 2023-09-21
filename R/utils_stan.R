@@ -164,6 +164,23 @@ update_compiled_stanmodel <- function(model_def, force_recompile = FALSE) {
   return(model_def)
 }
 
+verify_is_modeldata <- function(modeldata, arg_name) {
+  if (!all(c("init", "meta_info", "checks") %in% names(modeldata))) {
+    error_msg <- paste0(
+      "The argument `", arg_name, "` expects EpiSewer model data as input. ",
+      "Please use a function of the form `", arg_name, "_`", " to specify ",
+      "this argument."
+    )
+    all_fs <- names(ns_env("EpiSewer"))
+    arg_fs <- all_fs[stringr::str_detect(all_fs, paste0(arg_name, "_"))]
+    if (length(arg_fs)>0) {
+      error_msg <- paste(error_msg, "Available functions:")
+      error_msg <- c(error_msg, paste0(arg_fs, "()"))
+    }
+    abort(error_msg, call = caller_env())
+  }
+}
+
 #' Check modeldata object for required variables
 #'
 #' `modeldata_check` accepts various additional arguments which are turned into a

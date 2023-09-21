@@ -228,6 +228,8 @@ sewer_assumptions <- function(generation_dist = NULL,
 model_measurements <- function(
     concentrations = concentrations_observe(),
     noise = noise_estimate()) {
+  verify_is_modeldata(concentrations, "concentrations")
+  verify_is_modeldata(noise, "noise")
   return(modeldata_combine(concentrations, noise))
 }
 
@@ -241,6 +243,7 @@ model_measurements <- function(
 #' @examples
 model_sampling <- function(
     sample_effects = sample_effects_none()) {
+  verify_is_modeldata(sample_effects, "sample_effects")
   return(modeldata_combine(sample_effects))
 }
 
@@ -255,6 +258,8 @@ model_sampling <- function(
 model_sewage <- function(
     flows = flows_observe(),
     residence_dist = residence_dist_assume()) {
+  verify_is_modeldata(flows, "flows")
+  verify_is_modeldata(residence_dist, "residence_dist")
   return(modeldata_combine(flows, residence_dist))
 }
 
@@ -272,6 +277,9 @@ model_shedding <- function(
     incubation_dist = incubation_dist_assume(),
     shedding_dist = shedding_dist_assume(),
     load_per_case = load_per_case_assume()) {
+  verify_is_modeldata(incubation_dist, "incubation_dist")
+  verify_is_modeldata(shedding_dist, "shedding_dist")
+  verify_is_modeldata(load_per_case, "load_per_case")
   return(modeldata_combine(incubation_dist, shedding_dist, load_per_case))
 }
 
@@ -291,5 +299,9 @@ model_infections <- function(
     R = R_estimate_rw(),
     seeding = seeding_estimate(),
     infection_noise = infection_noise_estimate()) {
+  verify_is_modeldata(generation_dist, "generation_dist")
+  verify_is_modeldata(R, "R")
+  verify_is_modeldata(seeding, "seeding")
+  verify_is_modeldata(infection_noise, "infection_noise")
   return(modeldata_combine(generation_dist, R, seeding, infection_noise))
 }
