@@ -435,7 +435,7 @@ tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
 #' @return
 #' @export
 print.tbe <- function(x) {
-  print(paste("Waiting for meta-information:", expr_text(x$lazy_r$expr)))
+  print(paste("Waiting for information:", expr_text(x$lazy_r$expr)))
 }
 
 solve.tbe <- function(x, modeldata, throw_error = TRUE) {
@@ -486,7 +486,7 @@ tbc <- function(f_name, f_expr, required = c(),
 #' @export
 print.tbc <- function(x) {
   print(paste(
-    "Waiting for the following meta-information to compute values:",
+    "Waiting for the following information to compute values:",
     paste(x$required, collapse = ", ")
   ))
 }
