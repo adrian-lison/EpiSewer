@@ -4,6 +4,7 @@ functions {
   #include functions/approx_count_dist.stan
   #include functions/renewal.stan
   #include functions/lognormal2.stan
+  #include functions/hurdle.stan
 }
 data {
   int<lower=0> T; // number of total days in measured time span
@@ -26,6 +27,10 @@ data {
   int<lower=0, upper=1> pre_replicate_noise; // Model variation before replication step?
   array[pre_replicate_noise ? 2 : 0] real tau_prior; // Prior on variation
   array[2] real sigma_prior; // Prior for scale of lognormal likelihood for measurements
+
+  // Limit of detection
+  real<lower=0> LOD;
+  real<lower=0> LOD_sharpness;
 
   // Residence time distribution
   int<lower=0> D; // last day of shedding
@@ -78,12 +83,19 @@ transformed data {
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T] log_flow = log(flow);
 
-  array[n_measured - num_zeros(measured_concentrations)] int<lower=0> i_nonzero;
+  int n_zero = num_zeros(measured_concentrations);
+  array[n_zero] int<lower=0> i_zero;
+  array[n_measured - n_zero] int<lower=0> i_nonzero;
+  int i_z = 0;
   int i_nz = 0;
   for (n in 1:n_measured) {
-    if (measured_concentrations[n] == 0) continue;
-    i_nz += 1;
-    i_nonzero[i_nz] = n;
+    if (measured_concentrations[n] == 0) {
+      i_z += 1;
+      i_zero[i_z] = n;
+    } else {
+      i_nz += 1;
+      i_nonzero[i_nz] = n;
+    }
   }
 }
 parameters {
@@ -211,14 +223,31 @@ model {
 
 
   // Likelihood
-  if (pre_replicate_noise) {
+  {
+    // accounting for pre-replicate noise
+    vector[n_measured] concentrations;
+    if (pre_replicate_noise) {
+      concentrations = (rho_log + psi)[measure_to_sample];
+    } else {
+      concentrations = rho_log[measure_to_sample];
+    }
+
+    // limit of detection
+    if (LOD>0) {
+     // below-LOD probabilities for zero measurements
+    target += sum(log_inv_logit(hurdle_smooth(
+      concentrations[i_zero], LOD, LOD_sharpness
+      )));
+      // above-LOD probabilities for non-zero measurements
+    target += sum(log1m_inv_logit(hurdle_smooth(
+      concentrations[i_nonzero], LOD, LOD_sharpness
+      )));
+    }
+
+    // measurements
     target += lognormal3_lpdf(
-      measured_concentrations[i_nonzero] | (rho_log+psi)[measure_to_sample][i_nonzero],
-      sigma
-      );
-  } else {
-    target += lognormal3_lpdf(
-      measured_concentrations[i_nonzero] | rho_log[measure_to_sample][i_nonzero],
+      measured_concentrations[i_nonzero] |
+        concentrations[i_nonzero],
       sigma
       );
   }
@@ -227,11 +256,22 @@ generated quantities {
   // predicted measurements
   // note that we here assume the same measurement variance as from composite samples,
   // which may be smaller than that of hypothetical daily measurements
-  array[T] real predicted_concentration;
-  if (pre_replicate_noise) {
-    vector[T] pre_repl = to_vector(normal_rng(pi_log, tau[1])); // pre-replication
-    predicted_concentration = lognormal3_rng(pre_repl, sigma);
-  } else {
-    predicted_concentration = lognormal3_rng(pi_log, sigma);
+  vector[T] predicted_concentration;
+  {
+    vector[T] pre_repl;
+    vector[T] above_LOD; // will be a vector of 0s and 1s
+    if (pre_replicate_noise) {
+      pre_repl = to_vector(normal_rng(pi_log, tau[1]));
+    } else {
+      pre_repl = pi_log;
+    }
+    if (LOD>0) {
+     above_LOD = to_vector(bernoulli_rng(inv_logit(-hurdle_smooth(
+      pre_repl, LOD, LOD_sharpness
+      ))));
+    } else {
+      above_LOD = rep_vector(1, T);
+    }
+    predicted_concentration = above_LOD .* to_vector(lognormal3_rng(pre_repl, sigma));
   }
 }

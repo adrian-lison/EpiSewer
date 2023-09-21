@@ -288,3 +288,26 @@ plot_sample_date_effects <- function(result) {
     scale_x_continuous(labels = scales::percent) +
     scale_y_discrete(limits = rev)
 }
+
+plot_LOD <- function(modeldata) {
+  if (!all(c("LOD","LOD_sharpness") %in% names(modeldata))) {
+    abort(c("The following variables must be present in model data:",
+            "LOD", "LOD_sharpness"))
+  }
+  LOD_f <- function(x) {
+    plogis((modeldata$LOD - x) / modeldata$LOD * modeldata$LOD_sharpness)
+  }
+  example_data <- data.frame(
+    x = seq(modeldata$LOD-modeldata$LOD*0.75,
+            modeldata$LOD+modeldata$LOD*0.75,length.out = 100)
+    )
+  example_data$y <- LOD_f(example_data$x)
+  ggplot(example_data, aes(x=x, y=y)) +
+    geom_vline(xintercept = modeldata$LOD, linetype = "dashed") +
+    geom_line() +
+    xlab("Measurement") +
+    ylab("Probability of non-detection") +
+    coord_cartesian(ylim = c(0,1)) +
+    scale_x_continuous(expand = c(0,0)) +
+    theme_bw()
+}

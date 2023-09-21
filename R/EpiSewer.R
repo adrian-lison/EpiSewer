@@ -231,10 +231,12 @@ sewer_assumptions <- function(generation_dist = NULL,
 #' @examples
 model_measurements <- function(
     concentrations = concentrations_observe(),
-    noise = noise_estimate()) {
+    noise = noise_estimate(),
+    LOD = LOD_none()) {
   verify_is_modeldata(concentrations, "concentrations")
   verify_is_modeldata(noise, "noise")
-  return(modeldata_combine(concentrations, noise))
+  verify_is_modeldata(LOD, "LOD")
+  return(modeldata_combine(concentrations, noise, LOD))
 }
 
 #' Title

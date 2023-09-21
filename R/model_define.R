@@ -181,6 +181,19 @@ concentrations_observe <-
     return(modeldata)
   }
 
+#' Title
+#'
+#' @param data
+#' @param composite_window
+#' @param date_col
+#' @param droplets_col
+#' @param replicate_col
+#' @param modeldata
+#'
+#' @return
+#' @export
+#'
+#' @examples
 droplets_observe <-
   function(data,
            composite_window = 1,
@@ -193,6 +206,42 @@ droplets_observe <-
       "is not implemented yet."
     ))
   }
+
+#' Title
+#'
+#' @param modeldata
+#'
+#' @return
+#' @export
+#'
+#' @examples
+LOD_none <- function(modeldata = modeldata_init()) {
+  modeldata$LOD <- 0
+  modeldata$LOD_sharpness <- 0
+  return(modeldata)
+}
+
+#' Title
+#'
+#' @param limit
+#' @param sharpness
+#' @param modeldata
+#'
+#' @return
+#' @export
+#'
+#' @examples
+LOD_assume <- function(limit = NULL, sharpness = 10, modeldata = modeldata_init()) {
+  if (is.null(limit)) {
+    limit <- tryCatch(
+      get_from_env("assumptions", "limit_of_detection"),
+      error = abort_f("Please supply an assumed limit of detection.")
+    )
+  }
+  modeldata$LOD <- limit
+  modeldata$LOD_sharpness <- sharpness
+  return(modeldata)
+}
 
 #' Title
 #'

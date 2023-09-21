@@ -6,7 +6,8 @@
 \usage{
 model_measurements(
   concentrations = concentrations_observe(),
-  noise = noise_estimate()
+  noise = noise_estimate(),
+  LOD = LOD_none()
 )
 }
 \arguments{

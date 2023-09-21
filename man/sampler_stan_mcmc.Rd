@@ -16,6 +16,7 @@ sampler_stan_mcmc(
   seed = 0,
   refresh = 200,
   show_messages = TRUE,
+  show_exceptions = FALSE,
   ...
 )
 }
