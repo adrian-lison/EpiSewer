@@ -107,6 +107,7 @@ sampler_stan_mcmc <- function(
     seed = 0,
     refresh = 200,
     show_messages = TRUE,
+    show_exceptions = FALSE,
     ...) {
   opts <- c(as.list(environment()), list(...))
   if (opts$threads_per_chain == 1) {
