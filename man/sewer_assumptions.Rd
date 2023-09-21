@@ -9,6 +9,7 @@ sewer_assumptions(
   incubation_dist = NULL,
   shedding_dist = NULL,
   load_per_case = NULL,
+  residence_dist = c(1),
   ...
 )
 }

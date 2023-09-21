@@ -4,7 +4,7 @@
 \alias{model_sewage}
 \title{Title}
 \usage{
-model_sewage(flows)
+model_sewage(flows = flows_observe(), residence_dist = residence_dist_assume())
 }
 \arguments{
 \item{flows}{}

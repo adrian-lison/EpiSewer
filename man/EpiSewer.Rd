@@ -10,7 +10,8 @@ EpiSewer(
   measurements = model_measurements(concentrations = concentrations_observe(data =
     data$measurements)),
   sampling = model_sampling(),
-  sewage = model_sewage(flows = flows_observe(data = data$flows)),
+  sewage = model_sewage(flows = flows_observe(data = data$flows), residence_dist =
+    residence_dist_assume(residence_dist = assumptions$residence_dist)),
   shedding = model_shedding(incubation_dist = incubation_dist_assume(incubation_dist =
     assumptions$incubation_dist), shedding_dist = shedding_dist_assume(shedding_dist =
     assumptions$shedding_dist), load_per_case = load_per_case_assume(load_per_case =

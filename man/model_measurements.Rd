@@ -4,7 +4,10 @@
 \alias{model_measurements}
 \title{Title}
 \usage{
-model_measurements(concentrations, noise = noise_estimate())
+model_measurements(
+  concentrations = concentrations_observe(),
+  noise = noise_estimate()
+)
 }
 \arguments{
 \item{noise}{}

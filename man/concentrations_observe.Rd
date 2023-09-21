@@ -5,7 +5,7 @@
 \title{Title}
 \usage{
 concentrations_observe(
-  data,
+  data = NULL,
   composite_window = 1,
   date_col = "date",
   concentration_col = "concentration",
