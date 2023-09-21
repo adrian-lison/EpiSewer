@@ -27,6 +27,11 @@ data {
   array[pre_replicate_noise ? 2 : 0] real tau_prior; // Prior on variation
   array[2] real sigma_prior; // Prior for scale of lognormal likelihood for measurements
 
+  // Residence time distribution
+  int<lower=0> D; // last day of shedding
+  vector[D + 1] residence_dist; // residence time distribution
+  // --> probability for residence of zero days (same day arrival at sampling site) comes first
+
   // Shedding load distribution
   int<lower=0> S; // last day of shedding
   vector[S + 1] shedding_dist; // shedding load distribution
@@ -70,6 +75,7 @@ transformed data {
   vector[G] gi_rev = reverse(generation_dist);
   vector[L + 1] inc_rev = reverse(incubation_dist);
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
+  vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T] log_flow = log(flow);
 
   array[n_measured - num_zeros(measured_concentrations)] int<lower=0> i_nonzero;
@@ -85,7 +91,7 @@ parameters {
   real R_level_start; // starting value of the level
   real R_trend_start; // starting value of the trend
   real<lower=0> R_sd; // standard deviation of additive errors
-  vector<multiplier=(ets_noncentered ? R_sd : 1)>[L + S + T - G - 1] R_noise; // additive errors
+  vector<multiplier=(ets_noncentered ? R_sd : 1)>[L + S + D + T - G - 1] R_noise; // additive errors
 
   // exponential smoothing / innovations state space process for log(R)
   array[ets_alpha_fixed < 0 ? 1 : 0] real<lower=0, upper=1> ets_alpha; // smoothing parameter for the level
@@ -97,7 +103,7 @@ parameters {
   real<lower=0> iota_log_ar_sd;
   vector<multiplier=iota_log_ar_sd>[G - 1] iota_log_ar_noise;
   array[I_overdispersion ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
-  vector<lower=0>[I_sample ? L + S + T : 0] I; // realized number of infections
+  vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
 
   // sample date effects
   vector[K] eta;
@@ -108,9 +114,9 @@ parameters {
   real<lower=0> sigma;
 }
 transformed parameters {
-  vector[L + S + T - G] R; // effective reproduction number
-  vector[L + S + T] iota; // expected number of infections
-  vector[S + T] lambda_log; // log expected number of symptom onsets
+  vector[L + S + D + T - G] R; // effective reproduction number
+  vector[L + S + D + T] iota; // expected number of infections
+  vector[S + D + T] lambda_log; // log expected number of symptom onsets
   vector[T] kappa_log; // log expected daily loads
   vector[T] pi_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
@@ -129,18 +135,23 @@ transformed parameters {
   // infections and renewal process
   iota[1 : G] = exp(random_walk([iota_log_ar_start]', iota_log_ar_noise, 0)); // seeding
   if (I_sample) {
-    iota[(G + 1) : (L + S + T)] = renewal_process_stochastic(
-      (L + S + T - G), R, G, gi_rev, I);
+    iota[(G + 1) : (L + S + D + T)] = renewal_process_stochastic(
+      (L + S + D + T - G), R, G, gi_rev, I);
   } else {
-    iota[(G + 1) : (L + S + T)] = renewal_process_deterministic(
-      (L + S + T - G), R, G, gi_rev, iota);
+    iota[(G + 1) : (L + S + D + T)] = renewal_process_deterministic(
+      (L + S + D + T - G), R, G, gi_rev, iota);
   }
 
   // convolution from infections to log symptom onsets (expected)
-  lambda_log = log(convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + T)]);
+  lambda_log = log(convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + D + T)]);
 
   // calculation of loads at measurement site by day (expected)
-  kappa_log = log_convolve(shed_rev_log, lambda_log)[(S + 1) : (S + T)];
+  // this first convolves with the shedding load distribution and then
+  // with the residence time distribution
+  kappa_log = log_convolve(
+    residence_rev_log,
+    log_convolve(shed_rev_log, lambda_log)[(S + 1) : (S + D + T)]
+    )[(D + 1) : (D + T)];
 
   // calculation of concentrations at measurement site by day (expected)
   // --> adjusted for flow and for date of sample effects
@@ -180,9 +191,9 @@ model {
   if (I_sample) {
     if (I_overdispersion) {
       I_xi[1] ~ normal(I_xi_prior[1], I_xi_prior[2]) T[0, ]; // truncated normal
-      I[1 : (L + S + T)] ~ normal(iota, sqrt(iota .* (1 + iota * (I_xi[1] ^ 2)))); // approximates negative binomial
+      I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota .* (1 + iota * (I_xi[1] ^ 2)))); // approximates negative binomial
     } else {
-      I[1 : (L + S + T)] ~ normal(iota, sqrt(iota)); // approximates Poisson
+      I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota)); // approximates Poisson
     }
   }
 

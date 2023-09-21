@@ -25,7 +25,10 @@ EpiSewer <- function(
     ),
     sampling = model_sampling(),
     sewage = model_sewage(
-      flows = flows_observe(data = data$flows)
+      flows = flows_observe(data = data$flows),
+      residence_dist = residence_dist_assume(
+        residence_dist = assumptions$residence_dist
+        )
     ),
     shedding = model_shedding(
       incubation_dist = incubation_dist_assume(
@@ -207,6 +210,7 @@ sewer_assumptions <- function(generation_dist = NULL,
                               incubation_dist = NULL,
                               shedding_dist = NULL,
                               load_per_case = NULL,
+                              residence_dist = c(1),
                               ...) {
   assumptions <- as.list(environment())
   return(assumptions)
@@ -248,8 +252,10 @@ model_sampling <- function(
 #' @export
 #'
 #' @examples
-model_sewage <- function(flows) {
-  return(modeldata_combine(flows))
+model_sewage <- function(
+    flows = flows_observe(),
+    residence_dist = residence_dist_assume()) {
+  return(modeldata_combine(flows, residence_dist))
 }
 
 #' Title

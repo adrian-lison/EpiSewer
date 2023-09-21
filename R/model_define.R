@@ -20,11 +20,15 @@ modeldata_var_requirements <- function() {
   requirements <- list(
     "meta_info$initial_cases_crude" = "flows_observe",
     "meta_info$length_seeding" = "generation_dist_assume",
-    "meta_info$length_I" = c("incubation_dist_assume", "shedding_dist_assume"),
+    "meta_info$length_I" = c(
+      "incubation_dist_assume",
+      "shedding_dist_assume",
+      "residence_dist_assume"),
     "meta_info$length_R" = c(
       "incubation_dist_assume",
       "shedding_dist_assume",
-      "generation_dist_assume"
+      "generation_dist_assume",
+      "residence_dist_assume"
     )
   )
   return(requirements)
@@ -58,16 +62,16 @@ modeldata_init <- function() {
 #' the modeldata object.
 modeldata_update_metainfo <- function(modeldata) {
   if (modeldata_check(modeldata,
-    required = c("L", "S", "T"),
+    required = c("L", "S", "D", "T"),
     throw_error = FALSE
   )) {
-    modeldata$meta_info$length_I <- with(modeldata, L + S + T)
+    modeldata$meta_info$length_I <- with(modeldata, L + S + D + T)
   }
   if (modeldata_check(modeldata,
-    required = c("L", "S", "T", "G"),
+    required = c("L", "S", "D", "T", "G"),
     throw_error = FALSE
   )) {
-    modeldata$meta_info$length_R <- with(modeldata, L + S + T - G)
+    modeldata$meta_info$length_R <- with(modeldata, L + S + D + T - G)
   }
   if (modeldata_check(
     modeldata,
@@ -383,6 +387,29 @@ shedding_dist_assume <-
       tbe(shedding_dist * modeldata$meta_info$load_per_case,
         required = "meta_info$load_per_case"
       )
+    return(modeldata)
+  }
+
+#' Title
+#'
+#' @param residence_dist
+#' @param modeldata
+#'
+#' @return
+#' @export
+#'
+#' @examples
+residence_dist_assume <-
+  function(residence_dist = NULL, modeldata = modeldata_init()) {
+    if (is.null(residence_dist)) {
+      residence_dist <- tryCatch(
+        get_from_env("assumptions", "residence_dist"),
+        error = abort_f("Please supply an assumed residence time distribution.")
+      )
+    }
+    modeldata$D <- length(residence_dist) - 1
+    residence_dist <- check_dist(residence_dist, "residence time distribution")
+    modeldata$residence_dist <- residence_dist
     return(modeldata)
   }
 
