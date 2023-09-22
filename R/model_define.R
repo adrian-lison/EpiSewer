@@ -260,6 +260,7 @@ load_per_case_assume <-
         error = abort_f("Please supply an assumed average shedding load per person.")
       )
     }
+    modeldata$load_mean <- load_per_case
     modeldata$meta_info$load_per_case <- load_per_case
     return(modeldata)
   }
@@ -431,11 +432,7 @@ shedding_dist_assume <-
     }
     modeldata$S <- length(shedding_dist) - 1
     shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
-    # here we account for the scaling factor from cases to load
-    modeldata$shedding_dist <-
-      tbe(shedding_dist * modeldata$meta_info$load_per_case,
-        required = "meta_info$load_per_case"
-      )
+    modeldata$shedding_dist <- shedding_dist
     return(modeldata)
   }
 
@@ -918,13 +915,13 @@ noise_estimate <-
            pre_replicate_sd_prior_mu = 0,
            pre_replicate_sd_prior_sigma = 1,
            modeldata = modeldata_init()) {
-    modeldata$pre_replicate_noise <- replicates
+    modeldata$pr_noise <- replicates
 
     modeldata$sigma_prior <- set_prior("sigma", "truncated normal",
       mu = sd_prior_mu, sigma = sd_prior_sigma
     )
 
-    if (modeldata$pre_replicate_noise) {
+    if (modeldata$pr_noise) {
       modeldata$tau_prior <- set_prior("tau", "truncated normal",
         mu = pre_replicate_sd_prior_mu, sigma = pre_replicate_sd_prior_sigma
       )

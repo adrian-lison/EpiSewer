@@ -16,6 +16,8 @@ data {
   int<lower=1> w; // composite window: how many past days the samples cover,
   // e.g. 1 for individual day samples, 7 for weekly composite samples, ...
 
+  real<lower=0> load_mean; // mean load shed per person
+
   vector<lower=0>[T] flow; // flow rate for normalization of measurements
 
   // Sample date effects model
@@ -24,8 +26,8 @@ data {
   array[K > 0 ? 2 : 0] real eta_prior; // prior for sample date effects
 
   // Noise
-  int<lower=0, upper=1> pre_replicate_noise; // Model variation before replication step?
-  array[pre_replicate_noise ? 2 : 0] real tau_prior; // Prior on variation
+  int<lower=0, upper=1> pr_noise; // Pre-replicate noise: Model variation before replication step?
+  array[pr_noise ? 2 : 0] real tau_prior; // Prior on variation
   array[2] real sigma_prior; // Prior for scale of lognormal likelihood for measurements
 
   // Limit of detection
@@ -110,8 +112,8 @@ parameters {
   vector[K] eta;
 
   // Scale of lognormal likelihood for measurements
-  array[pre_replicate_noise ? 1 : 0] real<lower=0> tau; // pre-replicaton variation
-  vector<multiplier = (pre_replicate_noise ? tau[1] : 1)>[pre_replicate_noise ? n_samples : 0] psi; // realized noise before replication step
+  array[pr_noise ? 1 : 0] real<lower=0> tau; // pre-replicaton variation
+  vector<multiplier = (pr_noise ? tau[1] : 1)>[pr_noise ? n_samples : 0] psi; // realized noise before replication step
   real<lower=0> sigma;
 }
 transformed parameters {
@@ -143,10 +145,19 @@ transformed parameters {
   // calculation of loads at measurement site by day (expected)
   // this first convolves with the shedding load distribution and then
   // with the residence time distribution
-  kappa_log = log_convolve(
-    residence_rev_log,
-    log_convolve(shed_rev_log, lambda_log)[(S + 1) : (S + D + T)]
-    )[(D + 1) : (D + T)];
+  if (D>0) {
+    kappa_log = log_convolve(
+      residence_rev_log,
+      log_convolve(
+        shed_rev_log,
+        log(load_mean) + lambda_log
+        )[(S + 1) : (S + D + T)]
+      )[(D + 1) : (D + T)];
+  } else {
+    kappa_log = log_convolve(
+      shed_rev_log, log(load_mean) + lambda_log
+      )[(S + 1) : (S + T)];
+  }
 
   // calculation of concentrations at measurement site by day (expected)
   // --> adjusted for flow and for date of sample effects
@@ -194,7 +205,7 @@ model {
   }
 
   // Prior on scale of lognormal likelihood for measurements
-  if (pre_replicate_noise) {
+  if (pr_noise) {
     tau[1] ~ normal(tau_prior[1], tau_prior[2]); // truncated normal
     psi ~ normal(0, tau[1]);
   }
@@ -204,7 +215,7 @@ model {
   {
     // accounting for pre-replicate noise
     vector[n_measured] concentrations;
-    if (pre_replicate_noise) {
+    if (pr_noise) {
       concentrations = (rho_log + psi)[measure_to_sample];
     } else {
       concentrations = rho_log[measure_to_sample];
@@ -238,7 +249,7 @@ generated quantities {
   {
     vector[T] pre_repl;
     vector[T] above_LOD; // will be a vector of 0s and 1s
-    if (pre_replicate_noise) {
+    if (pr_noise) {
       pre_repl = to_vector(normal_rng(pi_log, tau[1]));
     } else {
       pre_repl = pi_log;
