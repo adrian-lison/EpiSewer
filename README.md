@@ -266,7 +266,7 @@ options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 500, iter_sampling = 1000, chains = 4, show_messages = T))
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 500, iter_sampling = 1000, chains = 4))
 )
 ```
 
@@ -380,8 +380,8 @@ parameters from the model.
 ``` r
 names(ww_result$summary)
 #> [1] "R"                      "R_samples"              "expected_infections"   
-#> [4] "infections"             "infections_samples"     "expected_onsets"       
-#> [7] "expected_load"          "expected_concentration" "concentration"
+#> [4] "infections"             "infections_samples"     "expected_load"         
+#> [7] "expected_concentration" "concentration"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -389,18 +389,30 @@ number.
 
 ``` r
 ww_result$summary$R
-#>            date     mean   median     lower    upper seeding
-#>   1: 2021-12-06 1.074035 1.073050 0.7035129 1.442790    TRUE
-#>   2: 2021-12-07 1.073385 1.072620 0.7169806 1.433125    TRUE
-#>   3: 2021-12-08 1.073732 1.071740 0.7304690 1.430257    TRUE
-#>   4: 2021-12-09 1.074019 1.073505 0.7473058 1.410519    TRUE
-#>   5: 2021-12-10 1.074774 1.073380 0.7559406 1.397295    TRUE
-#>  ---                                                        
-#> 172: 2022-05-26 1.342199 1.325245 1.0462802 1.733282   FALSE
-#> 173: 2022-05-27 1.348734 1.328010 1.0313458 1.775872   FALSE
-#> 174: 2022-05-28 1.352267 1.330245 1.0228650 1.786648   FALSE
-#> 175: 2022-05-29 1.352050 1.329705 1.0121513 1.812245   FALSE
-#> 176: 2022-05-30 1.352279 1.328110 1.0091880 1.838021   FALSE
+#>            date     mean   median lower_0.95 lower_0.5 upper_0.95 upper_0.5
+#>   1: 2021-12-06 1.045315 1.048455  0.6545776 0.9272795   1.411848  1.165302
+#>   2: 2021-12-07 1.045749 1.048955  0.6712394 0.9291202   1.411490  1.164115
+#>   3: 2021-12-08 1.046740 1.048185  0.6976070 0.9357220   1.388787  1.160318
+#>   4: 2021-12-09 1.047307 1.049825  0.7063578 0.9420907   1.380422  1.156362
+#>   5: 2021-12-10 1.047131 1.051345  0.7073939 0.9462520   1.369877  1.150200
+#>  ---                                                                       
+#> 172: 2022-05-26 1.349490 1.333315  1.0293482 1.2221525   1.760449  1.463567
+#> 173: 2022-05-27 1.357525 1.337010  1.0278413 1.2225450   1.794444  1.476707
+#> 174: 2022-05-28 1.360521 1.340215  1.0174218 1.2183100   1.823932  1.481882
+#> 175: 2022-05-29 1.361005 1.336515  1.0081528 1.2142350   1.834631  1.487255
+#> 176: 2022-05-30 1.361629 1.338500  1.0040498 1.2054100   1.852623  1.492240
+#>      seeding
+#>   1:    TRUE
+#>   2:    TRUE
+#>   3:    TRUE
+#>   4:    TRUE
+#>   5:    TRUE
+#>  ---        
+#> 172:   FALSE
+#> 173:   FALSE
+#> 174:   FALSE
+#> 175:   FALSE
+#> 176:   FALSE
 ```
 
 Finally, the `fitted` attribute provides access to all details of the
@@ -444,5 +456,5 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.8514579 0.7615325 0.8731199 0.8085602
+#> [1] 0.8823145 0.8001372 0.8175664 0.8383984
 ```
