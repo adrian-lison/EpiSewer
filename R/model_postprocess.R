@@ -40,7 +40,8 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
 
   summary[["R"]] <- get_summary_1d_date(
     fit, "R",
-    T_shift = T_shift_R, meta_info = meta_info
+    T_shift = T_shift_R, meta_info = meta_info,
+    intervals = c(0.95, 0.5)
   )
   summary[["R"]]$seeding <- FALSE
   summary[["R"]][1:(data$G), "seeding"] <- TRUE
@@ -54,7 +55,8 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
 
   summary[["expected_infections"]] <- get_summary_1d_date(
     fit, "iota",
-    T_shift = T_shift_latent, meta_info = meta_info
+    T_shift = T_shift_latent, meta_info = meta_info,
+    intervals = c(0.95, 0.5)
   )
   summary[["expected_infections"]]$seeding <- FALSE
   summary[["expected_infections"]][1:(data$G * 2), "seeding"] <- TRUE
@@ -62,7 +64,8 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
   if (data$I_sample) {
     summary[["infections"]] <- get_summary_1d_date(
       fit, "I",
-      T_shift = T_shift_latent, meta_info = meta_info
+      T_shift = T_shift_latent, meta_info = meta_info,
+      intervals = c(0.95, 0.5)
     )
     summary[["infections"]]$seeding <- FALSE
     summary[["infections"]][1:(data$G * 2), "seeding"] <- TRUE
@@ -77,30 +80,29 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
     ] <- TRUE
   }
 
-  summary[["expected_onsets"]] <- get_summary_1d_date_log(
-    fit, "lambda_log",
-    T_shift = T_shift_onset, meta_info = meta_info
-  )
-
   summary[["expected_load"]] <- get_summary_1d_date_log(
     fit, "kappa_log",
-    T_shift = T_shift_load, meta_info = meta_info
+    T_shift = T_shift_load, meta_info = meta_info,
+    intervals = c(0.95, 0.5)
   )
 
   summary[["expected_concentration"]] <- get_summary_1d_date_log(
     fit, "pi_log",
-    T_shift = T_shift_load, meta_info = meta_info
+    T_shift = T_shift_load, meta_info = meta_info,
+    intervals = c(0.95, 0.5)
   )
 
   summary[["concentration"]] <- get_summary_1d_date(
     fit, "predicted_concentration",
-    T_shift = T_shift_load, meta_info = meta_info
+    T_shift = T_shift_load, meta_info = meta_info,
+    intervals = c(0.95, 0.5)
   )
 
   if (data$K > 0) {
     # here we exponentiate to get the multiplicative effect
     summary[["sample_date_effects"]] <- get_summary_vector_log(
-      fit, "eta", colnames(data$X)
+      fit, "eta", colnames(data$X),
+      intervals = c(0.95, 0.5)
     )
   }
 
