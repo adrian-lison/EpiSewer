@@ -33,8 +33,8 @@ get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
 #' @examples
 summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
   summary <- list()
-  T_shift_R <- with(data, L + S - G)
-  T_shift_latent <- with(data, L + S)
+  T_shift_R <- with(data, L + S + D - G)
+  T_shift_latent <- with(data, L + S + D)
   T_shift_onset <- with(data, S)
   T_shift_load <- with(data, 0)
 
