@@ -9,7 +9,7 @@
 #' @import ggplot2
 #'
 #' @examples
-plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE) {
+plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -43,8 +43,9 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FAL
       geom_line(aes(y = I, group = .draw), size = 0.1, alpha = 0.9)
   } else {
     plot <- plot +
-      geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
-      geom_line(aes(y = median))
+      geom_ribbon(aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, color = NA) +
+      geom_ribbon(aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.4, color = NA) +
+      {if (median) geom_line(aes(y = median))}
   }
   if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
@@ -65,7 +66,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FAL
 #' @export
 #'
 #' @examples
-plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE) {
+plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -100,8 +101,9 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE) {
       geom_line(aes(y = R, group = .draw), size = 0.1, alpha = 0.9)
   } else {
     plot <- plot +
-      geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
-      geom_line(aes(y = median))
+      geom_ribbon(aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, color = NA) +
+      geom_ribbon(aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.4, color = NA) +
+      {if (median) geom_line(aes(y = median))}
   }
   if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
@@ -122,7 +124,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE) {
 #' @export
 #'
 #' @examples
-plot_concentration <- function(results, measurements = NULL, include_noise = TRUE) {
+plot_concentration <- function(results, measurements = NULL, include_noise = TRUE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -179,7 +181,11 @@ plot_concentration <- function(results, measurements = NULL, include_noise = TRU
     } +
     geom_ribbon(
       data = concentration_pred,
-      aes(ymin = lower, ymax = upper, fill = model), alpha = 0.3
+      aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
+    ) +
+    geom_ribbon(
+      data = concentration_pred,
+      aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
     ) +
     {
       if (!is.null(measurements)) {
@@ -193,14 +199,14 @@ plot_concentration <- function(results, measurements = NULL, include_noise = TRU
       if (!is.null(concentration_measured)) {
         geom_point(
           data = concentration_measured,
-          aes(y = concentration)
+          aes(y = concentration), color = "black", shape = 4
         )
       }
     } +
-    geom_line(
+    {if (median) geom_line(
       data = concentration_pred,
       aes(y = median, color = model)
-    ) +
+    )} +
     theme_bw() +
     scale_x_date(
       expand = c(0, 0),
@@ -229,7 +235,7 @@ plot_concentration <- function(results, measurements = NULL, include_noise = TRU
 #' @export
 #'
 #' @examples
-plot_load <- function(results, measurements = NULL, include_noise = TRUE) {
+plot_load <- function(results, measurements = NULL, include_noise = TRUE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -246,9 +252,13 @@ plot_load <- function(results, measurements = NULL, include_noise = TRUE) {
   plot <- ggplot(load_pred, aes(x = date)) +
     geom_ribbon(
       data = load_pred,
-      aes(ymin = lower, ymax = upper, fill = model), alpha = 0.3
+      aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
     ) +
-    geom_line(data = load_pred, aes(y = median, color = model)) +
+    geom_ribbon(
+      data = load_pred,
+      aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
+    ) +
+    {if (median) geom_line(data = load_pred, aes(y = median, color = model))} +
     theme_bw() +
     scale_x_date(
       expand = c(0, 0),
@@ -279,7 +289,7 @@ plot_sample_date_effects <- function(result) {
   ggplot(result$summary$sample_date_effects, aes(y = variable)) +
     geom_vline(xintercept = 0, linetype = "dashed") +
     geom_pointinterval(
-      aes(x = median - 1, xmin = lower - 1, xmax = upper - 1),
+      aes(x = median - 1, xmin = lower_0.95 - 1, xmax = upper_0.95 - 1),
       fatten_point = 5,
     ) +
     theme_bw() +
