@@ -62,6 +62,12 @@ modeldata_init <- function() {
 #' the modeldata object.
 modeldata_update_metainfo <- function(modeldata) {
   if (modeldata_check(modeldata,
+                      required = c("S", "D", "T"),
+                      throw_error = FALSE
+  )) {
+    modeldata$meta_info$length_shedding <- with(modeldata, S + D + T)
+  }
+  if (modeldata_check(modeldata,
     required = c("L", "S", "D", "T"),
     throw_error = FALSE
   )) {
@@ -264,6 +270,50 @@ load_per_case_assume <-
     modeldata$meta_info$load_per_case <- load_per_case
     return(modeldata)
   }
+
+#' Title
+#'
+#' @param modeldata
+#'
+#' @return
+#' @export
+#'
+#' @examples
+load_variation_none <- function(modeldata = modeldata_init()) {
+  modeldata$load_vari <- 0
+  modeldata$nu_prior <- numeric(0)
+  modeldata$init$nu <- numeric(0)
+  modeldata$init$zeta <- numeric(0)
+  return(modeldata)
+}
+
+#' Title
+#'
+#' @param sd_prior_mu
+#' @param sd_prior_sigma
+#' @param modeldata
+#'
+#' @return
+#' @export
+#'
+#' @examples
+load_variation_estimate <- function(
+    cv_prior_mu = 0.1,
+    cv_prior_sigma = 0.01,
+    modeldata = modeldata_init()) {
+  modeldata$load_vari <- 1
+  modeldata$nu_prior <- set_prior(
+    "nu", "truncated normal",
+    mu = cv_prior_mu, sigma = cv_prior_sigma
+  )
+  modeldata$init$nu <- as.array(cv_prior_mu)
+  modeldata$init$zeta <- tbe(
+    rep(median(modeldata$measured_concentrations, na.rm=T),
+        modeldata$meta_info$length_shedding),
+    c("measured_concentrations", "meta_info$length_shedding")
+  )
+  return(modeldata)
+}
 
 #' Title
 #'

@@ -282,11 +282,13 @@ model_sewage <- function(
 model_shedding <- function(
     incubation_dist = incubation_dist_assume(),
     shedding_dist = shedding_dist_assume(),
-    load_per_case = load_per_case_assume()) {
+    load_per_case = load_per_case_assume(),
+    load_variation = load_variation_none()) {
   verify_is_modeldata(incubation_dist, "incubation_dist")
   verify_is_modeldata(shedding_dist, "shedding_dist")
   verify_is_modeldata(load_per_case, "load_per_case")
-  return(modeldata_combine(incubation_dist, shedding_dist, load_per_case))
+  verify_is_modeldata(load_variation, "load_variation")
+  return(modeldata_combine(incubation_dist, shedding_dist, load_per_case, load_variation))
 }
 
 #' Title

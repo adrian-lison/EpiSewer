@@ -4,6 +4,7 @@ functions {
   #include functions/approx_count_dist.stan
   #include functions/renewal.stan
   #include functions/lognormal2.stan
+  #include functions/gamma2.stan
   #include functions/hurdle.stan
 }
 data {
@@ -17,6 +18,8 @@ data {
   // e.g. 1 for individual day samples, 7 for weekly composite samples, ...
 
   real<lower=0> load_mean; // mean load shed per person
+    int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads
+  array[load_vari ? 2 : 0] real nu_prior; // Prior on individual-level load coefficient of variation
 
   vector<lower=0>[T] flow; // flow rate for normalization of measurements
 
@@ -108,6 +111,10 @@ parameters {
   array[I_overdispersion ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
 
+  // individual-level shedding load variation
+  array[load_vari ? 1 : 0] real<lower=0> nu; // coefficient of variation of individual-level load
+  vector[load_vari ? S + D + T : 0] zeta; // realized shedding load
+
   // sample date effects
   vector[K] eta;
 
@@ -120,7 +127,7 @@ transformed parameters {
   vector[bs_n_basis] bs_coeff; // Basis spline coefficients
   vector[L + S + D + T - G] R; // effective reproduction number
   vector[L + S + D + T] iota; // expected number of infections
-  vector[S + D + T] lambda_log; // log expected number of symptom onsets
+  vector[S + D + T] lambda; // expected number of shedding onsets
   vector[T] kappa_log; // log expected daily loads
   vector[T] pi_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samplesles
@@ -139,23 +146,33 @@ transformed parameters {
       (L + S + D + T - G), R, G, gi_rev, iota);
   }
 
-  // convolution from infections to log symptom onsets (expected)
-  lambda_log = log(convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + D + T)]);
+  // convolution from infections to shedding onsets (expected)
+  lambda = convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + D + T)];
 
   // calculation of loads at measurement site by day (expected)
+  // total load shed
+  vector[S + D + T] load_realised_log;
+  if (load_vari) {
+    load_realised_log = log(zeta);
+  } else {
+    load_realised_log = log(load_mean) + log(lambda);
+  }
+  // distribution of load over time
   // this first convolves with the shedding load distribution and then
   // with the residence time distribution
   if (D>0) {
     kappa_log = log_convolve(
-      residence_rev_log,
+      residence_rev_log, // residence time distribution
       log_convolve(
-        shed_rev_log,
-        log(load_mean) + lambda_log
+        shed_rev_log, // shedding load distribution
+        load_realised_log // total load shed
         )[(S + 1) : (S + D + T)]
       )[(D + 1) : (D + T)];
   } else {
+
     kappa_log = log_convolve(
-      shed_rev_log, log(load_mean) + lambda_log
+      shed_rev_log, // shedding load distribution
+      load_realised_log // total load shed
       )[(S + 1) : (S + T)];
   }
 
@@ -197,6 +214,12 @@ model {
     } else {
       I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota)); // approximates Poisson
     }
+  }
+
+  // Prior on individual-level shedding load variation
+  if (load_vari) {
+    nu[1] ~ normal(nu_prior[1], nu_prior[2]); // truncated normal
+    target += gamma3_sum_lpdf(zeta | load_mean, nu[1], lambda);
   }
 
   // Prior on sample date effects
