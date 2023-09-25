@@ -925,7 +925,7 @@ noise_estimate <-
       modeldata$tau_prior <- set_prior("tau", "truncated normal",
         mu = pre_replicate_sd_prior_mu, sigma = pre_replicate_sd_prior_sigma
       )
-      modeldata$init$tau <- as.array(0.1)
+      modeldata$init$tau <- as.array(pre_replicate_sd_prior_mu)
 
       modeldata$init$psi <- tbe(
         rep(1e-4, modeldata$n_samples),
