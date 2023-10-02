@@ -2,20 +2,59 @@
 % Please edit documentation in R/EpiSewer.R
 \name{model_shedding}
 \alias{model_shedding}
-\title{Title}
+\title{Model the shedding process}
 \usage{
 model_shedding(
   incubation_dist = incubation_dist_assume(),
   shedding_dist = shedding_dist_assume(),
-  load_per_case = load_per_case_assume()
+  load_per_case = load_per_case_assume(),
+  load_variation = load_variation_none()
 )
 }
 \arguments{
-\item{load_per_case}{}
+\item{incubation_dist}{Incubation period distribution. \code{EpiSewer} uses this
+as a proxy for the time between infection and the start of shedding, as
+shedding load distributions in the literature are often given from symptom
+onset onwards. If the supplied shedding load distribution instead starts
+with the time of infection, the incubation period should be fixed to 0 days
+(see examples). Modeling options:
+\itemize{
+\item \code{\link[=incubation_dist_assume]{incubation_dist_assume()}}
+}}
+
+\item{shedding_dist}{Shedding load distribution. Describes how the total load
+shed by an individual is distributed over time (and therefore sums to 1).
+Modeling options:
+\itemize{
+\item \code{\link[=shedding_dist_assume]{shedding_dist_assume()}}
+}}
+
+\item{load_per_case}{Average total load per case. This is a scaling factor
+that describes how many pathogen particles are shed by the average infected
+individual overall and how much of this is detectable at the sampling site.
+It thus depends both on biological factors as well as on the specific
+sewage system. Modeling options:
+\itemize{
+\item \code{\link[=load_per_case_assume]{load_per_case_assume()}}
+}}
+
+\item{load_variation}{Individual-level shedding load variation. The strength
+of shedding may vary between individuals. Modeling this variation can better
+account for uncertainty especially at low incidence. Modeling options:
+\itemize{
+\item \code{\link[=load_variation_estimate]{load_variation_estimate()}}
+\item \code{\link[=load_variation_none]{load_variation_none()}}
+}}
 }
 \value{
-
+A \code{modeldata} object containing the data and specifications of the
+\code{shedding} module.
 }
 \description{
-Title
+This module function is used to specify the components of the
+\code{shedding} module in \code{EpiSewer}.
+
+Each component can be specified using one or several helper
+functions (see available options below). See the documentation of the
+individual helper functions to adjust model priors and further settings.
 }

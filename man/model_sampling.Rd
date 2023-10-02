@@ -2,16 +2,32 @@
 % Please edit documentation in R/EpiSewer.R
 \name{model_sampling}
 \alias{model_sampling}
-\title{Title}
+\title{Model the sampling process}
 \usage{
 model_sampling(sample_effects = sample_effects_none())
 }
 \arguments{
-\item{sample_effects}{}
+\item{sample_effects}{Sample (batch) effects. The pathogen concentration in
+a sample may be influenced by sampling-related external factors, for example
+the time between sampling and shipping to the lab (age-of-sample effect),
+or different sampling or storage methods. \code{EpiSewer} allows to estimate
+such effects using covariates that describe differences between the samples.
+Modeling options:
+\itemize{
+\item \code{\link[=sample_effects_estimate_weekday]{sample_effects_estimate_weekday()}}
+\item \code{\link[=sample_effects_none]{sample_effects_none()}}
+\item \code{\link[=sample_effects_estimate_matrix]{sample_effects_estimate_matrix()}}
+}}
 }
 \value{
-
+A \code{modeldata} object containing the data and specifications of the
+\code{sampling} module.
 }
 \description{
-Title
+This module function is used to specify the components of the
+\code{sampling} module in \code{EpiSewer}.
+
+Each component can be specified using one or several helper
+functions (see available options below). See the documentation of the
+individual helper functions to adjust model priors and further settings.
 }

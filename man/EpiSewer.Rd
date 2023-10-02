@@ -2,33 +2,70 @@
 % Please edit documentation in R/EpiSewer.R
 \name{EpiSewer}
 \alias{EpiSewer}
-\title{Title}
+\title{Estimate the effective reproduction number from wastewater measurements}
 \usage{
 EpiSewer(
   data = sewer_data(),
   assumptions = sewer_assumptions(),
-  measurements = model_measurements(concentrations = concentrations_observe(data =
-    data$measurements)),
+  measurements = model_measurements(),
   sampling = model_sampling(),
-  sewage = model_sewage(flows = flows_observe(data = data$flows), residence_dist =
-    residence_dist_assume(residence_dist = assumptions$residence_dist)),
-  shedding = model_shedding(incubation_dist = incubation_dist_assume(incubation_dist =
-    assumptions$incubation_dist), shedding_dist = shedding_dist_assume(shedding_dist =
-    assumptions$shedding_dist), load_per_case = load_per_case_assume(load_per_case =
-    assumptions$load_per_case)),
-  infections = model_infections(generation_dist =
-    generation_dist_assume(generation_dist = assumptions$generation_dist)),
-  model = get_stan_model(modeldata = modeldata),
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE),
+  sewage = model_sewage(),
+  shedding = model_shedding(),
+  infections = model_infections(),
+  fit_opts = set_fit_opts(),
   run_fit = TRUE
 )
 }
 \arguments{
-\item{run_fit}{Run the model fitting immediately or return only the job without running it?}
+\item{data}{Observations such as concentration measurements
+and flows, specified via \code{\link[=sewer_data]{sewer_data()}}. The data can also be directly
+supplied to the relevant model components, in which case \code{data} can be left
+empty.}
+
+\item{assumptions}{Assumptions about infections, shedding,
+or the sewage system, specified via \code{\link[=sewer_assumptions]{sewer_assumptions()}}. The assumptions
+can also be directly supplied to the relevant model components, in which
+case \code{assumptions} can be left empty.}
+
+\item{measurements}{The \code{measurements} module, see \code{\link[=model_measurements]{model_measurements()}}.}
+
+\item{sampling}{The \code{sampling} module, see \code{\link[=model_sampling]{model_sampling()}}.}
+
+\item{sewage}{The \code{sewage} module, see \code{\link[=model_sewage]{model_sewage()}}.}
+
+\item{shedding}{The \code{shedding} module, see \code{\link[=model_shedding]{model_shedding()}}.}
+
+\item{infections}{The \code{infections} module, see \code{\link[=model_infections]{model_infections()}}.}
+
+\item{fit_opts}{Settings for model fitting, see \code{\link[=set_fit_opts]{set_fit_opts()}}.}
+
+\item{run_fit}{If \code{TRUE} (the default), the model is fitted immediately. If
+\code{FALSE}, the EpiSewerJob object is returned without fitting the model (it
+can be fitted later or even on a different machine).}
 }
 \value{
+If the model fitting was successful, a \code{list} with the following
+elements is returned:
+\itemize{
+\item \code{job}: the \code{EpiSewerJob} that was run
+\item \code{summary}: a summary of parameter estimates of interest
+\item \code{fitted}: the fitted model (for \code{set_fit_opts(fitted = TRUE)})
+}
 
+If the model fitting fails, a \code{list} with the following elements is returned:
+\itemize{
+\item \code{error}: information about the errors and warnings that were thrown
+\item \code{sampler_output}: potential outputs printed by the sampler
+}
 }
 \description{
-Title
+\code{EpiSewer} estimates the effective reproduction number Rt and
+other parameters of interest from wastewater measurements over time. This
+function combines data, assumptions and modeling details to fit a Bayesian
+hierarchical model to the measurements. The resulting posterior estimates
+of Rt and other parameters can be plotted and further analyzed.
+
+The inputs to this function can be specified using various
+helper functions (see below). It is best to define the inputs in advance as
+separate variables and then pass them to \code{EpiSewer}.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/EpiSewer.R
 \name{EpiSewerJob}
 \alias{EpiSewerJob}
-\title{Title}
+\title{Constructor for EpiSewerJob objects}
 \usage{
 EpiSewerJob(
   job_name,
@@ -14,12 +14,6 @@ EpiSewerJob(
   results_exclude = c()
 )
 }
-\arguments{
-\item{results_exclude}{}
-}
-\value{
-
-}
 \description{
-Title
+Constructor for EpiSewerJob objects
 }

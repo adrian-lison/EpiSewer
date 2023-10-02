@@ -2,16 +2,30 @@
 % Please edit documentation in R/model_define.R
 \name{infection_noise_none}
 \alias{infection_noise_none}
-\title{Title}
+\title{Do not model infection noise}
 \usage{
 infection_noise_none(modeldata = modeldata_init())
 }
 \arguments{
-\item{modeldata}{}
+\item{modeldata}{A \code{modeldata} object to which the above model specifications
+should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
+also be an already partly specified model returned by other \code{EpiSewer}
+model helpers.}
 }
 \value{
+A \code{modeldata} object containing data and specifications of the model
+to be fitted. Can be passed on to other \code{EpiSewer} model helpers to add
+further data and model specifications.
 
+The \code{modeldata} object also includes information about parameter
+initialization (\code{init}), meta data (\code{meta_info}), and checks to be
+performed before model fitting (\code{checks}).
 }
 \description{
-Title
+Do not model infection noise
 }
+\seealso{
+Other {infection noise models}: 
+\code{\link{infection_noise_estimate}()}
+}
+\concept{{infection noise models}}

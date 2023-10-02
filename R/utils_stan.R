@@ -30,7 +30,7 @@ get_stan_model <- function(
         c(
           "Please either provide ",
           "`model_filename` and `model_folder` (i.e. path to a stan model)",
-          "to `modeldata` (so that a suitable stan model can be inferred)"
+          "or `modeldata` (so that a suitable stan model can be inferred)."
         )
       )
     }
@@ -173,13 +173,65 @@ verify_is_modeldata <- function(modeldata, arg_name) {
       "this argument."
     )
     all_fs <- names(ns_env("EpiSewer"))
-    arg_fs <- all_fs[stringr::str_detect(all_fs, paste0(arg_name, "_"))]
+    arg_fs <- all_fs[stringr::str_detect(all_fs, paste0("^", arg_name, "_"))]
     if (length(arg_fs)>0) {
       error_msg <- paste(error_msg, "Available functions:")
       error_msg <- c(error_msg, paste0(arg_fs, "()"))
     }
     abort(error_msg, call = caller_env())
   }
+}
+
+#' Get model helpers for a component (internal function)
+#'
+#' Get all available model helpers for a given component. Argument defaults are
+#' such that helpers are returned as a comma-separated list of roxygen function
+#' links.
+#'
+#' @param component A character vector with the name of the component
+#' @param collapse A character used to collapse helpers into one string.
+#' Default is NULL (do not collapse).
+#' @param prefix A prefix to add to each function name
+#' @param suffix A suffix to add to each function name
+#'
+#' @return A character vector with all available model helper functions for
+#' the component. If collapse is not NULL, the helper functions are collapsed
+#' into a single string.
+component_helpers_ <- function(component, collapse = "\n",
+                              prefix = "- [", suffix = "()]") {
+  if (!component %in% all_components()) {
+    abort(c(paste("No valid component provided.",
+                "Must be one out of:"),
+                all_components()))
+  }
+  all_fs <- names(ns_env("EpiSewer"))
+  arg_fs <- all_fs[stringr::str_detect(all_fs, paste0("^", component, "_"))]
+  if (length(arg_fs)>0) {
+    helpers <- paste0(prefix, arg_fs, suffix)
+  } else {
+    helpers <- c()
+  }
+  if (!is.null(collapse)) {
+    return(paste(helpers, collapse = collapse))
+  } else {
+    return(helpers)
+  }
+}
+
+#' Get model helpers for a component
+#'
+#' @inheritParams component_helpers_
+#'
+#' @return A character vector with all available model helper functions for
+#' the component.
+#' @export
+#'
+#' @examples
+#' component_helpers("R")
+component_helpers <- function(component) {
+  return(component_helpers_(
+    component, collapse = NULL, prefix = "", suffix = "()"
+    ))
 }
 
 #' Check modeldata object for required variables
@@ -208,6 +260,11 @@ modeldata_check <- function(modeldata,
                            advice = NULL,
                            throw_error = TRUE,
                            calling_env = rlang::caller_env()) {
+
+  if (!class(modeldata) == "modeldata") {
+    abort("Please supply a modeldata object.")
+  }
+
   var_check <- check_list_nested(modeldata, required)
   if (throw_error) {
     if (!all(var_check)) {
@@ -269,6 +326,10 @@ modeldata_check <- function(modeldata,
 #'   replaced by zero-length dimension defaults for stan.
 modeldata_validate <- function(modeldata, model_def,
                               defaults = modeldata_defaults()) {
+  if (!class(modeldata) == "modeldata") {
+    abort("Please supply a modeldata object.")
+  }
+
   modeldata <- modeldata_update(modeldata)
 
   for (modeldata_sub in list(modeldata$meta_info, modeldata, modeldata$init)) {
@@ -299,11 +360,19 @@ modeldata_validate <- function(modeldata, model_def,
 
 modeldata_combine <- function(...) {
   modeldata_sets <- list(...)
+
+  lapply(modeldata_sets, function(md) {
+    if (!class(md) == "modeldata") {
+      abort("Please supply a modeldata object.")
+    }
+  })
+
   modeldata_combined <- do.call(
     c, lapply(modeldata_sets, function(x) {
       list_except(x, c("init", "meta_info", "checks"))
     })
   )
+  class(modeldata_combined) <- "modeldata"
   modeldata_combined$init <- do.call(
     c, lapply(modeldata_sets, function(x) x$init)
   )
@@ -318,6 +387,10 @@ modeldata_combine <- function(...) {
 }
 
 modeldata_update <- function(modeldata, throw_error = TRUE) {
+  if (!class(modeldata) == "modeldata") {
+    abort("Please supply a modeldata object.")
+  }
+
   modeldata <- modeldata_update_metainfo(modeldata)
 
   # meta info

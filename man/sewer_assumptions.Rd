@@ -2,7 +2,7 @@
 % Please edit documentation in R/EpiSewer.R
 \name{sewer_assumptions}
 \alias{sewer_assumptions}
-\title{Title}
+\title{Specify modeling assumptions}
 \usage{
 sewer_assumptions(
   generation_dist = NULL,
@@ -14,11 +14,33 @@ sewer_assumptions(
 )
 }
 \arguments{
-\item{load_per_case}{}
+\item{generation_dist}{Generation time distribution. The intrinsic
+distribution of the time between infection of a primary case and infection
+of its secondary cases. Will be automatically passed to
+\code{\link[=generation_dist_assume]{generation_dist_assume()}}.}
+
+\item{incubation_dist}{Incubation period distribution. \code{EpiSewer} uses this
+as a proxy for the time between infection and the start of shedding, as
+shedding load distributions in the literature are often given from symptom
+onset onwards. If the supplied shedding load distribution instead starts
+with the time of infection, use \code{incubation_dist=c(1)} (i.e. no lag). Will
+be automatically passed to \code{\link[=incubation_dist_assume]{incubation_dist_assume()}}.}
+
+\item{shedding_dist}{Shedding load distribution. Describes how the total load
+shed by an individual is distributed over time (and therefore sums to 1).
+Will be automatically passed to \code{\link[=shedding_dist_assume]{shedding_dist_assume()}}.}
+
+\item{load_per_case}{Average total load per case. This is a scaling factor
+that describes how many pathogen particles are shed by the average infected
+individual overall and how much of this is detectable at the sampling site.
+It thus depends both on biological factors as well as on the specific
+sewage system. See \code{\link[=suggest_load_per_case]{suggest_load_per_case()}} to help you
+make a suitable assumption. Will be automatically passed to \code{\link[=load_per_case_assume]{load_per_case_assume()}}.}
 }
 \value{
-
+A \code{list} with all assumptions supplied. Can be passed to the
+\code{assumptions} argument in \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
-Title
+Specify modeling assumptions
 }

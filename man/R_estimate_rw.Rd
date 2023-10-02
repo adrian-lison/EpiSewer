@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_define.R
 \name{R_estimate_rw}
 \alias{R_estimate_rw}
-\title{Title}
+\title{Smooth Rt estimates via a random walk}
 \usage{
 R_estimate_rw(
   intercept_prior_mu = 1,
@@ -15,11 +15,28 @@ R_estimate_rw(
 )
 }
 \arguments{
-\item{modeldata}{}
+\item{noncentered}{}
+
+\item{modeldata}{A \code{modeldata} object to which the above model specifications
+should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
+also be an already partly specified model returned by other \code{EpiSewer}
+model helpers.}
 }
 \value{
+A \code{modeldata} object containing data and specifications of the model
+to be fitted. Can be passed on to other \code{EpiSewer} model helpers to add
+further data and model specifications.
 
+The \code{modeldata} object also includes information about parameter
+initialization (\code{init}), meta data (\code{meta_info}), and checks to be
+performed before model fitting (\code{checks}).
 }
 \description{
-Title
+Smooth Rt estimates via a random walk
 }
+\seealso{
+Other {Rt models}: 
+\code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_splines}()}
+}
+\concept{{Rt models}}

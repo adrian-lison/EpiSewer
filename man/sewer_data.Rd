@@ -2,16 +2,26 @@
 % Please edit documentation in R/EpiSewer.R
 \name{sewer_data}
 \alias{sewer_data}
-\title{Title}
+\title{Specify observation data}
 \usage{
 sewer_data(measurements = NULL, flows = NULL, ...)
 }
 \arguments{
-\item{flows}{}
+\item{measurements}{A \code{data.frame} with measured concentrations of the
+pathogen of interest. Will be automatically passed to
+\code{\link[=concentrations_observe]{concentrations_observe()}}.}
+
+\item{flows}{A \code{data.frame} with wastewater flow volumes at the sampling site
+for each day. Will be automatically passed to \code{\link[=flows_observe]{flows_observe()}}.}
+
+\item{...}{Further observations to be supplied to \code{\link[=EpiSewer]{EpiSewer()}}.}
 }
 \value{
-
+A \code{list} with all observations supplied. Can be passed to the \code{data} argument
+in \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
-Title
+Specify wastewater observation data such as concentration
+measurements and flows. This is a convenience function to collect all
+observation data in one object.
 }

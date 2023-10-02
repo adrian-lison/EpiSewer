@@ -4,7 +4,7 @@
 \alias{plot_R}
 \title{Title}
 \usage{
-plot_R(results, draws = FALSE, ndraws = NULL, seeding = FALSE)
+plot_R(results, draws = FALSE, ndraws = NULL, seeding = FALSE, median = FALSE)
 }
 \arguments{
 \item{ndraws}{}

@@ -4,7 +4,13 @@
 \alias{plot_infections}
 \title{Title}
 \usage{
-plot_infections(results, draws = FALSE, ndraws = NULL, seeding = FALSE)
+plot_infections(
+  results,
+  draws = FALSE,
+  ndraws = NULL,
+  seeding = FALSE,
+  median = FALSE
+)
 }
 \arguments{
 \item{ndraws}{}

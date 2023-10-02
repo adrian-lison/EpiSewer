@@ -2,16 +2,27 @@
 % Please edit documentation in R/model_define.R
 \name{load_per_case_assume}
 \alias{load_per_case_assume}
-\title{Title}
+\title{Assume the average load per case}
 \usage{
 load_per_case_assume(load_per_case = NULL, modeldata = modeldata_init())
 }
 \arguments{
 \item{load_per_case}{}
+
+\item{modeldata}{A \code{modeldata} object to which the above model specifications
+should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
+also be an already partly specified model returned by other \code{EpiSewer}
+model helpers.}
 }
 \value{
+A \code{modeldata} object containing data and specifications of the model
+to be fitted. Can be passed on to other \code{EpiSewer} model helpers to add
+further data and model specifications.
 
+The \code{modeldata} object also includes information about parameter
+initialization (\code{init}), meta data (\code{meta_info}), and checks to be
+performed before model fitting (\code{checks}).
 }
 \description{
-Title
+Assume the average load per case
 }

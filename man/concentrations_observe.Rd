@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_define.R
 \name{concentrations_observe}
 \alias{concentrations_observe}
-\title{Title}
+\title{Observe pathogen concentrations from wastewater samples}
 \usage{
 concentrations_observe(
   data = NULL,
@@ -14,11 +14,45 @@ concentrations_observe(
 )
 }
 \arguments{
-\item{replicate_col}{}
+\item{data}{A \code{data.frame} with each row representing one measurement. Must
+have at least a column with dates and a column with concentration
+measurements.}
+
+\item{composite_window}{Over how many days has each measured sample been
+collected? If 1 (default), samples represent single days. If larger than 1,
+samples are assumed to be equivolumetric composites over several dates. In
+this case, the supplied dates represent the last day included in each
+sample.}
+
+\item{date_col}{Name of the column containing the dates.}
+
+\item{concentration_col}{Name of the column containing the measured
+concentrations.}
+
+\item{replicate_col}{Name of the column containing the replicate ID of each
+measurement. This is used to identify multiple measurements made of a
+sample from the same date. Should be \code{NULL} if only one measurement per
+date was made.}
+
+\item{modeldata}{A \code{modeldata} object to which the above model specifications
+should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
+also be an already partly specified model returned by other \code{EpiSewer}
+model helpers.}
 }
 \value{
+A \code{modeldata} object containing data and specifications of the model
+to be fitted. Can be passed on to other \code{EpiSewer} model helpers to add
+further data and model specifications.
 
+The \code{modeldata} object also includes information about parameter
+initialization (\code{init}), meta data (\code{meta_info}), and checks to be
+performed before model fitting (\code{checks}).
 }
 \description{
-Title
+Observe pathogen concentrations from wastewater samples
 }
+\seealso{
+Other {observation types}: 
+\code{\link{droplets_observe}()}
+}
+\concept{{observation types}}

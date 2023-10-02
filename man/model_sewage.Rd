@@ -2,16 +2,37 @@
 % Please edit documentation in R/EpiSewer.R
 \name{model_sewage}
 \alias{model_sewage}
-\title{Title}
+\title{Model the sewage process}
 \usage{
 model_sewage(flows = flows_observe(), residence_dist = residence_dist_assume())
 }
 \arguments{
-\item{flows}{}
+\item{flows}{Flow volumes at the sampling site. The flow can change due to
+rainfall or industrial discharge, and directly influences pathogen
+concentrations in the wastewater. Modeling options:
+\itemize{
+\item \code{\link[=flows_assume]{flows_assume()}}
+\item \code{\link[=flows_observe]{flows_observe()}}
+}}
+
+\item{residence_dist}{Sewer residence time distribution for pathogen
+particles. By default, \code{EpiSewer} assumes that particles arrive at the
+sampling site within the day of shedding. However, for larger sewage
+systems, particles may also travel longer than a day depending on where and
+when they were shed into the wastewater. Modeling options:
+\itemize{
+\item \code{\link[=residence_dist_assume]{residence_dist_assume()}}
+}}
 }
 \value{
-
+A \code{modeldata} object containing the data and specifications of the
+\code{sewage} module.
 }
 \description{
-Title
+This module function is used to specify the components of the
+\code{sewage} module in \code{EpiSewer}.
+
+Each component can be specified using one or several helper
+functions (see available options below). See the documentation of the
+individual helper functions to adjust model priors and further settings.
 }

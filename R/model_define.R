@@ -44,22 +44,35 @@ modeldata_defaults <- function() {
   return(defaults)
 }
 
-modeldata_init <- function() {
-  modeldata <- list()
-  modeldata$init <- list()
-  modeldata$meta_info <- list()
-  modeldata$checks <- list()
-  return(modeldata)
+all_components <- function() {
+  components <- c(
+    "concentrations",
+    "droplets",
+    "LOD",
+    "load_per_case",
+    "load_variation",
+    "flows",
+    "generation_dist",
+    "incubation_dist",
+    "shedding_dist",
+    "residence_dist",
+    "R",
+    "seeding",
+    "infection_noise",
+    "sample_effects",
+    "noise"
+  )
+  return(components)
 }
 
 #' Update meta information in modeldata based on available variables
 #'
-#' This update function is for all meta information that depends on modeldata
-#' from several functions. There are also functions which add meta information
-#' directly, in particular when this meta information cannot be solely inferred
-#' from modeldata. This function is designed such that calling it will never do
-#' harm to the modeldata object and not throw errors if something is missing in
-#' the modeldata object.
+#' @description This update function is for all meta information that depends on
+#'   modeldata from several functions. There are also functions which add meta
+#'   information directly, in particular when this meta information cannot be
+#'   solely inferred from modeldata. This function is designed such that calling
+#'   it will never do harm to the modeldata object and not throw errors if
+#'   something is missing in the modeldata object.
 modeldata_update_metainfo <- function(modeldata) {
   if (modeldata_check(modeldata,
                       required = c("S", "D", "T"),
@@ -100,17 +113,64 @@ modeldata_update_metainfo <- function(modeldata) {
   return(modeldata)
 }
 
-#' Title
+#' Construct an unspecified EpiSewer model
 #'
-#' @param modeldata
-#' @param data
-#' @param composite_window
-#' @param date_col
-#' @param concentration_col
-#' @param replicate_col
+#' @return A `modeldata` object containing data and specifications of the model
+#'   to be fitted. Can be passed on to other `EpiSewer` model helpers to add
+#'   further data and model specifications.
 #'
-#' @return
+#' @return The `modeldata` object also includes information about parameter
+#'   initialization (`init`), meta data (`meta_info`), and checks to be
+#'   performed before model fitting (`checks`).
 #' @export
+#'
+#' @examples
+#' modeldata_init()
+modeldata_init <- function() {
+  modeldata <- list()
+  modeldata$init <- list()
+  modeldata$meta_info <- list()
+  modeldata$checks <- list()
+  class(modeldata) <- "modeldata"
+  return(modeldata)
+}
+
+#' Template function
+#'
+#' @description This function does not actually do anything. It only serves as a
+#'   template for the documentation of other functions using inheritance of
+#'   params.
+#'
+#' @param modeldata A `modeldata` object to which the above model specifications
+#'   should be added. Default is an empty model given by [modeldata_init()]. Can
+#'   also be an already partly specified model returned by other `EpiSewer`
+#'   model helpers.
+#'
+#' @return Nothing
+template_model_helpers <- function(modeldata) { }
+
+#' Observe pathogen concentrations from wastewater samples
+#'
+#' @param data A `data.frame` with each row representing one measurement. Must
+#'   have at least a column with dates and a column with concentration
+#'   measurements.
+#' @param composite_window Over how many days has each measured sample been
+#'   collected? If 1 (default), samples represent single days. If larger than 1,
+#'   samples are assumed to be equivolumetric composites over several dates. In
+#'   this case, the supplied dates represent the last day included in each
+#'   sample.
+#' @param date_col Name of the column containing the dates.
+#' @param concentration_col Name of the column containing the measured
+#'   concentrations.
+#' @param replicate_col Name of the column containing the replicate ID of each
+#'   measurement. This is used to identify multiple measurements made of a
+#'   sample from the same date. Should be `NULL` if only one measurement per
+#'   date was made.
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {observation types}
 #'
 #' @examples
 concentrations_observe <-
@@ -126,6 +186,10 @@ concentrations_observe <-
         get_from_env("data", "measurements"),
         error = abort_f("Please supply measurement data.")
       )
+    }
+
+    if(!(is.integer(composite_window) && composite_window>0)) {
+      abort("The argument `composite_window` must be a positive integer.")
     }
 
     required_data_cols <- c(date_col, concentration_col, replicate_col)
@@ -187,17 +251,18 @@ concentrations_observe <-
     return(modeldata)
   }
 
-#' Title
+#' Observe positive droplet counts from wastewater samples
 #'
 #' @param data
 #' @param composite_window
 #' @param date_col
 #' @param droplets_col
 #' @param replicate_col
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {observation types}
 #'
 #' @examples
 droplets_observe <-
@@ -213,12 +278,12 @@ droplets_observe <-
     ))
   }
 
-#' Title
+#' Do not model a limit of detection
 #'
-#' @param modeldata
-#'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {LOD models}
 #'
 #' @examples
 LOD_none <- function(modeldata = modeldata_init()) {
@@ -227,14 +292,16 @@ LOD_none <- function(modeldata = modeldata_init()) {
   return(modeldata)
 }
 
-#' Title
+#' Assume a limit of detection
 #'
 #' @param limit
 #' @param sharpness
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#'
+#' @family {LOD models}
 #'
 #' @examples
 LOD_assume <- function(limit = NULL, sharpness = 10, modeldata = modeldata_init()) {
@@ -249,12 +316,12 @@ LOD_assume <- function(limit = NULL, sharpness = 10, modeldata = modeldata_init(
   return(modeldata)
 }
 
-#' Title
+#' Assume the average load per case
 #'
-#' @param modeldata
 #' @param load_per_case
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
 #'
 #' @examples
@@ -271,12 +338,13 @@ load_per_case_assume <-
     return(modeldata)
   }
 
-#' Title
+#' Do not model individual-level variation in shedding loads
 #'
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {load variation models}
 #'
 #' @examples
 load_variation_none <- function(modeldata = modeldata_init()) {
@@ -287,14 +355,15 @@ load_variation_none <- function(modeldata = modeldata_init()) {
   return(modeldata)
 }
 
-#' Title
+#' Estimate individual-level variation in shedding loads
 #'
 #' @param sd_prior_mu
 #' @param sd_prior_sigma
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {load variation models}
 #'
 #' @examples
 load_variation_estimate <- function(
@@ -315,13 +384,14 @@ load_variation_estimate <- function(
   return(modeldata)
 }
 
-#' Title
+#' Assume a constant wastewater flow
 #'
 #' @param constant_flow
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {flow models}
 #'
 #' @examples
 flows_assume <- function(
@@ -345,13 +415,14 @@ flows_assume <- function(
 
 #' Title
 #'
-#' @param modeldata
 #' @param data
 #' @param date_col
 #' @param flow_col
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {flow models}
 #'
 #' @examples
 flows_observe <-
@@ -416,12 +487,12 @@ flows_observe <-
     return(modeldata)
   }
 
-#' Title
+#' Assume a generation time distribution
 #'
-#' @param modeldata
 #' @param generation_dist
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
 #'
 #' @examples
@@ -440,12 +511,12 @@ generation_dist_assume <-
     return(modeldata)
   }
 
-#' Title
+#' Assume an incubation period distribution
 #'
-#' @param modeldata
 #' @param incubation_dist
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
 #'
 #' @examples
@@ -463,12 +534,12 @@ incubation_dist_assume <-
     return(modeldata)
   }
 
-#' Title
+#' Aasume a shedding load profile / distribution
 #'
-#' @param modeldata
 #' @param shedding_dist
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
 #'
 #' @examples
@@ -486,12 +557,12 @@ shedding_dist_assume <-
     return(modeldata)
   }
 
-#' Title
+#' Assume a sewer residence time distribution
 #'
 #' @param residence_dist
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
 #'
 #' @examples
@@ -509,7 +580,7 @@ residence_dist_assume <-
     return(modeldata)
   }
 
-#' Title
+#' Smooth Rt estimates via exponential smoothing
 #'
 #' @param level_prior_mu
 #' @param level_prior_sigma
@@ -525,10 +596,11 @@ residence_dist_assume <-
 #' @param dampen_fixed
 #' @param differenced
 #' @param noncentered
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {Rt models}
 #'
 #' @examples
 R_estimate_ets <- function(
@@ -621,7 +693,7 @@ R_estimate_ets <- function(
   return(modeldata)
 }
 
-#' Title
+#' Smooth Rt estimates via a random walk
 #'
 #' @param level_prior_mu
 #' @param level_prior_sigma
@@ -629,10 +701,11 @@ R_estimate_ets <- function(
 #' @param sd_prior_sigma
 #' @param differenced
 #' @param noncentered
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {Rt models}
 #'
 #' @examples
 R_estimate_rw <- function(
@@ -658,16 +731,17 @@ R_estimate_rw <- function(
   return(modeldata)
 }
 
-#' Title
+#' Smooth Rt estimates via smoothing splines
 #'
-#' @param modeldata
 #' @param knot_distance
 #' @param spline_degree
 #' @param bs_coeff_ar_start_prior
 #' @param bs_coeff_ar_sd_prior
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {Rt models}
 #'
 #' @examples
 R_estimate_splines <- function(
@@ -720,15 +794,15 @@ R_estimate_splines <- function(
   return(modeldata)
 }
 
-#' Title
+#' Estimate infections at the start of the modeled time period
 #'
 #' @param intercept_prior_mu
 #' @param intercept_prior_sigma
 #' @param sd_prior_mu
 #' @param sd_prior_sigma
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
 #'
 #' @examples
@@ -779,12 +853,12 @@ seeding_estimate <- function(
   return(modeldata)
 }
 
-#' Title
+#' Do not model infection noise
 #'
-#' @param modeldata
-#'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {infection noise models}
 #'
 #' @examples
 infection_noise_none <- function(modeldata = modeldata_init()) {
@@ -795,15 +869,16 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
   return(modeldata)
 }
 
-#' Title
+#' Estimate infection noise
 #'
 #' @param overdispersion
 #' @param overdispersion_prior_mu
 #' @param overdispersion_prior_sigma
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {infection noise models}
 #'
 #' @examples
 infection_noise_estimate <-
@@ -842,12 +917,12 @@ infection_noise_estimate <-
     return(modeldata)
   }
 
-#' Title
+#' Do not model sample effects
 #'
-#' @param modeldata
-#'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {sample effect models}
 #'
 #' @examples
 sample_effects_none <- function(modeldata = modeldata_init()) {
@@ -858,15 +933,16 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
   return(modeldata)
 }
 
-#' Title
+#' Estimate sample effects using a design matrix
 #'
-#' @param modeldata
 #' @param effect_prior_mu
 #' @param effect_prior_sigma
 #' @param design_matrix
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {sample effect models}
 #'
 #' @examples
 sample_effects_estimate_matrix <- function(
@@ -906,14 +982,15 @@ sample_effects_estimate_matrix <- function(
   return(modeldata)
 }
 
-#' Title
+#' Estimate weekday sample effects
 #'
 #' @param effect_prior_mu
 #' @param effect_prior_sigma
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
+#' @family {sample effect models}
 #'
 #' @examples
 sample_effects_estimate_weekday <- function(
@@ -945,16 +1022,16 @@ sample_effects_estimate_weekday <- function(
   )
 }
 
-#' Title
+#' Estimate measurement noise
 #'
 #' @param replicates
 #' @param sd_prior_mu
 #' @param sd_prior_sigma
 #' @param pre_replicate_sd_prior_mu
 #' @param pre_replicate_sd_prior_sigma
-#' @param modeldata
 #'
-#' @return
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
 #' @export
 #'
 #' @examples

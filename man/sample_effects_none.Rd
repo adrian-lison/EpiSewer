@@ -2,16 +2,31 @@
 % Please edit documentation in R/model_define.R
 \name{sample_effects_none}
 \alias{sample_effects_none}
-\title{Title}
+\title{Do not model sample effects}
 \usage{
 sample_effects_none(modeldata = modeldata_init())
 }
 \arguments{
-\item{modeldata}{}
+\item{modeldata}{A \code{modeldata} object to which the above model specifications
+should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
+also be an already partly specified model returned by other \code{EpiSewer}
+model helpers.}
 }
 \value{
+A \code{modeldata} object containing data and specifications of the model
+to be fitted. Can be passed on to other \code{EpiSewer} model helpers to add
+further data and model specifications.
 
+The \code{modeldata} object also includes information about parameter
+initialization (\code{init}), meta data (\code{meta_info}), and checks to be
+performed before model fitting (\code{checks}).
 }
 \description{
-Title
+Do not model sample effects
 }
+\seealso{
+Other {sample effect models}: 
+\code{\link{sample_effects_estimate_matrix}()},
+\code{\link{sample_effects_estimate_weekday}()}
+}
+\concept{{sample effect models}}

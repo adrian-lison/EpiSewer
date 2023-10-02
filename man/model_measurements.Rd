@@ -2,7 +2,7 @@
 % Please edit documentation in R/EpiSewer.R
 \name{model_measurements}
 \alias{model_measurements}
-\title{Title}
+\title{Model the measurement process}
 \usage{
 model_measurements(
   concentrations = concentrations_observe(),
@@ -11,11 +11,35 @@ model_measurements(
 )
 }
 \arguments{
-\item{noise}{}
+\item{concentrations}{Concentration measurements from wastewater samples.
+Modeling options:
+\itemize{
+\item \code{\link[=concentrations_observe]{concentrations_observe()}}
+}}
+
+\item{noise}{Measurement noise due to unexplained variation in sampling
+and lab analysis. Modeling options:
+\itemize{
+\item \code{\link[=noise_estimate]{noise_estimate()}}
+}}
+
+\item{LOD}{Limit of detection. Concentrations below a certain threshold may
+not be detectable and thus erroneously measured as 0. \code{EpiSewer} can adjust
+for the limit of detection using a hurdle model. Modeling options:
+\itemize{
+\item \code{\link[=LOD_none]{LOD_none()}}
+\item \code{\link[=LOD_assume]{LOD_assume()}}
+}}
 }
 \value{
-
+A \code{modeldata} object containing the data and specifications of the
+\code{measurements} module.
 }
 \description{
-Title
+This module function is used to specify the components of the
+\code{measurements} module in \code{EpiSewer}.
+
+@description Each component can be specified using one or several helper
+functions (see available options below). See the documentation of the
+individual helper functions to adjust model priors and further settings.
 }
