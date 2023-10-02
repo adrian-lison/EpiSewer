@@ -338,8 +338,11 @@ load_per_case_assume <-
     return(modeldata)
   }
 
-#' Do not model individual-level variation in shedding loads
+#' Do not model individual-level load variation
 #'
+#' @description This option assumes that there is no variation in the
+#'   total load shed per case, i.e. the individual shedding load is fixed to the
+#'   average shedding load.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -355,10 +358,22 @@ load_variation_none <- function(modeldata = modeldata_init()) {
   return(modeldata)
 }
 
-#' Estimate individual-level variation in shedding loads
+#' Estimate individual-level load variation
 #'
-#' @param sd_prior_mu
-#' @param sd_prior_sigma
+#' @description This option accounts for variation in the total shedding load
+#'   per case by modeling individual shedding loads as Gamma distributed with
+#'   mean equal to the average `load_per_case` and a coefficient of variation to
+#'   be estimated.
+#'
+#' @description Note that measurement noise and individual-level load variation
+#'   might not be jointly identifiable. It might therefore be necessary to use
+#'   informative priors for at least one of these parameters when using both
+#'   [noise_estimate()] and [load_variation_estimate()].
+#'
+#' @param cv_prior_mu Mean of the truncated normal prior for the coefficient of
+#'   individual-level variation.
+#' @param cv_prior_sigma Standard deviation of the truncated normal prior for
+#'   the coefficient of individual-level variation.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return

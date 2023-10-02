@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_define.R
 \name{load_variation_none}
 \alias{load_variation_none}
-\title{Do not model individual-level variation in shedding loads}
+\title{Do not model individual-level load variation}
 \usage{
 load_variation_none(modeldata = modeldata_init())
 }
@@ -22,7 +22,9 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Do not model individual-level variation in shedding loads
+This option assumes that there is no variation in the
+total load shed per case, i.e. the individual shedding load is fixed to the
+average shedding load.
 }
 \seealso{
 Other {load variation models}: 

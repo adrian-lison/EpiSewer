@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_define.R
 \name{load_variation_estimate}
 \alias{load_variation_estimate}
-\title{Estimate individual-level variation in shedding loads}
+\title{Estimate individual-level load variation}
 \usage{
 load_variation_estimate(
   cv_prior_mu = 0.1,
@@ -11,12 +11,16 @@ load_variation_estimate(
 )
 }
 \arguments{
+\item{cv_prior_mu}{Mean of the truncated normal prior for the coefficient of
+individual-level variation.}
+
+\item{cv_prior_sigma}{Standard deviation of the truncated normal prior for
+the coefficient of individual-level variation.}
+
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
 also be an already partly specified model returned by other \code{EpiSewer}
 model helpers.}
-
-\item{sd_prior_sigma}{}
 }
 \value{
 A \code{modeldata} object containing data and specifications of the model
@@ -28,7 +32,15 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Estimate individual-level variation in shedding loads
+This option accounts for variation in the total shedding load
+per case by modeling individual shedding loads as Gamma distributed with
+mean equal to the average \code{load_per_case} and a coefficient of variation to
+be estimated.
+
+Note that measurement noise and individual-level load variation
+might not be jointly identifiable. It might therefore be necessary to use
+informative priors for at least one of these parameters when using both
+\code{\link[=noise_estimate]{noise_estimate()}} and \code{\link[=load_variation_estimate]{load_variation_estimate()}}.
 }
 \seealso{
 Other {load variation models}: 
