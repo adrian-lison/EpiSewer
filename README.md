@@ -205,8 +205,9 @@ sewage system.
 
 Fortunately, if we are only interested in the effective reproduction
 number, a rough estimate for the shedding load per case is sufficient:
-getting it wrong cannot bias the reproduction number estimates, and will
-distort the uncertainty of estimates only in rather extreme cases.
+getting it wrong cannot strongly bias the reproduction number estimates,
+and will distort the uncertainty of estimates only in rather extreme
+cases.
 
 If we also have case data available (ideally catchment-specific, or we
 might down-scale case counts from a higher aggregation level to roughly
@@ -220,8 +221,8 @@ cases (which is often not realistic).
 ``` r
 suggest_load_per_case(
   data_zurich$measurements,
-  data_zurich$flows,
   data_zurich$cases,
+  data_zurich$flows,
   ascertainment_prop = 1
 )
 #> [1] 6e+11
