@@ -11,7 +11,7 @@ shown below. Please note that the package is still highly experimental
 and may be subject to breaking changes.
 
 ``` r
-remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE, auth_token = "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")
+remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE, auth_token = "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")
 ```
 
 `EpiSewer` also requires CmdStan to be installed on your system. This
