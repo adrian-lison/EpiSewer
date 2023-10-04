@@ -80,13 +80,15 @@ mark_outlier_spikes_median <- function(
 #' @param measurement_col
 #' @param case_col
 #' @param flow_col
+#' @param flow_constant
 #'
 #' @return
 #' @export
 #' @import data.table
 #'
 #' @examples
-suggest_load_per_case <- function(measurements, flows, cases,
+suggest_load_per_case <- function(measurements, cases, flows = NULL,
+                                  flow_constant = NULL,
                                   ascertainment_prop = 1,
                                   measurement_shift = seq(-7,7),
                                   shift_weights = 1/(abs(measurement_shift)+1),
@@ -108,19 +110,6 @@ suggest_load_per_case <- function(measurements, flows, cases,
   measurements = as.data.table(measurements)
   measurements[, (date_col) := as.Date(get(date_col))]
 
-  required_data_cols <- c(date_col, flow_col)
-  if (!all(required_data_cols %in% names(flows))) {
-    abort(
-      paste(
-        "The following columns must be present",
-        "in the provided measurements `data.frame`:",
-        paste(required_data_cols, collapse = ", ")
-      )
-    )
-  }
-  flows = as.data.table(flows)
-  flows[, (date_col) := as.Date(get(date_col))]
-
   required_data_cols <- c(date_col, case_col)
   if (!all(required_data_cols %in% names(cases))) {
     abort(
@@ -141,7 +130,37 @@ suggest_load_per_case <- function(measurements, flows, cases,
     ))
   }
 
-  measurements <- merge(measurements, flows, by = "date")
+  if (is.null(flows) && is.null(flow_constant)) {
+    abort(c(
+      "Please supply one of the following arguments:",
+      "flows: a data frame with flow measurements",
+      "flow_constant: a constant flow value"
+      ))
+  } else if (is.null(flows)) {
+    measurements[[flow_col]] <- flow_constant
+  } else {
+    if (!is.null(flow_constant)) {
+      warn(paste(
+        "You provided both a data frame with flow measurements (flows)",
+        "and a constant flow value (flow_constant).",
+        "Only the `flows` argument will be used."
+        ))
+    }
+    required_data_cols <- c(date_col, flow_col)
+    if (!all(required_data_cols %in% names(flows))) {
+      abort(
+        paste(
+          "The following columns must be present",
+          "in the provided measurements `data.frame`:",
+          paste(required_data_cols, collapse = ", ")
+        )
+      )
+    }
+    flows = as.data.table(flows)
+    flows[, (date_col) := as.Date(get(date_col))]
+    measurements <- merge(measurements, flows, by = "date")
+  }
+
   measurements[, load := get(measurement_col)*get(flow_col)]
   cases[, (case_col) := get(case_col)/ascertainment_prop]
   shift_weights <- shift_weights/sum(shift_weights)
