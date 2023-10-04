@@ -1039,11 +1039,6 @@ sample_effects_estimate_weekday <- function(
 
 #' Estimate measurement noise
 #'
-#' @param replicates
-#' @param sd_prior_mu
-#' @param sd_prior_sigma
-#' @param pre_replicate_sd_prior_mu
-#' @param pre_replicate_sd_prior_sigma
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -1052,22 +1047,22 @@ sample_effects_estimate_weekday <- function(
 #' @examples
 noise_estimate <-
   function(replicates = FALSE,
-           sd_prior_mu = 0,
-           sd_prior_sigma = 1,
-           pre_replicate_sd_prior_mu = 0,
-           pre_replicate_sd_prior_sigma = 1,
+           cv_prior_mu = 0,
+           cv_prior_sigma = 1,
+           pre_replicate_cv_prior_mu = 0,
+           pre_replicate_cv_prior_sigma = 1,
            modeldata = modeldata_init()) {
     modeldata$pr_noise <- replicates
 
-    modeldata$sigma_prior <- set_prior("sigma", "truncated normal",
-      mu = sd_prior_mu, sigma = sd_prior_sigma
+    modeldata$cv_prior <- set_prior("cv", "truncated normal",
+      mu = cv_prior_mu, sigma = cv_prior_sigma
     )
 
     if (modeldata$pr_noise) {
       modeldata$tau_prior <- set_prior("tau", "truncated normal",
-        mu = pre_replicate_sd_prior_mu, sigma = pre_replicate_sd_prior_sigma
+        mu = pre_replicate_cv_prior_mu, sigma = pre_replicate_cv_prior_sigma
       )
-      modeldata$init$tau <- as.array(pre_replicate_sd_prior_mu)
+      modeldata$init$tau <- as.array(pre_replicate_cv_prior_mu)
 
       modeldata$init$psi <- tbe(
         rep(1e-4, modeldata$n_samples),
@@ -1077,7 +1072,7 @@ noise_estimate <-
       modeldata$checks$check_replicate_ids <- function(d) {
         if (!"replicate_ids" %in% names(d)) {
           abort(paste(
-            "Pre-replicate noise can only be estimated with",
+            "Variation before the replication stage can only be estimated with",
             "replicate measurements. Please specify a column `replicate_col`",
             "with replicate IDs in your data."
           ))
@@ -1089,7 +1084,7 @@ noise_estimate <-
       modeldata$init$psi <- numeric(0)
     }
 
-    modeldata$init$sigma <- 0.1 # roughly 10% coefficient of variation
+    modeldata$init$cv <- 0.1 # 10% coefficient of variation
 
     return(modeldata)
   }

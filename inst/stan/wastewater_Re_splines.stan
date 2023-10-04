@@ -30,8 +30,8 @@ data {
 
   // Noise
   int<lower=0, upper=1> pr_noise; // Pre-replicate noise: Model variation before replication step?
-  array[pr_noise ? 2 : 0] real tau_prior; // Prior on variation
-  array[2] real sigma_prior; // Prior for scale of lognormal likelihood for measurements
+  array[pr_noise ? 2 : 0] real tau_prior; // Prior on coefficient of variation
+  array[2] real cv_prior; // Prior for coefficient of variation of lognormal likelihood for measurements
 
   // Limit of detection
   real<lower=0> LOD;
@@ -119,9 +119,9 @@ parameters {
   vector[K] eta;
 
   // Scale of lognormal likelihood for measurements
-  array[pr_noise ? 1 : 0] real<lower=0> tau; // pre-replicaton variation
+  array[pr_noise ? 1 : 0] real<lower=0> tau; // pre-replicaton coefficient of variation
   vector<multiplier = (pr_noise ? tau[1] : 1)>[pr_noise ? n_samples : 0] psi; // realized noise before replication step
-  real<lower=0> sigma;
+  real<lower=0> cv;
 }
 transformed parameters {
   vector[bs_n_basis] bs_coeff; // Basis spline coefficients
@@ -230,9 +230,9 @@ model {
   // Prior on scale of lognormal likelihood for measurements
   if (pr_noise) {
     tau[1] ~ normal(tau_prior[1], tau_prior[2]); // truncated normal
-    psi ~ normal(0, tau[1]);
+    psi ~ normal(0, sqrt(log1p(tau[1]^2))); // from tau(=cv) to sigma (lognormal)
   }
-  sigma ~ normal(sigma_prior[1], sigma_prior[2]); // truncated normal
+  cv ~ normal(cv_prior[1], cv_prior[2]); // truncated normal
 
   // Likelihood
   {
@@ -257,10 +257,10 @@ model {
     }
 
     // measurements
-    target += lognormal3_lpdf(
+    target += lognormal4_lpdf(
       measured_concentrations[i_nonzero] |
         concentrations[i_nonzero],
-      sigma
+      cv
       );
   }
 }
@@ -273,7 +273,7 @@ generated quantities {
     vector[T] pre_repl;
     vector[T] above_LOD; // will be a vector of 0s and 1s
     if (pr_noise) {
-      pre_repl = to_vector(normal_rng(pi_log, tau[1]));
+      pre_repl = to_vector(normal_rng(pi_log, sqrt(log1p(tau[1]^2))));
     } else {
       pre_repl = pi_log;
     }
@@ -284,6 +284,6 @@ generated quantities {
     } else {
       above_LOD = rep_vector(1, T);
     }
-    predicted_concentration = above_LOD .* to_vector(lognormal3_rng(pre_repl, sigma));
+    predicted_concentration = above_LOD .* to_vector(lognormal4_rng(pre_repl, cv));
   }
 }
