@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_define.R
 \name{droplets_observe}
 \alias{droplets_observe}
-\title{Observe positive droplet counts from wastewater samples}
+\title{Observe positive ddPCR droplet counts}
 \usage{
 droplets_observe(
   data,
@@ -14,8 +14,6 @@ droplets_observe(
 )
 }
 \arguments{
-\item{replicate_col}{}
-
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
 also be an already partly specified model returned by other \code{EpiSewer}
@@ -31,7 +29,10 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Observe positive droplet counts from wastewater samples
+This option fits the \code{EpiSewer} model to positive droplet counts
+in digital droplet PCR (ddPCR) for the pathogen target of interest. This
+allows the use of a ddPCR-specific likelihood using a Poisson distribution.
+For a more generic likelihood, see \code{\link[=concentrations_observe]{concentrations_observe()}}.
 }
 \seealso{
 Other {observation types}: 

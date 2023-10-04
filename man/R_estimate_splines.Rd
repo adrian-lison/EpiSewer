@@ -15,12 +15,30 @@ R_estimate_splines(
 )
 }
 \arguments{
+\item{knot_distance}{Distance between spline breakpoints (knots) in days
+(default is 1, i.e. a knot on each day). Placing knots further apart
+increases the smoothness of Rt estimates and can speed up model fitting. If
+knots are too far apart however, the estimates can become inaccurate.}
+
+\item{spline_degree}{Degree of the spline polynomials (default is 3 for cubic
+splines).}
+
+\item{coef_intercept_prior_mu}{Prior (mean) on the intercept of the log
+random walk over spline coefficients.}
+
+\item{coef_intercept_prior_sigma}{Prior (standard deviation) on the intercept
+of the log random walk over spline coefficients.}
+
+\item{coef_sd_prior_mu}{Prior (mean) on the standard deviation of the random
+walk over spline coefficients.}
+
+\item{coef_sd_prior_sigma}{Prior (standard deviation) on the standard
+deviation of the random walk over spline coefficients.}
+
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
 also be an already partly specified model returned by other \code{EpiSewer}
 model helpers.}
-
-\item{bs_coeff_ar_sd_prior}{}
 }
 \value{
 A \code{modeldata} object containing data and specifications of the model
@@ -32,7 +50,36 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Smooth Rt estimates via smoothing splines
+This option estimates the effective reproduction number using
+regularized smoothing splines on a B-spline basis.
+}
+\details{
+\code{EpiSewer} uses a random walk on the B-spline coefficients for
+regularization. This allows to use small knot distances without obtaining
+extremely wiggly Rt estimates. The random walk is modeled on the
+logarithmic scale (i.e. a geometric random walk):
+\itemize{
+\item A prior on the log intercept with mean 0 roughly equals a prior on
+the unit intercept with mean 1. The prior on the intercept should reflect
+your expectation of Rt at the beginning of the time series. If estimating
+from the start of an epidemic, you might want to use a prior with
+log(mean) > 0 (i.e. mean > 1) for the intercept.
+\item The prior on the standard deviation should be interpreted in terms of
+exponential multiplicative changes. For example, a standard deviation of
+0.2 on the log scale roughly allows for multiplicative changes between
+exp(-0.4) and exp(0.4) on the unit scale (using the 2 sigma rule).
+}
+
+The smoothness of the Rt estimates is influenced both by the knot
+distance and by the standard deviation of the random walk on coefficients.
+The latter also influences the uncertainty of Rt estimates towards the
+present / date of estimation, when limited data signal is available.
+
+The priors of this component have the following functional form:
+\itemize{
+\item intercept of the log random walk over spline coefficients: \code{Normal}
+\item standard deviation of the log random walk over spline coefficients: \verb{Truncated normal}
+}
 }
 \seealso{
 Other {Rt models}: 

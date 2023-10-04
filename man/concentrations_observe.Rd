@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_define.R
 \name{concentrations_observe}
 \alias{concentrations_observe}
-\title{Observe pathogen concentrations from wastewater samples}
+\title{Observe concentration measurements}
 \usage{
 concentrations_observe(
   data = NULL,
@@ -49,7 +49,10 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Observe pathogen concentrations from wastewater samples
+This option fits the \code{EpiSewer} model to pathogen concentrations
+measured in wastewater samples. It is suitable for different quantification
+methods such as qPCR or dPCR. The measured concentrations are modeled via
+a lognormal likelihood.
 }
 \seealso{
 Other {observation types}: 

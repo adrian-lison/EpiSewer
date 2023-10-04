@@ -36,11 +36,27 @@ This option accounts for variation in the total shedding load
 per case by modeling individual shedding loads as Gamma distributed with
 mean equal to the average \code{load_per_case} and a coefficient of variation to
 be estimated.
-
-Note that measurement noise and individual-level load variation
-might not be jointly identifiable. It might therefore be necessary to use
-informative priors for at least one of these parameters when using both
+}
+\details{
+Measurement noise and individual-level load variation might not be
+jointly identifiable. It may therefore be necessary to use informative
+priors for at least one of these parameters when using both
 \code{\link[=noise_estimate]{noise_estimate()}} and \code{\link[=load_variation_estimate]{load_variation_estimate()}}.
+
+Also note that the accuracy of the variation model depends on
+the estimated number of cases to be on the right scale (which in turn
+depends on the assumed \code{load_per_case} to be roughly correct). This is
+because in the variation model, the population-level  coefficient of
+variation (CV) of shedding loads is proportional to the individual-level CV
+divided by the square root of the number of cases. If for example the
+assumed \code{load_per_case} is too small, the number of cases will be
+overestimated, which has effects in two directions:
+\itemize{
+\item the individual-level CV will be overestimated (especially if the prior
+on the individual-level CV is weak)
+\item the population-level CV will be underestimated (especially if the prior
+on the individual-level CV is strong)
+}
 }
 \seealso{
 Other {load variation models}: 

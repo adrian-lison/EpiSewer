@@ -13,9 +13,6 @@ get_discrete_gamma_shifted(gamma_mean = 4.8, gamma_sd = 2.3, maxX = 10)
 
 }
 \description{
-Title
+This code is adapted from EpiEstim, credit to Anne Cori
+(a.cori@imperial.ac.uk)
 }
-\section{This ocode is adapted from EpiEstim, credit to Anne Cori}{
-a.cori@imperial.ac.uk
-}
-

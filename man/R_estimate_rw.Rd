@@ -15,7 +15,23 @@ R_estimate_rw(
 )
 }
 \arguments{
-\item{noncentered}{}
+\item{intercept_prior_mu}{Prior (mean) on the intercept of the random walk.}
+
+\item{intercept_prior_sigma}{Prior (standard deviation) on the intercept of
+the random walk.}
+
+\item{sd_prior_mu}{Prior (mean) on the standard deviation of the random walk.}
+
+\item{sd_prior_sigma}{Prior (standard deviation) on the standard deviation of
+the random walk.}
+
+\item{differenced}{If \code{FALSE} (default), the random walk is applied to the
+absolute Rt time series. If \code{TRUE}, it is instead applied to the
+differenced time series, i.e. now the trend is modeled as a random walk.}
+
+\item{noncentered}{If \code{TRUE} (default), a non-centered parameterization is
+used to model the innovations of the random walk (for better sampling
+efficiency).}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -32,7 +48,23 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Smooth Rt estimates via a random walk
+This option estimates the effective reproduction number over
+time using a random walk.
+}
+\details{
+The smoothness of Rt estimates is influenced by the prior on the
+standard deviation of the random walk. It also influences the uncertainty
+of Rt estimates towards the present / date of estimation, when limited
+data signal is available. The prior on the intercept of the random walk
+should reflect your expectation of Rt at the beginning of the time series.
+If estimating from the start of an epidemic, you might want to use a prior
+with mean > 1 for the intercept.
+
+The priors of this component have the following functional form:
+\itemize{
+\item intercept of the random walk: \code{Normal}
+\item standard deviation of the random walk: \verb{Truncated normal}
+}
 }
 \seealso{
 Other {Rt models}: 

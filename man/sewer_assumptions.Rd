@@ -33,7 +33,7 @@ Will be automatically passed to \code{\link[=shedding_dist_assume]{shedding_dist
 \item{load_per_case}{Average total load per case. This is a scaling factor
 that describes how many pathogen particles are shed by the average infected
 individual overall and how much of this is detectable at the sampling site.
-It thus depends both on biological factors as well as on the specific
+It depends both on biological factors as well as on the specific
 sewage system. See \code{\link[=suggest_load_per_case]{suggest_load_per_case()}} to help you
 make a suitable assumption. Will be automatically passed to \code{\link[=load_per_case_assume]{load_per_case_assume()}}.}
 }
@@ -42,5 +42,7 @@ A \code{list} with all assumptions supplied. Can be passed to the
 \code{assumptions} argument in \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
-Specify modeling assumptions
+Specify model assumptions such as the generation time
+distribution or shedding load distribution. This is a convenience function
+to collect all assumptions in one object.
 }

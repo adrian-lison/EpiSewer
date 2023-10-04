@@ -15,9 +15,9 @@ model_shedding(
 \item{incubation_dist}{Incubation period distribution. \code{EpiSewer} uses this
 as a proxy for the time between infection and the start of shedding, as
 shedding load distributions in the literature are often given from symptom
-onset onwards. If the supplied shedding load distribution instead starts
-with the time of infection, the incubation period should be fixed to 0 days
-(see examples). Modeling options:
+onset onwards. If the assumed shedding load distribution instead starts
+from the time of infection, the incubation period should be fixed to 0
+days. Modeling options:
 \itemize{
 \item \code{\link[=incubation_dist_assume]{incubation_dist_assume()}}
 }}
@@ -32,7 +32,7 @@ Modeling options:
 \item{load_per_case}{Average total load per case. This is a scaling factor
 that describes how many pathogen particles are shed by the average infected
 individual overall and how much of this is detectable at the sampling site.
-It thus depends both on biological factors as well as on the specific
+It depends both on biological factors as well as on the specific
 sewage system. Modeling options:
 \itemize{
 \item \code{\link[=load_per_case_assume]{load_per_case_assume()}}

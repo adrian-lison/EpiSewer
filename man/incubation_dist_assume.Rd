@@ -7,7 +7,9 @@
 incubation_dist_assume(incubation_dist = NULL, modeldata = modeldata_init())
 }
 \arguments{
-\item{incubation_dist}{}
+\item{incubation_dist}{A numeric vector representing a discrete incubation
+period distribution, starting with the probability for an incubation period of 0
+days, 1 day, 2 days, and so on.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -24,5 +26,17 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Assume an incubation period distribution
+This option assumes a fixed incubation period distribution for
+the shedding model in \code{EpiSewer}.
+}
+\details{
+\code{EpiSewer} uses the incubation period as a proxy for the time
+between infection and the start of shedding. This is because shedding load
+distributions in the literature are often given from symptom onset onwards.
+If the assumed shedding load distribution instead starts from the time of
+infection, then use \code{incubation_dist=c(1)} (i.e. no lag).
+}
+\seealso{
+Helpers to discretize continuous probability distributions:
+\code{\link[=get_discrete_gamma]{get_discrete_gamma()}}, \code{\link[=get_discrete_lognormal]{get_discrete_lognormal()}}
 }

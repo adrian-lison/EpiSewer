@@ -12,7 +12,15 @@ infection_noise_estimate(
 )
 }
 \arguments{
-\item{overdispersion_prior_sigma}{}
+\item{overdispersion}{If \code{FALSE} (default) new infections are modeled as
+Poisson distributed. If \code{TRUE}, new infections are modeled as Negative
+Binomial distributed.}
+
+\item{overdispersion_prior_mu}{Prior (mean) on the overdispersion parameter
+of the Negative Binomial.}
+
+\item{overdispersion_prior_sigma}{Prior (standard deviation) on the
+overdispersion parameter of the Negative Binomial.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -29,7 +37,16 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Estimate infection noise
+This option estimates noise in the infection process, i.e.
+implements a stochastic renewal model. This allows for variation in the
+number of new infections generated at each time step, which can often speed
+up model fitting.
+}
+\details{
+The priors of this component have the following functional form:
+\itemize{
+\item overdispersion parameter of the Negative Binomial: \verb{Truncated normal}
+}
 }
 \seealso{
 Other {infection noise models}: 

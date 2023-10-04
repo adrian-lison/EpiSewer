@@ -7,8 +7,8 @@
 model_sewage(flows = flows_observe(), residence_dist = residence_dist_assume())
 }
 \arguments{
-\item{flows}{Flow volumes at the sampling site. The flow can change due to
-rainfall or industrial discharge, and directly influences pathogen
+\item{flows}{Daily flow volumes at the sampling site. The flow can change due
+to rainfall or industrial discharge, and directly influences pathogen
 concentrations in the wastewater. Modeling options:
 \itemize{
 \item \code{\link[=flows_assume]{flows_assume()}}
@@ -18,7 +18,7 @@ concentrations in the wastewater. Modeling options:
 \item{residence_dist}{Sewer residence time distribution for pathogen
 particles. By default, \code{EpiSewer} assumes that particles arrive at the
 sampling site within the day of shedding. However, for larger sewage
-systems, particles may also travel longer than a day depending on where and
+systems, particles may travel longer than a day depending on where and
 when they were shed into the wastewater. Modeling options:
 \itemize{
 \item \code{\link[=residence_dist_assume]{residence_dist_assume()}}

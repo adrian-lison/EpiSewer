@@ -22,7 +22,14 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Do not model a limit of detection
+This option drops all zero measurements from the likelihood and
+does not explicitly model a limit of detection.
+}
+\details{
+Dropping zero measurements implicitly assumes that any
+level of concentration can theoretically lead to a zero measurement. Since
+the corresponding observations are dropped, this will discard information,
+but not bias estimates.
 }
 \seealso{
 Other {LOD models}: 

@@ -6,15 +6,28 @@
 \usage{
 noise_estimate(
   replicates = FALSE,
-  sd_prior_mu = 0,
-  sd_prior_sigma = 1,
-  pre_replicate_sd_prior_mu = 0,
-  pre_replicate_sd_prior_sigma = 1,
+  cv_prior_mu = 0,
+  cv_prior_sigma = 1,
+  pre_replicate_cv_prior_mu = 0,
+  pre_replicate_cv_prior_sigma = 1,
   modeldata = modeldata_init()
 )
 }
 \arguments{
-\item{pre_replicate_sd_prior_sigma}{}
+\item{replicates}{Should replicates be used to explicitly model variation
+before the replication stage?}
+
+\item{cv_prior_mu}{Prior (mean) on the coefficient of variation of
+concentration measurements.}
+
+\item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
+variation of concentration measurements.}
+
+\item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
+of concentrations before the replication stage.}
+
+\item{pre_replicate_cv_prior_sigma}{Prior (standard deviation) on the
+coefficient of variation of concentrations before the replication stage.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -31,5 +44,16 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Estimate measurement noise
+This option estimates the unexplained variation in wastewater
+measurements. If multiple measurements (replicates) per sample are
+provided, \code{EpiSewer} can also explicitly model variation before the
+replication stage.
+}
+\details{
+The priors of this component have the following functional form:
+\itemize{
+\item coefficient of variation of concentration measurements: \verb{Truncated normal}
+\item coefficient of variation of concentration before the replication stage:
+\verb{Truncated normal}
+}
 }

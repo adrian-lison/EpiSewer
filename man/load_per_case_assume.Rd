@@ -7,7 +7,10 @@
 load_per_case_assume(load_per_case = NULL, modeldata = modeldata_init())
 }
 \arguments{
-\item{load_per_case}{}
+\item{load_per_case}{The assumed average total shedding load per case. Must
+have the same unit as the numerator of the concentration unit. For example,
+if concentration is measured in gc/mL (gc = gene copies), then
+\code{load_per_case} should also be in gc.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -24,5 +27,13 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Assume the average load per case
+This option assumes an average total shedding load per case. In
+the \code{EpiSewer} model, this serves as a scaling factor describing how
+many pathogen particles are shed by the average infected individual overall
+and how much of this is detectable at the sampling site. This depends
+both on biological factors as well as on the specific sewage system.
+}
+\seealso{
+{Helper for finding a suitable load per case assumption}
+\code{\link[=suggest_load_per_case]{suggest_load_per_case()}}
 }

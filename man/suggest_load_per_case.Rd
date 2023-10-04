@@ -6,8 +6,9 @@
 \usage{
 suggest_load_per_case(
   measurements,
-  flows,
   cases,
+  flows = NULL,
+  flow_constant = NULL,
   ascertainment_prop = 1,
   measurement_shift = seq(-7, 7),
   shift_weights = 1/(abs(measurement_shift) + 1),
@@ -18,7 +19,7 @@ suggest_load_per_case(
 )
 }
 \arguments{
-\item{flow_col}{}
+\item{flow_constant}{}
 }
 \value{
 

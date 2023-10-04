@@ -22,7 +22,8 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Do not model sample effects
+This option does not model effects of sample covariates on the
+concentrations.
 }
 \seealso{
 Other {sample effect models}: 

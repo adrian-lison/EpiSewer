@@ -39,7 +39,7 @@ A \code{modeldata} object containing the data and specifications of the
 This module function is used to specify the components of the
 \code{measurements} module in \code{EpiSewer}.
 
-@description Each component can be specified using one or several helper
+Each component can be specified using one or several helper
 functions (see available options below). See the documentation of the
 individual helper functions to adjust model priors and further settings.
 }

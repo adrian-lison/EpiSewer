@@ -2,12 +2,14 @@
 % Please edit documentation in R/model_define.R
 \name{shedding_dist_assume}
 \alias{shedding_dist_assume}
-\title{Aasume a shedding load profile / distribution}
+\title{Assume a shedding load distribution}
 \usage{
 shedding_dist_assume(shedding_dist = NULL, modeldata = modeldata_init())
 }
 \arguments{
-\item{shedding_dist}{}
+\item{shedding_dist}{A numeric vector representing a discrete shedding load
+distribution, with elements describing the share of load shed 0 days, 1
+day, 2 days, and so on after the start of shedding.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -24,5 +26,10 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Aasume a shedding load profile / distribution
+This option assumes a fixed shedding load distribution for the
+shedding model in \code{EpiSewer}.
+}
+\seealso{
+Helpers to discretize continuous probability distributions:
+\code{\link[=get_discrete_gamma]{get_discrete_gamma()}}, \code{\link[=get_discrete_lognormal]{get_discrete_lognormal()}}
 }

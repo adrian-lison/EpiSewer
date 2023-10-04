@@ -12,7 +12,15 @@ sample_effects_estimate_matrix(
 )
 }
 \arguments{
-\item{design_matrix}{}
+\item{design_matrix}{A design matrix with different covariates potentially
+influencing sample concentration. The matrix must have one row for each
+modeled day. See \code{\link[stats:model.matrix]{stats::model.matrix()}} for construction of design
+matrices.}
+
+\item{effect_prior_mu}{Prior (mean) on the regression coefficients.}
+
+\item{effect_prior_sigma}{Prior (standard deviation) on the regression
+coefficients.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -29,7 +37,20 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Estimate sample effects using a design matrix
+This option uses a linear regression model to estimate effects
+of sample covariates on the concentration. Concentrations can be influenced
+by sampling-related external factors, for example the time between sampling
+and shipping to the lab (age-of-sample effect), or different sampling or
+storage methods.
+}
+\details{
+\code{EpiSewer} will fit a fixed-effects linear model, random effects are
+currently not supported.
+
+The priors of this component have the following functional form:
+\itemize{
+\item regression coefficients: \code{Normal}
+}
 }
 \seealso{
 Other {sample effect models}: 

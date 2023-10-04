@@ -7,7 +7,9 @@
 generation_dist_assume(generation_dist = NULL, modeldata = modeldata_init())
 }
 \arguments{
-\item{generation_dist}{}
+\item{generation_dist}{A numeric vector representing a discrete generation
+time distribution, starting with the probability for a generation time of 1
+day, 2 days, 3 days, and so on (a generation time of 0 days is excluded).}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -24,5 +26,16 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Assume a generation time distribution
+This option assumes a fixed generation time distribution for the
+renewal model in \code{EpiSewer}.
+}
+\details{
+The generation time distribution here refers to the intrinsic
+distribution of the time between infection of a primary case and infection
+of its secondary cases. It is disease-specific and typically obtained from
+literature.
+}
+\seealso{
+Helpers to discretize continuous probability distributions:
+\code{\link[=get_discrete_gamma]{get_discrete_gamma()}}, \code{\link[=get_discrete_gamma_shifted]{get_discrete_gamma_shifted()}}, \code{\link[=get_discrete_lognormal]{get_discrete_lognormal()}}
 }

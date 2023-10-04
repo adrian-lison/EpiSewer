@@ -7,7 +7,10 @@
 LOD_assume(limit = NULL, sharpness = 10, modeldata = modeldata_init())
 }
 \arguments{
-\item{sharpness}{}
+\item{limit}{Limit of detection. The concentration below which measurements
+will be determined as zero with substantial probability.}
+
+\item{sharpness}{Sharpness of the threshold, see details.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -24,9 +27,30 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Assume a limit of detection
+Pathogen concentrations below a certain threshold may not be
+detectable and thus erroneously measured as 0. This option adjusts for a
+known limit of detection and includes zero measurements in the likelihood.
+}
+\details{
+The limit of detection is modeled using a hurdle model. In effect,
+zero measurements provide a signal that the concentration in the respective
+sample was likely below the limit of detection, but we don't know what the
+exact concentration was.
+
+The limit of detection is highly specific to the quantification
+approach and protocol. It is usually established from a dedicated lab
+experiment.
+
+\code{EpiSewer} does not model a clear-cut limit of detection but rather
+a gradual increase in the probability of zero measurements as
+concentrations become smaller. This is achieved using a sigmodial curve
+that has its inflection point at the supplied \code{limit}. The \code{sharpness}
+argument determines the steepness of this curve.
 }
 \seealso{
+{Visualize the assumed limit of detection and its sharpness:}
+\code{\link[=plot_LOD]{plot_LOD()}}
+
 Other {LOD models}: 
 \code{\link{LOD_none}()}
 }

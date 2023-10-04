@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_define.R
 \name{flows_observe}
 \alias{flows_observe}
-\title{Title}
+\title{Observe wastewater flows}
 \usage{
 flows_observe(
   data = NULL,
@@ -12,7 +12,12 @@ flows_observe(
 )
 }
 \arguments{
-\item{flow_col}{}
+\item{data}{A \code{data.frame} with each row representing one day. Must have at
+least a column with dates and a column with flow measurements.}
+
+\item{date_col}{Name of the column containing the dates.}
+
+\item{flow_col}{Name of the column containing the flows.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -29,7 +34,15 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Title
+This option accounts for daily wastewater flow volumes measured
+at the sampling site. The flow can change due to rainfall or industrial
+discharge, and directly influences pathogen concentrations in the
+wastewater.
+}
+\details{
+The flow volume unit should be the same as for the concentration
+measurements, e.g. if concentrations are measured in gc/mL, then the flow
+should be in mL as well.
 }
 \seealso{
 Other {flow models}: 

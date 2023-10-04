@@ -4,10 +4,11 @@
 \alias{flows_assume}
 \title{Assume a constant wastewater flow}
 \usage{
-flows_assume(constant_flow, modeldata = modeldata_init())
+flows_assume(flow_constant, modeldata = modeldata_init())
 }
 \arguments{
-\item{constant_flow}{}
+\item{flow_constant}{Daily wastewater flow volume, assumed to be the same for
+all days.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -24,7 +25,19 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Assume a constant wastewater flow
+This option assumes a constant flow of wastewater at the
+sampling site. Can be used as an approximation if no regular flow
+measurements are available.
+}
+\details{
+The flow volume unit should be the same as for the concentration
+measurements, e.g. if concentrations are measured in gc/mL, then the flow
+should be in mL as well.
+
+Note that when the flow is unknown and therefore some arbitrary
+value (e.g. \code{flow_constant=1}) is assumed, this must also be accounted for
+in the assumed \code{load_per_case}. For this purpose, the function
+\code{\link[=suggest_load_per_case]{suggest_load_per_case()}} offers a \code{flow_constant} argument.
 }
 \seealso{
 Other {flow models}: 

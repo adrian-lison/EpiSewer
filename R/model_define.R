@@ -149,7 +149,12 @@ modeldata_init <- function() {
 #' @return Nothing
 template_model_helpers <- function(modeldata) { }
 
-#' Observe pathogen concentrations from wastewater samples
+#' Observe concentration measurements
+#'
+#' @description This option fits the `EpiSewer` model to pathogen concentrations
+#'   measured in wastewater samples. It is suitable for different quantification
+#'   methods such as qPCR or dPCR. The measured concentrations are modeled via
+#'   a lognormal likelihood.
 #'
 #' @param data A `data.frame` with each row representing one measurement. Must
 #'   have at least a column with dates and a column with concentration
@@ -171,8 +176,6 @@ template_model_helpers <- function(modeldata) { }
 #' @inherit modeldata_init return
 #' @export
 #' @family {observation types}
-#'
-#' @examples
 concentrations_observe <-
   function(data = NULL,
            composite_window = 1,
@@ -188,7 +191,7 @@ concentrations_observe <-
       )
     }
 
-    if(!(is.integer(composite_window) && composite_window>0)) {
+    if(!(composite_window%%1==0 && composite_window>0)) {
       abort("The argument `composite_window` must be a positive integer.")
     }
 
@@ -251,20 +254,16 @@ concentrations_observe <-
     return(modeldata)
   }
 
-#' Observe positive droplet counts from wastewater samples
+#' Observe positive ddPCR droplet counts
 #'
-#' @param data
-#' @param composite_window
-#' @param date_col
-#' @param droplets_col
-#' @param replicate_col
+#' @description This option fits the `EpiSewer` model to positive droplet counts
+#'   in digital droplet PCR (ddPCR) for the pathogen target of interest. This
+#'   allows the use of a ddPCR-specific likelihood using a Poisson distribution.
+#'   For a more generic likelihood, see [concentrations_observe()].
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
-#' @export
 #' @family {observation types}
-#'
-#' @examples
 droplets_observe <-
   function(data,
            composite_window = 1,
@@ -280,12 +279,18 @@ droplets_observe <-
 
 #' Do not model a limit of detection
 #'
+#' @description This option drops all zero measurements from the likelihood and
+#'   does not explicitly model a limit of detection.
+#'
+#' @details Dropping zero measurements implicitly assumes that any
+#'   level of concentration can theoretically lead to a zero measurement. Since
+#'   the corresponding observations are dropped, this will discard information,
+#'   but not bias estimates.
+#'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {LOD models}
-#'
-#' @examples
 LOD_none <- function(modeldata = modeldata_init()) {
   modeldata$LOD <- 0
   modeldata$LOD_sharpness <- 0
@@ -294,16 +299,37 @@ LOD_none <- function(modeldata = modeldata_init()) {
 
 #' Assume a limit of detection
 #'
-#' @param limit
-#' @param sharpness
+#' @description Pathogen concentrations below a certain threshold may not be
+#'   detectable and thus erroneously measured as 0. This option adjusts for a
+#'   known limit of detection and includes zero measurements in the likelihood.
+#'
+#' @details The limit of detection is modeled using a hurdle model. In effect,
+#'   zero measurements provide a signal that the concentration in the respective
+#'   sample was likely below the limit of detection, but we don't know what the
+#'   exact concentration was.
+#'
+#' @param limit Limit of detection. The concentration below which measurements
+#'   will be determined as zero with substantial probability.
+#' @param sharpness Sharpness of the threshold, see details.
+#'
+#' @details The limit of detection is highly specific to the quantification
+#'   approach and protocol. It is usually established from a dedicated lab
+#'   experiment.
+#'
+#' @details `EpiSewer` does not model a clear-cut limit of detection but rather
+#'   a gradual increase in the probability of zero measurements as
+#'   concentrations become smaller. This is achieved using a sigmodial curve
+#'   that has its inflection point at the supplied `limit`. The `sharpness`
+#'   argument determines the steepness of this curve.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #'
-#' @family {LOD models}
+#' @seealso {Visualize the assumed limit of detection and its sharpness:}
+#'   [plot_LOD()]
 #'
-#' @examples
+#' @family {LOD models}
 LOD_assume <- function(limit = NULL, sharpness = 10, modeldata = modeldata_init()) {
   if (is.null(limit)) {
     limit <- tryCatch(
@@ -318,13 +344,23 @@ LOD_assume <- function(limit = NULL, sharpness = 10, modeldata = modeldata_init(
 
 #' Assume the average load per case
 #'
-#' @param load_per_case
+#' @description This option assumes an average total shedding load per case. In
+#'   the `EpiSewer` model, this serves as a scaling factor describing how
+#'   many pathogen particles are shed by the average infected individual overall
+#'   and how much of this is detectable at the sampling site. This depends
+#'   both on biological factors as well as on the specific sewage system.
+#'
+#' @param load_per_case The assumed average total shedding load per case. Must
+#'   have the same unit as the numerator of the concentration unit. For example,
+#'   if concentration is measured in gc/mL (gc = gene copies), then
+#'   `load_per_case` should also be in gc.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #'
-#' @examples
+#' @seealso {Helper for finding a suitable load per case assumption}
+#'   [suggest_load_per_case()]
 load_per_case_assume <-
   function(load_per_case = NULL, modeldata = modeldata_init()) {
     if (is.null(load_per_case)) {
@@ -348,8 +384,6 @@ load_per_case_assume <-
 #' @inherit modeldata_init return
 #' @export
 #' @family {load variation models}
-#'
-#' @examples
 load_variation_none <- function(modeldata = modeldata_init()) {
   modeldata$load_vari <- 0
   modeldata$nu_prior <- numeric(0)
@@ -365,10 +399,23 @@ load_variation_none <- function(modeldata = modeldata_init()) {
 #'   mean equal to the average `load_per_case` and a coefficient of variation to
 #'   be estimated.
 #'
-#' @description Note that measurement noise and individual-level load variation
-#'   might not be jointly identifiable. It might therefore be necessary to use
-#'   informative priors for at least one of these parameters when using both
+#' @details Measurement noise and individual-level load variation might not be
+#'   jointly identifiable. It may therefore be necessary to use informative
+#'   priors for at least one of these parameters when using both
 #'   [noise_estimate()] and [load_variation_estimate()].
+#'
+#' @details Also note that the accuracy of the variation model depends on
+#'   the estimated number of cases to be on the right scale (which in turn
+#'   depends on the assumed `load_per_case` to be roughly correct). This is
+#'   because in the variation model, the population-level  coefficient of
+#'   variation (CV) of shedding loads is proportional to the individual-level CV
+#'   divided by the square root of the number of cases. If for example the
+#'   assumed `load_per_case` is too small, the number of cases will be
+#'   overestimated, which has effects in two directions:
+#'   - the individual-level CV will be overestimated (especially if the prior
+#'   on the individual-level CV is weak)
+#'   - the population-level CV will be underestimated (especially if the prior
+#'   on the individual-level CV is strong)
 #'
 #' @param cv_prior_mu Mean of the truncated normal prior for the coefficient of
 #'   individual-level variation.
@@ -379,8 +426,6 @@ load_variation_none <- function(modeldata = modeldata_init()) {
 #' @inherit modeldata_init return
 #' @export
 #' @family {load variation models}
-#'
-#' @examples
 load_variation_estimate <- function(
     cv_prior_mu = 0.1,
     cv_prior_sigma = 0.01,
@@ -401,16 +446,28 @@ load_variation_estimate <- function(
 
 #' Assume a constant wastewater flow
 #'
-#' @param constant_flow
+#' @description This option assumes a constant flow of wastewater at the
+#'   sampling site. Can be used as an approximation if no regular flow
+#'   measurements are available.
+#'
+#' @param flow_constant Daily wastewater flow volume, assumed to be the same for
+#'   all days.
+#'
+#' @details The flow volume unit should be the same as for the concentration
+#'   measurements, e.g. if concentrations are measured in gc/mL, then the flow
+#'   should be in mL as well.
+#'
+#' @details Note that when the flow is unknown and therefore some arbitrary
+#'   value (e.g. `flow_constant=1`) is assumed, this must also be accounted for
+#'   in the assumed `load_per_case`. For this purpose, the function
+#'   [suggest_load_per_case()] offers a `flow_constant` argument.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {flow models}
-#'
-#' @examples
 flows_assume <- function(
-    constant_flow,
+    flow_constant,
     modeldata = modeldata_init()) {
   modeldata <- tbc(
     "flow_data",
@@ -421,25 +478,33 @@ flows_assume <- function(
           modeldata$meta_info$T_end_date,
           by = "1 day"
         )
-      modeldata$flow <- rep(constant_flow, length(all_dates))
+      modeldata$flow <- rep(flow_constant, length(all_dates))
     },
     required = c("meta_info$T_start_date", "meta_info$T_end_date")
   )
   return(modeldata)
 }
 
-#' Title
+#' Observe wastewater flows
 #'
-#' @param data
-#' @param date_col
-#' @param flow_col
+#' @description This option accounts for daily wastewater flow volumes measured
+#'   at the sampling site. The flow can change due to rainfall or industrial
+#'   discharge, and directly influences pathogen concentrations in the
+#'   wastewater.
+#'
+#' @details The flow volume unit should be the same as for the concentration
+#'   measurements, e.g. if concentrations are measured in gc/mL, then the flow
+#'   should be in mL as well.
+#'
+#' @param data A `data.frame` with each row representing one day. Must have at
+#'   least a column with dates and a column with flow measurements.
+#' @param date_col Name of the column containing the dates.
+#' @param flow_col Name of the column containing the flows.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {flow models}
-#'
-#' @examples
 flows_observe <-
   function(data = NULL,
            date_col = "date",
@@ -504,13 +569,24 @@ flows_observe <-
 
 #' Assume a generation time distribution
 #'
-#' @param generation_dist
+#' @description This option assumes a fixed generation time distribution for the
+#'   renewal model in `EpiSewer`.
+#'
+#' @details The generation time distribution here refers to the intrinsic
+#'   distribution of the time between infection of a primary case and infection
+#'   of its secondary cases. It is disease-specific and typically obtained from
+#'   literature.
+#'
+#' @param generation_dist A numeric vector representing a discrete generation
+#'   time distribution, starting with the probability for a generation time of 1
+#'   day, 2 days, 3 days, and so on (a generation time of 0 days is excluded).
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #'
-#' @examples
+#' @seealso Helpers to discretize continuous probability distributions:
+#'   [get_discrete_gamma()], [get_discrete_gamma_shifted()], [get_discrete_lognormal()]
 generation_dist_assume <-
   function(generation_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(generation_dist)) {
@@ -528,13 +604,25 @@ generation_dist_assume <-
 
 #' Assume an incubation period distribution
 #'
-#' @param incubation_dist
+#' @description This option assumes a fixed incubation period distribution for
+#'   the shedding model in `EpiSewer`.
+#'
+#' @details `EpiSewer` uses the incubation period as a proxy for the time
+#'   between infection and the start of shedding. This is because shedding load
+#'   distributions in the literature are often given from symptom onset onwards.
+#'   If the assumed shedding load distribution instead starts from the time of
+#'   infection, then use `incubation_dist=c(1)` (i.e. no lag).
+#'
+#' @param incubation_dist A numeric vector representing a discrete incubation
+#'   period distribution, starting with the probability for an incubation period of 0
+#'   days, 1 day, 2 days, and so on.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #'
-#' @examples
+#' @seealso Helpers to discretize continuous probability distributions:
+#'   [get_discrete_gamma()], [get_discrete_lognormal()]
 incubation_dist_assume <-
   function(incubation_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(incubation_dist)) {
@@ -549,15 +637,21 @@ incubation_dist_assume <-
     return(modeldata)
   }
 
-#' Aasume a shedding load profile / distribution
+#' Assume a shedding load distribution
 #'
-#' @param shedding_dist
+#' @description This option assumes a fixed shedding load distribution for the
+#'   shedding model in `EpiSewer`.
+#'
+#' @param shedding_dist A numeric vector representing a discrete shedding load
+#'   distribution, with elements describing the share of load shed 0 days, 1
+#'   day, 2 days, and so on after the start of shedding.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #'
-#' @examples
+#' @seealso Helpers to discretize continuous probability distributions:
+#'   [get_discrete_gamma()], [get_discrete_lognormal()]
 shedding_dist_assume <-
   function(shedding_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(shedding_dist)) {
@@ -574,13 +668,29 @@ shedding_dist_assume <-
 
 #' Assume a sewer residence time distribution
 #'
-#' @param residence_dist
+#' @description This option assumes a fixed residence time distribution for
+#'   pathogen particles. By default, `EpiSewer` assumes that particles arrive at
+#'   the sampling site within the day of shedding. However, for larger sewage
+#'   systems, particles may travel longer than a day depending on where and
+#'   when they were shed into the wastewater.
+#'
+#' @param residence_dist A numeric vector representing a discrete residence time
+#'   distribution, with elements describing the share of load that takes 0 days,
+#'   1 day, 2 days, and so on to arrive at the sampling site.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #'
 #' @examples
+#' # Particles arrive within the same day
+#' residence_dist_assume(residence_dist = c(1))
+#'
+#' # Particles always arrive after one day
+#' residence_dist_assume(residence_dist = c(0, 1))
+#'
+#' 1/4 of particles only arrives after one day
+#' residence_dist_assume(residence_dist = c(0.75, 0.25))
 residence_dist_assume <-
   function(residence_dist = NULL, modeldata = modeldata_init()) {
     if (is.null(residence_dist)) {
@@ -597,27 +707,85 @@ residence_dist_assume <-
 
 #' Smooth Rt estimates via exponential smoothing
 #'
-#' @param level_prior_mu
-#' @param level_prior_sigma
-#' @param trend_prior_mu
-#' @param trend_prior_sigma
-#' @param sd_prior_mu
-#' @param sd_prior_sigma
-#' @param smooth_fixed
-#' @param smooth_prior_shapes
-#' @param trend_smooth_fixed
-#' @param trend_smooth_prior_shapes
-#' @param dampen_prior_shapes
-#' @param dampen_fixed
-#' @param differenced
-#' @param noncentered
+#' @description This option estimates the effective reproduction number over
+#'   time using exponential smoothing. It implements Holt's linear trend method
+#'   with dampening through an innovations state space model with a level,
+#'   trend, and dampening component.
+#'
+#' @param level_prior_mu Prior (mean) on the initial level of Rt.
+#' @param level_prior_sigma Prior (standard deviation) on the initial level of
+#'   Rt.
+#' @param trend_prior_mu Prior (mean) on the initial trend of Rt.
+#' @param trend_prior_sigma Prior (standard deviation) on the initial trend of
+#'   Rt.
+#' @param sd_prior_mu Prior (mean) on the standard deviation of the innovations.
+#' @param sd_prior_sigma Prior (standard deviation) on the standard deviation of
+#'   the innovations.
+#' @param smooth_fixed Fixed value for the smoothing parameter
+#'   (alpha). If NULL (default), the smoothing parameter is estimated, otherwise
+#'   it will be fixed to the given value.
+#' @param smooth_prior_shapes Prior (Beta shape 1 and 2) on the smoothing
+#'   parameter.
+#' @param trend_smooth_fixed Fixed value for the trend smoothing parameter
+#'   (beta). If NULL (default), the trend smoothing parameter is estimated,
+#'   otherwise it will be fixed to the given value.
+#' @param trend_smooth_prior_shapes Prior (Beta shape 1 and 2) on the trend
+#'   smoothing parameter.
+#' @param dampen_fixed Fixed value for the dampening parameter (phi). If NULL
+#'   (default), the dampening parameter is estimated, otherwise it will be fixed
+#'   to the given value.
+#' @param dampen_prior_shapes Prior (Beta shape 1 and 2) on the dampening
+#'   parameter.
+#' @param differenced If `FALSE` (default), exponential smoothing is applied to
+#'   the absolute Rt time series. If `TRUE`, it is instead applied to the
+#'   differenced time series. This makes the level become the trend, and the
+#'   trend become the curvature.
+#' @param noncentered If `TRUE` (default), a non-centered parameterization is
+#'   used to model the innovations in the state space process (for better
+#'   sampling efficiency).
+#'
+#' @details The innovations state space model consists of three components: a
+#'   level, a trend, and a dampening component.
+#' - The level is smoothed based on the levels from earlier time steps,
+#'   with exponentially decaying weights, as controlled by a smoothing parameter
+#'   (often called alpha). Note that *smaller* values of `alpha` indicate
+#'   *stronger* smoothing. In particular, `alpha = 1` means that only the last
+#'   level is used.
+#' - The trend is smoothed based on the trends from earlier time steps,
+#'   with exponentially decaying weights, as controlled by a trend smoothing
+#'   parameter (often called beta). Note that *smaller* values of `beta`
+#'   indicate *stronger* smoothing. In particular, `beta = 1` means that only
+#'   the last trend is used.
+#' - The dampening determines how long a previous trend continues into the
+#'   future before it levels of to a stationary time series. The strength of
+#'   dampening is controlled by a dampening parameter (often called phi).
+#'   Note that *smaller* values of `phi` indicate *stronger* dampening.
+#'   In particular, `phi = 1` means no dampening. Values below `phi = 0.8`
+#'   are seldom in practice as the dampening becomes very strong.
+#'
+#' @details Often, `alpha`, `beta`, and `phi` are jointly unidentifiable. It may
+#'   therefore be necessary to fix at least one of the parameters (typically
+#'   `phi`) or supply strong priors.
+#'
+#' @details Note that the smoothness of retrospective Rt estimates is often more
+#'   influenced by the prior on the standard deviation of innovations than the
+#'   smoothing and trend smoothing parameters. The smoothing parameters mostly
+#'   have an influence on estimates close to the present / date of estimation,
+#'   when limited data signal is available. Here, the standard deviation of the
+#'   innovations influences how uncertain Rt estimates are close to the present.
+#'
+#' @details The priors of this component have the following functional form:
+#' - initial level of Rt: `Normal`
+#' - initial trend of Rt: `Normal`
+#' - standard deviation of innovations: `Truncated normal`
+#' - smoothing parameter: `Beta`
+#' - trend smoothing parameter: `Beta`
+#' - dampening parameter: `Beta`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {Rt models}
-#'
-#' @examples
 R_estimate_ets <- function(
     level_prior_mu = 1,
     level_prior_sigma = 0.8,
@@ -710,19 +878,38 @@ R_estimate_ets <- function(
 
 #' Smooth Rt estimates via a random walk
 #'
-#' @param level_prior_mu
-#' @param level_prior_sigma
-#' @param sd_prior_mu
-#' @param sd_prior_sigma
-#' @param differenced
-#' @param noncentered
+#' @description This option estimates the effective reproduction number over
+#'   time using a random walk.
+#'
+#' @param intercept_prior_mu Prior (mean) on the intercept of the random walk.
+#' @param intercept_prior_sigma Prior (standard deviation) on the intercept of
+#'   the random walk.
+#' @param sd_prior_mu Prior (mean) on the standard deviation of the random walk.
+#' @param sd_prior_sigma Prior (standard deviation) on the standard deviation of
+#'   the random walk.
+#' @param differenced If `FALSE` (default), the random walk is applied to the
+#'   absolute Rt time series. If `TRUE`, it is instead applied to the
+#'   differenced time series, i.e. now the trend is modeled as a random walk.
+#' @param noncentered If `TRUE` (default), a non-centered parameterization is
+#'   used to model the innovations of the random walk (for better sampling
+#'   efficiency).
+#'
+#' @details The smoothness of Rt estimates is influenced by the prior on the
+#'   standard deviation of the random walk. It also influences the uncertainty
+#'   of Rt estimates towards the present / date of estimation, when limited
+#'   data signal is available. The prior on the intercept of the random walk
+#'   should reflect your expectation of Rt at the beginning of the time series.
+#'   If estimating from the start of an epidemic, you might want to use a prior
+#'   with mean > 1 for the intercept.
+#'
+#' @details The priors of this component have the following functional form:
+#' - intercept of the random walk: `Normal`
+#' - standard deviation of the random walk: `Truncated normal`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {Rt models}
-#'
-#' @examples
 R_estimate_rw <- function(
     intercept_prior_mu = 1,
     intercept_prior_sigma = 0.8,
@@ -748,17 +935,51 @@ R_estimate_rw <- function(
 
 #' Smooth Rt estimates via smoothing splines
 #'
-#' @param knot_distance
-#' @param spline_degree
-#' @param bs_coeff_ar_start_prior
-#' @param bs_coeff_ar_sd_prior
+#' @description This option estimates the effective reproduction number using
+#'   regularized smoothing splines on a B-spline basis.
+#'
+#' @param knot_distance Distance between spline breakpoints (knots) in days
+#'   (default is 1, i.e. a knot on each day). Placing knots further apart
+#'   increases the smoothness of Rt estimates and can speed up model fitting. If
+#'   knots are too far apart however, the estimates can become inaccurate.
+#' @param spline_degree Degree of the spline polynomials (default is 3 for cubic
+#'   splines).
+#' @param coef_intercept_prior_mu Prior (mean) on the intercept of the log
+#'   random walk over spline coefficients.
+#' @param coef_intercept_prior_sigma Prior (standard deviation) on the intercept
+#'   of the log random walk over spline coefficients.
+#' @param coef_sd_prior_mu Prior (mean) on the standard deviation of the random
+#'   walk over spline coefficients.
+#' @param coef_sd_prior_sigma Prior (standard deviation) on the standard
+#'   deviation of the random walk over spline coefficients.
+#'
+#' @details `EpiSewer` uses a random walk on the B-spline coefficients for
+#'   regularization. This allows to use small knot distances without obtaining
+#'   extremely wiggly Rt estimates. The random walk is modeled on the
+#'   logarithmic scale (i.e. a geometric random walk):
+#'   - A prior on the log intercept with mean 0 roughly equals a prior on
+#'   the unit intercept with mean 1. The prior on the intercept should reflect
+#'   your expectation of Rt at the beginning of the time series. If estimating
+#'   from the start of an epidemic, you might want to use a prior with
+#'   log(mean) > 0 (i.e. mean > 1) for the intercept.
+#'   - The prior on the standard deviation should be interpreted in terms of
+#'   exponential multiplicative changes. For example, a standard deviation of
+#'   0.2 on the log scale roughly allows for multiplicative changes between
+#'   exp(-0.4) and exp(0.4) on the unit scale (using the 2 sigma rule).
+#'
+#' @details The smoothness of the Rt estimates is influenced both by the knot
+#'   distance and by the standard deviation of the random walk on coefficients.
+#'   The latter also influences the uncertainty of Rt estimates towards the
+#'   present / date of estimation, when limited data signal is available.
+#'
+#' @details The priors of this component have the following functional form:
+#' - intercept of the log random walk over spline coefficients: `Normal`
+#' - standard deviation of the log random walk over spline coefficients: `Truncated normal`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {Rt models}
-#'
-#' @examples
 R_estimate_splines <- function(
     knot_distance = 1,
     spline_degree = 3,
@@ -809,30 +1030,65 @@ R_estimate_splines <- function(
   return(modeldata)
 }
 
-#' Estimate infections at the start of the modeled time period
+#' Estimate seeding infections
 #'
-#' @param intercept_prior_mu
-#' @param intercept_prior_sigma
-#' @param sd_prior_mu
-#' @param sd_prior_sigma
+#' @description This option estimates initial infections at the start of the
+#'   modeled time period, when the renewal model cannot be applied yet. It uses
+#'   a random walk to model these seeding infections.
+#'
+#' @param intercept_prior_mu Prior (mean) on the intercept of the seeding random
+#'   walk. If NULL (default), this is set to a crude empirical estimate of the
+#'   number of cases (see details).
+#' @param intercept_prior_sigma Prior (standard deviation) on the intercept of
+#'   the seeding random walk.
+#' @param sd_prior_mu Prior (mean) on the standard deviation of the seeding
+#'   random walk.
+#' @param sd_prior_sigma Prior (standard deviation) on the standard deviation of
+#'   the seeding random walk.
+#'
+#' @details The seeding phase has the length of the maximum generation time
+#'   (during this time, the renewal model cannot be applied). Traditionally,
+#'   seeding refers to the first few (potentially imported) infections of an
+#'   epidemic, but depending on what time period the model is fitted to, this
+#'   may also cover a different phase with higher incidence levels.
+#'
+#' @details If `intercept_prior_mu` is not specified by the user, `EpiSewer`
+#'   will set it to a rough estimate of the number of cases using the supplied
+#'   wastewater measurements and shedding assumptions. We note that this is a
+#'   violation of Bayesian principles (data must not be used to inform priors) -
+#'   but a neglectable one, since it only ensures that the seeding is modeled on
+#'   the right order of magnitude and does not have relevant impacts on later Rt
+#'   estimates.
+#'
+#' @details The priors of this component have the following functional form:
+#' - intercept of the seeding random walk: `Normal`
+#' - standard deviation of the seeding random walk: `Truncated normal`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#'
-#' @examples
 seeding_estimate <- function(
     intercept_prior_mu = NULL,
-    intercept_prior_sigma = NULL,
+    intercept_prior_sigma = 1,
     sd_prior_mu = 0.05,
     sd_prior_sigma = 0.025,
     modeldata = modeldata_init()) {
-  if (!(is.null(intercept_prior_mu) || is.null(intercept_prior_sigma))) {
+  if (!is.null(intercept_prior_mu)) {
     modeldata$iota_log_ar_start_prior <- set_prior(
       "iota_log_ar_start",
       "normal",
       mu = intercept_prior_mu,
       sigma = intercept_prior_sigma
+    )
+  } else {
+    modeldata$iota_log_ar_start_prior <- tbe(
+      set_prior(
+        "iota_log_ar_start",
+        "normal (mu based on crude empirical estimate of cases)",
+        mu = log(modeldata$meta_info$initial_cases_crude),
+        sigma = intercept_prior_sigma
+      ),
+      "meta_info$initial_cases_crude"
     )
   }
 
@@ -842,18 +1098,6 @@ seeding_estimate <- function(
     mu = sd_prior_mu,
     sigma = sd_prior_sigma
   )
-
-  if (is.null(modeldata$iota_log_ar_start_prior)) {
-    modeldata$iota_log_ar_start_prior <- tbe(
-      set_prior(
-        "iota_log_ar_start",
-        "normal (mu based on crude empirical estimate of cases)",
-        mu = log(modeldata$meta_info$initial_cases_crude),
-        sigma = 1
-      ),
-      "meta_info$initial_cases_crude"
-    )
-  }
 
   modeldata$init$iota_log_ar_start <- tbe(
     log(modeldata$meta_info$initial_cases_crude),
@@ -870,12 +1114,13 @@ seeding_estimate <- function(
 
 #' Do not model infection noise
 #'
+#' This option does not model noise in the infection process and instead
+#' implements a deterministic renewal model.
+#'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {infection noise models}
-#'
-#' @examples
 infection_noise_none <- function(modeldata = modeldata_init()) {
   modeldata$I_sample <- FALSE
   modeldata$I_overdispersion <- FALSE
@@ -886,16 +1131,26 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 
 #' Estimate infection noise
 #'
-#' @param overdispersion
-#' @param overdispersion_prior_mu
-#' @param overdispersion_prior_sigma
+#' @description This option estimates noise in the infection process, i.e.
+#'   implements a stochastic renewal model. This allows for variation in the
+#'   number of new infections generated at each time step, which can often speed
+#'   up model fitting.
+#'
+#' @param overdispersion If `FALSE` (default) new infections are modeled as
+#'   Poisson distributed. If `TRUE`, new infections are modeled as Negative
+#'   Binomial distributed.
+#' @param overdispersion_prior_mu Prior (mean) on the overdispersion parameter
+#'   of the Negative Binomial.
+#' @param overdispersion_prior_sigma Prior (standard deviation) on the
+#'   overdispersion parameter of the Negative Binomial.
+#'
+#' @details The priors of this component have the following functional form:
+#' - overdispersion parameter of the Negative Binomial: `Truncated normal`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {infection noise models}
-#'
-#' @examples
 infection_noise_estimate <-
   function(overdispersion = FALSE,
            overdispersion_prior_mu = 0,
@@ -934,12 +1189,13 @@ infection_noise_estimate <-
 
 #' Do not model sample effects
 #'
+#' @description This option does not model effects of sample covariates on the
+#'   concentrations.
+#'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {sample effect models}
-#'
-#' @examples
 sample_effects_none <- function(modeldata = modeldata_init()) {
   modeldata$K <- 0
   modeldata$X <- numeric(0)
@@ -950,16 +1206,30 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
 
 #' Estimate sample effects using a design matrix
 #'
-#' @param effect_prior_mu
-#' @param effect_prior_sigma
-#' @param design_matrix
+#' @description This option uses a linear regression model to estimate effects
+#'   of sample covariates on the concentration. Concentrations can be influenced
+#'   by sampling-related external factors, for example the time between sampling
+#'   and shipping to the lab (age-of-sample effect), or different sampling or
+#'   storage methods.
+#'
+#' @param effect_prior_mu Prior (mean) on the regression coefficients.
+#' @param effect_prior_sigma Prior (standard deviation) on the regression
+#'   coefficients.
+#' @param design_matrix A design matrix with different covariates potentially
+#'   influencing sample concentration. The matrix must have one row for each
+#'   modeled day. See [stats::model.matrix()] for construction of design
+#'   matrices.
+#'
+#' @details `EpiSewer` will fit a fixed-effects linear model, random effects are
+#'   currently not supported.
+#'
+#' @details The priors of this component have the following functional form:
+#' - regression coefficients: `Normal`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {sample effect models}
-#'
-#' @examples
 sample_effects_estimate_matrix <- function(
     design_matrix,
     effect_prior_mu = 0,
@@ -978,7 +1248,8 @@ sample_effects_estimate_matrix <- function(
           paste(
             "Mismatch: Modeled time period has",
             modeldata$T,
-            "days, design matrix for sample date effects has",
+            "days (from earliest to latest date, accounting for the composite window length),",
+            "but design matrix for sample date effects has",
             nrow(design_matrix),
             "rows."
           )
@@ -999,15 +1270,27 @@ sample_effects_estimate_matrix <- function(
 
 #' Estimate weekday sample effects
 #'
-#' @param effect_prior_mu
-#' @param effect_prior_sigma
+#' @description This option uses a linear regression model to estimate sample
+#'   weekday effects on the concentration. Concentrations can be influenced by
+#'   the time between sampling and shipping to the lab (age-of-sample effect),
+#'   and if shipment follows a weekly batch scheme, the sampling weekday is a
+#'   good proxy for the age at shipment.
+#'
+#' @param effect_prior_mu Prior (mean) on the regression coefficients.
+#' @param effect_prior_sigma Prior (standard deviation) on the regression
+#'   coefficients.
+#'
+#' @details Effects are estimated for weekdays Monday - Saturday, with Sunday as
+#'   the baseline. `EpiSewer` will fit a fixed-effects linear model, random
+#'   effects are currently not supported.
+#'
+#' @details The priors of this component have the following functional form:
+#' - regression coefficients: `Normal`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {sample effect models}
-#'
-#' @examples
 sample_effects_estimate_weekday <- function(
     effect_prior_mu = 0,
     effect_prior_sigma = 1,
@@ -1039,12 +1322,30 @@ sample_effects_estimate_weekday <- function(
 
 #' Estimate measurement noise
 #'
+#' @description This option estimates the unexplained variation in wastewater
+#'   measurements. If multiple measurements (replicates) per sample are
+#'   provided, `EpiSewer` can also explicitly model variation before the
+#'   replication stage.
+#'
+#' @param replicates Should replicates be used to explicitly model variation
+#'   before the replication stage?
+#' @param cv_prior_mu Prior (mean) on the coefficient of variation of
+#'   concentration measurements.
+#' @param cv_prior_sigma Prior (standard deviation) on the coefficient of
+#'   variation of concentration measurements.
+#' @param pre_replicate_cv_prior_mu Prior (mean) on the coefficient of variation
+#'   of concentrations before the replication stage.
+#' @param pre_replicate_cv_prior_sigma Prior (standard deviation) on the
+#'   coefficient of variation of concentrations before the replication stage.
+#'
+#' @details The priors of this component have the following functional form:
+#' - coefficient of variation of concentration measurements: `Truncated normal`
+#' - coefficient of variation of concentration before the replication stage:
+#' `Truncated normal`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#'
-#' @examples
 noise_estimate <-
   function(replicates = FALSE,
            cv_prior_mu = 0,

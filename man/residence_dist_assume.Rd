@@ -7,7 +7,9 @@
 residence_dist_assume(residence_dist = NULL, modeldata = modeldata_init())
 }
 \arguments{
-\item{residence_dist}{}
+\item{residence_dist}{A numeric vector representing a discrete residence time
+distribution, with elements describing the share of load that takes 0 days,
+1 day, 2 days, and so on to arrive at the sampling site.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -24,5 +26,19 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Assume a sewer residence time distribution
+This option assumes a fixed residence time distribution for
+pathogen particles. By default, \code{EpiSewer} assumes that particles arrive at
+the sampling site within the day of shedding. However, for larger sewage
+systems, particles may travel longer than a day depending on where and
+when they were shed into the wastewater.
+}
+\examples{
+# Particles arrive within the same day
+residence_dist_assume(residence_dist = c(1))
+
+# Particles always arrive after one day
+residence_dist_assume(residence_dist = c(0, 1))
+
+1/4 of particles only arrives after one day
+residence_dist_assume(residence_dist = c(0.75, 0.25))
 }

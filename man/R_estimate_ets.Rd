@@ -23,7 +23,50 @@ R_estimate_ets(
 )
 }
 \arguments{
-\item{noncentered}{}
+\item{level_prior_mu}{Prior (mean) on the initial level of Rt.}
+
+\item{level_prior_sigma}{Prior (standard deviation) on the initial level of
+Rt.}
+
+\item{trend_prior_mu}{Prior (mean) on the initial trend of Rt.}
+
+\item{trend_prior_sigma}{Prior (standard deviation) on the initial trend of
+Rt.}
+
+\item{sd_prior_mu}{Prior (mean) on the standard deviation of the innovations.}
+
+\item{sd_prior_sigma}{Prior (standard deviation) on the standard deviation of
+the innovations.}
+
+\item{smooth_fixed}{Fixed value for the smoothing parameter
+(alpha). If NULL (default), the smoothing parameter is estimated, otherwise
+it will be fixed to the given value.}
+
+\item{smooth_prior_shapes}{Prior (Beta shape 1 and 2) on the smoothing
+parameter.}
+
+\item{trend_smooth_fixed}{Fixed value for the trend smoothing parameter
+(beta). If NULL (default), the trend smoothing parameter is estimated,
+otherwise it will be fixed to the given value.}
+
+\item{trend_smooth_prior_shapes}{Prior (Beta shape 1 and 2) on the trend
+smoothing parameter.}
+
+\item{dampen_fixed}{Fixed value for the dampening parameter (phi). If NULL
+(default), the dampening parameter is estimated, otherwise it will be fixed
+to the given value.}
+
+\item{dampen_prior_shapes}{Prior (Beta shape 1 and 2) on the dampening
+parameter.}
+
+\item{differenced}{If \code{FALSE} (default), exponential smoothing is applied to
+the absolute Rt time series. If \code{TRUE}, it is instead applied to the
+differenced time series. This makes the level become the trend, and the
+trend become the curvature.}
+
+\item{noncentered}{If \code{TRUE} (default), a non-centered parameterization is
+used to model the innovations in the state space process (for better
+sampling efficiency).}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -40,7 +83,53 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Smooth Rt estimates via exponential smoothing
+This option estimates the effective reproduction number over
+time using exponential smoothing. It implements Holt's linear trend method
+with dampening through an innovations state space model with a level,
+trend, and dampening component.
+}
+\details{
+The innovations state space model consists of three components: a
+level, a trend, and a dampening component.
+\itemize{
+\item The level is smoothed based on the levels from earlier time steps,
+with exponentially decaying weights, as controlled by a smoothing parameter
+(often called alpha). Note that \emph{smaller} values of \code{alpha} indicate
+\emph{stronger} smoothing. In particular, \code{alpha = 1} means that only the last
+level is used.
+\item The trend is smoothed based on the trends from earlier time steps,
+with exponentially decaying weights, as controlled by a trend smoothing
+parameter (often called beta). Note that \emph{smaller} values of \code{beta}
+indicate \emph{stronger} smoothing. In particular, \code{beta = 1} means that only
+the last trend is used.
+\item The dampening determines how long a previous trend continues into the
+future before it levels of to a stationary time series. The strength of
+dampening is controlled by a dampening parameter (often called phi).
+Note that \emph{smaller} values of \code{phi} indicate \emph{stronger} dampening.
+In particular, \code{phi = 1} means no dampening. Values below \code{phi = 0.8}
+are seldom in practice as the dampening becomes very strong.
+}
+
+Often, \code{alpha}, \code{beta}, and \code{phi} are jointly unidentifiable. It may
+therefore be necessary to fix at least one of the parameters (typically
+\code{phi}) or supply strong priors.
+
+Note that the smoothness of retrospective Rt estimates is often more
+influenced by the prior on the standard deviation of innovations than the
+smoothing and trend smoothing parameters. The smoothing parameters mostly
+have an influence on estimates close to the present / date of estimation,
+when limited data signal is available. Here, the standard deviation of the
+innovations influences how uncertain Rt estimates are close to the present.
+
+The priors of this component have the following functional form:
+\itemize{
+\item initial level of Rt: \code{Normal}
+\item initial trend of Rt: \code{Normal}
+\item standard deviation of innovations: \verb{Truncated normal}
+\item smoothing parameter: \code{Beta}
+\item trend smoothing parameter: \code{Beta}
+\item dampening parameter: \code{Beta}
+}
 }
 \seealso{
 Other {Rt models}: 

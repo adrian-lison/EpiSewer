@@ -22,7 +22,8 @@ initialization (\code{init}), meta data (\code{meta_info}), and checks to be
 performed before model fitting (\code{checks}).
 }
 \description{
-Do not model infection noise
+This option does not model noise in the infection process and instead
+implements a deterministic renewal model.
 }
 \seealso{
 Other {infection noise models}: 

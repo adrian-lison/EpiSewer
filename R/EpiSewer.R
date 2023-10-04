@@ -179,8 +179,8 @@ run.EpiSewerJob <- function(job) {
 #' Specify observation data
 #'
 #' @description Specify wastewater observation data such as concentration
-#' measurements and flows. This is a convenience function to collect all
-#' observation data in one object.
+#'   measurements and flows. This is a convenience function to collect all
+#'   observation data in one object.
 #'
 #' @param measurements A `data.frame` with measured concentrations of the
 #'   pathogen of interest. Will be automatically passed to
@@ -192,14 +192,16 @@ run.EpiSewerJob <- function(job) {
 #' @return A `list` with all observations supplied. Can be passed to the `data` argument
 #'   in [EpiSewer()].
 #' @export
-#'
-#' @examples
 sewer_data <- function(measurements = NULL, flows = NULL, ...) {
   data <- as.list(environment())
   return(data)
 }
 
 #' Specify modeling assumptions
+#'
+#' @description Specify model assumptions such as the generation time
+#'   distribution or shedding load distribution. This is a convenience function
+#'   to collect all assumptions in one object.
 #'
 #' @param generation_dist Generation time distribution. The intrinsic
 #'   distribution of the time between infection of a primary case and infection
@@ -217,15 +219,13 @@ sewer_data <- function(measurements = NULL, flows = NULL, ...) {
 #' @param load_per_case Average total load per case. This is a scaling factor
 #'   that describes how many pathogen particles are shed by the average infected
 #'   individual overall and how much of this is detectable at the sampling site.
-#'   It thus depends both on biological factors as well as on the specific
+#'   It depends both on biological factors as well as on the specific
 #'   sewage system. See [suggest_load_per_case()] to help you
 #'   make a suitable assumption. Will be automatically passed to [load_per_case_assume()].
 #'
 #' @return A `list` with all assumptions supplied. Can be passed to the
 #'   `assumptions` argument in [EpiSewer()].
 #' @export
-#'
-#' @examples
 sewer_assumptions <- function(generation_dist = NULL,
                               incubation_dist = NULL,
                               shedding_dist = NULL,
@@ -241,7 +241,7 @@ sewer_assumptions <- function(generation_dist = NULL,
 #' @description This module function is used to specify the components of the
 #'  `measurements` module in `EpiSewer`.
 #'
-#'  @description Each component can be specified using one or several helper
+#' @description Each component can be specified using one or several helper
 #'  functions (see available options below). See the documentation of the
 #'  individual helper functions to adjust model priors and further settings.
 #'
@@ -259,8 +259,6 @@ sewer_assumptions <- function(generation_dist = NULL,
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `measurements` module.
 #' @export
-#'
-#' @examples
 model_measurements <- function(
     concentrations = concentrations_observe(),
     noise = noise_estimate(),
@@ -291,8 +289,6 @@ model_measurements <- function(
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `sampling` module.
 #' @export
-#'
-#' @examples
 model_sampling <- function(
     sample_effects = sample_effects_none()) {
   verify_is_modeldata(sample_effects, "sample_effects")
@@ -308,22 +304,20 @@ model_sampling <- function(
 #'  functions (see available options below). See the documentation of the
 #'  individual helper functions to adjust model priors and further settings.
 #'
-#' @param flows Flow volumes at the sampling site. The flow can change due to
-#'   rainfall or industrial discharge, and directly influences pathogen
+#' @param flows Daily flow volumes at the sampling site. The flow can change due
+#'   to rainfall or industrial discharge, and directly influences pathogen
 #'   concentrations in the wastewater. Modeling options:
 #' `r component_helpers_("flows")`
 #' @param residence_dist Sewer residence time distribution for pathogen
 #'   particles. By default, `EpiSewer` assumes that particles arrive at the
 #'   sampling site within the day of shedding. However, for larger sewage
-#'   systems, particles may also travel longer than a day depending on where and
+#'   systems, particles may travel longer than a day depending on where and
 #'   when they were shed into the wastewater. Modeling options:
 #' `r component_helpers_("residence_dist")`
 #'
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `sewage` module.
 #' @export
-#'
-#' @examples
 model_sewage <- function(
     flows = flows_observe(),
     residence_dist = residence_dist_assume()) {
@@ -344,9 +338,9 @@ model_sewage <- function(
 #' @param incubation_dist Incubation period distribution. `EpiSewer` uses this
 #'   as a proxy for the time between infection and the start of shedding, as
 #'   shedding load distributions in the literature are often given from symptom
-#'   onset onwards. If the supplied shedding load distribution instead starts
-#'   with the time of infection, the incubation period should be fixed to 0 days
-#'   (see examples). Modeling options:
+#'   onset onwards. If the assumed shedding load distribution instead starts
+#'   from the time of infection, the incubation period should be fixed to 0
+#'   days. Modeling options:
 #' `r component_helpers_("incubation_dist")`
 #' @param shedding_dist Shedding load distribution. Describes how the total load
 #'   shed by an individual is distributed over time (and therefore sums to 1).
@@ -355,7 +349,7 @@ model_sewage <- function(
 #' @param load_per_case Average total load per case. This is a scaling factor
 #'   that describes how many pathogen particles are shed by the average infected
 #'   individual overall and how much of this is detectable at the sampling site.
-#'   It thus depends both on biological factors as well as on the specific
+#'   It depends both on biological factors as well as on the specific
 #'   sewage system. Modeling options:
 #' `r component_helpers_("load_per_case")`
 #' @param load_variation Individual-level shedding load variation. The strength
@@ -366,8 +360,6 @@ model_sewage <- function(
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `shedding` module.
 #' @export
-#'
-#' @examples
 model_shedding <- function(
     incubation_dist = incubation_dist_assume(),
     shedding_dist = shedding_dist_assume(),
@@ -412,8 +404,6 @@ model_shedding <- function(
 #'
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `infections` module.
-#'
-#' @examples
 model_infections <- function(
     generation_dist = generation_dist_assume(),
     R = R_estimate_rw(),
