@@ -85,7 +85,7 @@ EpiSewer <- function(
 #'   [concentrations_observe()].
 #' @param flows A `data.frame` with wastewater flow volumes at the sampling site
 #'   for each day. Will be automatically passed to [flows_observe()].
-#' @param ... Further observations to be supplied to [EpiSewer()].
+#' @param ... Further observations to be passed to [EpiSewer()].
 #'
 #' @return A `list` with all observations supplied. Can be passed to the `data` argument
 #'   in [EpiSewer()].
@@ -119,7 +119,15 @@ sewer_data <- function(measurements = NULL, flows = NULL, ...) {
 #'   individual overall and how much of this is detectable at the sampling site.
 #'   It depends both on biological factors as well as on the specific
 #'   sewage system. See [suggest_load_per_case()] to help you
-#'   make a suitable assumption. Will be automatically passed to [load_per_case_assume()].
+#'   make a suitable assumption. Will be automatically passed to
+#'   [load_per_case_assume()].
+#' @param residence_dist Sewer residence time distribution for pathogen
+#'   particles. By default, `EpiSewer` assumes that particles arrive at the
+#'   sampling site within the day of shedding. However, for larger sewage
+#'   systems, particles may travel longer than a day depending on where and
+#'   when they were shed into the wastewater. Will be automatically passed to
+#'   [residence_dist_assume()].
+#' @param ... Further assumptions to be passed to [EpiSewer()].
 #'
 #' @return A `list` with all assumptions supplied. Can be passed to the
 #'   `assumptions` argument in [EpiSewer()].

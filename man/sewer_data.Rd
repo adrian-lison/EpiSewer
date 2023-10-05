@@ -14,7 +14,7 @@ pathogen of interest. Will be automatically passed to
 \item{flows}{A \code{data.frame} with wastewater flow volumes at the sampling site
 for each day. Will be automatically passed to \code{\link[=flows_observe]{flows_observe()}}.}
 
-\item{...}{Further observations to be supplied to \code{\link[=EpiSewer]{EpiSewer()}}.}
+\item{...}{Further observations to be passed to \code{\link[=EpiSewer]{EpiSewer()}}.}
 }
 \value{
 A \code{list} with all observations supplied. Can be passed to the \code{data} argument

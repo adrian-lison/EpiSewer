@@ -68,7 +68,7 @@ generation_dist_assume <-
     if (is.null(generation_dist)) {
       generation_dist <- tryCatch(
         get_from_env("assumptions", "generation_dist"),
-        error = abort_f("Please supply an assumed incubation period distribution.")
+        error = abort_f("Please supply an assumed generation time distribution.")
       )
     }
     modeldata$G <- length(generation_dist)

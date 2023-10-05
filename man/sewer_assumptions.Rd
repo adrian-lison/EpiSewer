@@ -35,7 +35,17 @@ that describes how many pathogen particles are shed by the average infected
 individual overall and how much of this is detectable at the sampling site.
 It depends both on biological factors as well as on the specific
 sewage system. See \code{\link[=suggest_load_per_case]{suggest_load_per_case()}} to help you
-make a suitable assumption. Will be automatically passed to \code{\link[=load_per_case_assume]{load_per_case_assume()}}.}
+make a suitable assumption. Will be automatically passed to
+\code{\link[=load_per_case_assume]{load_per_case_assume()}}.}
+
+\item{residence_dist}{Sewer residence time distribution for pathogen
+particles. By default, \code{EpiSewer} assumes that particles arrive at the
+sampling site within the day of shedding. However, for larger sewage
+systems, particles may travel longer than a day depending on where and
+when they were shed into the wastewater. Will be automatically passed to
+\code{\link[=residence_dist_assume]{residence_dist_assume()}}.}
+
+\item{...}{Further assumptions to be passed to \code{\link[=EpiSewer]{EpiSewer()}}.}
 }
 \value{
 A \code{list} with all assumptions supplied. Can be passed to the
