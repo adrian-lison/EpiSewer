@@ -99,7 +99,7 @@ suggest_load_per_case <- function(measurements, cases, flows = NULL,
 
   required_data_cols <- c(date_col, measurement_col)
   if (!all(required_data_cols %in% names(measurements))) {
-    abort(
+    rlang::abort(
       paste(
         "The following columns must be present",
         "in the provided measurements `data.frame`:",
@@ -112,7 +112,7 @@ suggest_load_per_case <- function(measurements, cases, flows = NULL,
 
   required_data_cols <- c(date_col, case_col)
   if (!all(required_data_cols %in% names(cases))) {
-    abort(
+    rlang::abort(
       paste(
         "The following columns must be present",
         "in the provided cases `data.frame`:",
@@ -124,14 +124,14 @@ suggest_load_per_case <- function(measurements, cases, flows = NULL,
   cases[, (date_col) := as.Date(get(date_col))]
 
   if (!(ascertainment_prop>0 && ascertainment_prop<=1)) {
-    abort(paste(
+    rlang::abort(paste(
       "The ascertainment proportion must be between 0 and 1,",
       "e.g. 0.9 for 90%."
     ))
   }
 
   if (is.null(flows) && is.null(flow_constant)) {
-    abort(c(
+    rlang::abort(c(
       "Please supply one of the following arguments:",
       "flows: a data frame with flow measurements",
       "flow_constant: a constant flow value"
@@ -140,7 +140,7 @@ suggest_load_per_case <- function(measurements, cases, flows = NULL,
     measurements[[flow_col]] <- flow_constant
   } else {
     if (!is.null(flow_constant)) {
-      warn(paste(
+      rlang::warn(paste(
         "You provided both a data frame with flow measurements (flows)",
         "and a constant flow value (flow_constant).",
         "Only the `flows` argument will be used."
@@ -148,7 +148,7 @@ suggest_load_per_case <- function(measurements, cases, flows = NULL,
     }
     required_data_cols <- c(date_col, flow_col)
     if (!all(required_data_cols %in% names(flows))) {
-      abort(
+      rlang::abort(
         paste(
           "The following columns must be present",
           "in the provided measurements `data.frame`:",

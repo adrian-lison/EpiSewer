@@ -40,7 +40,6 @@
 #'
 #' @export
 #' @import data.table
-#' @import rlang
 EpiSewer <- function(
     data = sewer_data(),
     assumptions = sewer_assumptions(),

@@ -81,7 +81,7 @@ get_summary_vector <- function(fit, var, varnames = NULL, intervals = c(0.95, 0.
   )
   if (!is.null(varnames)) {
     if (nrow(fsummary) != length(varnames)) {
-      abort("Mismatch between model var and varnames", .internal = TRUE)
+      rlang::abort("Mismatch between model var and varnames", .internal = TRUE)
     }
     fsummary$variable <- forcats::fct_inorder(varnames, ordered = TRUE)
   }
@@ -98,7 +98,7 @@ get_summary_vector_log <- function(fit, var, varnames = NULL, intervals = c(0.95
   )
   if (!is.null(varnames)) {
     if (nrow(fsummary) != length(varnames)) {
-      abort("Mismatch between model var and varnames", .internal = TRUE)
+      rlang::abort("Mismatch between model var and varnames", .internal = TRUE)
     }
     fsummary$variable <- forcats::fct_inorder(varnames, ordered = TRUE)
   }
@@ -123,7 +123,7 @@ combine_samples <- function(
     if (!is.null(ndraws)) {
       draw_ids <- unique(res$.draw)
       if (ndraws > length(draw_ids)) {
-        abort(paste(
+        rlang::abort(paste(
           "The maximum number of available draws is", length(draw_ids)
         ))
       }

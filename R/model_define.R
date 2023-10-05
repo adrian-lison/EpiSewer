@@ -192,12 +192,14 @@ concentrations_observe <-
     }
 
     if(!(composite_window%%1==0 && composite_window>0)) {
-      abort("The argument `composite_window` must be a positive integer.")
+      rlang::abort(
+        "The argument `composite_window` must be a positive integer."
+        )
     }
 
     required_data_cols <- c(date_col, concentration_col, replicate_col)
     if (!all(required_data_cols %in% names(data))) {
-      abort(
+      rlang::abort(
         paste(
           "The following columns must be present",
           "in the provided measurements `data.frame`:",
@@ -210,7 +212,7 @@ concentrations_observe <-
 
     if (is.null(replicate_col)) {
       if (any(duplicated(data[[date_col]]))) {
-        abort(
+        rlang::abort(
           paste(
             "Duplicated dates found in measurements `data.frame`.",
             "If your data contains replicate measurements, please add a column",
@@ -271,7 +273,7 @@ droplets_observe <-
            droplets_col = "droplets",
            replicate_col = NULL,
            modeldata = modeldata_init()) {
-    abort(paste(
+    rlang::abort(paste(
       "Specification of measurements via ddPCR droplet count",
       "is not implemented yet."
     ))
@@ -520,7 +522,7 @@ flows_observe <-
 
     required_data_cols <- c(date_col, flow_col)
     if (!all(required_data_cols %in% names(data))) {
-      abort(
+      rlang::abort(
         paste(
           "The following columns must be present",
           "in the provided flow `data.frame`:",
@@ -532,7 +534,7 @@ flows_observe <-
     data[[date_col]] <- as.Date(data[[date_col]])
 
     if (any(duplicated(data[[date_col]]))) {
-      abort("Flow data is ambigious, duplicate dates found.")
+      rlang::abort("Flow data is ambigious, duplicate dates found.")
     }
 
     modeldata <- tbc(
@@ -550,7 +552,7 @@ flows_observe <-
             origin = lubridate::origin
           )
         if (length(missing_flow_dates) > 0) {
-          abort(paste(
+          rlang::abort(paste(
             "Missing flow values for the following dates:",
             paste(missing_flow_dates, collapse = ", ")
           ))
@@ -1244,7 +1246,7 @@ sample_effects_estimate_matrix <- function(
     "check_design_matrix",
     {
       if (!(modeldata$T == nrow(design_matrix))) {
-        abort(
+        rlang::abort(
           paste(
             "Mismatch: Modeled time period has",
             modeldata$T,
@@ -1372,7 +1374,7 @@ noise_estimate <-
 
       modeldata$checks$check_replicate_ids <- function(d) {
         if (!"replicate_ids" %in% names(d)) {
-          abort(paste(
+          rlang::abort(paste(
             "Variation before the replication stage can only be estimated with",
             "replicate measurements. Please specify a column `replicate_col`",
             "with replicate IDs in your data."

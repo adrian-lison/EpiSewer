@@ -288,7 +288,7 @@ plot_load <- function(results, measurements = NULL, include_noise = TRUE, median
 plot_sample_date_effects <- function(result) {
   ggplot(result$summary$sample_date_effects, aes(y = variable)) +
     geom_vline(xintercept = 0, linetype = "dashed") +
-    geom_pointinterval(
+    ggdist::geom_pointinterval(
       aes(x = median - 1, xmin = lower_0.95 - 1, xmax = upper_0.95 - 1),
       fatten_point = 5,
     ) +
@@ -301,7 +301,7 @@ plot_sample_date_effects <- function(result) {
 
 plot_LOD <- function(modeldata) {
   if (!all(c("LOD","LOD_sharpness") %in% names(modeldata))) {
-    abort(c("The following variables must be present in model data:",
+    rlang::abort(c("The following variables must be present in model data:",
             "LOD", "LOD_sharpness"))
   }
   LOD_f <- function(x) {

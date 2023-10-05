@@ -26,7 +26,7 @@ get_stan_model <- function(
 
   if (is.null(model_filename)) {
     if (is.null(modeldata)) {
-      abort(
+      rlang::abort(
         c(
           "Please either provide ",
           "`model_filename` and `model_folder` (i.e. path to a stan model)",
@@ -41,7 +41,7 @@ get_stan_model <- function(
     } else if (modeldata$meta_info$R_estimate_approach == "rw") {
       model_filename <- "wastewater_Re.stan"
     } else {
-      abort(
+      rlang::abort(
         paste(
           "No suitable model available,",
           "please supply a stan model yourself",
@@ -172,13 +172,13 @@ verify_is_modeldata <- function(modeldata, arg_name) {
       "Please use a function of the form `", arg_name, "_`", " to specify ",
       "this argument."
     )
-    all_fs <- names(ns_env("EpiSewer"))
+    all_fs <- names(rlang::ns_env("EpiSewer"))
     arg_fs <- all_fs[stringr::str_detect(all_fs, paste0("^", arg_name, "_"))]
     if (length(arg_fs)>0) {
       error_msg <- paste(error_msg, "Available functions:")
       error_msg <- c(error_msg, paste0(arg_fs, "()"))
     }
-    abort(error_msg, call = caller_env())
+    rlang::abort(error_msg, call = rlang::caller_env())
   }
 }
 
@@ -200,11 +200,11 @@ verify_is_modeldata <- function(modeldata, arg_name) {
 component_helpers_ <- function(component, collapse = "\n",
                               prefix = "- [", suffix = "()]") {
   if (!component %in% all_components()) {
-    abort(c(paste("No valid component provided.",
+    rlang::abort(c(paste("No valid component provided.",
                 "Must be one out of:"),
                 all_components()))
   }
-  all_fs <- names(ns_env("EpiSewer"))
+  all_fs <- names(rlang::ns_env("EpiSewer"))
   arg_fs <- all_fs[stringr::str_detect(all_fs, paste0("^", component, "_"))]
   if (length(arg_fs)>0) {
     helpers <- paste0(prefix, arg_fs, suffix)
@@ -262,7 +262,7 @@ modeldata_check <- function(modeldata,
                            calling_env = rlang::caller_env()) {
 
   if (!class(modeldata) == "modeldata") {
-    abort("Please supply a modeldata object.")
+    rlang::abort("Please supply a modeldata object.")
   }
 
   var_check <- check_list_nested(modeldata, required)
@@ -295,7 +295,7 @@ modeldata_check <- function(modeldata,
         run_before_msg <- NULL
       }
       error_msg <- paste(c(error_msg, run_before_msg, advice), collapse = "\n")
-      abort(error_msg, call = calling_env)
+      rlang::abort(error_msg, call = calling_env)
     } else {
       return(all(var_check))
     }
@@ -327,7 +327,7 @@ modeldata_check <- function(modeldata,
 modeldata_validate <- function(modeldata, model_def,
                               defaults = modeldata_defaults()) {
   if (!class(modeldata) == "modeldata") {
-    abort("Please supply a modeldata object.")
+    rlang::abort("Please supply a modeldata object.")
   }
 
   modeldata <- modeldata_update(modeldata)
@@ -335,7 +335,7 @@ modeldata_validate <- function(modeldata, model_def,
   for (modeldata_sub in list(modeldata$meta_info, modeldata, modeldata$init)) {
     for (name in names(modeldata_sub)) {
       if (any(c("tbe", "tbc") %in% class(modeldata_sub[[name]]))) {
-        abort(paste0(
+        rlang::abort(paste0(
           "There is still information missing to compute ",
           "`", name, "`"
         ))
@@ -363,7 +363,7 @@ modeldata_combine <- function(...) {
 
   lapply(modeldata_sets, function(md) {
     if (!class(md) == "modeldata") {
-      abort("Please supply a modeldata object.")
+      rlang::abort("Please supply a modeldata object.")
     }
   })
 
@@ -388,7 +388,7 @@ modeldata_combine <- function(...) {
 
 modeldata_update <- function(modeldata, throw_error = TRUE) {
   if (!class(modeldata) == "modeldata") {
-    abort("Please supply a modeldata object.")
+    rlang::abort("Please supply a modeldata object.")
   }
 
   modeldata <- modeldata_update_metainfo(modeldata)
@@ -492,7 +492,7 @@ tba <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
 #' @return
 #' @export
 print.tba <- function(x) {
-  print(paste("Requires assumption:", expr_text(x$lazy_r$expr)))
+  print(paste("Requires assumption:", lazyeval::expr_text(x$lazy_r$expr)))
 }
 
 solve.tba <- function(x, assumptions) {
@@ -526,7 +526,7 @@ tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
 #' @return
 #' @export
 print.tbe <- function(x) {
-  print(paste("Waiting for information:", expr_text(x$lazy_r$expr)))
+  print(paste("Waiting for information:", lazyeval::expr_text(x$lazy_r$expr)))
 }
 
 solve.tbe <- function(x, modeldata, throw_error = TRUE) {

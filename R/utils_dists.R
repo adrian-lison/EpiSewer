@@ -192,14 +192,14 @@ get_discrete_lognormal <- function(
 
 check_dist <- function(dist, name = "probability distribution") {
   if (!is.numeric(dist)) {
-    abort(paste("Supplied", name, "is not a numeric vector."))
+    rlang::abort(paste("Supplied", name, "is not a numeric vector."))
   }
   if (any(dist<0)) {
-    abort(paste("Supplied", name, "has negative entries.",
+    rlang::abort(paste("Supplied", name, "has negative entries.",
                 "All probabilities must be positive."))
   }
   if (sum(dist)!=1) {
-    warn(paste(
+    rlang::warn(paste(
       "Supplied", name, "does not sum to 1.",
       "EpiSewer will normalize the probabilities such that they sum to 1.\n"
     ))

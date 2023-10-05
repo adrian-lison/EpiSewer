@@ -19,6 +19,7 @@ Imports:
     data.table,
     extraDistr,
     forcats,
+    ggdist,
     ggplot2,
     lazyeval,
     lubridate,
