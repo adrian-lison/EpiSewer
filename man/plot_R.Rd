@@ -2,16 +2,32 @@
 % Please edit documentation in R/utils_plot.R
 \name{plot_R}
 \alias{plot_R}
-\title{Title}
+\title{Plot the effective reproduction number}
 \usage{
 plot_R(results, draws = FALSE, ndraws = NULL, seeding = FALSE, median = FALSE)
 }
 \arguments{
-\item{ndraws}{}
+\item{results}{Results object returned by \code{\link[=EpiSewer]{EpiSewer()}} after model fitting.}
+
+\item{draws}{If \code{FALSE} (default), 50\% and 95\% Bayesian credible intervals
+are shown. If \code{TRUE}, exemplary posterior samples are shown in a "spaghetti
+plot" style.}
+
+\item{ndraws}{Number of different samples to show if \code{draws=TRUE}.}
+
+\item{seeding}{Should Rt from the seeding phase be shown as well?
+Default is \code{FALSE}.}
+
+\item{median}{Should the estimated median be shown, or only the credible
+intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
 }
 \value{
-
+A ggplot object showing the time series of estimated Rt,
+either with credible intervals or as "spaghetti plot". Can be further
+manipulated using \link{ggplot2} functions to adjust themes and scales, and add
+further geoms.
 }
 \description{
-Title
+Plots the effective reproduction number over time from a fitted
+\code{EpiSewer} model.
 }

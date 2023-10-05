@@ -2,16 +2,22 @@
 % Please edit documentation in R/utils_plot.R
 \name{plot_load}
 \alias{plot_load}
-\title{Title}
+\title{Plot the estimated load}
 \usage{
-plot_load(results, measurements = NULL, include_noise = TRUE, median = FALSE)
+plot_load(results, median = FALSE)
 }
 \arguments{
-\item{include_noise}{}
+\item{results}{Results object returned by \code{\link[=EpiSewer]{EpiSewer()}} after model fitting.}
+
+\item{median}{Should the estimated median be shown, or only the credible
+intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
 }
 \value{
-
+A ggplot object showing the estimated load over time. Can be further
+manipulated using \link{ggplot2} functions to adjust themes and scales, and add
+further geoms.
 }
 \description{
-Title
+Plots the estimated load in wastewater over time from a fitted
+\code{EpiSewer} model.
 }

@@ -2,17 +2,33 @@
 % Please edit documentation in R/utils_dists.R
 \name{get_discrete_gamma_shifted}
 \alias{get_discrete_gamma_shifted}
-\title{Title}
+\title{Get PMF of a discretized shifted Gamma distribution}
 \usage{
 get_discrete_gamma_shifted(gamma_mean = 4.8, gamma_sd = 2.3, maxX = 10)
 }
 \arguments{
-\item{maxX}{}
+\item{gamma_mean}{Mean of the shifted Gamma distribution.}
+
+\item{gamma_sd}{Standard deviation of the shifted Gamma distribution.}
+
+\item{maxX}{Right truncation point. All probability mass beyond \code{maxX} will
+be assigned to \code{maxX}.}
 }
 \value{
-
+A numeric vector representing the PMF of the discretized shifted
+Gamma distribution.
 }
 \description{
-This code is adapted from EpiEstim, credit to Anne Cori
-(a.cori@imperial.ac.uk)
+This function specifies a discretized shifted Gamma distribution
+(shifted such that the minimum is at 1) using a mean and standard deviation
+parameterization.
+
+The shift makes the distribution attractive for modeling
+generation time distributions, which are often assumed to have zero
+probability mass for a generation time of zero (as this is incompatible
+with the renewal equation).
+}
+\details{
+This code was adapted from EpiEstim, credit to Anne Cori
+(a.cori@imperial.ac.uk).
 }

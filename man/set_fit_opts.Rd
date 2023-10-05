@@ -2,16 +2,21 @@
 % Please edit documentation in R/utils_stan.R
 \name{set_fit_opts}
 \alias{set_fit_opts}
-\title{Title}
+\title{Configure the model fitting}
 \usage{
 set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE)
 }
 \arguments{
-\item{fitted}{}
+\item{sampler}{Which type of sampler should be used for model fitting?
+Currently, only \code{\link[=sampler_stan_mcmc]{sampler_stan_mcmc()}} is supported.}
+
+\item{fitted}{If \code{TRUE} (default), the fitted model object is also returned,
+not only summaries of the model fitting. Note that this makes the results
+object substantially larger.}
 }
 \value{
-
+A \code{list} with the model fitting options.
 }
 \description{
-Title
+Sets model fitting options in \code{EpiSewer}.
 }

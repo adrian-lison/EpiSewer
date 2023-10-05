@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_preprocess.R
 \name{suggest_load_per_case}
 \alias{suggest_load_per_case}
-\title{Title}
+\title{Estimate load per case from wastewater data and case numbers}
 \usage{
 suggest_load_per_case(
   measurements,
@@ -13,17 +13,86 @@ suggest_load_per_case(
   measurement_shift = seq(-7, 7),
   shift_weights = 1/(abs(measurement_shift) + 1),
   date_col = "date",
-  measurement_col = "concentration",
+  concentration_col = "concentration",
   flow_col = "flow",
-  case_col = "cases"
+  case_col = "cases",
+  signif_fig = 2
 )
 }
 \arguments{
-\item{flow_constant}{}
+\item{measurements}{A \code{data.frame} with each row representing one
+measurement. Must have at least a column with dates and a column with
+concentration measurements.}
+
+\item{cases}{A \code{data.frame} with each row representing one day. Must have at
+least a column with dates and a column with case numbers.}
+
+\item{flows}{A \code{data.frame} with each row representing one day. Must have at
+least a column with dates and a column with flow measurements.}
+
+\item{flow_constant}{Fixed flow volume, as an alternative to \code{flows}, if no
+regular flow measurements are available.}
+
+\item{ascertainment_prop}{Proportion of all cases that get detected /
+reported. Can be used to account for underreporting of infections. Default
+is \code{ascertainment_prop=1}, meaning that 100\% of infections become confirmed
+cases.}
+
+\item{measurement_shift}{The specific timing between wastewater
+concentrations and case numbers depends on reporting delays and shedding
+profiles and is typically uncertain. This argument allows to shift the
+concentration and case number time series relative to each other and to
+average over several potential lags/leads, as specified by an integer
+vector. The default is \code{measurement_shift = seq(-7,7)}, i.e. a shift of
+concentrations between up to one week before and after case numbers.}
+
+\item{shift_weights}{Weights for the shifted comparisons. Must be an numeric
+vector of the same length as \code{measurement_shift}. If \code{NULL} (default), the
+weights are chosen to be approximately inversely proportional to the shift
+distance.}
+
+\item{date_col}{Name of the date column in all provided data frames.}
+
+\item{concentration_col}{Name of the column containing the measured
+concentrations.}
+
+\item{flow_col}{Name of the column containing the flows.}
+
+\item{case_col}{Name of the column containing the case numbers.}
+
+\item{signif_fig}{Significant figures to round to. Since this heuristic only
+provides crude estimates which should not be overinterpreted, the result
+gets rounded. Default is rounding to the 2 most significant figures.}
 }
 \value{
-
+A suggested \code{load_per_case} that can be used as an assumption in
+\code{\link[=load_per_case_assume]{load_per_case_assume()}}.
 }
 \description{
-Title
+This helper function uses a crude heuristic to infer the
+\code{load_per_case} based on the relationship between measured concentrations
+and case counts. The goal is to obtain a \code{load_per_case} assumption that is
+on the right order of magnitude - this will not be sufficient for accurate
+prevalence estimation from wastewater, but fully sufficient for monitoring
+trends and estimating Rt.
+}
+\details{
+In the \code{EpiSewer} model, the \code{load_per_case} serves as a scaling
+factor describing how many pathogen particles are shed by the average
+infected individual overall and how much of this is detectable at the
+sampling site. This depends both on biological factors as well as on the
+specific sewage system. It is therefore almost always necessary to assume
+the load per case based on a comparison of measured concentrations/loads
+and case numbers.
+
+The heuristic used here is to fit a linear regression model with
+loads (computed using concentrations and flows) as dependent variable and
+case numbers as independent variable over all measurements. This does not
+explicitly account for shedding profiles or reporting delays, but the
+\code{measurement_shift} argument allows to average over a set of relative
+shifts between the two time series.
+
+The flow volume unit should be the same as for the concentration
+measurements, e.g. if concentrations are measured in gc/mL, then the flow
+should be in mL as well.
 }

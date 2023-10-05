@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_stan.R
 \name{sampler_stan_mcmc}
 \alias{sampler_stan_mcmc}
-\title{Title}
+\title{Use the stan MCMC sampler}
 \usage{
 sampler_stan_mcmc(
   chains = 4,
@@ -21,11 +21,77 @@ sampler_stan_mcmc(
 )
 }
 \arguments{
-\item{...}{}
+\item{chains}{(positive integer) The number of Markov chains to run. The
+default is 4.}
+
+\item{iter_warmup}{(positive integer) The number of warmup iterations to run
+per chain. Note: in the CmdStan User's Guide this is referred to as
+\code{num_warmup}.}
+
+\item{iter_sampling}{(positive integer) The number of post-warmup iterations
+to run per chain. Note: in the CmdStan User's Guide this is referred to as
+\code{num_samples}.}
+
+\item{adapt_delta}{(real in \verb{(0,1)}) The adaptation target acceptance
+statistic.}
+
+\item{max_treedepth}{(positive integer) The maximum allowed tree depth for
+the NUTS engine. See the \emph{Tree Depth} section of the CmdStan User's Guide
+for more details.}
+
+\item{step_size}{(positive real) The \emph{initial} step size for the discrete
+approximation to continuous Hamiltonian dynamics. This is further tuned
+during warmup.}
+
+\item{parallel_chains}{(positive integer) The \emph{maximum} number of MCMC chains
+to run in parallel. If \code{parallel_chains} is not specified then the default
+is to look for the option \code{"mc.cores"}, which can be set for an entire \R
+session by \code{options(mc.cores=value)}. If the \code{"mc.cores"} option has not
+been set then the default is \code{1}.}
+
+\item{threads_per_chain}{(positive integer) If the model was
+\link[cmdstanr:model-method-compile]{compiled} with threading support, the number of
+threads to use in parallelized sections \emph{within} an MCMC chain (e.g., when
+using the Stan functions \code{reduce_sum()} or \code{map_rect()}). This is in
+contrast with \code{parallel_chains}, which specifies the number of chains to
+run in parallel. The actual number of CPU cores used is
+\code{parallel_chains*threads_per_chain}. For an example of using threading see
+the Stan case study
+\href{https://mc-stan.org/users/documentation/case-studies/reduce_sum_tutorial.html}{Reduce Sum: A Minimal Example}.}
+
+\item{seed}{(positive integer(s)) A seed for the (P)RNG to pass to CmdStan.
+In the case of multi-chain sampling the single \code{seed} will automatically be
+augmented by the the run (chain) ID so that each chain uses a different
+seed. The exception is the transformed data block, which defaults to
+using same seed for all chains so that the same data is generated for all
+chains if RNG functions are used. The only time \code{seed} should be specified
+as a vector (one element per chain) is if RNG functions are used in
+transformed data and the goal is to generate \emph{different} data for each
+chain.}
+
+\item{refresh}{(non-negative integer) The number of iterations between
+printed screen updates. If \code{refresh = 0}, only error messages will be
+printed.}
+
+\item{show_messages}{(logical) When \code{TRUE} (the default), prints all
+output during the sampling process, such as iteration numbers and elapsed times.
+If the output is silenced then the \code{\link[cmdstanr:fit-method-output]{$output()}} method of
+the resulting fit object can be used to display the silenced messages.}
+
+\item{show_exceptions}{(logical) When \code{TRUE} (the default), prints all
+informational messages, for example rejection of the current proposal.
+Disable if you wish to silence these messages, but this is not usually
+recommended unless you are very confident that the model is correct up to
+numerical error. If the messages are silenced then the
+\code{\link[cmdstanr:fit-method-output]{$output()}} method of the resulting fit object can be
+used to display the silenced messages.}
+
+\item{...}{Further arguments to pass to \link{cmdstanr}.}
 }
 \value{
-
+A \code{list} with settings for the MCMC sampler.
 }
 \description{
-Title
+This option will use stan's NUTS sampler via \link{cmdstanr} for
+Markov Chain Monte Carlo (MCMC) sampling of the \code{EpiSewer} model.
 }

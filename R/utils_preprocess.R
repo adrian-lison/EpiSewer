@@ -5,21 +5,23 @@
 #' median of measurements in a small centered window. If the measurements before
 #' and after are considerably lower than the current measurement, the median
 #' will also be much lower. This is used as a criterion to determine outliers.
-#' Note that the method also allows for multiple measurements per day
-#' (replicates), where each replicate is evaluated individually. However, this
-#' currently does not give more weight to days with more replicates, i.e.
-#' ignores potential differences in measurement uncertainty.
 #'
-#' To determine how much deviation from the median is significant, a moving
-# median absolute deviation (as a more robust estimate than the standard
-# deviation of how much noise to expect) in measurements is used. This ' seems to
-# be more robust than just multiplying the median with a factor to ' determine
-# the threshold. The moving MAD is lagged by one day such that the current value
-# is ' not included. Moreover, note that because the window for the moving median
-# is centered. the last window_size/2 dates have no spike detection.
+#' @details To determine how much deviation from the median is significant, a
+#'   moving median absolute deviation (as a more robust estimate than the
+#'   standard deviation of how much noise to expect) in measurements is used.
+#'   This seems to be more robust than just multiplying the median with a
+#'   factor to determine the threshold. The moving MAD is lagged by one day
+#'   such that the current value is not included. Moreover, note that because
+#'   the window for the moving median is centered, the last window_size/2 dates
+#'   have no spike detection.
+#'
+#' @details The method also allows for multiple measurements per day
+#'   (replicates), where each replicate is evaluated individually. However, this
+#'   currently does not give more weight to days with more replicates, i.e.
+#'   ignores potential differences in measurement uncertainty.
 #'
 #' @param df A `data.frame` containing the time series of measurements.
-#' @param col The name of the column with the measurements. Use dplyr-style
+#' @param measurement_col The name of the column with the measurements. Use dplyr-style
 #'   env-variables, not characters.
 #' @param date_col The name of the column with corresponding dates. Use
 #'   dplyr-style env-variables, not characters.
@@ -35,14 +37,13 @@
 #'
 #' @return The provided `data.frame`, with an additional logical column
 #'   `is_outlier`.
-#'
 mark_outlier_spikes_median <- function(
-    df, col, date_col = date, window = 5,
+    df, measurement_col, date_col = date, window = 5,
     threshold_factor = 5, mad_window = 14, mad_lower_quantile = 0.05) {
 
   median_info <- df %>%
     group_by({{ date_col }}) %>%
-    summarize(daily_median = median({{ col }}), .groups = "drop") %>%
+    summarize(daily_median = median({{ measurement_col }}), .groups = "drop") %>%
     transmute({{ date_col }},
       rolling_median = zoo::rollmedian(
         daily_median, window,
@@ -60,7 +61,7 @@ mark_outlier_spikes_median <- function(
 
   df <- df %>%
     left_join(median_info, by = rlang::as_string(ensym(date_col))) %>%
-    mutate(is_outlier = {{ col }} - rolling_median > threshold_factor *
+    mutate(is_outlier = {{ measurement_col }} - rolling_median > threshold_factor *
       pmax(rolling_mad, lower_rolling_mad)) %>%
     select(-c(rolling_median, rolling_mad, lower_rolling_mad))
 
@@ -68,36 +69,83 @@ mark_outlier_spikes_median <- function(
 }
 
 
-#' Title
+#' Estimate load per case from wastewater data and case numbers
 #'
-#' @param measurements
-#' @param flows
-#' @param cases
-#' @param ascertainment_prop
-#' @param measurement_shift
-#' @param shift_weights
-#' @param date_col
-#' @param measurement_col
-#' @param case_col
-#' @param flow_col
-#' @param flow_constant
+#' @description This helper function uses a crude heuristic to infer the
+#'   `load_per_case` based on the relationship between measured concentrations
+#'   and case counts. The goal is to obtain a `load_per_case` assumption that is
+#'   on the right order of magnitude - this will not be sufficient for accurate
+#'   prevalence estimation from wastewater, but fully sufficient for monitoring
+#'   trends and estimating Rt.
 #'
-#' @return
+#' @param measurements A `data.frame` with each row representing one
+#'   measurement. Must have at least a column with dates and a column with
+#'   concentration measurements.
+#' @param cases A `data.frame` with each row representing one day. Must have at
+#'   least a column with dates and a column with case numbers.
+#' @param flows A `data.frame` with each row representing one day. Must have at
+#'   least a column with dates and a column with flow measurements.
+#' @param flow_constant Fixed flow volume, as an alternative to `flows`, if no
+#'   regular flow measurements are available.
+#' @param ascertainment_prop Proportion of all cases that get detected /
+#'   reported. Can be used to account for underreporting of infections. Default
+#'   is `ascertainment_prop=1`, meaning that 100% of infections become confirmed
+#'   cases.
+#' @param measurement_shift The specific timing between wastewater
+#'   concentrations and case numbers depends on reporting delays and shedding
+#'   profiles and is typically uncertain. This argument allows to shift the
+#'   concentration and case number time series relative to each other and to
+#'   average over several potential lags/leads, as specified by an integer
+#'   vector. The default is `measurement_shift = seq(-7,7)`, i.e. a shift of
+#'   concentrations between up to one week before and after case numbers.
+#' @param shift_weights Weights for the shifted comparisons. Must be an numeric
+#'   vector of the same length as `measurement_shift`. If `NULL` (default), the
+#'   weights are chosen to be approximately inversely proportional to the shift
+#'   distance.
+#' @param date_col Name of the date column in all provided data frames.
+#' @param concentration_col Name of the column containing the measured
+#'   concentrations.
+#' @param case_col Name of the column containing the case numbers.
+#' @param flow_col Name of the column containing the flows.
+#' @param signif_fig Significant figures to round to. Since this heuristic only
+#'   provides crude estimates which should not be overinterpreted, the result
+#'   gets rounded. Default is rounding to the 2 most significant figures.
+#'
+#' @details In the `EpiSewer` model, the `load_per_case` serves as a scaling
+#'   factor describing how many pathogen particles are shed by the average
+#'   infected individual overall and how much of this is detectable at the
+#'   sampling site. This depends both on biological factors as well as on the
+#'   specific sewage system. It is therefore almost always necessary to assume
+#'   the load per case based on a comparison of measured concentrations/loads
+#'   and case numbers.
+#'
+#' @details The heuristic used here is to fit a linear regression model with
+#'   loads (computed using concentrations and flows) as dependent variable and
+#'   case numbers as independent variable over all measurements. This does not
+#'   explicitly account for shedding profiles or reporting delays, but the
+#'   `measurement_shift` argument allows to average over a set of relative
+#'   shifts between the two time series.
+#'
+#' @details The flow volume unit should be the same as for the concentration
+#'   measurements, e.g. if concentrations are measured in gc/mL, then the flow
+#'   should be in mL as well.
+#'
+#' @return A suggested `load_per_case` that can be used as an assumption in
+#'   [load_per_case_assume()].
 #' @export
 #' @import data.table
-#'
-#' @examples
-suggest_load_per_case <- function(measurements, cases, flows = NULL,
-                                  flow_constant = NULL,
+suggest_load_per_case <- function(measurements, cases,
+                                  flows = NULL, flow_constant = NULL,
                                   ascertainment_prop = 1,
                                   measurement_shift = seq(-7,7),
                                   shift_weights = 1/(abs(measurement_shift)+1),
                                   date_col = "date",
-                                  measurement_col = "concentration",
+                                  concentration_col = "concentration",
                                   flow_col = "flow",
-                                  case_col = "cases") {
+                                  case_col = "cases",
+                                  signif_fig = 2) {
 
-  required_data_cols <- c(date_col, measurement_col)
+  required_data_cols <- c(date_col, concentration_col)
   if (!all(required_data_cols %in% names(measurements))) {
     rlang::abort(
       paste(
@@ -161,7 +209,7 @@ suggest_load_per_case <- function(measurements, cases, flows = NULL,
     measurements <- merge(measurements, flows, by = "date")
   }
 
-  measurements[, load := get(measurement_col)*get(flow_col)]
+  measurements[, load := get(concentration_col)*get(flow_col)]
   cases[, (case_col) := get(case_col)/ascertainment_prop]
   shift_weights <- shift_weights/sum(shift_weights)
 
@@ -179,6 +227,7 @@ suggest_load_per_case <- function(measurements, cases, flows = NULL,
   combined <- merge(measurements, cases, by = "date")
   lm_res <- lm(load ~ 0 + cases, combined, weights = combined$weight)
   load_per_case <- unname(lm_res$coefficients["cases"])
-  load_per_case <- signif(load_per_case, 2) # round to 2 significant figures
+  # round to a certain number of significant figures
+  load_per_case <- signif(load_per_case, signif_fig)
   return(load_per_case)
 }

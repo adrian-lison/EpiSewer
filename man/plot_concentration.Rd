@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_plot.R
 \name{plot_concentration}
 \alias{plot_concentration}
-\title{Title}
+\title{Plot predicted concentration}
 \usage{
 plot_concentration(
   results,
@@ -12,11 +12,24 @@ plot_concentration(
 )
 }
 \arguments{
-\item{include_noise}{}
+\item{results}{Results object returned by \code{\link[=EpiSewer]{EpiSewer()}} after model fitting.}
+
+\item{measurements}{A \code{data.frame} with observed measurements, which will be
+plotted alongside the predicted values. Useful to assess model fit.}
+
+\item{include_noise}{If \code{TRUE} (default), concentrations including
+measurement noise are shown. If \code{FALSE}, only the expected concentrations
+are shown.}
+
+\item{median}{Should the estimated median be shown, or only the credible
+intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
 }
 \value{
-
+A ggplot object showing predicted and observed concentrations over
+time. Can be further manipulated using \link{ggplot2} functions to adjust themes
+and scales, and add further geoms.
 }
 \description{
-Title
+Plots the predicted concentration over time from a fitted
+\code{EpiSewer} model.
 }

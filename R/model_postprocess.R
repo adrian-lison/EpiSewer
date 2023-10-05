@@ -20,17 +20,28 @@ get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
   return(fit_draws[])
 }
 
-#' Title
+#' Summarize parameters of interest
 #'
-#' @param fit
-#' @param data
-#' @param meta_info
-#' @param ndraws
+#' @description This helper summarizes important parameters of interest from a
+#'   fitted `EpiSewer` model.
 #'
-#' @return
+#' @param fit The fitted `EpiSewer` model.
+#' @param data The model data that the `EpiSewer` model was fitted with.
+#' @param meta_info Meta information about the model data.
+#' @param ndraws Number of exemplary posterior samples that should be extracted.
+#'   (The summaries always use all draws.)
+#'
+#' @return A `list` with the following summaries:
+#' - R (posterior summary)
+#' - R_samples (exemplary samples)
+#' - expected_infections (posterior summary)
+#' - infections (posterior summary)
+#' - infections_samples (exemplary samples)
+#' - expected_load (posterior summary)
+#' - expected_concentration (posterior summary)
+#' - concentration (posterior summary)
+#' - sample_effects (posterior summary)
 #' @export
-#'
-#' @examples
 summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
   summary <- list()
   T_shift_R <- with(data, L + S + D - G)

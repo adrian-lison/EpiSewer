@@ -1,14 +1,24 @@
-#' Title
+#' Plot infections
 #'
-#' @param results
-#' @param draws
-#' @param ndraws
+#' @description Plots the estimated number of infections over time from a fitted
+#'   `EpiSewer` model.
 #'
-#' @return
+#' @param results Results object returned by [EpiSewer()] after model fitting.
+#' @param draws If `FALSE` (default), 50% and 95% Bayesian credible intervals
+#'   are shown. If `TRUE`, exemplary posterior samples are shown in a "spaghetti
+#'   plot" style.
+#' @param ndraws Number of different samples to show if `draws=TRUE`.
+#' @param seeding Should infections from the seeding phase be shown as well?
+#'   Default is `FALSE`.
+#' @param median Should the estimated median be shown, or only the credible
+#'   intervals? Default is `FALSE` to avoid over-interpretation of the median.
+#'
+#' @return A ggplot object showing the time series of estimated infections,
+#'   either with credible intervals or as "spaghetti plot". Can be further
+#'   manipulated using [ggplot2] functions to adjust themes and scales, and add
+#'   further geoms.
 #' @export
 #' @import ggplot2
-#'
-#' @examples
 plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
@@ -56,16 +66,21 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FAL
   plot
 }
 
-#' Title
+#' Plot the effective reproduction number
 #'
-#' @param results
-#' @param draws
-#' @param ndraws
+#' @description Plots the effective reproduction number over time from a fitted
+#'   `EpiSewer` model.
 #'
-#' @return
+#' @param results Results object returned by [EpiSewer()] after model fitting.
+#' @param seeding Should Rt from the seeding phase be shown as well?
+#'   Default is `FALSE`.
+#' @inheritParams plot_infections
+#'
+#' @return A ggplot object showing the time series of estimated Rt,
+#'   either with credible intervals or as "spaghetti plot". Can be further
+#'   manipulated using [ggplot2] functions to adjust themes and scales, and add
+#'   further geoms.
 #' @export
-#'
-#' @examples
 plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
@@ -114,16 +129,22 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE, media
   plot
 }
 
-#' Title
+#' Plot predicted concentration
 #'
-#' @param results
-#' @param measurements
-#' @param include_noise
+#' @description Plots the predicted concentration over time from a fitted
+#'   `EpiSewer` model.
 #'
-#' @return
+#' @param measurements A `data.frame` with observed measurements, which will be
+#'   plotted alongside the predicted values. Useful to assess model fit.
+#' @param include_noise If `TRUE` (default), concentrations including
+#'   measurement noise are shown. If `FALSE`, only the expected concentrations
+#'   are shown.
+#' @inheritParams plot_infections
+#'
+#' @return A ggplot object showing predicted and observed concentrations over
+#'   time. Can be further manipulated using [ggplot2] functions to adjust themes
+#'   and scales, and add further geoms.
 #' @export
-#'
-#' @examples
 plot_concentration <- function(results, measurements = NULL, include_noise = TRUE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
@@ -225,29 +246,26 @@ plot_concentration <- function(results, measurements = NULL, include_noise = TRU
   plot
 }
 
-#' Title
+#' Plot the estimated load
 #'
-#' @param results
-#' @param measurements
-#' @param include_noise
+#' @description Plots the estimated load in wastewater over time from a fitted
+#'   `EpiSewer` model.
 #'
-#' @return
+#' @inheritParams plot_infections
+#'
+#' @return A ggplot object showing the estimated load over time. Can be further
+#'   manipulated using [ggplot2] functions to adjust themes and scales, and add
+#'   further geoms.
+#'
 #' @export
-#'
-#' @examples
-plot_load <- function(results, measurements = NULL, include_noise = TRUE, median = FALSE) {
+plot_load <- function(results, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
   load_pred <- combine_summaries(results, "expected_load")
 
-  if (is.null(measurements)) {
-    first_date <- min(load_pred$date)
-    last_date <- max(load_pred$date)
-  } else {
-    first_date <- max(min(measurements$date), min(load_pred$date))
-    last_date <- min(max(measurements$date), max(load_pred$date))
-  }
+  first_date <- min(load_pred$date)
+  last_date <- max(load_pred$date)
 
   plot <- ggplot(load_pred, aes(x = date)) +
     geom_ribbon(
@@ -277,14 +295,18 @@ plot_load <- function(results, measurements = NULL, include_noise = TRUE, median
   plot
 }
 
-#' Title
+#' Plot estimated sample effects
 #'
-#' @param result
+#' @description Plots estimated effect sizes for sample covariates with 95%
+#'   credible intervals. Only works if the `EpiSewer` model
+#'   included sample covariates, see e.g. [sample_effects_estimate_matrix()].
 #'
-#' @return
+#' @inheritParams plot_infections
+#'
+#' @return A ggplot object showing the estimated effect sizes. Can be further
+#'   manipulated using [ggplot2] functions to adjust themes and scales, and add
+#'   further geoms.
 #' @export
-#'
-#' @examples
 plot_sample_effects <- function(results) {
   ggplot(results$summary$sample_effects, aes(y = variable)) +
     geom_vline(xintercept = 0, linetype = "dashed") +
@@ -299,6 +321,26 @@ plot_sample_effects <- function(results) {
     scale_y_discrete(limits = rev)
 }
 
+
+#' Plot limit of detection
+#'
+#' @description Helper function to visualize the assumed limit of detection.
+#'
+#' @param modeldata A `modeldata` object as returned by [LOD_assume()].
+#'
+#' @details This function can also be applied to `modeldata` objects which have
+#'   been passed through several other modeling functions, as long as
+#'   [LOD_assume()] was applied at some point.
+#'
+#' @return A plot showing the probability of non-detection (i.e. zero
+#'   measurement) for different concentrations below and above the assumed LOD.
+#'   Can be further manipulated using [ggplot2] functions to adjust themes and
+#'   scales, and add further geoms.
+#' @export
+#'
+#' @examples
+#' modeldata <- LOD_assume(limit = 1e7, sharpness = 10)
+#' plot_LOD(modeldata)
 plot_LOD <- function(modeldata) {
   if (!all(c("LOD","LOD_sharpness") %in% names(modeldata))) {
     rlang::abort(c("The following variables must be present in model data:",
@@ -315,7 +357,7 @@ plot_LOD <- function(modeldata) {
   ggplot(example_data, aes(x=x, y=y)) +
     geom_vline(xintercept = modeldata$LOD, linetype = "dashed") +
     geom_line() +
-    xlab("Measurement") +
+    xlab("True concentration") +
     ylab("Probability of non-detection") +
     coord_cartesian(ylim = c(0,1)) +
     scale_x_continuous(expand = c(0,0)) +

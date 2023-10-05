@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_dists.R
 \name{get_discrete_lognormal}
 \alias{get_discrete_lognormal}
-\title{Get PMF of a discretized lognormal distribution.}
+\title{Get PMF of a discretized lognormal distribution}
 \usage{
 get_discrete_lognormal(
   meanlog,
@@ -15,15 +15,16 @@ get_discrete_lognormal(
 )
 }
 \arguments{
-\item{meanlog}{Mean of log}
+\item{meanlog}{Log scale mean (location of lognormal).}
 
-\item{sdlog}{Standard deviation of log}
+\item{sdlog}{Log scale standard deviation (scale of lognormal).}
 
-\item{unit_mean}{Alternative parameterization: unit scale mean}
+\item{unit_mean}{Alternative parameterization: unit scale mean.}
 
-\item{unit_sd}{Alternative parameterization: unit scale sd}
+\item{unit_sd}{Alternative parameterization: unit scale sd.}
 
-\item{maxX}{Right truncation point}
+\item{maxX}{Right truncation point. All probability mass beyond \code{maxX} will
+be assigned to \code{maxX}.}
 
 \item{include_zero}{Should the distribution explicitly cover X=0, or should
 X=1 include the probability mass for X=0 too?}
@@ -31,9 +32,9 @@ X=1 include the probability mass for X=0 too?}
 \item{print_params}{Should the log-level parameters be printed?}
 }
 \value{
-PMF of the discretized lognormal
+A numeric vector representing the PMF of the discretized lognormal.
 }
 \description{
-This function accepts both log-scale and unit-scale parameters to specify the
-lognormal distribution
+This function accepts both log-scale and unit-scale parameters to specify a
+discretized lognormal distribution.
 }

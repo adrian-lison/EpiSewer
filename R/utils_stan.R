@@ -2,22 +2,32 @@
 ##                           Stan utils                          -
 ## ---------------------------------------------------------------
 
-#' Title
+#' Load stan model
 #'
-#' @param model_filename
-#' @param modeldata
-#' @param model_folder
-#' @param profile
-#' @param threads
-#' @param force_recompile
+#' @description Loads a specific stan model for model fitting in `EpiSewer`.
 #'
-#' @return
+#' @param modeldata A `modeldata` object containing data and specifications of
+#'   the model to be fitted. The required stan model is automatically inferred
+#'   from the `modeldata`.
+#' @param model_filename File name of a specific stan model to load. This is an
+#'   alternative to supplying `modeldata`.
+#' @param model_folder Path to the folder containing the stan models for
+#'   `EpiSewer`.
+#' @param profile Should profiling be run during model fitting? Default is
+#'   `TRUE`. Disabling profiling can decrease runtime in some cases.
+#' @param threads Should multihreading be enabled? Default is `FALSE`, as
+#'   `EpiSewer` currently does not support within-chain parallelism.
+#' @param force_recompile If `FALSE` (default), the model is only recompiled if
+#'   changes to the model code are detected. However, as the change detection is
+#'   not fully reliable, it is sometimes necessary to force recompilation after
+#'   having made some changes to the stan code.
+#'
+#' @return A `list` containing the model definition and a link to the compiled
+#'   stan model.
 #' @export
-#'
-#' @examples
 get_stan_model <- function(
-    model_filename = NULL,
     modeldata = NULL,
+    model_filename = NULL,
     model_folder = "stan",
     profile = TRUE,
     threads = FALSE,
@@ -62,39 +72,33 @@ get_stan_model <- function(
   return(model_def)
 }
 
-#' Title
+#' Configure the model fitting
 #'
-#' @param sampler_opts
-#' @param fitted
+#' @description Sets model fitting options in `EpiSewer`.
 #'
-#' @return
+#' @param sampler Which type of sampler should be used for model fitting?
+#'   Currently, only [sampler_stan_mcmc()] is supported.
+#' @param fitted If `TRUE` (default), the fitted model object is also returned,
+#'   not only summaries of the model fitting. Note that this makes the results
+#'   object substantially larger.
+#'
+#' @return A `list` with the model fitting options.
 #' @export
-#'
-#' @examples
 set_fit_opts <- function(sampler = sampler_stan_mcmc(), fitted = TRUE) {
   opts <- as.list(environment())
   return(opts)
 }
 
-#' Title
+#' Use the stan MCMC sampler
 #'
-#' @param chains
-#' @param iter_warmup
-#' @param iter_sampling
-#' @param adapt_delta
-#' @param max_treedepth
-#' @param step_size
-#' @param parallel_chains
-#' @param threads_per_chain
-#' @param seed
-#' @param refresh
-#' @param show_messages
-#' @param ...
+#' @description This option will use stan's NUTS sampler via [cmdstanr] for
+#'   Markov Chain Monte Carlo (MCMC) sampling of the `EpiSewer` model.
 #'
-#' @return
+#' @param ... Further arguments to pass to [cmdstanr].
+#' @inheritParams cmdstanr::sample
+#'
+#' @return A `list` with settings for the MCMC sampler.
 #' @export
-#'
-#' @examples
 sampler_stan_mcmc <- function(
     chains = 4,
     iter_warmup = 1000,
@@ -444,16 +448,6 @@ modeldata_update <- function(modeldata, throw_error = TRUE) {
   return(modeldata)
 }
 
-#' Title
-#'
-#' @param param
-#' @param dist
-#' @param ...
-#'
-#' @return
-#' @export
-#'
-#' @examples
 set_prior <- function(param, dist = "normal", ...) {
   prior <- c(as.list(environment()), list(...))
   prior_data <- list()

@@ -19,24 +19,28 @@ get_gamma_scale_alternative <- function(gamma_mean, gamma_sd) {
   return(1 / get_gamma_rate_alternative(gamma_mean, gamma_sd))
 }
 
-#' Get PMF of a discretized Gamma distribution.
+#' Get PMF of a discretized Gamma distribution
 #'
-#' This function accepts different parameterizations to specify the Gamma
-#' distribution
+#' @description This function accepts different parameterizations to specify a
+#'   discretized Gamma distribution.
 #'
-#' @param gamma_shape Shape parameter of the Gamma distribution
+#' @param gamma_shape Shape parameter of the Gamma distribution.
 #' @param gamma_rate Rate parameter of the Gamma distribution.
 #' @param gamma_scale Scale parameter of the Gamma distribution. Can be
 #'   specified instead of the rate. Only has an effect if the rate is not
 #'   specified.
 #' @param gamma_mean Alternative parameterization: Mean of the Gamma
+#'   distribution.
 #' @param gamma_sd Alternative parameterization: Standard deviation of the Gamma
-#' @param maxX Right truncation point
+#'   distribution.
+#' @param maxX Right truncation point. All probability mass beyond `maxX` will
+#'   be assigned to `maxX`.
 #' @param include_zero Should the distribution explicitly cover X=0, or should
 #'   X=1 include the probability mass for X=0 too?
 #' @param print_params Should the shape and rate parameters be printed?
 #'
-#' @return PMF of the discretized Gamma distribution
+#' @return A numeric vector representing the PMF of the discretized Gamma
+#'   distribution.
 #' @export
 get_discrete_gamma <- function(gamma_shape,
                                gamma_rate,
@@ -90,19 +94,28 @@ get_discrete_gamma <- function(gamma_shape,
   return(probs)
 }
 
-#' Title
+#' Get PMF of a discretized shifted Gamma distribution
 #'
-#' @description # This ocode is adapted from EpiEstim, credit to Anne Cori
-#'   a.cori@imperial.ac.uk
+#' @description This function specifies a discretized shifted Gamma distribution
+#'   (shifted such that the minimum is at 1) using a mean and standard deviation
+#'   parameterization.
 #'
-#' @param gamma_mean
-#' @param gamma_sd
-#' @param maxX
+#' @description The shift makes the distribution attractive for modeling
+#'   generation time distributions, which are often assumed to have zero
+#'   probability mass for a generation time of zero (as this is incompatible
+#'   with the renewal equation).
 #'
-#' @return
+#' @details This code was adapted from EpiEstim, credit to Anne Cori
+#'   (a.cori@imperial.ac.uk).
+#'
+#' @param gamma_mean Mean of the shifted Gamma distribution.
+#' @param gamma_sd Standard deviation of the shifted Gamma distribution.
+#' @param maxX Right truncation point. All probability mass beyond `maxX` will
+#'   be assigned to `maxX`.
+#'
+#' @return A numeric vector representing the PMF of the discretized shifted
+#'   Gamma distribution.
 #' @export
-#'
-#' @examples
 get_discrete_gamma_shifted <- function(
     gamma_mean = 4.8, gamma_sd = 2.3, maxX = 10) {
   k <- 1:maxX
@@ -127,21 +140,22 @@ get_discrete_gamma_shifted <- function(
   return(res)
 }
 
-#' Get PMF of a discretized lognormal distribution.
+#' Get PMF of a discretized lognormal distribution
 #'
-#' This function accepts both log-scale and unit-scale parameters to specify the
-#' lognormal distribution
+#' This function accepts both log-scale and unit-scale parameters to specify a
+#' discretized lognormal distribution.
 #'
-#' @param meanlog Mean of log
-#' @param sdlog Standard deviation of log
-#' @param unit_mean Alternative parameterization: unit scale mean
-#' @param unit_sd Alternative parameterization: unit scale sd
-#' @param maxX Right truncation point
+#' @param meanlog Log scale mean (location of lognormal).
+#' @param sdlog Log scale standard deviation (scale of lognormal).
+#' @param unit_mean Alternative parameterization: unit scale mean.
+#' @param unit_sd Alternative parameterization: unit scale sd.
+#' @param maxX Right truncation point. All probability mass beyond `maxX` will
+#'   be assigned to `maxX`.
 #' @param include_zero Should the distribution explicitly cover X=0, or should
 #' X=1 include the probability mass for X=0 too?
 #' @param print_params Should the log-level parameters be printed?
 #'
-#' @return PMF of the discretized lognormal
+#' @return A numeric vector representing the PMF of the discretized lognormal.
 #' @export
 get_discrete_lognormal <- function(
     meanlog, sdlog, unit_mean = NULL, unit_sd = NULL, maxX, include_zero = TRUE,

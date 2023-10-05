@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_plot.R
 \name{plot_infections}
 \alias{plot_infections}
-\title{Title}
+\title{Plot infections}
 \usage{
 plot_infections(
   results,
@@ -13,11 +13,27 @@ plot_infections(
 )
 }
 \arguments{
-\item{ndraws}{}
+\item{results}{Results object returned by \code{\link[=EpiSewer]{EpiSewer()}} after model fitting.}
+
+\item{draws}{If \code{FALSE} (default), 50\% and 95\% Bayesian credible intervals
+are shown. If \code{TRUE}, exemplary posterior samples are shown in a "spaghetti
+plot" style.}
+
+\item{ndraws}{Number of different samples to show if \code{draws=TRUE}.}
+
+\item{seeding}{Should infections from the seeding phase be shown as well?
+Default is \code{FALSE}.}
+
+\item{median}{Should the estimated median be shown, or only the credible
+intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
 }
 \value{
-
+A ggplot object showing the time series of estimated infections,
+either with credible intervals or as "spaghetti plot". Can be further
+manipulated using \link{ggplot2} functions to adjust themes and scales, and add
+further geoms.
 }
 \description{
-Title
+Plots the estimated number of infections over time from a fitted
+\code{EpiSewer} model.
 }

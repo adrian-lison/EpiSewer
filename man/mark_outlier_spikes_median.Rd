@@ -6,7 +6,7 @@
 \usage{
 mark_outlier_spikes_median(
   df,
-  col,
+  measurement_col,
   date_col = date,
   window = 5,
   threshold_factor = 5,
@@ -17,7 +17,7 @@ mark_outlier_spikes_median(
 \arguments{
 \item{df}{A \code{data.frame} containing the time series of measurements.}
 
-\item{col}{The name of the column with the measurements. Use dplyr-style
+\item{measurement_col}{The name of the column with the measurements. Use dplyr-style
 env-variables, not characters.}
 
 \item{date_col}{The name of the column with corresponding dates. Use
@@ -46,11 +46,19 @@ spikes) in a time series. The approach is to compare a measurement with the
 median of measurements in a small centered window. If the measurements before
 and after are considerably lower than the current measurement, the median
 will also be much lower. This is used as a criterion to determine outliers.
-Note that the method also allows for multiple measurements per day
+}
+\details{
+To determine how much deviation from the median is significant, a
+moving median absolute deviation (as a more robust estimate than the
+standard deviation of how much noise to expect) in measurements is used.
+This seems to be more robust than just multiplying the median with a
+factor to determine the threshold. The moving MAD is lagged by one day
+such that the current value is not included. Moreover, note that because
+the window for the moving median is centered, the last window_size/2 dates
+have no spike detection.
+
+The method also allows for multiple measurements per day
 (replicates), where each replicate is evaluated individually. However, this
 currently does not give more weight to days with more replicates, i.e.
 ignores potential differences in measurement uncertainty.
-}
-\details{
-To determine how much deviation from the median is significant, a moving
 }

@@ -2,16 +2,35 @@
 % Please edit documentation in R/model_postprocess.R
 \name{summarize_fit}
 \alias{summarize_fit}
-\title{Title}
+\title{Summarize parameters of interest}
 \usage{
 summarize_fit(fit, data, meta_info, ndraws = 50)
 }
 \arguments{
-\item{ndraws}{}
+\item{fit}{The fitted \code{EpiSewer} model.}
+
+\item{data}{The model data that the \code{EpiSewer} model was fitted with.}
+
+\item{meta_info}{Meta information about the model data.}
+
+\item{ndraws}{Number of exemplary posterior samples that should be extracted.
+(The summaries always use all draws.)}
 }
 \value{
-
+A \code{list} with the following summaries:
+\itemize{
+\item R (posterior summary)
+\item R_samples (exemplary samples)
+\item expected_infections (posterior summary)
+\item infections (posterior summary)
+\item infections_samples (exemplary samples)
+\item expected_load (posterior summary)
+\item expected_concentration (posterior summary)
+\item concentration (posterior summary)
+\item sample_effects (posterior summary)
+}
 }
 \description{
-Title
+This helper summarizes important parameters of interest from a
+fitted \code{EpiSewer} model.
 }

@@ -2,11 +2,11 @@
 % Please edit documentation in R/utils_stan.R
 \name{get_stan_model}
 \alias{get_stan_model}
-\title{Title}
+\title{Load stan model}
 \usage{
 get_stan_model(
-  model_filename = NULL,
   modeldata = NULL,
+  model_filename = NULL,
   model_folder = "stan",
   profile = TRUE,
   threads = FALSE,
@@ -14,11 +14,31 @@ get_stan_model(
 )
 }
 \arguments{
-\item{force_recompile}{}
+\item{modeldata}{A \code{modeldata} object containing data and specifications of
+the model to be fitted. The required stan model is automatically inferred
+from the \code{modeldata}.}
+
+\item{model_filename}{File name of a specific stan model to load. This is an
+alternative to supplying \code{modeldata}.}
+
+\item{model_folder}{Path to the folder containing the stan models for
+\code{EpiSewer}.}
+
+\item{profile}{Should profiling be run during model fitting? Default is
+\code{TRUE}. Disabling profiling can decrease runtime in some cases.}
+
+\item{threads}{Should multihreading be enabled? Default is \code{FALSE}, as
+\code{EpiSewer} currently does not support within-chain parallelism.}
+
+\item{force_recompile}{If \code{FALSE} (default), the model is only recompiled if
+changes to the model code are detected. However, as the change detection is
+not fully reliable, it is sometimes necessary to force recompilation after
+having made some changes to the stan code.}
 }
 \value{
-
+A \code{list} containing the model definition and a link to the compiled
+stan model.
 }
 \description{
-Title
+Loads a specific stan model for model fitting in \code{EpiSewer}.
 }
