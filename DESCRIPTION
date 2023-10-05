@@ -32,9 +32,11 @@ Imports:
     stringr,
     vctrs
 Suggests:
+    testthat (>= 3.0.0),
     zoo
 Remotes:
     stan-dev/cmdstanr
 SystemRequirements:
     CmdStan (>=2.30)
 LazyData: true
+Config/testthat/edition: 3
