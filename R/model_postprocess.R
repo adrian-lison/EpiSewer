@@ -100,7 +100,7 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
 
   if (data$K > 0) {
     # here we exponentiate to get the multiplicative effect
-    summary[["sample_date_effects"]] <- get_summary_vector_log(
+    summary[["sample_effects"]] <- get_summary_vector_log(
       fit, "eta", colnames(data$X),
       intervals = c(0.95, 0.5)
     )

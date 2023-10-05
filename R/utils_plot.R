@@ -285,8 +285,8 @@ plot_load <- function(results, measurements = NULL, include_noise = TRUE, median
 #' @export
 #'
 #' @examples
-plot_sample_date_effects <- function(result) {
-  ggplot(result$summary$sample_date_effects, aes(y = variable)) +
+plot_sample_effects <- function(results) {
+  ggplot(results$summary$sample_effects, aes(y = variable)) +
     geom_vline(xintercept = 0, linetype = "dashed") +
     ggdist::geom_pointinterval(
       aes(x = median - 1, xmin = lower_0.95 - 1, xmax = upper_0.95 - 1),
