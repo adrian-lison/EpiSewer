@@ -17,7 +17,7 @@ summarize_fit(fit, data, meta_info, ndraws = 50)
 (The summaries always use all draws.)}
 }
 \value{
-A \code{list} with the following summaries:
+A \code{list} with the following summaries (each in a \code{data.frame}):
 \itemize{
 \item R (posterior summary)
 \item R_samples (exemplary samples)
@@ -31,6 +31,16 @@ A \code{list} with the following summaries:
 }
 }
 \description{
-This helper summarizes important parameters of interest from a
+This function summarizes important parameters of interest from a
 fitted \code{EpiSewer} model.
+}
+\details{
+The summaries for infections and R include a column \code{seeding}, which
+indicates whether the corresponding date was still in the seeding phase or
+not. The seeding phase is here defined as 2xG days long, where G is the
+maximum generation time. This is in contrast to the model, where it is only
+G days long. The reason for this decision is that after G days, new
+infections are still based on the seeded infections and not strongly
+informed by the data. By using the extended seeding criterion, we ensure
+that only sufficiently data-driven estimates are shown in the result plots.
 }

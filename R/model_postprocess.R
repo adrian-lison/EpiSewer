@@ -22,7 +22,7 @@ get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
 
 #' Summarize parameters of interest
 #'
-#' @description This helper summarizes important parameters of interest from a
+#' @description This function summarizes important parameters of interest from a
 #'   fitted `EpiSewer` model.
 #'
 #' @param fit The fitted `EpiSewer` model.
@@ -31,7 +31,16 @@ get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
 #' @param ndraws Number of exemplary posterior samples that should be extracted.
 #'   (The summaries always use all draws.)
 #'
-#' @return A `list` with the following summaries:
+#' @details The summaries for infections and R include a column `seeding`, which
+#'   indicates whether the corresponding date was still in the seeding phase or
+#'   not. The seeding phase is here defined as 2xG days long, where G is the
+#'   maximum generation time. This is in contrast to the model, where it is only
+#'   G days long. The reason for this decision is that after G days, new
+#'   infections are still based on the seeded infections and not strongly
+#'   informed by the data. By using the extended seeding criterion, we ensure
+#'   that only sufficiently data-driven estimates are shown in the result plots.
+#'
+#' @return A `list` with the following summaries (each in a `data.frame`):
 #' - R (posterior summary)
 #' - R_samples (exemplary samples)
 #' - expected_infections (posterior summary)
