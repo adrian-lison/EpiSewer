@@ -4,6 +4,30 @@
 [![MIT
 license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epinowcast/epinowcast/blob/master/LICENSE.md/)
 
+## Model highlights
+
+**Measurements**  
+⭐ Non-daily / missing measurements  
+⭐ Multiple measurements (replicates) per sample  
+⭐ Multi-day composite samples  
+⭐ Limit of detection (LOD) model
+
+**Sampling**  
+⭐ Sample batch effects (e.g. weekday or age-of-sample effects)
+
+**Sewer**  
+⭐ Flow normalization  
+⭐ Sewer residence time distributions
+
+**Shedding**  
+⭐ Incubation period and shedding load distributions  
+⭐ Individual-level shedding load variation
+
+**Infections**  
+⭐ Stochastic infection model with overdispersion  
+⭐ Flexible $R_t$ smoothing (random walk, exponential smoothing,
+splines)
+
 ## Installing the package
 
 The development version of `EpiSewer` can be installed from GitHub as
@@ -28,8 +52,8 @@ cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up
 
 ### Loading the package
 
-EpiSewer comes with `data.table` for data manipulation and `ggplot2` for
-plotting.
+`EpiSewer` comes with `data.table` for data manipulation and `ggplot2`
+for plotting.
 
 ``` r
 library(EpiSewer)
