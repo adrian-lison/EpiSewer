@@ -65,7 +65,8 @@ flows_assume <- function(
         )
       modeldata$flow <- rep(flow_constant, length(all_dates))
     },
-    required = c("meta_info$T_start_date", "meta_info$T_end_date")
+    required = c("meta_info$T_start_date", "meta_info$T_end_date"),
+    modeldata = modeldata
   )
   return(modeldata)
 }
@@ -81,7 +82,7 @@ flows_assume <- function(
 #'   measurements, e.g. if concentrations are measured in gc/mL, then the flow
 #'   should be in mL as well.
 #'
-#' @param data A `data.frame` with each row representing one day. Must have at
+#' @param flows A `data.frame` with each row representing one day. Must have at
 #'   least a column with dates and a column with flow measurements.
 #' @param date_col Name of the column containing the dates.
 #' @param flow_col Name of the column containing the flows.
@@ -91,63 +92,63 @@ flows_assume <- function(
 #' @export
 #' @family {flow models}
 flows_observe <-
-  function(data = NULL,
+  function(flows = NULL,
            date_col = "date",
            flow_col = "flow",
            modeldata = modeldata_init()) {
 
-    if (is.null(data)) {
-      data <- tryCatch(
-        get_from_env("data", "flows"),
-        error = abort_f("Please supply flow data.")
-      )
-    }
-
-    required_data_cols <- c(date_col, flow_col)
-    if (!all(required_data_cols %in% names(data))) {
-      rlang::abort(
-        paste(
-          "The following columns must be present",
-          "in the provided flow `data.frame`:",
-          paste(required_data_cols, collapse = ", ")
+    modeldata = tbp("flows_observe", {
+      required_data_cols <- c(date_col, flow_col)
+      if (!all(required_data_cols %in% names(flows))) {
+        rlang::abort(
+          paste(
+            "The following columns must be present",
+            "in the provided flow `data.frame`:",
+            paste(required_data_cols, collapse = ", ")
+          )
         )
+      }
+
+      flows[[date_col]] <- as.Date(flows[[date_col]])
+
+      if (any(duplicated(flows[[date_col]]))) {
+        rlang::abort("Flow data is ambigious, duplicate dates found.")
+      }
+
+      modeldata <- tbc(
+        "flow_data",
+        {
+          all_dates <-
+            seq.Date(
+              modeldata$meta_info$T_start_date,
+              modeldata$meta_info$T_end_date,
+              by = "1 day"
+            )
+          missing_flow_dates <-
+            as.Date(
+              setdiff(all_dates, flows[[date_col]][!is.na(flows[[flow_col]])]),
+              origin = lubridate::origin
+            )
+          if (length(missing_flow_dates) > 0) {
+            rlang::abort(paste(
+              "Missing flow values for the following dates:",
+              paste(missing_flow_dates, collapse = ", ")
+            ))
+          }
+          flows <-
+            flows[flows[[date_col]] >= modeldata$meta_info$T_start_date &
+                   flows[[date_col]] <= modeldata$meta_info$T_end_date, ]
+          flows <- flows[order(flows[[date_col]]), ]
+          modeldata$flow <- flows[[flow_col]]
+        },
+        required = c("meta_info$T_start_date", "meta_info$T_end_date"),
+        modeldata = modeldata
       )
-    }
 
-    data[[date_col]] <- as.Date(data[[date_col]])
-
-    if (any(duplicated(data[[date_col]]))) {
-      rlang::abort("Flow data is ambigious, duplicate dates found.")
-    }
-
-    modeldata <- tbc(
-      "flow_data",
-      {
-        all_dates <-
-          seq.Date(
-            modeldata$meta_info$T_start_date,
-            modeldata$meta_info$T_end_date,
-            by = "1 day"
-          )
-        missing_flow_dates <-
-          as.Date(
-            setdiff(all_dates, data[[date_col]][!is.na(data[[flow_col]])]),
-            origin = lubridate::origin
-          )
-        if (length(missing_flow_dates) > 0) {
-          rlang::abort(paste(
-            "Missing flow values for the following dates:",
-            paste(missing_flow_dates, collapse = ", ")
-          ))
-        }
-        data <-
-          data[data[[date_col]] >= modeldata$meta_info$T_start_date &
-                 data[[date_col]] <= modeldata$meta_info$T_end_date, ]
-        data <- data[order(data[[date_col]]), ]
-        modeldata$flow <- data[[flow_col]]
-      },
-      required = c("meta_info$T_start_date", "meta_info$T_end_date")
-    )
+      return(modeldata)
+    },
+    required_data = "flows",
+    modeldata = modeldata)
 
     return(modeldata)
   }
@@ -179,14 +180,14 @@ flows_observe <-
 #' residence_dist_assume(residence_dist = c(0.75, 0.25))
 residence_dist_assume <-
   function(residence_dist = NULL, modeldata = modeldata_init()) {
-    if (is.null(residence_dist)) {
-      residence_dist <- tryCatch(
-        get_from_env("assumptions", "residence_dist"),
-        error = abort_f("Please supply an assumed residence time distribution.")
-      )
-    }
-    modeldata$D <- length(residence_dist) - 1
-    residence_dist <- check_dist(residence_dist, "residence time distribution")
-    modeldata$residence_dist <- residence_dist
+    modeldata = tbp("residence_dist_assume", {
+      modeldata$D <- length(residence_dist) - 1
+      residence_dist <- check_dist(residence_dist, "residence time distribution")
+      modeldata$residence_dist <- residence_dist
+      return(modeldata)
+    },
+    required_assumptions = "residence_dist",
+    modeldata = modeldata)
+
     return(modeldata)
   }

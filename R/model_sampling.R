@@ -85,7 +85,8 @@ sample_effects_estimate_matrix <- function(
           paste(
             "Mismatch: Modeled time period has",
             modeldata$T,
-            "days (from earliest to latest date, accounting for the composite window length),",
+            "days (from earliest to latest date,",
+            "accounting for the composite window length),",
             "but design matrix for sample date effects has",
             nrow(design_matrix),
             "rows."
@@ -93,7 +94,8 @@ sample_effects_estimate_matrix <- function(
         )
       }
     },
-    required = "T"
+    required = "T",
+    modeldata = modeldata
   )
   modeldata$K <- ncol(design_matrix)
   modeldata$X <- design_matrix
@@ -153,6 +155,7 @@ sample_effects_estimate_weekday <- function(
           design_matrix, effect_prior_mu, effect_prior_sigma, modeldata
         )
     },
-    required = c("meta_info$T_start_date", "meta_info$T_end_date")
+    required = c("meta_info$T_start_date", "meta_info$T_end_date"),
+    modeldata = modeldata
   )
 }

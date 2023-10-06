@@ -205,17 +205,87 @@ modeldata_check <- function(modeldata,
 #' @param defaults A `list` with default values to be used for modeldata
 #'   variables if not supplied in modeldata. For example, `numeric(0)` will often
 #'   be supplied for optional parameters.
+#' @param data
+#' @param assumptions
 #'
 #' @return If no error is thrown due to missing mandatory variables, the same
 #'   modeldata object is returned again, where optional variables have been
 #'   replaced by zero-length dimension defaults for stan.
-modeldata_validate <- function(modeldata, model_def,
+modeldata_validate <- function(modeldata,
+                               data = list(),
+                               assumptions = list(),
+                               model_def,
                                defaults = modeldata_defaults()) {
   if (!class(modeldata) == "modeldata") {
     rlang::abort("Please supply a modeldata object.")
   }
 
-  modeldata <- modeldata_update(modeldata)
+  # check for conflicting data
+  for (comp in names(modeldata$sewer_data)) {
+    overlaps_data <- intersect(
+      names(data), names(modeldata$sewer_data[[comp]])
+    )
+    for (o in overlaps_data) {
+      if (!is.null(data[[o]]) &&
+          !is.null(modeldata$sewer_data[[comp]][o]) &&
+          !identical(data[[o]], modeldata$sewer_data[[comp]][o][[1]])) {
+        rlang::cli_abort(paste0(
+          "You provided different data for `", o,
+          "` in sewer_data() and ", comp, "()."
+        ))
+      }
+    }
+  }
+
+  # check for conflicting assumptions
+  for (comp in names(modeldata$sewer_assumptions)) {
+    overlaps_assumptions <- intersect(
+      names(assumptions), names(modeldata$sewer_assumptions[[comp]])
+    )
+    for (o in overlaps_assumptions) {
+      if (!is.null(assumptions[[o]]) &&
+          !is.null(modeldata$sewer_assumptions[[comp]][o]) &&
+          !identical(assumptions[[o]], modeldata$sewer_assumptions[[comp]][o][[1]])) {
+        rlang::abort(paste0(
+          "You provided different assumptions for `", o,
+          "` in sewer_assumptions() and ", comp, "()."
+        ))
+      }
+    }
+  }
+
+  for (i in 1:2) { # update two times to catch all lazy evals
+    modeldata <- modeldata_update(
+      modeldata, data = data, assumptions = assumptions, throw_error = F
+    )
+  }
+
+  for (modeldata_sub in list(modeldata$meta_info, modeldata, modeldata$init)) {
+    for (name in names(modeldata_sub)) {
+      if ("tbp" %in% class(modeldata_sub[[name]])) {
+        message_data <- c()
+        message_assumptions <- c()
+        if (length(modeldata_sub[[name]]$required_data) > 0) {
+          message_data <- paste(
+            "Data (also via sewer_data()):",
+            paste("`", modeldata_sub[[name]]$required_data, "`", sep = "", collapse = ", ")
+            )
+        }
+        if (length(modeldata_sub[[name]]$required_assumptions) > 0) {
+          message_assumptions <- paste(
+            "Assumptions (also via sewer_assumptions()):",
+            paste("`", modeldata_sub[[name]]$required_assumptions, "`", sep = "", collapse = ", ")
+            )
+        }
+        rlang::abort(c(paste0(
+          "Please provide the following information to ", name, "():"
+        ),
+        message_data,
+        message_assumptions
+        ))
+      }
+    }
+  }
 
   for (modeldata_sub in list(modeldata$meta_info, modeldata, modeldata$init)) {
     for (name in names(modeldata_sub)) {
@@ -227,6 +297,10 @@ modeldata_validate <- function(modeldata, model_def,
       }
     }
   }
+
+  modeldata <- modeldata_update(
+    modeldata, data = data, assumptions = assumptions
+    )
 
   for (i in seq_along(defaults)) {
     levels <- stringr::str_split(names(defaults)[[i]], "\\$")[[1]]
@@ -254,7 +328,9 @@ modeldata_combine <- function(...) {
 
   modeldata_combined <- do.call(
     c, lapply(modeldata_sets, function(x) {
-      list_except(x, c("init", "meta_info", "checks"))
+      list_except(
+        x, c("init", "meta_info", "checks", "sewer_data", "sewer_assumptions")
+        )
     })
   )
   class(modeldata_combined) <- "modeldata"
@@ -267,11 +343,21 @@ modeldata_combine <- function(...) {
   modeldata_combined$checks <- do.call(
     c, lapply(modeldata_sets, function(x) x$checks)
   )
-  modeldata_combined <- modeldata_update(modeldata_combined, throw_error = FALSE)
+  modeldata_combined$sewer_data <- do.call(
+    c, lapply(modeldata_sets, function(x) x$sewer_data)
+  )
+  modeldata_combined$sewer_assumptions <- do.call(
+    c, lapply(modeldata_sets, function(x) x$sewer_assumptions)
+  )
+  modeldata_combined <- modeldata_update(
+    modeldata_combined, throw_error = FALSE
+    )
   return(modeldata_combined)
 }
 
-modeldata_update <- function(modeldata, throw_error = TRUE) {
+modeldata_update <- function(modeldata,
+                             data = list(), assumptions = list(),
+                             throw_error = TRUE) {
   if (!class(modeldata) == "modeldata") {
     rlang::abort("Please supply a modeldata object.")
   }
@@ -291,6 +377,13 @@ modeldata_update <- function(modeldata, throw_error = TRUE) {
         modeldata$meta_info[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
+    } else if ("tbp" %in% class(modeldata$meta_info[[name]])) {
+      modeldata <- solve(
+        modeldata$meta_info[[name]],
+        modeldata = modeldata,
+        data = data,
+        assumptions = assumptions
+      )
     }
   }
 
@@ -306,6 +399,13 @@ modeldata_update <- function(modeldata, throw_error = TRUE) {
       modeldata <- solve(
         modeldata[[name]],
         modeldata = modeldata, throw_error = throw_error
+      )
+    } else if ("tbp" %in% class(modeldata[[name]])) {
+      modeldata <- solve(
+        modeldata[[name]],
+        modeldata = modeldata,
+        data = data,
+        assumptions = assumptions
       )
     }
   }
@@ -323,8 +423,17 @@ modeldata_update <- function(modeldata, throw_error = TRUE) {
         modeldata$init[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
+    } else if ("tbp" %in% class(modeldata$init[[name]])) {
+      modeldata <- solve(
+        modeldata$init[[name]],
+        modeldata = modeldata,
+        data = data,
+        assumptions = assumptions
+      )
     }
   }
+
+  modeldata <- modeldata_update_metainfo(modeldata)
 
   return(modeldata)
 }

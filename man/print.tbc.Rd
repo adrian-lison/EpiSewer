@@ -2,16 +2,10 @@
 % Please edit documentation in R/utils_lazy.R
 \name{print.tbc}
 \alias{print.tbc}
-\title{Title}
+\title{Print to-be-computed object}
 \usage{
 \method{print}{tbc}(x)
 }
-\arguments{
-\item{x}{}
-}
-\value{
-
-}
 \description{
-Title
+Print to-be-computed object
 }

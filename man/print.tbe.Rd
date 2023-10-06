@@ -2,16 +2,10 @@
 % Please edit documentation in R/utils_lazy.R
 \name{print.tbe}
 \alias{print.tbe}
-\title{Title}
+\title{Print to-be-evaluated object}
 \usage{
 \method{print}{tbe}(x)
 }
-\arguments{
-\item{x}{}
-}
-\value{
-
-}
 \description{
-Title
+Print to-be-evaluated object
 }

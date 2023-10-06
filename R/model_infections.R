@@ -65,16 +65,16 @@ model_infections <- function(
 #'   [get_discrete_gamma()], [get_discrete_gamma_shifted()], [get_discrete_lognormal()]
 generation_dist_assume <-
   function(generation_dist = NULL, modeldata = modeldata_init()) {
-    if (is.null(generation_dist)) {
-      generation_dist <- tryCatch(
-        get_from_env("assumptions", "generation_dist"),
-        error = abort_f("Please supply an assumed generation time distribution.")
-      )
-    }
-    modeldata$G <- length(generation_dist)
-    generation_dist <- check_dist(generation_dist, "generation time distribution")
-    modeldata$generation_dist <- generation_dist
-    modeldata$meta_info$length_seeding <- length(generation_dist)
+
+    modeldata <- tbp("generation_dist_assume", {
+      modeldata$G <- length(generation_dist)
+      generation_dist <- check_dist(generation_dist, "generation time distribution")
+      modeldata$generation_dist <- generation_dist
+      modeldata$meta_info$length_seeding <- length(generation_dist)
+    },
+    required_assumptions = "generation_dist",
+    modeldata = modeldata)
+
     return(modeldata)
   }
 
@@ -210,7 +210,7 @@ R_estimate_ets <- function(
     modeldata$init$ets_alpha <- numeric(0)
   } else {
     modeldata$ets_alpha_prior <- set_prior("ets_alpha", "beta",
-                                           alpha = smooth_prior_shapes[1], beta = smooth_prior_shapes[2]
+      alpha = smooth_prior_shapes[1], beta = smooth_prior_shapes[2]
     )
     modeldata$init$ets_alpha <- 0.5
   }
@@ -224,7 +224,7 @@ R_estimate_ets <- function(
     modeldata$init$ets_beta <- numeric(0)
   } else {
     modeldata$ets_beta_prior <- set_prior("ets_beta", "beta",
-                                          alpha = trend_smooth_prior_shapes[1], beta = trend_smooth_prior_shapes[2]
+      alpha = trend_smooth_prior_shapes[1], beta = trend_smooth_prior_shapes[2]
     )
     modeldata$init$ets_beta <- 0.5
   }
@@ -238,7 +238,7 @@ R_estimate_ets <- function(
     modeldata$init$ets_phi <- numeric(0)
   } else {
     modeldata$ets_phi_prior <- set_prior("ets_phi", "beta",
-                                         alpha = dampen_prior_shapes[1], beta = dampen_prior_shapes[2]
+      alpha = dampen_prior_shapes[1], beta = dampen_prior_shapes[2]
     )
     modeldata$init$ets_phi <- 0.9
   }
@@ -363,41 +363,43 @@ R_estimate_splines <- function(
     modeldata = modeldata_init()) {
   modeldata$meta_info$R_estimate_approach <- "splines"
 
-  modeldata <- tbc("spline_definition",
-                   {
-                     knots <- seq(1, modeldata$meta_info$length_R, by = knot_distance)
-                     B <-
-                       splines::bs(
-                         1:modeldata$meta_info$length_R,
-                         knots = knots,
-                         degree = spline_degree,
-                         intercept = FALSE
-                       )
-                     modeldata$meta_info$R_knots <- knots
-                     modeldata$meta_info$B <- B
-                     modeldata$bs_n_basis <- ncol(B)
-                     B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
-                     modeldata$bs_n_w <- length(B_sparse$w)
-                     modeldata$bs_w <- B_sparse$w
-                     modeldata$bs_v <- B_sparse$v
-                     modeldata$bs_u <- B_sparse$u
+  modeldata <- tbc(
+    "spline_definition",
+    {
+      knots <- seq(1, modeldata$meta_info$length_R, by = knot_distance)
+      B <-
+        splines::bs(
+          1:modeldata$meta_info$length_R,
+          knots = knots,
+          degree = spline_degree,
+          intercept = FALSE
+        )
+      modeldata$meta_info$R_knots <- knots
+      modeldata$meta_info$B <- B
+      modeldata$bs_n_basis <- ncol(B)
+      B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
+      modeldata$bs_n_w <- length(B_sparse$w)
+      modeldata$bs_w <- B_sparse$w
+      modeldata$bs_v <- B_sparse$v
+      modeldata$bs_u <- B_sparse$u
 
-                     modeldata$init$bs_coeff_ar_start <- 0
-                     modeldata$init$bs_coeff_ar_sd <- 0.1
-                     modeldata$init$bs_coeff_noise <- rep(0, modeldata$bs_n_basis - 1)
-                   },
-                   required = "meta_info$length_R"
+      modeldata$init$bs_coeff_ar_start <- 0
+      modeldata$init$bs_coeff_ar_sd <- 0.1
+      modeldata$init$bs_coeff_noise <- rep(0, modeldata$bs_n_basis - 1)
+    },
+    required = "meta_info$length_R",
+    modeldata = modeldata
   )
 
   modeldata$bs_coeff_ar_start_prior <- set_prior("bs_coeff_ar_start",
-                                                 "normal",
-                                                 mu = coef_intercept_prior_mu,
-                                                 sigma = coef_intercept_prior_sigma
+    "normal",
+    mu = coef_intercept_prior_mu,
+    sigma = coef_intercept_prior_sigma
   )
   modeldata$bs_coeff_ar_sd_prior <- set_prior("bs_coeff_ar_sd",
-                                              "truncated normal",
-                                              mu = coef_sd_prior_mu,
-                                              sigma = coef_sd_prior_sigma
+    "truncated normal",
+    mu = coef_sd_prior_mu,
+    sigma = coef_sd_prior_sigma
   )
 
   return(modeldata)
@@ -531,7 +533,7 @@ infection_noise_estimate <-
            modeldata = modeldata_init()) {
     modeldata$I_overdispersion <- overdispersion
     modeldata$I_xi_prior <- set_prior("I_xi", "normal",
-                                      mu = overdispersion_prior_mu, sigma = overdispersion_prior_sigma
+      mu = overdispersion_prior_mu, sigma = overdispersion_prior_sigma
     )
 
     modeldata$I_sample <- TRUE

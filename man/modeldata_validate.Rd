@@ -4,11 +4,19 @@
 \alias{modeldata_validate}
 \title{Ensure that modeldata contains all necessary variables}
 \usage{
-modeldata_validate(modeldata, model_def, defaults = modeldata_defaults())
+modeldata_validate(
+  modeldata,
+  data = list(),
+  assumptions = list(),
+  model_def,
+  defaults = modeldata_defaults()
+)
 }
 \arguments{
 \item{modeldata}{A \code{list} with all data variables (including priors) to be
 passed on to stan, alongside additional meta information and descriptions.}
+
+\item{assumptions}{}
 
 \item{model_def}{A \code{list} with information about the stan model to be fitted
 and a function that returns the CmdStanModel object.}

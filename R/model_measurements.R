@@ -35,12 +35,12 @@ model_measurements <- function(
 #'
 #' @description This option fits the `EpiSewer` model to pathogen concentrations
 #'   measured in wastewater samples. It is suitable for different quantification
-#'   methods such as qPCR or dPCR. The measured concentrations are modeled via
-#'   a lognormal likelihood.
+#'   methods such as qPCR or dPCR. The measured concentrations are modeled via a
+#'   lognormal likelihood.
 #'
-#' @param data A `data.frame` with each row representing one measurement. Must
-#'   have at least a column with dates and a column with concentration
-#'   measurements.
+#' @param measurements A `data.frame` with each row representing one
+#'   measurement. Must have at least a column with dates and a column with
+#'   concentration measurements.
 #' @param composite_window Over how many days has each measured sample been
 #'   collected? If 1 (default), samples represent single days. If larger than 1,
 #'   samples are assumed to be equivolumetric composites over several dates. In
@@ -59,19 +59,12 @@ model_measurements <- function(
 #' @export
 #' @family {observation types}
 concentrations_observe <-
-  function(data = NULL,
+  function(measurements = NULL,
            composite_window = 1,
            date_col = "date",
            concentration_col = "concentration",
            replicate_col = NULL,
            modeldata = modeldata_init()) {
-
-    if (is.null(data)) {
-      data <- tryCatch(
-        get_from_env("data", "measurements"),
-        error = abort_f("Please supply measurement data.")
-      )
-    }
 
     if(!(composite_window%%1==0 && composite_window>0)) {
       rlang::abort(
@@ -79,61 +72,67 @@ concentrations_observe <-
       )
     }
 
-    required_data_cols <- c(date_col, concentration_col, replicate_col)
-    if (!all(required_data_cols %in% names(data))) {
-      rlang::abort(
-        paste(
-          "The following columns must be present",
-          "in the provided measurements `data.frame`:",
-          paste(required_data_cols, collapse = ", ")
-        )
-      )
-    }
-
-    data[[date_col]] <- as.Date(data[[date_col]])
-
-    if (is.null(replicate_col)) {
-      if (any(duplicated(data[[date_col]]))) {
+    modeldata <- tbp("concentrations_observe", {
+      required_data_cols <- c(date_col, concentration_col, replicate_col)
+      if (!all(required_data_cols %in% names(measurements))) {
         rlang::abort(
           paste(
-            "Duplicated dates found in measurements `data.frame`.",
-            "If your data contains replicate measurements, please add a column",
-            "with replicate IDs to your `data.frame` and provide its name via",
-            "the `replicate_col` argument."
+            "The following columns must be present",
+            "in the provided measurements `data.frame`:",
+            paste(required_data_cols, collapse = ", ")
           )
         )
       }
-    }
 
-    modeldata$T <-
-      as.integer(max(data[[date_col]]) -
-                   min(data[[date_col]]) + composite_window)
+      measurements[[date_col]] <- as.Date(measurements[[date_col]])
 
-    modeldata$meta_info$T_start_date <-
-      min(data[[date_col]]) - composite_window + 1
-    modeldata$meta_info$T_end_date <- max(data[[date_col]])
+      if (is.null(replicate_col)) {
+        if (any(duplicated(measurements[[date_col]]))) {
+          rlang::abort(
+            paste(
+              "Duplicated dates found in measurements `data.frame`.",
+              "If your data contains replicate measurements, please add a column",
+              "with replicate IDs to your `data.frame` and provide its name via",
+              "the `replicate_col` argument."
+            )
+          )
+        }
+      }
 
-    modeldata$w <- composite_window
-    modeldata$meta_info$composite_window <- composite_window
+      modeldata$T <-
+        as.integer(max(measurements[[date_col]]) -
+                     min(measurements[[date_col]]) + composite_window)
+
+      modeldata$meta_info$T_start_date <-
+        min(measurements[[date_col]]) - composite_window + 1
+      modeldata$meta_info$T_end_date <- max(measurements[[date_col]])
+
+      modeldata$w <- composite_window
+      modeldata$meta_info$composite_window <- composite_window
 
 
-    measured <- !is.na(data[[concentration_col]])
-    modeldata$n_measured <- sum(measured)
-    modeldata$n_samples <- length(unique(data[[date_col]][measured]))
-    measured_dates <- as.integer(
-      data[[date_col]][measured] - modeldata$meta_info$T_start_date + 1
-    )
-    modeldata$sample_to_date <- sort(unique(measured_dates))
-    modeldata$measure_to_sample <- sapply(
-      measured_dates,
-      function(x) which(x == modeldata$sample_to_date)[[1]]
-    )
-    modeldata$measured_concentrations <- data[[concentration_col]][measured]
-    modeldata$meta_info$measured_dates <- data[[date_col]][measured]
+      measured <- !is.na(measurements[[concentration_col]])
+      modeldata$n_measured <- sum(measured)
+      modeldata$n_samples <- length(unique(measurements[[date_col]][measured]))
+      measured_dates <- as.integer(
+        measurements[[date_col]][measured] - modeldata$meta_info$T_start_date + 1
+      )
+      modeldata$sample_to_date <- sort(unique(measured_dates))
+      modeldata$measure_to_sample <- sapply(
+        measured_dates,
+        function(x) which(x == modeldata$sample_to_date)[[1]]
+      )
+      modeldata$measured_concentrations <- measurements[[concentration_col]][measured]
+      modeldata$meta_info$measured_dates <- measurements[[date_col]][measured]
 
-    if (!is.null(replicate_col)) {
-      modeldata$replicate_ids <- as.integer(data[[replicate_col]][measured])
-    }
+      if (!is.null(replicate_col)) {
+        modeldata$replicate_ids <- as.integer(measurements[[replicate_col]][measured])
+      }
+
+      return(modeldata)
+    },
+    required_data = "measurements",
+    modeldata = modeldata)
 
     return(modeldata)
   }
@@ -285,13 +284,15 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #'
 #' @family {LOD models}
 LOD_assume <- function(limit = NULL, sharpness = 10, modeldata = modeldata_init()) {
-  if (is.null(limit)) {
-    limit <- tryCatch(
-      get_from_env("assumptions", "limit_of_detection"),
-      error = abort_f("Please supply an assumed limit of detection.")
-    )
-  }
-  modeldata$LOD <- limit
-  modeldata$LOD_sharpness <- sharpness
+
+  modeldata <- tbp("LOD_assume",{
+    modeldata$LOD <- limit
+    modeldata$LOD_sharpness <- sharpness
+    return(modeldata)
+  },
+  required_assumptions = "limit_of_detection",
+  modeldata = modeldata
+  )
+
   return(modeldata)
 }

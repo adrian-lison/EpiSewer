@@ -5,7 +5,7 @@
 \title{Observe concentration measurements}
 \usage{
 concentrations_observe(
-  data = NULL,
+  measurements = NULL,
   composite_window = 1,
   date_col = "date",
   concentration_col = "concentration",
@@ -14,9 +14,9 @@ concentrations_observe(
 )
 }
 \arguments{
-\item{data}{A \code{data.frame} with each row representing one measurement. Must
-have at least a column with dates and a column with concentration
-measurements.}
+\item{measurements}{A \code{data.frame} with each row representing one
+measurement. Must have at least a column with dates and a column with
+concentration measurements.}
 
 \item{composite_window}{Over how many days has each measured sample been
 collected? If 1 (default), samples represent single days. If larger than 1,
@@ -51,8 +51,8 @@ performed before model fitting (\code{checks}).
 \description{
 This option fits the \code{EpiSewer} model to pathogen concentrations
 measured in wastewater samples. It is suitable for different quantification
-methods such as qPCR or dPCR. The measured concentrations are modeled via
-a lognormal likelihood.
+methods such as qPCR or dPCR. The measured concentrations are modeled via a
+lognormal likelihood.
 }
 \seealso{
 Other {observation types}: 

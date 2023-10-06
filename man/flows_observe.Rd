@@ -5,14 +5,14 @@
 \title{Observe wastewater flows}
 \usage{
 flows_observe(
-  data = NULL,
+  flows = NULL,
   date_col = "date",
   flow_col = "flow",
   modeldata = modeldata_init()
 )
 }
 \arguments{
-\item{data}{A \code{data.frame} with each row representing one day. Must have at
+\item{flows}{A \code{data.frame} with each row representing one day. Must have at
 least a column with dates and a column with flow measurements.}
 
 \item{date_col}{Name of the column containing the dates.}

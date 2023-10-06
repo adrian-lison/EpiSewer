@@ -50,12 +50,16 @@ EpiSewer <- function(
     infections = model_infections(),
     fit_opts = set_fit_opts(),
     run_fit = TRUE) {
+
   modeldata <- modeldata_combine(
     measurements, sampling, sewage, shedding, infections
   )
+  modeldata <- modeldata_validate(
+    modeldata, data = data, assumptions = assumptions, model_def = model
+    )
+
 
   model = get_stan_model(modeldata = modeldata)
-  modeldata <- modeldata_validate(modeldata, model_def = model)
 
   job <- EpiSewerJob(
     job_name = paste("Job on", date()),
@@ -159,7 +163,9 @@ EpiSewerJob <- function(job_name,
 
   # ToDo rlang::flatten is deprecated, replace
   data_arguments <- suppressWarnings(
-    rlang::flatten(modeldata[!(names(modeldata) %in% c("init", "meta_info", "checks"))])
+    rlang::flatten(modeldata[!(names(modeldata) %in% c(
+        "init", "meta_info", "checks", "sewer_data", "sewer_assumptions"
+        ))])
   )
   data_arguments_raw <- data_arguments[
     stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)

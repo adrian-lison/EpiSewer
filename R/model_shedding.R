@@ -67,15 +67,16 @@ model_shedding <- function(
 #'   [get_discrete_gamma()], [get_discrete_lognormal()]
 incubation_dist_assume <-
   function(incubation_dist = NULL, modeldata = modeldata_init()) {
-    if (is.null(incubation_dist)) {
-      incubation_dist <- tryCatch(
-        get_from_env("assumptions", "incubation_dist"),
-        error = abort_f("Please supply an assumed incubation period distribution.")
-      )
-    }
-    modeldata$L <- length(incubation_dist) - 1
-    incubation_dist <- check_dist(incubation_dist, "incubation period distribution")
-    modeldata$incubation_dist <- incubation_dist
+
+    modeldata = tbp("incubation_dist_assume", {
+      modeldata$L <- length(incubation_dist) - 1
+      incubation_dist <- check_dist(incubation_dist, "incubation period distribution")
+      modeldata$incubation_dist <- incubation_dist
+      return(modeldata)
+    },
+    required_assumptions = "incubation_dist",
+    modeldata = modeldata)
+
     return(modeldata)
   }
 
@@ -96,15 +97,16 @@ incubation_dist_assume <-
 #'   [get_discrete_gamma()], [get_discrete_lognormal()]
 shedding_dist_assume <-
   function(shedding_dist = NULL, modeldata = modeldata_init()) {
-    if (is.null(shedding_dist)) {
-      shedding_dist <- tryCatch(
-        get_from_env("assumptions", "shedding_dist"),
-        error = abort_f("Please supply an assumed shedding load distribution.")
-      )
-    }
-    modeldata$S <- length(shedding_dist) - 1
-    shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
-    modeldata$shedding_dist <- shedding_dist
+
+    modeldata = tbp("shedding_dist_assume", {
+      modeldata$S <- length(shedding_dist) - 1
+      shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
+      modeldata$shedding_dist <- shedding_dist
+      return(modeldata)
+    },
+    required_assumptions = "shedding_dist",
+    modeldata = modeldata)
+
     return(modeldata)
   }
 
@@ -129,14 +131,15 @@ shedding_dist_assume <-
 #'   [suggest_load_per_case()]
 load_per_case_assume <-
   function(load_per_case = NULL, modeldata = modeldata_init()) {
-    if (is.null(load_per_case)) {
-      load_per_case <- tryCatch(
-        get_from_env("assumptions", "load_per_case"),
-        error = abort_f("Please supply an assumed average shedding load per person.")
-      )
-    }
-    modeldata$load_mean <- load_per_case
-    modeldata$meta_info$load_per_case <- load_per_case
+
+    modeldata = tbp("load_per_case_assume", {
+      modeldata$load_mean <- load_per_case
+      modeldata$meta_info$load_per_case <- load_per_case
+      return(modeldata)
+    },
+    required_assumptions = "load_per_case",
+    modeldata = modeldata)
+
     return(modeldata)
   }
 
