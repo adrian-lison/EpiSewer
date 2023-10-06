@@ -50,6 +50,11 @@ cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up
 
 ## Introduction
 
+This is a quick introduction to using the `EpiSewer` package. To learn
+more about modeling with `EpiSewer`, see the [model
+specification](vignettes/model-specification.md) and [detailed
+example](vignettes/detailed-example.md) vignettes.
+
 ### Loading the package
 
 `EpiSewer` comes with `data.table` for data manipulation and `ggplot2`
