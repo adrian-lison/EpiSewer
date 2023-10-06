@@ -6,3 +6,7 @@
 
 inst/stan/
 !inst/stan/*.*
+
+vignettes/*.html
+*.Rmd
+data/
