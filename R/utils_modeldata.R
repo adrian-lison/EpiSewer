@@ -7,7 +7,7 @@
 #' @param modeldata A `modeldata` object to which the above model specifications
 #'   should be added. Default is an empty model given by [modeldata_init()]. Can
 #'   also be an already partly specified model returned by other `EpiSewer`
-#'   model helpers.
+#'   modeling functions.
 #'
 #' @return Nothing
 template_model_helpers <- function(modeldata) { }
@@ -15,8 +15,8 @@ template_model_helpers <- function(modeldata) { }
 #' Construct an unspecified EpiSewer model
 #'
 #' @return A `modeldata` object containing data and specifications of the model
-#'   to be fitted. Can be passed on to other `EpiSewer` model helpers to add
-#'   further data and model specifications.
+#'   to be fitted. Can be passed on to other `EpiSewer` modeling functions to
+#'   add further data and model specifications.
 #'
 #' @return The `modeldata` object also includes information about parameter
 #'   initialization (`init`), meta data (`meta_info`), and checks to be
@@ -52,22 +52,22 @@ verify_is_modeldata <- function(modeldata, arg_name) {
   }
 }
 
-#' Get model helpers for a component (internal function)
+#' Get modeling functions for a component (internal function)
 #'
-#' Get all available model helpers for a given component. Argument defaults are
-#' such that helpers are returned as a comma-separated list of roxygen function
-#' links.
+#' Get all available modeling functions for a given component. Argument defaults
+#' are such that helpers are returned as a comma-separated list of roxygen
+#' function links.
 #'
 #' @param component A character vector with the name of the component
-#' @param collapse A character used to collapse helpers into one string.
-#' Default is NULL (do not collapse).
+#' @param collapse A character used to collapse helpers into one string. Default
+#'   is NULL (do not collapse).
 #' @param prefix A prefix to add to each function name
 #' @param suffix A suffix to add to each function name
 #'
-#' @return A character vector with all available model helper functions for
-#' the component. If collapse is not NULL, the helper functions are collapsed
-#' into a single string.
-component_helpers_ <- function(component, collapse = "\n",
+#' @return A character vector with all available modeling functions for the
+#'   component. If collapse is not NULL, the helper functions are collapsed into
+#'   a single string.
+component_functions_ <- function(component, collapse = "\n",
                                prefix = "- [", suffix = "()]") {
   if (!component %in% all_components()) {
     rlang::abort(c(paste("No valid component provided.",
@@ -88,18 +88,18 @@ component_helpers_ <- function(component, collapse = "\n",
   }
 }
 
-#' Get model helpers for a component
+#' Get modeling functions for a component
 #'
-#' @inheritParams component_helpers_
+#' @inheritParams component_functions_
 #'
-#' @return A character vector with all available model helper functions for
-#' the component.
+#' @return A character vector with all available modeling functions for the
+#'   component.
 #' @export
 #'
 #' @examples
-#' component_helpers("R")
-component_helpers <- function(component) {
-  return(component_helpers_(
+#' component_functions("R")
+component_functions <- function(component) {
+  return(component_functions_(
     component, collapse = NULL, prefix = "", suffix = "()"
   ))
 }

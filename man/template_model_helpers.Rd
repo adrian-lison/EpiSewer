@@ -10,7 +10,7 @@ template_model_helpers(modeldata)
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
 also be an already partly specified model returned by other \code{EpiSewer}
-model helpers.}
+modeling functions.}
 }
 \value{
 Nothing

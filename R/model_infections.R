@@ -10,23 +10,23 @@
 #' @param generation_dist Generation time distribution. The intrinsic
 #'   distribution of the time between infection of a primary case and infection
 #'   of its secondary cases. Modeling options:
-#' `r component_helpers_("generation_dist")`
+#' `r component_functions_("generation_dist")`
 #' @param R Effective reproduction number over time. This is the main parameter
 #'   of interest estimated by `EpiSewer`. `R` is smoothed using a time series
 #'   smoothing prior. Currently supported are: random walk (rw), exponential
 #'   smoothing (ets), and smoothing splines. Modeling options:
-#' `r component_helpers_("R")`
+#' `r component_functions_("R")`
 #' @param seeding Seeding of initial infections. The renewal model used by
 #'   `EpiSewer` requires a seeding phase of the length of the maximum generation
 #'   time. For these initial infections, a simple seeding model instead of the
 #'   renewal model must be used. Modeling options:
-#' `r component_helpers_("seeding")`
+#' `r component_functions_("seeding")`
 #' @param infection_noise Noise in the infection process. `EpiSewer` implements
 #' a stochastic infection model, i.e. allows for variation in the number of new
 #' infections generated at each time step. This accounts for stochastic
 #' uncertainty in the infection process and often speeds up model fitting.
 #' Modeling options:
-#' `r component_helpers_("infection_noise")`
+#' `r component_functions_("infection_noise")`
 #'
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `infections` module.
@@ -34,7 +34,7 @@
 model_infections <- function(
     generation_dist = generation_dist_assume(),
     R = R_estimate_rw(),
-    seeding = seeding_estimate(),
+    seeding = seeding_estimate_rw(),
     infection_noise = infection_noise_estimate()) {
   verify_is_modeldata(generation_dist, "generation_dist")
   verify_is_modeldata(R, "R")
@@ -442,7 +442,7 @@ R_estimate_splines <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-seeding_estimate <- function(
+seeding_estimate_rw <- function(
     intercept_prior_mu = NULL,
     intercept_prior_sigma = 1,
     sd_prior_mu = 0.05,

@@ -10,13 +10,13 @@
 #' @param flows Daily flow volumes at the sampling site. The flow can change due
 #'   to rainfall or industrial discharge, and directly influences pathogen
 #'   concentrations in the wastewater. Modeling options:
-#' `r component_helpers_("flows")`
+#' `r component_functions_("flows")`
 #' @param residence_dist Sewer residence time distribution for pathogen
 #'   particles. By default, `EpiSewer` assumes that particles arrive at the
 #'   sampling site within the day of shedding. However, for larger sewage
 #'   systems, particles may travel longer than a day depending on where and
 #'   when they were shed into the wastewater. Modeling options:
-#' `r component_helpers_("residence_dist")`
+#' `r component_functions_("residence_dist")`
 #'
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `sewage` module.

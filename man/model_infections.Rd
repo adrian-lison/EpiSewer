@@ -7,7 +7,7 @@
 model_infections(
   generation_dist = generation_dist_assume(),
   R = R_estimate_rw(),
-  seeding = seeding_estimate(),
+  seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
 )
 }
@@ -34,7 +34,7 @@ smoothing (ets), and smoothing splines. Modeling options:
 time. For these initial infections, a simple seeding model instead of the
 renewal model must be used. Modeling options:
 \itemize{
-\item \code{\link[=seeding_estimate]{seeding_estimate()}}
+\item \code{\link[=seeding_estimate_rw]{seeding_estimate_rw()}}
 }}
 
 \item{infection_noise}{Noise in the infection process. \code{EpiSewer} implements

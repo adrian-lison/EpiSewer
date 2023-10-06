@@ -8,8 +8,8 @@ modeldata_init()
 }
 \value{
 A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} model helpers to add
-further data and model specifications.
+to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
+add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
 initialization (\code{init}), meta data (\code{meta_info}), and checks to be

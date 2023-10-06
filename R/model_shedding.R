@@ -13,21 +13,21 @@
 #'   onset onwards. If the assumed shedding load distribution instead starts
 #'   from the time of infection, the incubation period should be fixed to 0
 #'   days. Modeling options:
-#' `r component_helpers_("incubation_dist")`
+#' `r component_functions_("incubation_dist")`
 #' @param shedding_dist Shedding load distribution. Describes how the total load
 #'   shed by an individual is distributed over time (and therefore sums to 1).
 #'   Modeling options:
-#' `r component_helpers_("shedding_dist")`
+#' `r component_functions_("shedding_dist")`
 #' @param load_per_case Average total load per case. This is a scaling factor
 #'   that describes how many pathogen particles are shed by the average infected
 #'   individual overall and how much of this is detectable at the sampling site.
 #'   It depends both on biological factors as well as on the specific
 #'   sewage system. Modeling options:
-#' `r component_helpers_("load_per_case")`
+#' `r component_functions_("load_per_case")`
 #' @param load_variation Individual-level shedding load variation. The strength
 #' of shedding may vary between individuals. Modeling this variation can better
 #' account for uncertainty especially at low incidence. Modeling options:
-#' `r component_helpers_("load_variation")`
+#' `r component_functions_("load_variation")`
 #'
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `shedding` module.

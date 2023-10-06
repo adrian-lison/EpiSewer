@@ -13,7 +13,7 @@
 #' or different sampling or storage methods. `EpiSewer` allows to estimate
 #' such effects using covariates that describe differences between the samples.
 #' Modeling options:
-#' `r component_helpers_("sample_effects")`
+#' `r component_functions_("sample_effects")`
 #'
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `sampling` module.

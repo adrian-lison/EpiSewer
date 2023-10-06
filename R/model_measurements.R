@@ -9,14 +9,14 @@
 #'
 #' @param concentrations Concentration measurements from wastewater samples.
 #' Modeling options:
-#' `r component_helpers_("concentrations")`
+#' `r component_functions_("concentrations")`
 #' @param noise Measurement noise due to unexplained variation in sampling
 #' and lab analysis. Modeling options:
-#' `r component_helpers_("noise")`
+#' `r component_functions_("noise")`
 #' @param LOD Limit of detection. Concentrations below a certain threshold may
 #' not be detectable and thus erroneously measured as 0. `EpiSewer` can adjust
 #' for the limit of detection using a hurdle model. Modeling options:
-#' `r component_helpers_("LOD")`
+#' `r component_functions_("LOD")`
 #'
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `measurements` module.
