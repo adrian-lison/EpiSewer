@@ -295,6 +295,12 @@ ww_result <- EpiSewer(
 )
 ```
 
+💡 We are here using a shorthand version of the `EpiSewer()` function
+which uses all available default settings. To find out how the
+`EpiSewer` model can be customized, see the [model
+specification](vignettes/model-specification.md) and [detailed
+example](vignettes/detailed-example.md) vignettes.
+
 ### Plotting the results
 
 Great, the sampling has completed! Now we can inspect the results of our
