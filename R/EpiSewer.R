@@ -53,13 +53,13 @@ EpiSewer <- function(
   modeldata <- modeldata_combine(
     measurements, sampling, sewage, shedding, infections
   )
+
+  model <- get_stan_model(modeldata = modeldata)
+
   modeldata <- modeldata_validate(
     modeldata,
     data = data, assumptions = assumptions, model_def = model
   )
-
-
-  model <- get_stan_model(modeldata = modeldata)
 
   job <- EpiSewerJob(
     job_name = paste("Job on", date()),
