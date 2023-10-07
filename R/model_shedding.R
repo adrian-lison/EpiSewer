@@ -134,7 +134,7 @@ load_per_case_assume <-
 
     modeldata = tbp("load_per_case_assume", {
       modeldata$load_mean <- load_per_case
-      modeldata$meta_info$load_per_case <- load_per_case
+      modeldata$.metainfo$load_per_case <- load_per_case
       return(modeldata)
     },
     required_assumptions = "load_per_case",
@@ -156,8 +156,8 @@ load_per_case_assume <-
 load_variation_none <- function(modeldata = modeldata_init()) {
   modeldata$load_vari <- 0
   modeldata$nu_prior <- numeric(0)
-  modeldata$init$nu <- numeric(0)
-  modeldata$init$zeta <- numeric(0)
+  modeldata$.init$nu <- numeric(0)
+  modeldata$.init$zeta <- numeric(0)
   return(modeldata)
 }
 
@@ -204,11 +204,11 @@ load_variation_estimate <- function(
     "nu", "truncated normal",
     mu = cv_prior_mu, sigma = cv_prior_sigma
   )
-  modeldata$init$nu <- as.array(cv_prior_mu)
-  modeldata$init$zeta <- tbe(
+  modeldata$.init$nu <- as.array(cv_prior_mu)
+  modeldata$.init$zeta <- tbe(
     rep(median(modeldata$measured_concentrations, na.rm=T),
-        modeldata$meta_info$length_shedding),
-    c("measured_concentrations", "meta_info$length_shedding")
+        modeldata$.metainfo$length_shedding),
+    c("measured_concentrations", ".metainfo$length_shedding")
   )
   return(modeldata)
 }

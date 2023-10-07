@@ -19,24 +19,24 @@ template_model_helpers <- function(modeldata) { }
 #'   add further data and model specifications.
 #'
 #' @return The `modeldata` object also includes information about parameter
-#'   initialization (`init`), meta data (`meta_info`), and checks to be
-#'   performed before model fitting (`checks`).
+#'   initialization (`init`), meta data (`.metainfo`), and checks to be
+#'   performed before model fitting (`.checks`).
 #' @export
 #'
 #' @examples
 #' modeldata_init()
 modeldata_init <- function() {
   modeldata <- list()
-  modeldata$init <- list()
-  modeldata$meta_info <- list()
-  modeldata$checks <- list()
+  modeldata$.init <- list()
+  modeldata$.metainfo <- list()
+  modeldata$.checks <- list()
   class(modeldata) <- "modeldata"
   return(modeldata)
 }
 
 #' Verification of modeldata objects
 verify_is_modeldata <- function(modeldata, arg_name) {
-  if (!all(c("init", "meta_info", "checks") %in% names(modeldata))) {
+  if (!all(c(".init", ".metainfo", ".checks") %in% names(modeldata))) {
     error_msg <- paste0(
       "The argument `", arg_name, "` expects EpiSewer model data as input. ",
       "Please use a function of the form `", arg_name, "_`", " to specify ",
@@ -221,14 +221,14 @@ modeldata_validate <- function(modeldata,
   }
 
   # check for conflicting data
-  for (comp in names(modeldata$sewer_data)) {
+  for (comp in names(modeldata$.sewer_data)) {
     overlaps_data <- intersect(
-      names(data), names(modeldata$sewer_data[[comp]])
+      names(data), names(modeldata$.sewer_data[[comp]])
     )
     for (o in overlaps_data) {
       if (!is.null(data[[o]]) &&
-          !is.null(modeldata$sewer_data[[comp]][o]) &&
-          !identical(data[[o]], modeldata$sewer_data[[comp]][o][[1]])) {
+          !is.null(modeldata$.sewer_data[[comp]][o]) &&
+          !identical(data[[o]], modeldata$.sewer_data[[comp]][o][[1]])) {
         rlang::cli_abort(paste0(
           "You provided different data for `", o,
           "` in sewer_data() and ", comp, "()."
@@ -238,14 +238,14 @@ modeldata_validate <- function(modeldata,
   }
 
   # check for conflicting assumptions
-  for (comp in names(modeldata$sewer_assumptions)) {
+  for (comp in names(modeldata$.sewer_assumptions)) {
     overlaps_assumptions <- intersect(
-      names(assumptions), names(modeldata$sewer_assumptions[[comp]])
+      names(assumptions), names(modeldata$.sewer_assumptions[[comp]])
     )
     for (o in overlaps_assumptions) {
       if (!is.null(assumptions[[o]]) &&
-          !is.null(modeldata$sewer_assumptions[[comp]][o]) &&
-          !identical(assumptions[[o]], modeldata$sewer_assumptions[[comp]][o][[1]])) {
+          !is.null(modeldata$.sewer_assumptions[[comp]][o]) &&
+          !identical(assumptions[[o]], modeldata$.sewer_assumptions[[comp]][o][[1]])) {
         rlang::abort(paste0(
           "You provided different assumptions for `", o,
           "` in sewer_assumptions() and ", comp, "()."
@@ -260,7 +260,7 @@ modeldata_validate <- function(modeldata,
     )
   }
 
-  for (modeldata_sub in list(modeldata$meta_info, modeldata, modeldata$init)) {
+  for (modeldata_sub in list(modeldata$.metainfo, modeldata, modeldata$.init)) {
     for (name in names(modeldata_sub)) {
       if ("tbp" %in% class(modeldata_sub[[name]])) {
         message_data <- c()
@@ -287,7 +287,7 @@ modeldata_validate <- function(modeldata,
     }
   }
 
-  for (modeldata_sub in list(modeldata$meta_info, modeldata, modeldata$init)) {
+  for (modeldata_sub in list(modeldata$.metainfo, modeldata, modeldata$.init)) {
     for (name in names(modeldata_sub)) {
       if (any(c("tbe", "tbc") %in% class(modeldata_sub[[name]]))) {
         rlang::abort(paste0(
@@ -310,7 +310,7 @@ modeldata_validate <- function(modeldata,
     )
   }
 
-  for (check in modeldata$checks) {
+  for (check in modeldata$.checks) {
     check(modeldata)
   }
 
@@ -329,25 +329,25 @@ modeldata_combine <- function(...) {
   modeldata_combined <- do.call(
     c, lapply(modeldata_sets, function(x) {
       list_except(
-        x, c("init", "meta_info", "checks", "sewer_data", "sewer_assumptions")
+        x, c(".init", ".metainfo", ".checks", ".sewer_data", ".sewer_assumptions")
         )
     })
   )
   class(modeldata_combined) <- "modeldata"
-  modeldata_combined$init <- do.call(
-    c, lapply(modeldata_sets, function(x) x$init)
+  modeldata_combined$.init <- do.call(
+    c, lapply(modeldata_sets, function(x) x$.init)
   )
-  modeldata_combined$meta_info <- do.call(
-    c, lapply(modeldata_sets, function(x) x$meta_info)
+  modeldata_combined$.metainfo <- do.call(
+    c, lapply(modeldata_sets, function(x) x$.metainfo)
   )
-  modeldata_combined$checks <- do.call(
-    c, lapply(modeldata_sets, function(x) x$checks)
+  modeldata_combined$.checks <- do.call(
+    c, lapply(modeldata_sets, function(x) x$.checks)
   )
-  modeldata_combined$sewer_data <- do.call(
-    c, lapply(modeldata_sets, function(x) x$sewer_data)
+  modeldata_combined$.sewer_data <- do.call(
+    c, lapply(modeldata_sets, function(x) x$.sewer_data)
   )
-  modeldata_combined$sewer_assumptions <- do.call(
-    c, lapply(modeldata_sets, function(x) x$sewer_assumptions)
+  modeldata_combined$.sewer_assumptions <- do.call(
+    c, lapply(modeldata_sets, function(x) x$.sewer_assumptions)
   )
   modeldata_combined <- modeldata_update(
     modeldata_combined, throw_error = FALSE
@@ -365,21 +365,21 @@ modeldata_update <- function(modeldata,
   modeldata <- modeldata_update_metainfo(modeldata)
 
   # meta info
-  all_vars <- names(modeldata$meta_info)
+  all_vars <- names(modeldata$.metainfo)
   for (name in all_vars) {
-    if ("tbe" %in% class(modeldata$meta_info[[name]])) {
-      modeldata$meta_info[[name]] <- solve(
-        modeldata$meta_info[[name]],
+    if ("tbe" %in% class(modeldata$.metainfo[[name]])) {
+      modeldata$.metainfo[[name]] <- solve(
+        modeldata$.metainfo[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
-    } else if ("tbc" %in% class(modeldata$meta_info[[name]])) {
+    } else if ("tbc" %in% class(modeldata$.metainfo[[name]])) {
       modeldata <- solve(
-        modeldata$meta_info[[name]],
+        modeldata$.metainfo[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
-    } else if ("tbp" %in% class(modeldata$meta_info[[name]])) {
+    } else if ("tbp" %in% class(modeldata$.metainfo[[name]])) {
       modeldata <- solve(
-        modeldata$meta_info[[name]],
+        modeldata$.metainfo[[name]],
         modeldata = modeldata,
         data = data,
         assumptions = assumptions
@@ -388,7 +388,7 @@ modeldata_update <- function(modeldata,
   }
 
   # main modeldata
-  all_vars <- setdiff(names(modeldata), c("init", "meta_info", "checks"))
+  all_vars <- setdiff(names(modeldata), c(".init", ".metainfo", ".checks"))
   for (name in all_vars) {
     if ("tbe" %in% class(modeldata[[name]])) {
       modeldata[[name]] <- solve(
@@ -411,21 +411,21 @@ modeldata_update <- function(modeldata,
   }
 
   # init
-  all_vars <- names(modeldata$init)
+  all_vars <- names(modeldata$.init)
   for (name in all_vars) {
-    if ("tbe" %in% class(modeldata$init[[name]])) {
-      modeldata$init[[name]] <- solve(
-        modeldata$init[[name]],
+    if ("tbe" %in% class(modeldata$.init[[name]])) {
+      modeldata$.init[[name]] <- solve(
+        modeldata$.init[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
-    } else if ("tbc" %in% class(modeldata$init[[name]])) {
+    } else if ("tbc" %in% class(modeldata$.init[[name]])) {
       modeldata <- solve(
-        modeldata$init[[name]],
+        modeldata$.init[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
-    } else if ("tbp" %in% class(modeldata$init[[name]])) {
+    } else if ("tbp" %in% class(modeldata$.init[[name]])) {
       modeldata <- solve(
-        modeldata$init[[name]],
+        modeldata$.init[[name]],
         modeldata = modeldata,
         data = data,
         assumptions = assumptions

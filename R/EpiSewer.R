@@ -164,20 +164,20 @@ EpiSewerJob <- function(job_name,
   # ToDo rlang::flatten is deprecated, replace
   data_arguments <- suppressWarnings(
     rlang::flatten(modeldata[!(names(modeldata) %in% c(
-        "init", "meta_info", "checks", "sewer_data", "sewer_assumptions"
+        ".init", ".metainfo", ".checks", ".sewer_data", ".sewer_assumptions"
         ))])
   )
   data_arguments_raw <- data_arguments[
     stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
   ]
   job[["data"]] <- data_arguments_raw
-  job[["init"]] <- modeldata$init
+  job[["init"]] <- modeldata$.init
   job[["fit_opts"]] <- fit_opts
 
   job[["priors_text"]] <- data_arguments[
     stringr::str_detect(names(data_arguments), "_prior_text")
   ]
-  job[["meta_info"]] <- modeldata$meta_info
+  job[["metainfo"]] <- modeldata$.metainfo
 
   job[["overwrite"]] <- overwrite
   job[["results_exclude"]] <- results_exclude
@@ -236,7 +236,7 @@ run.EpiSewerJob <- function(job) {
     result$errors <- fit_res$errors
     result$sampler_output <- fit_res$sampler_output
   } else {
-    result$summary <- summarize_fit(fit_res, job$data, job$meta_info)
+    result$summary <- summarize_fit(fit_res, job$data, job$.metainfo)
 
     if (job$fit_opts$fitted) {
       fit_res$draws()

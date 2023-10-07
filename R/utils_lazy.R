@@ -41,13 +41,13 @@ tbp <- function(f_name, f_expr,
     lazyeval::lazy_eval(f_lazy) # apply function to modeldata
     f_sewer_data <- list()
     f_sewer_data[[f_name]] <- as.list(f_lazy$env)[required_data]
-    f_lazy$env$modeldata$sewer_data <- c(
-      f_lazy$env$modeldata$sewer_data, f_sewer_data
+    f_lazy$env$modeldata$.sewer_data <- c(
+      f_lazy$env$modeldata$.sewer_data, f_sewer_data
       )
     f_sewer_assumptions <- list()
     f_sewer_assumptions[[f_name]] <- as.list(f_lazy$env)[required_assumptions]
-    f_lazy$env$modeldata$sewer_assumptions <- c(
-      f_lazy$env$modeldata$sewer_assumptions, f_sewer_assumptions
+    f_lazy$env$modeldata$.sewer_assumptions <- c(
+      f_lazy$env$modeldata$.sewer_assumptions, f_sewer_assumptions
       )
     return(f_lazy$env$modeldata)
   }

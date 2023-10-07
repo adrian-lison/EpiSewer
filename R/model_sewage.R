@@ -59,13 +59,13 @@ flows_assume <- function(
     {
       all_dates <-
         seq.Date(
-          modeldata$meta_info$T_start_date,
-          modeldata$meta_info$T_end_date,
+          modeldata$.metainfo$T_start_date,
+          modeldata$.metainfo$T_end_date,
           by = "1 day"
         )
       modeldata$flow <- rep(flow_constant, length(all_dates))
     },
-    required = c("meta_info$T_start_date", "meta_info$T_end_date"),
+    required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
     modeldata = modeldata
   )
   return(modeldata)
@@ -120,8 +120,8 @@ flows_observe <-
         {
           all_dates <-
             seq.Date(
-              modeldata$meta_info$T_start_date,
-              modeldata$meta_info$T_end_date,
+              modeldata$.metainfo$T_start_date,
+              modeldata$.metainfo$T_end_date,
               by = "1 day"
             )
           missing_flow_dates <-
@@ -136,12 +136,12 @@ flows_observe <-
             ))
           }
           flows <-
-            flows[flows[[date_col]] >= modeldata$meta_info$T_start_date &
-                   flows[[date_col]] <= modeldata$meta_info$T_end_date, ]
+            flows[flows[[date_col]] >= modeldata$.metainfo$T_start_date &
+                   flows[[date_col]] <= modeldata$.metainfo$T_end_date, ]
           flows <- flows[order(flows[[date_col]]), ]
           modeldata$flow <- flows[[flow_col]]
         },
-        required = c("meta_info$T_start_date", "meta_info$T_end_date"),
+        required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
         modeldata = modeldata
       )
 

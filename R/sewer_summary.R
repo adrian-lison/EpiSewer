@@ -1,7 +1,7 @@
-get_R_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
+get_R_trajectories <- function(fit, T_shift, .metainfo, ndraws = 10) {
   fit_draws <- get_draws_1d_date(fit, "R", ndraws)
   date_mapping <- seq.Date(
-    meta_info$T_start_date - T_shift, meta_info$T_end_date,
+    .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
     by = "1 day"
   )
   fit_draws[, date := date_mapping[as.integer(date)]]
@@ -9,10 +9,10 @@ get_R_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
   return(fit_draws[])
 }
 
-get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
+get_I_trajectories <- function(fit, T_shift, .metainfo, ndraws = 10) {
   fit_draws <- get_draws_1d_date(fit, "I", ndraws)
   date_mapping <- seq.Date(
-    meta_info$T_start_date - T_shift, meta_info$T_end_date,
+    .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
     by = "1 day"
   )
   fit_draws[, date := date_mapping[as.integer(date)]]
@@ -27,7 +27,7 @@ get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
 #'
 #' @param fit The fitted `EpiSewer` model.
 #' @param data The model data that the `EpiSewer` model was fitted with.
-#' @param meta_info Meta information about the model data.
+#' @param .metainfo Meta information about the model data.
 #' @param ndraws Number of exemplary posterior samples that should be extracted.
 #'   (The summaries always use all draws.)
 #'
@@ -51,7 +51,7 @@ get_I_trajectories <- function(fit, T_shift, meta_info, ndraws = 10) {
 #' - concentration (posterior summary)
 #' - sample_effects (posterior summary)
 #' @export
-summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
+summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
   summary <- list()
   T_shift_R <- with(data, L + S + D - G)
   T_shift_latent <- with(data, L + S + D)
@@ -60,7 +60,7 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
 
   summary[["R"]] <- get_summary_1d_date(
     fit, "R",
-    T_shift = T_shift_R, meta_info = meta_info,
+    T_shift = T_shift_R, .metainfo = .metainfo,
     intervals = c(0.95, 0.5)
   )
   summary[["R"]]$seeding <- FALSE
@@ -68,14 +68,14 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
 
   summary[["R_samples"]] <- get_R_trajectories(
     fit,
-    T_shift = T_shift_R, meta_info = meta_info, ndraws = ndraws
+    T_shift = T_shift_R, .metainfo = .metainfo, ndraws = ndraws
   )
   summary[["R_samples"]]$seeding <- FALSE
   summary[["R_samples"]][1:(data$G * ndraws), "seeding"] <- TRUE
 
   summary[["expected_infections"]] <- get_summary_1d_date(
     fit, "iota",
-    T_shift = T_shift_latent, meta_info = meta_info,
+    T_shift = T_shift_latent, .metainfo = .metainfo,
     intervals = c(0.95, 0.5)
   )
   summary[["expected_infections"]]$seeding <- FALSE
@@ -84,7 +84,7 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
   if (data$I_sample) {
     summary[["infections"]] <- get_summary_1d_date(
       fit, "I",
-      T_shift = T_shift_latent, meta_info = meta_info,
+      T_shift = T_shift_latent, .metainfo = .metainfo,
       intervals = c(0.95, 0.5)
     )
     summary[["infections"]]$seeding <- FALSE
@@ -92,7 +92,7 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
 
     summary[["infections_samples"]] <- get_I_trajectories(
       fit,
-      T_shift = T_shift_latent, meta_info = meta_info, ndraws = ndraws
+      T_shift = T_shift_latent, .metainfo = .metainfo, ndraws = ndraws
     )
     summary[["infections_samples"]]$seeding <- FALSE
     summary[["infections_samples"]][
@@ -102,19 +102,19 @@ summarize_fit <- function(fit, data, meta_info, ndraws = 50) {
 
   summary[["expected_load"]] <- get_summary_1d_date_log(
     fit, "kappa_log",
-    T_shift = T_shift_load, meta_info = meta_info,
+    T_shift = T_shift_load, .metainfo = .metainfo,
     intervals = c(0.95, 0.5)
   )
 
   summary[["expected_concentration"]] <- get_summary_1d_date_log(
     fit, "pi_log",
-    T_shift = T_shift_load, meta_info = meta_info,
+    T_shift = T_shift_load, .metainfo = .metainfo,
     intervals = c(0.95, 0.5)
   )
 
   summary[["concentration"]] <- get_summary_1d_date(
     fit, "predicted_concentration",
-    T_shift = T_shift_load, meta_info = meta_info,
+    T_shift = T_shift_load, .metainfo = .metainfo,
     intervals = c(0.95, 0.5)
   )
 

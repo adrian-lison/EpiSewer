@@ -18,8 +18,8 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{meta_info}), and checks to be
-performed before model fitting (\code{checks}).
+initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+performed before model fitting (\code{.checks}).
 }
 \description{
 This option does not model effects of sample covariates on the

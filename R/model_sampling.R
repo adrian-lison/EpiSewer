@@ -37,7 +37,7 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
   modeldata$K <- 0
   modeldata$X <- numeric(0)
   modeldata$eta_prior <- numeric(0)
-  modeldata$init$eta <- numeric(0)
+  modeldata$.init$eta <- numeric(0)
   return(modeldata)
 }
 
@@ -102,7 +102,7 @@ sample_effects_estimate_matrix <- function(
 
   modeldata$eta_prior <- eta_prior
 
-  modeldata$init$eta <- rep(0, modeldata$K)
+  modeldata$.init$eta <- rep(0, modeldata$K)
 
   return(modeldata)
 }
@@ -139,8 +139,8 @@ sample_effects_estimate_weekday <- function(
     {
       weekdays <- lubridate::wday(
         seq.Date(
-          modeldata$meta_info$T_start_date,
-          modeldata$meta_info$T_end_date,
+          modeldata$.metainfo$T_start_date,
+          modeldata$.metainfo$T_end_date,
           by = "1 day"
         ),
         label = TRUE
@@ -155,7 +155,7 @@ sample_effects_estimate_weekday <- function(
           design_matrix, effect_prior_mu, effect_prior_sigma, modeldata
         )
     },
-    required = c("meta_info$T_start_date", "meta_info$T_end_date"),
+    required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
     modeldata = modeldata
   )
 }

@@ -40,11 +40,11 @@ get_stan_model <- function(
         )
       )
     }
-    if (modeldata$meta_info$R_estimate_approach == "splines") {
+    if (modeldata$.metainfo$R_estimate_approach == "splines") {
       model_filename <- "wastewater_Re_splines.stan"
-    } else if (modeldata$meta_info$R_estimate_approach == "ets") {
+    } else if (modeldata$.metainfo$R_estimate_approach == "ets") {
       model_filename <- "wastewater_Re.stan"
-    } else if (modeldata$meta_info$R_estimate_approach == "rw") {
+    } else if (modeldata$.metainfo$R_estimate_approach == "rw") {
       model_filename <- "wastewater_Re.stan"
     } else {
       rlang::abort(

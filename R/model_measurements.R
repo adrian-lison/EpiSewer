@@ -103,19 +103,19 @@ concentrations_observe <-
         as.integer(max(measurements[[date_col]]) -
                      min(measurements[[date_col]]) + composite_window)
 
-      modeldata$meta_info$T_start_date <-
+      modeldata$.metainfo$T_start_date <-
         min(measurements[[date_col]]) - composite_window + 1
-      modeldata$meta_info$T_end_date <- max(measurements[[date_col]])
+      modeldata$.metainfo$T_end_date <- max(measurements[[date_col]])
 
       modeldata$w <- composite_window
-      modeldata$meta_info$composite_window <- composite_window
+      modeldata$.metainfo$composite_window <- composite_window
 
 
       measured <- !is.na(measurements[[concentration_col]])
       modeldata$n_measured <- sum(measured)
       modeldata$n_samples <- length(unique(measurements[[date_col]][measured]))
       measured_dates <- as.integer(
-        measurements[[date_col]][measured] - modeldata$meta_info$T_start_date + 1
+        measurements[[date_col]][measured] - modeldata$.metainfo$T_start_date + 1
       )
       modeldata$sample_to_date <- sort(unique(measured_dates))
       modeldata$measure_to_sample <- sapply(
@@ -123,7 +123,7 @@ concentrations_observe <-
         function(x) which(x == modeldata$sample_to_date)[[1]]
       )
       modeldata$measured_concentrations <- measurements[[concentration_col]][measured]
-      modeldata$meta_info$measured_dates <- measurements[[date_col]][measured]
+      modeldata$.metainfo$measured_dates <- measurements[[date_col]][measured]
 
       if (!is.null(replicate_col)) {
         modeldata$replicate_ids <- as.integer(measurements[[replicate_col]][measured])
@@ -203,14 +203,14 @@ noise_estimate <-
       modeldata$tau_prior <- set_prior("tau", "truncated normal",
                                        mu = pre_replicate_cv_prior_mu, sigma = pre_replicate_cv_prior_sigma
       )
-      modeldata$init$tau <- as.array(pre_replicate_cv_prior_mu)
+      modeldata$.init$tau <- as.array(pre_replicate_cv_prior_mu)
 
-      modeldata$init$psi <- tbe(
+      modeldata$.init$psi <- tbe(
         rep(1e-4, modeldata$n_samples),
         "n_samples"
       )
 
-      modeldata$checks$check_replicate_ids <- function(d) {
+      modeldata$.checks$check_replicate_ids <- function(d) {
         if (!"replicate_ids" %in% names(d)) {
           rlang::abort(paste(
             "Variation before the replication stage can only be estimated with",
@@ -221,11 +221,11 @@ noise_estimate <-
       }
     } else {
       modeldata$tau_prior <- numeric(0)
-      modeldata$init$tau <- numeric(0)
-      modeldata$init$psi <- numeric(0)
+      modeldata$.init$tau <- numeric(0)
+      modeldata$.init$psi <- numeric(0)
     }
 
-    modeldata$init$cv <- 0.1 # 10% coefficient of variation
+    modeldata$.init$cv <- 0.1 # 10% coefficient of variation
 
     return(modeldata)
   }

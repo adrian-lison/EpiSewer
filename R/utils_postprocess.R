@@ -25,10 +25,10 @@ map_dates_1d_df <- function(fit_summary, date_mapping) {
   return(fit_summary)
 }
 
-get_summary_1d_date <- function(fit, var, T_shift, meta_info, intervals = c(0.95, 0.5)) {
+get_summary_1d_date <- function(fit, var, T_shift, .metainfo, intervals = c(0.95, 0.5)) {
   # T_shift: how much does the variable lead or lag the time from 1:T?
   date_mapping <- seq.Date(
-    meta_info$T_start_date - T_shift, meta_info$T_end_date,
+    .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
     by = "1 day"
   )
   var_summary <- map_dates_1d_df(fit$summary(var,
@@ -41,10 +41,10 @@ get_summary_1d_date <- function(fit, var, T_shift, meta_info, intervals = c(0.95
   return(var_summary)
 }
 
-get_summary_1d_date_log <- function(fit, var, T_shift, meta_info, intervals = c(0.95, 0.5)) {
+get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo, intervals = c(0.95, 0.5)) {
   # T_shift: how much does the variable lead or lag the time from 1:T?
   date_mapping <- seq.Date(
-    meta_info$T_start_date - T_shift, meta_info$T_end_date,
+    .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
     by = "1 day"
   )
   var_summary <- map_dates_1d_df(fit$summary(var,

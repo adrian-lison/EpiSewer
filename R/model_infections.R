@@ -70,7 +70,7 @@ generation_dist_assume <-
       modeldata$G <- length(generation_dist)
       generation_dist <- check_dist(generation_dist, "generation time distribution")
       modeldata$generation_dist <- generation_dist
-      modeldata$meta_info$length_seeding <- length(generation_dist)
+      modeldata$.metainfo$length_seeding <- length(generation_dist)
     },
     required_assumptions = "generation_dist",
     modeldata = modeldata)
@@ -175,7 +175,7 @@ R_estimate_ets <- function(
     differenced = FALSE,
     noncentered = TRUE,
     modeldata = modeldata_init()) {
-  modeldata$meta_info$R_estimate_approach <- "ets"
+  modeldata$.metainfo$R_estimate_approach <- "ets"
 
   modeldata$R_level_start_prior <- set_prior(
     "R_level_start", "normal",
@@ -192,13 +192,13 @@ R_estimate_ets <- function(
     mu = sd_prior_mu, sigma = sd_prior_sigma
   )
 
-  modeldata$init$R_level_start <-
+  modeldata$.init$R_level_start <-
     modeldata$R_level_start_prior$R_level_start_prior[1]
-  modeldata$init$R_trend_start <- 1e-4
-  modeldata$init$R_sd <- max(modeldata$R_sd_prior$R_sd_prior[1], 0.1)
-  modeldata$init$R_noise <- tbe(
-    rep(0, modeldata$meta_info$length_R - 1),
-    "meta_info$length_R"
+  modeldata$.init$R_trend_start <- 1e-4
+  modeldata$.init$R_sd <- max(modeldata$R_sd_prior$R_sd_prior[1], 0.1)
+  modeldata$.init$R_noise <- tbe(
+    rep(0, modeldata$.metainfo$length_R - 1),
+    ".metainfo$length_R"
   )
 
   if (is.null(smooth_fixed)) {
@@ -207,12 +207,12 @@ R_estimate_ets <- function(
   modeldata$ets_alpha_fixed <- smooth_fixed
   if (smooth_fixed >= 0) {
     modeldata$ets_alpha_prior <- numeric(0)
-    modeldata$init$ets_alpha <- numeric(0)
+    modeldata$.init$ets_alpha <- numeric(0)
   } else {
     modeldata$ets_alpha_prior <- set_prior("ets_alpha", "beta",
       alpha = smooth_prior_shapes[1], beta = smooth_prior_shapes[2]
     )
-    modeldata$init$ets_alpha <- 0.5
+    modeldata$.init$ets_alpha <- 0.5
   }
 
   if (is.null(trend_smooth_fixed)) {
@@ -221,12 +221,12 @@ R_estimate_ets <- function(
   modeldata$ets_beta_fixed <- trend_smooth_fixed
   if (trend_smooth_fixed >= 0) {
     modeldata$ets_beta_prior <- numeric(0)
-    modeldata$init$ets_beta <- numeric(0)
+    modeldata$.init$ets_beta <- numeric(0)
   } else {
     modeldata$ets_beta_prior <- set_prior("ets_beta", "beta",
       alpha = trend_smooth_prior_shapes[1], beta = trend_smooth_prior_shapes[2]
     )
-    modeldata$init$ets_beta <- 0.5
+    modeldata$.init$ets_beta <- 0.5
   }
 
   if (is.null(dampen_fixed)) {
@@ -235,12 +235,12 @@ R_estimate_ets <- function(
   modeldata$ets_phi_fixed <- dampen_fixed
   if (dampen_fixed >= 0) {
     modeldata$ets_phi_prior <- numeric(0)
-    modeldata$init$ets_phi <- numeric(0)
+    modeldata$.init$ets_phi <- numeric(0)
   } else {
     modeldata$ets_phi_prior <- set_prior("ets_phi", "beta",
       alpha = dampen_prior_shapes[1], beta = dampen_prior_shapes[2]
     )
-    modeldata$init$ets_phi <- 0.9
+    modeldata$.init$ets_phi <- 0.9
   }
 
   modeldata$ets_diff <- differenced
@@ -361,21 +361,21 @@ R_estimate_splines <- function(
     coef_sd_prior_mu = 0,
     coef_sd_prior_sigma = 0.2,
     modeldata = modeldata_init()) {
-  modeldata$meta_info$R_estimate_approach <- "splines"
+  modeldata$.metainfo$R_estimate_approach <- "splines"
 
   modeldata <- tbc(
     "spline_definition",
     {
-      knots <- seq(1, modeldata$meta_info$length_R, by = knot_distance)
+      knots <- seq(1, modeldata$.metainfo$length_R, by = knot_distance)
       B <-
         splines::bs(
-          1:modeldata$meta_info$length_R,
+          1:modeldata$.metainfo$length_R,
           knots = knots,
           degree = spline_degree,
           intercept = FALSE
         )
-      modeldata$meta_info$R_knots <- knots
-      modeldata$meta_info$B <- B
+      modeldata$.metainfo$R_knots <- knots
+      modeldata$.metainfo$B <- B
       modeldata$bs_n_basis <- ncol(B)
       B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
       modeldata$bs_n_w <- length(B_sparse$w)
@@ -383,11 +383,11 @@ R_estimate_splines <- function(
       modeldata$bs_v <- B_sparse$v
       modeldata$bs_u <- B_sparse$u
 
-      modeldata$init$bs_coeff_ar_start <- 0
-      modeldata$init$bs_coeff_ar_sd <- 0.1
-      modeldata$init$bs_coeff_noise <- rep(0, modeldata$bs_n_basis - 1)
+      modeldata$.init$bs_coeff_ar_start <- 0
+      modeldata$.init$bs_coeff_ar_sd <- 0.1
+      modeldata$.init$bs_coeff_noise <- rep(0, modeldata$bs_n_basis - 1)
     },
-    required = "meta_info$length_R",
+    required = ".metainfo$length_R",
     modeldata = modeldata
   )
 
@@ -460,10 +460,10 @@ seeding_estimate_rw <- function(
       set_prior(
         "iota_log_ar_start",
         "normal (mu based on crude empirical estimate of cases)",
-        mu = log(modeldata$meta_info$initial_cases_crude),
+        mu = log(modeldata$.metainfo$initial_cases_crude),
         sigma = intercept_prior_sigma
       ),
-      "meta_info$initial_cases_crude"
+      ".metainfo$initial_cases_crude"
     )
   }
 
@@ -474,14 +474,14 @@ seeding_estimate_rw <- function(
     sigma = sd_prior_sigma
   )
 
-  modeldata$init$iota_log_ar_start <- tbe(
-    log(modeldata$meta_info$initial_cases_crude),
-    "meta_info$initial_cases_crude"
+  modeldata$.init$iota_log_ar_start <- tbe(
+    log(modeldata$.metainfo$initial_cases_crude),
+    ".metainfo$initial_cases_crude"
   )
-  modeldata$init$iota_log_ar_sd <- 1
-  modeldata$init$iota_log_ar_noise <- tbe(
-    rep(0, modeldata$meta_info$length_seeding - 1),
-    "meta_info$length_seeding"
+  modeldata$.init$iota_log_ar_sd <- 1
+  modeldata$.init$iota_log_ar_noise <- tbe(
+    rep(0, modeldata$.metainfo$length_seeding - 1),
+    ".metainfo$length_seeding"
   )
 
   return(modeldata)
@@ -499,8 +499,8 @@ seeding_estimate_rw <- function(
 infection_noise_none <- function(modeldata = modeldata_init()) {
   modeldata$I_sample <- FALSE
   modeldata$I_overdispersion <- FALSE
-  modeldata$init$I <- numeric(0)
-  modeldata$init$I_log <- numeric(0)
+  modeldata$.init$I <- numeric(0)
+  modeldata$.init$I_log <- numeric(0)
   return(modeldata)
 }
 
@@ -537,26 +537,26 @@ infection_noise_estimate <-
     )
 
     modeldata$I_sample <- TRUE
-    modeldata$init$I <- tbe(
+    modeldata$.init$I <- tbe(
       rep(
-        modeldata$meta_info$initial_cases_crude,
-        modeldata$meta_info$length_I
+        modeldata$.metainfo$initial_cases_crude,
+        modeldata$.metainfo$length_I
       ),
-      c("meta_info$initial_cases_crude", "meta_info$length_I")
+      c(".metainfo$initial_cases_crude", ".metainfo$length_I")
     )
-    modeldata$init$I_log <- tbe(
+    modeldata$.init$I_log <- tbe(
       rep(
-        log(modeldata$meta_info$initial_cases_crude),
-        modeldata$meta_info$length_I
+        log(modeldata$.metainfo$initial_cases_crude),
+        modeldata$.metainfo$length_I
       ),
-      c("meta_info$initial_cases_crude", "meta_info$length_I")
+      c(".metainfo$initial_cases_crude", ".metainfo$length_I")
     )
 
     if (modeldata$I_overdispersion) {
-      modeldata$init$I_xi <- 0.05
+      modeldata$.init$I_xi <- 0.05
     } else {
       modeldata$I_xi_prior <- numeric(0)
-      modeldata$init$I_xi <- numeric(0)
+      modeldata$.init$I_xi <- numeric(0)
     }
 
     return(modeldata)
