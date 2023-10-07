@@ -17,8 +17,8 @@ for each day. Will be automatically passed to \code{\link[=flows_observe]{flows_
 \item{...}{Further observations to be passed to \code{\link[=EpiSewer]{EpiSewer()}}.}
 }
 \value{
-A \code{list} with all observations supplied. Can be passed to the \code{data} argument
-in \code{\link[=EpiSewer]{EpiSewer()}}.
+A \code{list} with all observations supplied. Can be passed to the \code{data}
+argument in \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 Specify wastewater observation data such as concentration

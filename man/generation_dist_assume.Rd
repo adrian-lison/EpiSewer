@@ -37,5 +37,7 @@ literature.
 }
 \seealso{
 Helpers to discretize continuous probability distributions:
-\code{\link[=get_discrete_gamma]{get_discrete_gamma()}}, \code{\link[=get_discrete_gamma_shifted]{get_discrete_gamma_shifted()}}, \code{\link[=get_discrete_lognormal]{get_discrete_lognormal()}}
+\code{\link[=get_discrete_gamma]{get_discrete_gamma()}},
+\code{\link[=get_discrete_gamma_shifted]{get_discrete_gamma_shifted()}},
+\code{\link[=get_discrete_lognormal]{get_discrete_lognormal()}}
 }

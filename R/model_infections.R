@@ -62,18 +62,24 @@ model_infections <- function(
 #' @export
 #'
 #' @seealso Helpers to discretize continuous probability distributions:
-#'   [get_discrete_gamma()], [get_discrete_gamma_shifted()], [get_discrete_lognormal()]
+#'   [get_discrete_gamma()],
+#'   [get_discrete_gamma_shifted()],
+#'   [get_discrete_lognormal()]
 generation_dist_assume <-
   function(generation_dist = NULL, modeldata = modeldata_init()) {
-
-    modeldata <- tbp("generation_dist_assume", {
-      modeldata$G <- length(generation_dist)
-      generation_dist <- check_dist(generation_dist, "generation time distribution")
-      modeldata$generation_dist <- generation_dist
-      modeldata$.metainfo$length_seeding <- length(generation_dist)
-    },
-    required_assumptions = "generation_dist",
-    modeldata = modeldata)
+    modeldata <- tbp("generation_dist_assume",
+      {
+        modeldata$G <- length(generation_dist)
+        generation_dist <- check_dist(
+          generation_dist,
+          "generation time distribution"
+        )
+        modeldata$generation_dist <- generation_dist
+        modeldata$.metainfo$length_seeding <- length(generation_dist)
+      },
+      required_assumptions = "generation_dist",
+      modeldata = modeldata
+    )
 
     return(modeldata)
   }
@@ -346,8 +352,10 @@ R_estimate_rw <- function(
 #'   present / date of estimation, when limited data signal is available.
 #'
 #' @details The priors of this component have the following functional form:
-#' - intercept of the log random walk over spline coefficients: `Normal`
-#' - standard deviation of the log random walk over spline coefficients: `Truncated normal`
+#' - intercept of the log random walk over spline coefficients:
+#' `Normal`
+#' - standard deviation of the log random walk over spline coefficients:
+#' `Truncated normal`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return

@@ -8,8 +8,8 @@ incubation_dist_assume(incubation_dist = NULL, modeldata = modeldata_init())
 }
 \arguments{
 \item{incubation_dist}{A numeric vector representing a discrete incubation
-period distribution, starting with the probability for an incubation period of 0
-days, 1 day, 2 days, and so on.}
+period distribution, starting with the probability for an incubation period
+of 0 days, 1 day, 2 days, and so on.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

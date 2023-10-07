@@ -44,7 +44,7 @@ verify_is_modeldata <- function(modeldata, arg_name) {
     )
     all_fs <- names(rlang::ns_env("EpiSewer"))
     arg_fs <- all_fs[stringr::str_detect(all_fs, paste0("^", arg_name, "_"))]
-    if (length(arg_fs)>0) {
+    if (length(arg_fs) > 0) {
       error_msg <- paste(error_msg, "Available functions:")
       error_msg <- c(error_msg, paste0(arg_fs, "()"))
     }
@@ -68,15 +68,19 @@ verify_is_modeldata <- function(modeldata, arg_name) {
 #'   component. If collapse is not NULL, the helper functions are collapsed into
 #'   a single string.
 component_functions_ <- function(component, collapse = "\n",
-                               prefix = "- [", suffix = "()]") {
+                                 prefix = "- [", suffix = "()]") {
   if (!component %in% all_components()) {
-    rlang::abort(c(paste("No valid component provided.",
-                         "Must be one out of:"),
-                   all_components()))
+    rlang::abort(c(
+      paste(
+        "No valid component provided.",
+        "Must be one out of:"
+      ),
+      all_components()
+    ))
   }
   all_fs <- names(rlang::ns_env("EpiSewer"))
   arg_fs <- all_fs[stringr::str_detect(all_fs, paste0("^", component, "_"))]
-  if (length(arg_fs)>0) {
+  if (length(arg_fs) > 0) {
     helpers <- paste0(prefix, arg_fs, suffix)
   } else {
     helpers <- c()
@@ -100,7 +104,8 @@ component_functions_ <- function(component, collapse = "\n",
 #' component_functions("R")
 component_functions <- function(component) {
   return(component_functions_(
-    component, collapse = NULL, prefix = "", suffix = "()"
+    component,
+    collapse = NULL, prefix = "", suffix = "()"
   ))
 }
 
@@ -121,8 +126,8 @@ set_prior <- function(param, dist = "normal", ...) {
 
 #' Check modeldata object for required variables
 #'
-#' `modeldata_check` accepts various additional arguments which are turned into a
-#' sophisticated error message about missing variables
+#' `modeldata_check` accepts various additional arguments which are turned into
+#' a sophisticated error message about missing variables
 #'
 #' @inheritParams modeldata_validate
 #' @param required Character vector of required variables
@@ -130,8 +135,8 @@ set_prior <- function(param, dist = "normal", ...) {
 #'   of the required variables, and values corresponding to additional
 #'   descriptions of the variables
 #' @param run_before Optional, either a character vector, or a `list` with names
-#'   corresponding to all of the required variables, and values
-#'   corresponding to functions that will add these variables to modeldata.
+#'   corresponding to all of the required variables, and values corresponding to
+#'   functions that will add these variables to modeldata.
 #' @param advice Additional message with advice on how to solve error.
 #' @param throw_error Should an error be thrown (with verbatim error message),
 #'   or should `TRUE`/`FALSE` be returned. Default is `TRUE`.
@@ -145,7 +150,6 @@ modeldata_check <- function(modeldata,
                             advice = NULL,
                             throw_error = TRUE,
                             calling_env = rlang::caller_env()) {
-
   if (!class(modeldata) == "modeldata") {
     rlang::abort("Please supply a modeldata object.")
   }
@@ -203,8 +207,8 @@ modeldata_check <- function(modeldata,
 #' @param model_def A `list` with information about the stan model to be fitted
 #'   and a function that returns the CmdStanModel object.
 #' @param defaults A `list` with default values to be used for modeldata
-#'   variables if not supplied in modeldata. For example, `numeric(0)` will often
-#'   be supplied for optional parameters.
+#'   variables if not supplied in modeldata. For example, `numeric(0)` will
+#'   often be supplied for optional parameters.
 #' @param data
 #' @param assumptions
 #'
@@ -227,8 +231,8 @@ modeldata_validate <- function(modeldata,
     )
     for (o in overlaps_data) {
       if (!is.null(data[[o]]) &&
-          !is.null(modeldata$.sewer_data[[comp]][o]) &&
-          !identical(data[[o]], modeldata$.sewer_data[[comp]][o][[1]])) {
+        !is.null(modeldata$.sewer_data[[comp]][o]) &&
+        !identical(data[[o]], modeldata$.sewer_data[[comp]][o][[1]])) {
         rlang::cli_abort(paste0(
           "You provided different data for `", o,
           "` in sewer_data() and ", comp, "()."
@@ -244,8 +248,10 @@ modeldata_validate <- function(modeldata,
     )
     for (o in overlaps_assumptions) {
       if (!is.null(assumptions[[o]]) &&
-          !is.null(modeldata$.sewer_assumptions[[comp]][o]) &&
-          !identical(assumptions[[o]], modeldata$.sewer_assumptions[[comp]][o][[1]])) {
+        !is.null(modeldata$.sewer_assumptions[[comp]][o]) &&
+        !identical(
+          assumptions[[o]], modeldata$.sewer_assumptions[[comp]][o][[1]]
+        )) {
         rlang::abort(paste0(
           "You provided different assumptions for `", o,
           "` in sewer_assumptions() and ", comp, "()."
@@ -256,7 +262,8 @@ modeldata_validate <- function(modeldata,
 
   for (i in 1:2) { # update two times to catch all lazy evals
     modeldata <- modeldata_update(
-      modeldata, data = data, assumptions = assumptions, throw_error = F
+      modeldata,
+      data = data, assumptions = assumptions, throw_error = F
     )
   }
 
@@ -268,20 +275,27 @@ modeldata_validate <- function(modeldata,
         if (length(modeldata_sub[[name]]$required_data) > 0) {
           message_data <- paste(
             "Data (also via sewer_data()):",
-            paste("`", modeldata_sub[[name]]$required_data, "`", sep = "", collapse = ", ")
+            paste(
+              "`", modeldata_sub[[name]]$required_data, "`",
+              sep = "", collapse = ", "
             )
+          )
         }
         if (length(modeldata_sub[[name]]$required_assumptions) > 0) {
           message_assumptions <- paste(
             "Assumptions (also via sewer_assumptions()):",
-            paste("`", modeldata_sub[[name]]$required_assumptions, "`", sep = "", collapse = ", ")
+            paste(
+              "`", modeldata_sub[[name]]$required_assumptions, "`",
+              sep = "", collapse = ", "
             )
+          )
         }
-        rlang::abort(c(paste0(
-          "Please provide the following information to ", name, "():"
-        ),
-        message_data,
-        message_assumptions
+        rlang::abort(c(
+          paste0(
+            "Please provide the following information to ", name, "():"
+          ),
+          message_data,
+          message_assumptions
         ))
       }
     }
@@ -299,8 +313,9 @@ modeldata_validate <- function(modeldata,
   }
 
   modeldata <- modeldata_update(
-    modeldata, data = data, assumptions = assumptions
-    )
+    modeldata,
+    data = data, assumptions = assumptions
+  )
 
   for (i in seq_along(defaults)) {
     levels <- stringr::str_split(names(defaults)[[i]], "\\$")[[1]]
@@ -329,8 +344,10 @@ modeldata_combine <- function(...) {
   modeldata_combined <- do.call(
     c, lapply(modeldata_sets, function(x) {
       list_except(
-        x, c(".init", ".metainfo", ".checks", ".sewer_data", ".sewer_assumptions")
+        x, c(
+          ".init", ".metainfo", ".checks", ".sewer_data", ".sewer_assumptions"
         )
+      )
     })
   )
   class(modeldata_combined) <- "modeldata"
@@ -350,8 +367,9 @@ modeldata_combine <- function(...) {
     c, lapply(modeldata_sets, function(x) x$.sewer_assumptions)
   )
   modeldata_combined <- modeldata_update(
-    modeldata_combined, throw_error = FALSE
-    )
+    modeldata_combined,
+    throw_error = FALSE
+  )
   return(modeldata_combined)
 }
 

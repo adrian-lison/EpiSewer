@@ -77,8 +77,10 @@ present / date of estimation, when limited data signal is available.
 
 The priors of this component have the following functional form:
 \itemize{
-\item intercept of the log random walk over spline coefficients: \code{Normal}
-\item standard deviation of the log random walk over spline coefficients: \verb{Truncated normal}
+\item intercept of the log random walk over spline coefficients:
+\code{Normal}
+\item standard deviation of the log random walk over spline coefficients:
+\verb{Truncated normal}
 }
 }
 \seealso{

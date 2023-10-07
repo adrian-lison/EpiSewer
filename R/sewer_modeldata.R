@@ -8,20 +8,20 @@
 #'   something is missing in the modeldata object.
 modeldata_update_metainfo <- function(modeldata) {
   if (modeldata_check(modeldata,
-                      required = c("S", "D", "T"),
-                      throw_error = FALSE
+    required = c("S", "D", "T"),
+    throw_error = FALSE
   )) {
     modeldata$.metainfo$length_shedding <- with(modeldata, S + D + T)
   }
   if (modeldata_check(modeldata,
-                      required = c("L", "S", "D", "T"),
-                      throw_error = FALSE
+    required = c("L", "S", "D", "T"),
+    throw_error = FALSE
   )) {
     modeldata$.metainfo$length_I <- with(modeldata, L + S + D + T)
   }
   if (modeldata_check(modeldata,
-                      required = c("L", "S", "D", "T", "G"),
-                      throw_error = FALSE
+    required = c("L", "S", "D", "T", "G"),
+    throw_error = FALSE
   )) {
     modeldata$.metainfo$length_R <- with(modeldata, L + S + D + T - G)
   }
@@ -71,7 +71,8 @@ modeldata_var_requirements <- function() {
     ".metainfo$length_I" = c(
       "incubation_dist_assume",
       "shedding_dist_assume",
-      "residence_dist_assume"),
+      "residence_dist_assume"
+    ),
     ".metainfo$length_R" = c(
       "incubation_dist_assume",
       "shedding_dist_assume",

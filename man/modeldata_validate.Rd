@@ -22,8 +22,8 @@ passed on to stan, alongside additional meta information and descriptions.}
 and a function that returns the CmdStanModel object.}
 
 \item{defaults}{A \code{list} with default values to be used for modeldata
-variables if not supplied in modeldata. For example, \code{numeric(0)} will often
-be supplied for optional parameters.}
+variables if not supplied in modeldata. For example, \code{numeric(0)} will
+often be supplied for optional parameters.}
 }
 \value{
 If no error is thrown due to missing mandatory variables, the same

@@ -87,10 +87,10 @@ list_except <- function(l, except) {
 
 suppress_warnings <- function(.expr, .f, ...) {
   eval.parent(substitute(
-    withCallingHandlers( .expr, warning = function(w) {
+    withCallingHandlers(.expr, warning = function(w) {
       cm <- conditionMessage(w)
       cond <-
-        if(is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm,...)
+        if (is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm, ...)
       if (cond) {
         invokeRestart("muffleWarning")
       }
@@ -100,10 +100,10 @@ suppress_warnings <- function(.expr, .f, ...) {
 
 suppress_messages <- function(.expr, .f, ...) {
   eval.parent(substitute(
-    withCallingHandlers( .expr, message = function(w) {
+    withCallingHandlers(.expr, message = function(w) {
       cm <- conditionMessage(w)
       cond <-
-        if(is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm,...)
+        if (is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm, ...)
       if (cond) {
         invokeRestart("muffleMessage")
       }
@@ -116,10 +116,11 @@ suppress_messages <- function(.expr, .f, ...) {
 #' This can be used to provide abort statements as a direct argument to
 #' tryCatch without wrapping them in a function call
 abort_f <- function(...) {
-  return (function(err) rlang::abort(
-    call = NULL, .trace_bottom = sys.frames()[[sys.nframe()-4]], ...
+  return(function(err) {
+    rlang::abort(
+      call = NULL, .trace_bottom = sys.frames()[[sys.nframe() - 4]], ...
     )
-  )
+  })
 }
 
 #' Collect warnings arising during computation of a result

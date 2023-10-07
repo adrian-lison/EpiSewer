@@ -25,8 +25,8 @@ of the required variables, and values corresponding to additional
 descriptions of the variables}
 
 \item{run_before}{Optional, either a character vector, or a \code{list} with names
-corresponding to all of the required variables, and values
-corresponding to functions that will add these variables to modeldata.}
+corresponding to all of the required variables, and values corresponding to
+functions that will add these variables to modeldata.}
 
 \item{advice}{Additional message with advice on how to solve error.}
 
@@ -38,6 +38,6 @@ If throw_error is \code{TRUE}, nothing is returned, otherwise a logical is
 returned (\code{TRUE} if all required variables are present)
 }
 \description{
-\code{modeldata_check} accepts various additional arguments which are turned into a
-sophisticated error message about missing variables
+\code{modeldata_check} accepts various additional arguments which are turned into
+a sophisticated error message about missing variables
 }

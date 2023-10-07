@@ -41,7 +41,10 @@ model_shedding <- function(
   verify_is_modeldata(shedding_dist, "shedding_dist")
   verify_is_modeldata(load_per_case, "load_per_case")
   verify_is_modeldata(load_variation, "load_variation")
-  return(modeldata_combine(incubation_dist, shedding_dist, load_per_case, load_variation))
+  modeldata <- modeldata_combine(
+    incubation_dist, shedding_dist, load_per_case, load_variation
+  )
+  return(modeldata)
 }
 
 #' Assume an incubation period distribution
@@ -56,8 +59,8 @@ model_shedding <- function(
 #'   infection, then use `incubation_dist=c(1)` (i.e. no lag).
 #'
 #' @param incubation_dist A numeric vector representing a discrete incubation
-#'   period distribution, starting with the probability for an incubation period of 0
-#'   days, 1 day, 2 days, and so on.
+#'   period distribution, starting with the probability for an incubation period
+#'   of 0 days, 1 day, 2 days, and so on.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -67,15 +70,18 @@ model_shedding <- function(
 #'   [get_discrete_gamma()], [get_discrete_lognormal()]
 incubation_dist_assume <-
   function(incubation_dist = NULL, modeldata = modeldata_init()) {
-
-    modeldata = tbp("incubation_dist_assume", {
-      modeldata$L <- length(incubation_dist) - 1
-      incubation_dist <- check_dist(incubation_dist, "incubation period distribution")
-      modeldata$incubation_dist <- incubation_dist
-      return(modeldata)
-    },
-    required_assumptions = "incubation_dist",
-    modeldata = modeldata)
+    modeldata <- tbp("incubation_dist_assume",
+      {
+        modeldata$L <- length(incubation_dist) - 1
+        incubation_dist <- check_dist(
+          incubation_dist, "incubation period distribution"
+        )
+        modeldata$incubation_dist <- incubation_dist
+        return(modeldata)
+      },
+      required_assumptions = "incubation_dist",
+      modeldata = modeldata
+    )
 
     return(modeldata)
   }
@@ -97,15 +103,16 @@ incubation_dist_assume <-
 #'   [get_discrete_gamma()], [get_discrete_lognormal()]
 shedding_dist_assume <-
   function(shedding_dist = NULL, modeldata = modeldata_init()) {
-
-    modeldata = tbp("shedding_dist_assume", {
-      modeldata$S <- length(shedding_dist) - 1
-      shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
-      modeldata$shedding_dist <- shedding_dist
-      return(modeldata)
-    },
-    required_assumptions = "shedding_dist",
-    modeldata = modeldata)
+    modeldata <- tbp("shedding_dist_assume",
+      {
+        modeldata$S <- length(shedding_dist) - 1
+        shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
+        modeldata$shedding_dist <- shedding_dist
+        return(modeldata)
+      },
+      required_assumptions = "shedding_dist",
+      modeldata = modeldata
+    )
 
     return(modeldata)
   }
@@ -131,14 +138,15 @@ shedding_dist_assume <-
 #'   [suggest_load_per_case()]
 load_per_case_assume <-
   function(load_per_case = NULL, modeldata = modeldata_init()) {
-
-    modeldata = tbp("load_per_case_assume", {
-      modeldata$load_mean <- load_per_case
-      modeldata$.metainfo$load_per_case <- load_per_case
-      return(modeldata)
-    },
-    required_assumptions = "load_per_case",
-    modeldata = modeldata)
+    modeldata <- tbp("load_per_case_assume",
+      {
+        modeldata$load_mean <- load_per_case
+        modeldata$.metainfo$load_per_case <- load_per_case
+        return(modeldata)
+      },
+      required_assumptions = "load_per_case",
+      modeldata = modeldata
+    )
 
     return(modeldata)
   }
@@ -206,8 +214,10 @@ load_variation_estimate <- function(
   )
   modeldata$.init$nu <- as.array(cv_prior_mu)
   modeldata$.init$zeta <- tbe(
-    rep(median(modeldata$measured_concentrations, na.rm=T),
-        modeldata$.metainfo$length_shedding),
+    rep(
+      median(modeldata$measured_concentrations, na.rm = T),
+      modeldata$.metainfo$length_shedding
+    ),
     c("measured_concentrations", ".metainfo$length_shedding")
   )
   return(modeldata)

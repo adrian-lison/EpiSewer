@@ -96,59 +96,60 @@ flows_observe <-
            date_col = "date",
            flow_col = "flow",
            modeldata = modeldata_init()) {
-
-    modeldata = tbp("flows_observe", {
-      required_data_cols <- c(date_col, flow_col)
-      if (!all(required_data_cols %in% names(flows))) {
-        rlang::abort(
-          paste(
-            "The following columns must be present",
-            "in the provided flow `data.frame`:",
-            paste(required_data_cols, collapse = ", ")
+    modeldata <- tbp("flows_observe",
+      {
+        required_data_cols <- c(date_col, flow_col)
+        if (!all(required_data_cols %in% names(flows))) {
+          rlang::abort(
+            paste(
+              "The following columns must be present",
+              "in the provided flow `data.frame`:",
+              paste(required_data_cols, collapse = ", ")
+            )
           )
+        }
+
+        flows[[date_col]] <- as.Date(flows[[date_col]])
+
+        if (any(duplicated(flows[[date_col]]))) {
+          rlang::abort("Flow data is ambigious, duplicate dates found.")
+        }
+
+        modeldata <- tbc(
+          "flow_data",
+          {
+            all_dates <-
+              seq.Date(
+                modeldata$.metainfo$T_start_date,
+                modeldata$.metainfo$T_end_date,
+                by = "1 day"
+              )
+            missing_flow_dates <-
+              as.Date(
+                setdiff(all_dates, flows[[date_col]][!is.na(flows[[flow_col]])]),
+                origin = lubridate::origin
+              )
+            if (length(missing_flow_dates) > 0) {
+              rlang::abort(paste(
+                "Missing flow values for the following dates:",
+                paste(missing_flow_dates, collapse = ", ")
+              ))
+            }
+            flows <-
+              flows[flows[[date_col]] >= modeldata$.metainfo$T_start_date &
+                flows[[date_col]] <= modeldata$.metainfo$T_end_date, ]
+            flows <- flows[order(flows[[date_col]]), ]
+            modeldata$flow <- flows[[flow_col]]
+          },
+          required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
+          modeldata = modeldata
         )
-      }
 
-      flows[[date_col]] <- as.Date(flows[[date_col]])
-
-      if (any(duplicated(flows[[date_col]]))) {
-        rlang::abort("Flow data is ambigious, duplicate dates found.")
-      }
-
-      modeldata <- tbc(
-        "flow_data",
-        {
-          all_dates <-
-            seq.Date(
-              modeldata$.metainfo$T_start_date,
-              modeldata$.metainfo$T_end_date,
-              by = "1 day"
-            )
-          missing_flow_dates <-
-            as.Date(
-              setdiff(all_dates, flows[[date_col]][!is.na(flows[[flow_col]])]),
-              origin = lubridate::origin
-            )
-          if (length(missing_flow_dates) > 0) {
-            rlang::abort(paste(
-              "Missing flow values for the following dates:",
-              paste(missing_flow_dates, collapse = ", ")
-            ))
-          }
-          flows <-
-            flows[flows[[date_col]] >= modeldata$.metainfo$T_start_date &
-                   flows[[date_col]] <= modeldata$.metainfo$T_end_date, ]
-          flows <- flows[order(flows[[date_col]]), ]
-          modeldata$flow <- flows[[flow_col]]
-        },
-        required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
-        modeldata = modeldata
-      )
-
-      return(modeldata)
-    },
-    required_data = "flows",
-    modeldata = modeldata)
+        return(modeldata)
+      },
+      required_data = "flows",
+      modeldata = modeldata
+    )
 
     return(modeldata)
   }
@@ -176,18 +177,20 @@ flows_observe <-
 #' # Particles always arrive after one day
 #' residence_dist_assume(residence_dist = c(0, 1))
 #'
-#' 1/4 of particles only arrives after one day
+#' # 1/4 of particles only arrives after one day
 #' residence_dist_assume(residence_dist = c(0.75, 0.25))
 residence_dist_assume <-
   function(residence_dist = NULL, modeldata = modeldata_init()) {
-    modeldata = tbp("residence_dist_assume", {
-      modeldata$D <- length(residence_dist) - 1
-      residence_dist <- check_dist(residence_dist, "residence time distribution")
-      modeldata$residence_dist <- residence_dist
-      return(modeldata)
-    },
-    required_assumptions = "residence_dist",
-    modeldata = modeldata)
+    modeldata <- tbp("residence_dist_assume",
+      {
+        modeldata$D <- length(residence_dist) - 1
+        residence_dist <- check_dist(residence_dist, "residence time distribution")
+        modeldata$residence_dist <- residence_dist
+        return(modeldata)
+      },
+      required_assumptions = "residence_dist",
+      modeldata = modeldata
+    )
 
     return(modeldata)
   }

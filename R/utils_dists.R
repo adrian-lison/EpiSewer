@@ -136,7 +136,7 @@ get_discrete_gamma_shifted <- function(
   res <- res + a * b * (2 * cdf_gamma(k - 1, a + 1, b) -
     cdf_gamma(k - 2, a + 1, b) - cdf_gamma(k, a + 1, b))
   res <- sapply(res, function(e) max(0, e))
-  res <- res/sum(res)
+  res <- res / sum(res)
   return(res)
 }
 
@@ -208,11 +208,13 @@ check_dist <- function(dist, name = "probability distribution") {
   if (!is.numeric(dist)) {
     rlang::abort(paste("Supplied", name, "is not a numeric vector."))
   }
-  if (any(dist<0)) {
-    rlang::abort(paste("Supplied", name, "has negative entries.",
-                "All probabilities must be positive."))
+  if (any(dist < 0)) {
+    rlang::abort(paste(
+      "Supplied", name, "has negative entries.",
+      "All probabilities must be positive."
+    ))
   }
-  if (sum(dist)!=1) {
+  if (sum(dist) != 1) {
     rlang::warn(paste(
       "Supplied", name, "does not sum to 1.",
       "EpiSewer will normalize the probabilities such that they sum to 1.\n"

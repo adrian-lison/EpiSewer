@@ -50,16 +50,16 @@ EpiSewer <- function(
     infections = model_infections(),
     fit_opts = set_fit_opts(),
     run_fit = TRUE) {
-
   modeldata <- modeldata_combine(
     measurements, sampling, sewage, shedding, infections
   )
   modeldata <- modeldata_validate(
-    modeldata, data = data, assumptions = assumptions, model_def = model
-    )
+    modeldata,
+    data = data, assumptions = assumptions, model_def = model
+  )
 
 
-  model = get_stan_model(modeldata = modeldata)
+  model <- get_stan_model(modeldata = modeldata)
 
   job <- EpiSewerJob(
     job_name = paste("Job on", date()),
@@ -91,8 +91,8 @@ EpiSewer <- function(
 #'   for each day. Will be automatically passed to [flows_observe()].
 #' @param ... Further observations to be passed to [EpiSewer()].
 #'
-#' @return A `list` with all observations supplied. Can be passed to the `data` argument
-#'   in [EpiSewer()].
+#' @return A `list` with all observations supplied. Can be passed to the `data`
+#'   argument in [EpiSewer()].
 #' @export
 sewer_data <- function(measurements = NULL, flows = NULL, ...) {
   data <- as.list(environment())
@@ -164,8 +164,8 @@ EpiSewerJob <- function(job_name,
   # ToDo rlang::flatten is deprecated, replace
   data_arguments <- suppressWarnings(
     rlang::flatten(modeldata[!(names(modeldata) %in% c(
-        ".init", ".metainfo", ".checks", ".sewer_data", ".sewer_assumptions"
-        ))])
+      ".init", ".metainfo", ".checks", ".sewer_data", ".sewer_assumptions"
+    ))])
   )
   data_arguments_raw <- data_arguments[
     stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
@@ -212,10 +212,15 @@ run.EpiSewerJob <- function(job) {
       } else {
         cat("\n")
         rlang::warn(
-          paste("There was an error while fitting the model.",
-          "Only the model input is returned."))
+          paste(
+            "There was an error while fitting the model.",
+            "Only the model input is returned."
+          )
+        )
         fit_res <- list(
-          errors = unlist(lapply(fit_res$warnings, function(x) stringr::str_remove(x$message, "\n"))),
+          errors = unlist(lapply(
+            fit_res$warnings, function(x) stringr::str_remove(x$message, "\n")
+          )),
           sampler_output = fit_res$value$output()
         )
       }
@@ -224,8 +229,10 @@ run.EpiSewerJob <- function(job) {
     error = function(err) {
       cat("\n")
       rlang::warn(c(
-        paste("There was an error while fitting the model.",
-        "Only the model input is returned."),
+        paste(
+          "There was an error while fitting the model.",
+          "Only the model input is returned."
+        ),
         err$message
       ))
       return(list(errors = err, sampler_output = NULL))

@@ -39,6 +39,6 @@ residence_dist_assume(residence_dist = c(1))
 # Particles always arrive after one day
 residence_dist_assume(residence_dist = c(0, 1))
 
-1/4 of particles only arrives after one day
+# 1/4 of particles only arrives after one day
 residence_dist_assume(residence_dist = c(0.75, 0.25))
 }

@@ -19,7 +19,8 @@
 #'   further geoms.
 #' @export
 #' @import ggplot2
-plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE, median = FALSE) {
+plot_infections <- function(results, draws = FALSE, ndraws = NULL,
+                            seeding = FALSE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -53,9 +54,16 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FAL
       geom_line(aes(y = I, group = .draw), size = 0.1, alpha = 0.9)
   } else {
     plot <- plot +
-      geom_ribbon(aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, color = NA) +
-      geom_ribbon(aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.4, color = NA) +
-      {if (median) geom_line(aes(y = median))}
+      geom_ribbon(
+        aes(ymin = lower_0.95, ymax = upper_0.95),
+        alpha = 0.2, color = NA
+      ) +
+      geom_ribbon(
+        aes(ymin = lower_0.5, ymax = upper_0.5),
+        alpha = 0.4, color = NA
+      ) + {
+        if (median) geom_line(aes(y = median))
+      }
   }
   if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
@@ -81,7 +89,8 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL, seeding = FAL
 #'   manipulated using [ggplot2] functions to adjust themes and scales, and add
 #'   further geoms.
 #' @export
-plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE, median = FALSE) {
+plot_R <- function(results, draws = FALSE, ndraws = NULL,
+                   seeding = FALSE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -116,9 +125,16 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE, media
       geom_line(aes(y = R, group = .draw), size = 0.1, alpha = 0.9)
   } else {
     plot <- plot +
-      geom_ribbon(aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, color = NA) +
-      geom_ribbon(aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.4, color = NA) +
-      {if (median) geom_line(aes(y = median))}
+      geom_ribbon(
+        aes(ymin = lower_0.95, ymax = upper_0.95),
+        alpha = 0.2, color = NA
+      ) +
+      geom_ribbon(
+        aes(ymin = lower_0.5, ymax = upper_0.5),
+        alpha = 0.4, color = NA
+      ) + {
+        if (median) geom_line(aes(y = median))
+      }
   }
   if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
@@ -145,7 +161,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL, seeding = FALSE, media
 #'   time. Can be further manipulated using [ggplot2] functions to adjust themes
 #'   and scales, and add further geoms.
 #' @export
-plot_concentration <- function(results, measurements = NULL, include_noise = TRUE, median = FALSE) {
+plot_concentration <- function(results, measurements = NULL,
+                               include_noise = TRUE, median = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -156,12 +173,14 @@ plot_concentration <- function(results, measurements = NULL, include_noise = TRU
   }
 
   if (!is.null(measurements)) {
-    concentration_measured <- vctrs::vec_rbind(!!!lapply(results, function(res) {
-      return(measurements[
-        measurements$date %in% res$job$.metainfo$measured_dates,
-        c("date", "concentration")
-      ])
-    }), .names_to = "model")
+    concentration_measured <- vctrs::vec_rbind(!!!lapply(
+      results, function(res) {
+        return(measurements[
+          measurements$date %in% res$job$.metainfo$measured_dates,
+          c("date", "concentration")
+        ])
+      }
+    ), .names_to = "model")
     concentration_measured$model <- forcats::fct_inorder(
       as.character(concentration_measured$model),
       ordered = TRUE
@@ -224,10 +243,14 @@ plot_concentration <- function(results, measurements = NULL, include_noise = TRU
         )
       }
     } +
-    {if (median) geom_line(
-      data = concentration_pred,
-      aes(y = median, color = model)
-    )} +
+    {
+      if (median) {
+        geom_line(
+          data = concentration_pred,
+          aes(y = median, color = model)
+        )
+      }
+    } +
     theme_bw() +
     scale_x_date(
       expand = c(0, 0),
@@ -276,7 +299,9 @@ plot_load <- function(results, median = FALSE) {
       data = load_pred,
       aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
     ) +
-    {if (median) geom_line(data = load_pred, aes(y = median, color = model))} +
+    {
+      if (median) geom_line(data = load_pred, aes(y = median, color = model))
+    } +
     theme_bw() +
     scale_x_date(
       expand = c(0, 0),
@@ -342,24 +367,28 @@ plot_sample_effects <- function(results) {
 #' modeldata <- LOD_assume(limit = 1e7, sharpness = 10)
 #' plot_LOD(modeldata)
 plot_LOD <- function(modeldata) {
-  if (!all(c("LOD","LOD_sharpness") %in% names(modeldata))) {
-    rlang::abort(c("The following variables must be present in model data:",
-            "LOD", "LOD_sharpness"))
+  if (!all(c("LOD", "LOD_sharpness") %in% names(modeldata))) {
+    rlang::abort(c(
+      "The following variables must be present in model data:",
+      "LOD", "LOD_sharpness"
+    ))
   }
   LOD_f <- function(x) {
     plogis((modeldata$LOD - x) / modeldata$LOD * modeldata$LOD_sharpness)
   }
   example_data <- data.frame(
-    x = seq(modeldata$LOD-modeldata$LOD*0.75,
-            modeldata$LOD+modeldata$LOD*0.75,length.out = 100)
+    x = seq(modeldata$LOD - modeldata$LOD * 0.75,
+      modeldata$LOD + modeldata$LOD * 0.75,
+      length.out = 100
     )
+  )
   example_data$y <- LOD_f(example_data$x)
-  ggplot(example_data, aes(x=x, y=y)) +
+  ggplot(example_data, aes(x = x, y = y)) +
     geom_vline(xintercept = modeldata$LOD, linetype = "dashed") +
     geom_line() +
     xlab("True concentration") +
     ylab("Probability of non-detection") +
-    coord_cartesian(ylim = c(0,1)) +
-    scale_x_continuous(expand = c(0,0)) +
+    coord_cartesian(ylim = c(0, 1)) +
+    scale_x_continuous(expand = c(0, 0)) +
     theme_bw()
 }

@@ -25,7 +25,8 @@ map_dates_1d_df <- function(fit_summary, date_mapping) {
   return(fit_summary)
 }
 
-get_summary_1d_date <- function(fit, var, T_shift, .metainfo, intervals = c(0.95, 0.5)) {
+get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
+                                intervals = c(0.95, 0.5)) {
   # T_shift: how much does the variable lead or lag the time from 1:T?
   date_mapping <- seq.Date(
     .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
@@ -34,14 +35,23 @@ get_summary_1d_date <- function(fit, var, T_shift, .metainfo, intervals = c(0.95
   var_summary <- map_dates_1d_df(fit$summary(var,
     mean = mean,
     median = median,
-    function(x) setNames(quantile(x, (1-intervals)/2), paste0("lower_", intervals)),
-    function(x) setNames(quantile(x, (1+intervals)/2), paste0("upper_", intervals))
+    function(x) {
+      setNames(
+        quantile(x, (1 - intervals) / 2), paste0("lower_", intervals)
+      )
+    },
+    function(x) {
+      setNames(
+        quantile(x, (1 + intervals) / 2), paste0("upper_", intervals)
+      )
+    }
   ), date_mapping)
   setDT(var_summary)
   return(var_summary)
 }
 
-get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo, intervals = c(0.95, 0.5)) {
+get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo,
+                                    intervals = c(0.95, 0.5)) {
   # T_shift: how much does the variable lead or lag the time from 1:T?
   date_mapping <- seq.Date(
     .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
@@ -50,8 +60,16 @@ get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo, intervals = c(
   var_summary <- map_dates_1d_df(fit$summary(var,
     mean = function(x) mean(exp(x)),
     median = function(x) median(exp(x)),
-    function(x) setNames(quantile(exp(x), (1-intervals)/2), paste0("lower_", intervals)),
-    function(x) setNames(quantile(exp(x), (1+intervals)/2), paste0("upper_", intervals))
+    function(x) {
+      setNames(
+        quantile(exp(x), (1 - intervals) / 2), paste0("lower_", intervals)
+      )
+    },
+    function(x) {
+      setNames(
+        quantile(exp(x), (1 + intervals) / 2), paste0("upper_", intervals)
+      )
+    }
   ), date_mapping)
   setDT(var_summary)
   return(var_summary)
@@ -62,22 +80,31 @@ get_draws_1d_date <- function(fit, variable, ndraws = NULL) {
   setDT(fit_draws)
   if (!is.null(ndraws)) {
     draw_ids <- sample.int(max(fit_draws$.draw), ndraws, replace = FALSE)
-    fit_draws <- fit_draws[ .draw %in% draw_ids,]
+    fit_draws <- fit_draws[.draw %in% draw_ids, ]
   }
   fit_draws <- melt(fit_draws,
-                    id.vars = c(".chain", ".iteration", ".draw"),
-                    value.name = variable
+    id.vars = c(".chain", ".iteration", ".draw"),
+    value.name = variable
   )
   fit_draws[, date := stringr::str_extract(variable, "(?<=\\[)\\d+(?=\\])")]
   return(fit_draws[])
 }
 
-get_summary_vector <- function(fit, var, varnames = NULL, intervals = c(0.95, 0.5)) {
+get_summary_vector <- function(fit, var, varnames = NULL,
+                               intervals = c(0.95, 0.5)) {
   fsummary <- fit$summary(var,
     mean = mean,
     median = median,
-    function(x) setNames(quantile(x, (1-intervals)/2), paste0("lower_", intervals)),
-    function(x) setNames(quantile(x, (1+intervals)/2), paste0("upper_", intervals))
+    function(x) {
+      setNames(
+        quantile(x, (1 - intervals) / 2), paste0("lower_", intervals)
+      )
+    },
+    function(x) {
+      setNames(
+        quantile(x, (1 + intervals) / 2), paste0("upper_", intervals)
+      )
+    }
   )
   if (!is.null(varnames)) {
     if (nrow(fsummary) != length(varnames)) {
@@ -89,12 +116,21 @@ get_summary_vector <- function(fit, var, varnames = NULL, intervals = c(0.95, 0.
   return(fsummary)
 }
 
-get_summary_vector_log <- function(fit, var, varnames = NULL, intervals = c(0.95, 0.5)) {
+get_summary_vector_log <- function(fit, var, varnames = NULL,
+                                   intervals = c(0.95, 0.5)) {
   fsummary <- fit$summary(var,
     mean = function(x) mean(exp(x)),
     median = function(x) median(exp(x)),
-    function(x) setNames(quantile(exp(x), (1-intervals)/2), paste0("lower_", intervals)),
-    function(x) setNames(quantile(exp(x), (1+intervals)/2), paste0("upper_", intervals))
+    function(x) {
+      setNames(
+        quantile(exp(x), (1 - intervals) / 2), paste0("lower_", intervals)
+      )
+    },
+    function(x) {
+      setNames(
+        quantile(exp(x), (1 + intervals) / 2), paste0("upper_", intervals)
+      )
+    }
   )
   if (!is.null(varnames)) {
     if (nrow(fsummary) != length(varnames)) {
