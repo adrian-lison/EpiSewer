@@ -6,6 +6,16 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 [![MIT
 license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epinowcast/epinowcast/blob/master/LICENSE.md/)
 
+The `EpiSewer` R package provides a Bayesian generative model to
+estimate effective reproduction numbers from wastewater concentration
+measurements over time. Regular concentration measurements at wastewater
+treatment plants can provide a longitudinal data signal to track the
+transmission dynamics of a pathogen in the catchment population. The
+`EpiSewer` model is tailored to the specifics of wastewater
+concentration measurements, offers comprehensive uncertainty
+quantification via MCMC sampling in `stan`, and provides easily
+configurable modeling components.
+
 ## Model highlights
 
 **Measurements**  
