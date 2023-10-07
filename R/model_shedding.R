@@ -83,6 +83,10 @@ incubation_dist_assume <-
       modeldata = modeldata
     )
 
+    modeldata$.str$shedding[["incubation_dist"]] <- list(
+      incubation_dist_assume = c()
+    )
+
     return(modeldata)
   }
 
@@ -112,6 +116,10 @@ shedding_dist_assume <-
       },
       required_assumptions = "shedding_dist",
       modeldata = modeldata
+    )
+
+    modeldata$.str$shedding[["shedding_dist"]] <- list(
+      shedding_dist_assume = c()
     )
 
     return(modeldata)
@@ -148,6 +156,10 @@ load_per_case_assume <-
       modeldata = modeldata
     )
 
+    modeldata$.str$shedding[["load_per_case"]] <- list(
+      load_per_case_assume = c()
+    )
+
     return(modeldata)
   }
 
@@ -166,6 +178,11 @@ load_variation_none <- function(modeldata = modeldata_init()) {
   modeldata$nu_prior <- numeric(0)
   modeldata$.init$nu <- numeric(0)
   modeldata$.init$zeta <- numeric(0)
+
+  modeldata$.str$shedding[["load_variation"]] <- list(
+    load_variation_none = c()
+  )
+
   return(modeldata)
 }
 
@@ -220,5 +237,10 @@ load_variation_estimate <- function(
     ),
     c("measured_concentrations", ".metainfo$length_shedding")
   )
+
+  modeldata$.str$shedding[["load_variation"]] <- list(
+    load_variation_estimate = c()
+  )
+
   return(modeldata)
 }

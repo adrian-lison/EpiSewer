@@ -54,16 +54,16 @@ EpiSewer <- function(
     measurements, sampling, sewage, shedding, infections
   )
 
-  model <- get_stan_model(modeldata = modeldata)
+  model_stan <- get_stan_model(modeldata = modeldata)
 
   modeldata <- modeldata_validate(
     modeldata,
-    data = data, assumptions = assumptions, model_def = model
+    data = data, assumptions = assumptions, model_stan = model_stan
   )
 
   job <- EpiSewerJob(
     job_name = paste("Job on", date()),
-    model_def = model,
+    model_stan = model_stan,
     modeldata = modeldata,
     fit_opts = fit_opts,
     overwrite = TRUE,
@@ -148,7 +148,7 @@ sewer_assumptions <- function(generation_dist = NULL,
 
 #' Constructor for EpiSewerJob objects
 EpiSewerJob <- function(job_name,
-                        model_def,
+                        model_stan,
                         modeldata,
                         fit_opts,
                         jobarray_size = 1,
@@ -159,18 +159,20 @@ EpiSewerJob <- function(job_name,
   job[["job_name"]] <- job_name
   job[["jobarray_size"]] <- jobarray_size
 
-  job[["model_def"]] <- model_def
+  job[["model_stan"]] <- model_stan
 
   # ToDo rlang::flatten is deprecated, replace
   data_arguments <- suppressWarnings(
     rlang::flatten(modeldata[!(names(modeldata) %in% c(
-      ".init", ".metainfo", ".checks", ".sewer_data", ".sewer_assumptions"
+      ".init", ".metainfo", ".checks", ".str",
+      ".sewer_data", ".sewer_assumptions"
     ))])
   )
   data_arguments_raw <- data_arguments[
     stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
   ]
   job[["data"]] <- data_arguments_raw
+  job[["model"]] <- modeldata$.str
   job[["init"]] <- modeldata$.init
   job[["fit_opts"]] <- fit_opts
 
@@ -203,7 +205,7 @@ run.EpiSewerJob <- function(job) {
   fit_res <- tryCatch(
     {
       fit_res <- withWarnings(suppress_messages(
-        do.call(job$model_def$get_stan_model[[1]]()$sample, arguments),
+        do.call(job$model_stan$get_stan_model[[1]]()$sample, arguments),
         "Registered S3 method overwritten by 'data.table'"
       ))
       if (length(fit_res$warnings) == 0) {

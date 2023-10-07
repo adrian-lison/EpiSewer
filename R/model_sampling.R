@@ -38,6 +38,11 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
   modeldata$X <- numeric(0)
   modeldata$eta_prior <- numeric(0)
   modeldata$.init$eta <- numeric(0)
+
+  modeldata$.str$sampling[["sample_effects"]] <- list(
+    sample_effects_none = c()
+  )
+
   return(modeldata)
 }
 
@@ -104,6 +109,10 @@ sample_effects_estimate_matrix <- function(
 
   modeldata$.init$eta <- rep(0, modeldata$K)
 
+  modeldata$.str$sampling[["sample_effects"]] <- list(
+    sample_effects_estimate_matrix = c()
+  )
+
   return(modeldata)
 }
 
@@ -158,4 +167,10 @@ sample_effects_estimate_weekday <- function(
     required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
     modeldata = modeldata
   )
+
+  modeldata$.str$sampling[["sample_effects"]] <- list(
+    sample_effects_estimate_weekday = c()
+  )
+
+  return(modeldata)
 }

@@ -28,7 +28,7 @@ get_stan_model <- function(
     profile = TRUE,
     threads = FALSE,
     force_recompile = FALSE) {
-  model_def <- list()
+  model_stan <- list()
 
   if (is.null(model_filename)) {
     if (is.null(modeldata)) {
@@ -57,15 +57,15 @@ get_stan_model <- function(
     }
   }
 
-  model_def[["model_filename"]] <- model_filename
-  model_def[["model_folder"]] <- model_folder
-  model_def[["force_recompile"]] <- force_recompile
-  model_def[["threads"]] <- threads
-  model_def[["profile"]] <- profile
+  model_stan[["model_filename"]] <- model_filename
+  model_stan[["model_folder"]] <- model_folder
+  model_stan[["force_recompile"]] <- force_recompile
+  model_stan[["threads"]] <- threads
+  model_stan[["profile"]] <- profile
 
-  model_def <- update_compiled_stanmodel(model_def, force_recompile)
+  model_stan <- update_compiled_stanmodel(model_stan, force_recompile)
 
-  return(model_def)
+  return(model_stan)
 }
 
 #' Configure the model fitting
@@ -116,18 +116,18 @@ sampler_stan_mcmc <- function(
   return(opts)
 }
 
-update_compiled_stanmodel <- function(model_def, force_recompile = FALSE) {
-  n_models <- length(model_def$model_filename)
+update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
+  n_models <- length(model_stan$model_filename)
 
   model_path_list <- lapply(1:n_models, function(i) {
-    system.file(model_def$model_folder,
-                model_def$model_filename[[i]], package = "EpiSewer")
+    system.file(model_stan$model_folder,
+                model_stan$model_filename[[i]], package = "EpiSewer")
   })
   include_paths_list <- lapply(1:n_models, function(i) {
-    system.file(model_def$model_folder, package = "EpiSewer")
+    system.file(model_stan$model_folder, package = "EpiSewer")
   }) # identical
 
-  if (!model_def$profile) {
+  if (!model_stan$profile) {
     stan_no_profiling_list <- lapply(1:n_models, function(i) {
       write_stan_files_no_profiling(
         model_path_list[[i]],
@@ -143,7 +143,7 @@ update_compiled_stanmodel <- function(model_def, force_recompile = FALSE) {
   }
 
   cpp_options <- list()
-  if (model_def$threads) {
+  if (model_stan$threads) {
     cpp_options[["stan_threads"]] <- TRUE
   }
 
@@ -156,13 +156,13 @@ update_compiled_stanmodel <- function(model_def, force_recompile = FALSE) {
     ))
   })
 
-  model_def[["get_stan_model"]] <- lapply(1:n_models, function(i) {
+  model_stan[["get_stan_model"]] <- lapply(1:n_models, function(i) {
     function() {
       return(stanmodel_list[[i]])
     }
   })
 
-  return(model_def)
+  return(model_stan)
 }
 
 

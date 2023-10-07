@@ -68,6 +68,11 @@ flows_assume <- function(
     required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
     modeldata = modeldata
   )
+
+  modeldata$.str$sewage[["flows"]] <- list(
+    flows_assume = c()
+  )
+
   return(modeldata)
 }
 
@@ -151,6 +156,10 @@ flows_observe <-
       modeldata = modeldata
     )
 
+    modeldata$.str$sewage[["flows"]] <- list(
+      flows_observe = c()
+    )
+
     return(modeldata)
   }
 
@@ -190,6 +199,10 @@ residence_dist_assume <-
       },
       required_assumptions = "residence_dist",
       modeldata = modeldata
+    )
+
+    modeldata$.str$sewage[["residence_dist"]] <- list(
+      residence_dist_assume = c()
     )
 
     return(modeldata)

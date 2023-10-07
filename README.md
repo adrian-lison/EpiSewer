@@ -407,10 +407,45 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#> [1] "job_name"      "jobarray_size" "model_def"     "data"         
-#> [5] "init"          "fit_opts"      "priors_text"   "meta_info"    
-#> [9] "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "init"         
+#>  [5] "fit_opts"      "priors_text"   "meta_info"     "overwrite"    
+#>  [9] "model"         "model_stan"
 ```
+
+In particular, we can print a concise summary of the modeling details
+(the `EpiSewer`defaults in this case):
+
+``` r
+ww_result$job$model
+#> measurements
+#>  |- concentrations_observe
+#>  |- noise_estimate
+#>  |- LOD_none
+#> 
+#> sampling
+#>  |- sample_effects_none
+#> 
+#> sewage
+#>  |- flows_observe
+#>  |- residence_dist_assume
+#> 
+#> shedding
+#>  |- incubation_dist_assume
+#>  |- shedding_dist_assume
+#>  |- load_per_case_assume
+#>  |- load_variation_none
+#> 
+#> infections
+#>  |- generation_dist_assume
+#>  |- R_estimate_rw
+#>  |- seeding_estimate_rw
+#>  |- infection_noise_estimate
+```
+
+➡️ Check out the [model specification](vignettes/model-specification.md)
+and [detailed example](vignettes/detailed-example.md) vignettes to
+better understand the modeling details and customize the `EpiSewer`
+model.
 
 The `summary` attribute stores summarized results for important
 parameters from the model.

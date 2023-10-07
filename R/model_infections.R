@@ -81,6 +81,10 @@ generation_dist_assume <-
       modeldata = modeldata
     )
 
+    modeldata$.str$infections[["generation_dist"]] <- list(
+      generation_dist_assume = c()
+    )
+
     return(modeldata)
   }
 
@@ -252,6 +256,10 @@ R_estimate_ets <- function(
   modeldata$ets_diff <- differenced
   modeldata$ets_noncentered <- noncentered
 
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_ets = c()
+  )
+
   return(modeldata)
 }
 
@@ -309,6 +317,11 @@ R_estimate_rw <- function(
     noncentered = noncentered,
     modeldata = modeldata
   )
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_rw = c()
+  )
+
   return(modeldata)
 }
 
@@ -410,6 +423,10 @@ R_estimate_splines <- function(
     sigma = coef_sd_prior_sigma
   )
 
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_splines = c()
+  )
+
   return(modeldata)
 }
 
@@ -492,6 +509,10 @@ seeding_estimate_rw <- function(
     ".metainfo$length_seeding"
   )
 
+  modeldata$.str$infections[["seeding"]] <- list(
+    seeding_estimate_rw = c()
+  )
+
   return(modeldata)
 }
 
@@ -509,6 +530,11 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
   modeldata$I_overdispersion <- FALSE
   modeldata$.init$I <- numeric(0)
   modeldata$.init$I_log <- numeric(0)
+
+  modeldata$.str$infections[["infection_noise"]] <- list(
+    infection_noise_none = c()
+  )
+
   return(modeldata)
 }
 
@@ -566,6 +592,10 @@ infection_noise_estimate <-
       modeldata$I_xi_prior <- numeric(0)
       modeldata$.init$I_xi <- numeric(0)
     }
+
+    modeldata$.str$infections[["infection_noise"]] <- list(
+      infection_noise_estimate = c()
+    )
 
     return(modeldata)
   }

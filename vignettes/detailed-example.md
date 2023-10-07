@@ -99,6 +99,16 @@ suffix of each function explains what we modeled:
   the data
 - `LOD_none`: we do not model a limit of detection
 
+We can also print the module object to see what we have modeled:
+
+``` r
+ww_measurements
+#> measurements
+#>  |- concentrations_observe
+#>  |- noise_estimate
+#>  |- LOD_none
+```
+
 ❗ Note that the modeling functions above have further arguments, and
 `EpiSewer` will use default settings if they are not specified. For
 example, we could set a custom prior on the measurement noise as
@@ -281,6 +291,36 @@ components.
 
 The above model is identical to the default model fitted in the
 [README](../README.md), so we don’t repeat the results again.
+
+Remember that you can print a summary of the full modeling details from
+the job object:
+
+``` r
+ww_result$job$model
+#> measurements
+#>  |- concentrations_observe
+#>  |- noise_estimate
+#>  |- LOD_none
+#> 
+#> sampling
+#>  |- sample_effects_none
+#> 
+#> sewage
+#>  |- flows_observe
+#>  |- residence_dist_assume
+#> 
+#> shedding
+#>  |- incubation_dist_assume
+#>  |- shedding_dist_assume
+#>  |- load_per_case_assume
+#>  |- load_variation_none
+#> 
+#> infections
+#>  |- generation_dist_assume
+#>  |- R_estimate_rw
+#>  |- seeding_estimate_rw
+#>  |- infection_noise_estimate
+```
 
 ### Full model
 

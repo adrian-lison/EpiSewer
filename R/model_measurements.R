@@ -144,6 +144,15 @@ concentrations_observe <-
       modeldata = modeldata
     )
 
+    if (composite_window != 1) {
+      .str_details <- c(composite_window = composite_window)
+    } else {
+      .str_details <- c()
+    }
+    modeldata$.str$measurements[["concentrations"]] <- list(
+      concentrations_observe = .str_details
+    )
+
     return(modeldata)
   }
 
@@ -238,6 +247,15 @@ noise_estimate <-
 
     modeldata$.init$cv <- 0.1 # 10% coefficient of variation
 
+    if (replicates == TRUE) {
+      .str_details <- c(replicates = replicates)
+    } else {
+      .str_details <- c()
+    }
+    modeldata$.str$measurements[["noise"]] <- list(
+      noise_estimate = .str_details
+    )
+
     return(modeldata)
   }
 
@@ -258,6 +276,11 @@ noise_estimate <-
 LOD_none <- function(modeldata = modeldata_init()) {
   modeldata$LOD <- 0
   modeldata$LOD_sharpness <- 0
+
+  modeldata$.str$measurements[["LOD"]] <- list(
+    LOD_none = c()
+  )
+
   return(modeldata)
 }
 
@@ -304,6 +327,10 @@ LOD_assume <- function(limit = NULL, sharpness = 10,
     },
     required_assumptions = "limit_of_detection",
     modeldata = modeldata
+  )
+
+  modeldata$.str$measurements[["LOD"]] <- list(
+    LOD_assume = c()
   )
 
   return(modeldata)

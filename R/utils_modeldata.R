@@ -30,6 +30,16 @@ modeldata_init <- function() {
   modeldata$.init <- list()
   modeldata$.metainfo <- list()
   modeldata$.checks <- list()
+  modeldata$.str <- list(
+    measurements = list(),
+    sampling = list(),
+    sewage = list(),
+    shedding = list(),
+    infections = list()
+  )
+  class(modeldata$.str) <- c("modelstructure")
+  modeldata$.sewer_data <- list()
+  modeldata$.sewer_assumptions <- list()
   class(modeldata) <- "modeldata"
   return(modeldata)
 }
@@ -204,7 +214,7 @@ modeldata_check <- function(modeldata,
 #'
 #' @param modeldata A `list` with all data variables (including priors) to be
 #'   passed on to stan, alongside additional meta information and descriptions.
-#' @param model_def A `list` with information about the stan model to be fitted
+#' @param model_stan A `list` with information about the stan model to be fitted
 #'   and a function that returns the CmdStanModel object.
 #' @param defaults A `list` with default values to be used for modeldata
 #'   variables if not supplied in modeldata. For example, `numeric(0)` will
@@ -218,7 +228,7 @@ modeldata_check <- function(modeldata,
 modeldata_validate <- function(modeldata,
                                data = list(),
                                assumptions = list(),
-                               model_def,
+                               model_stan,
                                defaults = modeldata_defaults()) {
   if (!class(modeldata) == "modeldata") {
     rlang::abort("Please supply a modeldata object.")
@@ -345,7 +355,8 @@ modeldata_combine <- function(...) {
     c, lapply(modeldata_sets, function(x) {
       list_except(
         x, c(
-          ".init", ".metainfo", ".checks", ".sewer_data", ".sewer_assumptions"
+          ".init", ".metainfo", ".checks", ".str",
+          ".sewer_data", ".sewer_assumptions"
         )
       )
     })
@@ -360,6 +371,24 @@ modeldata_combine <- function(...) {
   modeldata_combined$.checks <- do.call(
     c, lapply(modeldata_sets, function(x) x$.checks)
   )
+  modeldata_combined$.str <- list(
+    measurements = do.call(
+      c, lapply(modeldata_sets, function(x) x$.str$measurements),
+    ),
+    sampling = do.call(
+      c, lapply(modeldata_sets, function(x) x$.str$sampling),
+    ),
+    sewage = do.call(
+      c, lapply(modeldata_sets, function(x) x$.str$sewage),
+    ),
+    shedding = do.call(
+      c, lapply(modeldata_sets, function(x) x$.str$shedding),
+    ),
+    infections = do.call(
+      c, lapply(modeldata_sets, function(x) x$.str$infections),
+    )
+  )
+  class(modeldata_combined$.str) <- c("modelstructure")
   modeldata_combined$.sewer_data <- do.call(
     c, lapply(modeldata_sets, function(x) x$.sewer_data)
   )
@@ -454,4 +483,48 @@ modeldata_update <- function(modeldata,
   modeldata <- modeldata_update_metainfo(modeldata)
 
   return(modeldata)
+}
+
+
+
+#' Print a `modeldata` object
+#'
+#' @param type If "structure", the model structure is printed. If "data", the
+#'   modeldata content (data, inits, metainfo) is printed.
+#' @export
+print.modeldata <- function(x, type = "structure") {
+  if (type == "structure") {
+    print(x$.str)
+  } else if (type == "data") {
+    print.default(x[!names(x) %in% c(
+      ".str", ".checks", ".sewer_data", ".sewer_assumptions"
+      )])
+  } else {
+    print.default(x)
+  }
+}
+
+#' Print a `modelstructure` object
+#'
+#' @export
+print.modelstructure <- function(.str) {
+  output <- sapply(names(.str), function(module) {
+    if (length(.str[[module]]) > 0) {
+      comp_output <- sapply(names(.str[[module]]), function(component) {
+        if (length(.str[[module]][[component]][[1]]) > 0) {
+          a <- .str[[module]][[component]][[1]]
+          details <- paste0(
+            " (", paste(paste0(names(a), " = ", a), collapse = ", "), ")"
+            )
+          paste0(" |- ", names(.str[[module]][[component]])[1], details)
+        } else {
+          paste0(" |- ", names(.str[[module]][[component]])[1])
+        }
+      })
+      paste0(module, "\n", paste(comp_output, collapse = "\n"))
+    } else {
+      return(NULL)
+    }
+  })
+  cat(paste(output[!sapply(output,is.null)], collapse = "\n\n"))
 }
