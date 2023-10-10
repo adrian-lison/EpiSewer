@@ -61,7 +61,7 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
   summary[["R"]] <- get_summary_1d_date(
     fit, "R",
     T_shift = T_shift_R, .metainfo = .metainfo,
-    intervals = c(0.95, 0.5)
+    intervals = c(0.5, 0.95)
   )
   summary[["R"]]$seeding <- FALSE
   summary[["R"]][1:(data$G), "seeding"] <- TRUE
@@ -76,7 +76,7 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
   summary[["expected_infections"]] <- get_summary_1d_date(
     fit, "iota",
     T_shift = T_shift_latent, .metainfo = .metainfo,
-    intervals = c(0.95, 0.5)
+    intervals = c(0.5, 0.95)
   )
   summary[["expected_infections"]]$seeding <- FALSE
   summary[["expected_infections"]][1:(data$G * 2), "seeding"] <- TRUE
@@ -85,7 +85,7 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
     summary[["infections"]] <- get_summary_1d_date(
       fit, "I",
       T_shift = T_shift_latent, .metainfo = .metainfo,
-      intervals = c(0.95, 0.5)
+      intervals = c(0.5, 0.95)
     )
     summary[["infections"]]$seeding <- FALSE
     summary[["infections"]][1:(data$G * 2), "seeding"] <- TRUE
@@ -103,26 +103,26 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
   summary[["expected_load"]] <- get_summary_1d_date_log(
     fit, "kappa_log",
     T_shift = T_shift_load, .metainfo = .metainfo,
-    intervals = c(0.95, 0.5)
+    intervals = c(0.5, 0.95)
   )
 
   summary[["expected_concentration"]] <- get_summary_1d_date_log(
     fit, "pi_log",
     T_shift = T_shift_load, .metainfo = .metainfo,
-    intervals = c(0.95, 0.5)
+    intervals = c(0.5, 0.95)
   )
 
   summary[["concentration"]] <- get_summary_1d_date(
     fit, "predicted_concentration",
     T_shift = T_shift_load, .metainfo = .metainfo,
-    intervals = c(0.95, 0.5)
+    intervals = c(0.5, 0.95)
   )
 
   if (data$K > 0) {
     # here we exponentiate to get the multiplicative effect
     summary[["sample_effects"]] <- get_summary_vector_log(
       fit, "eta", colnames(data$X),
-      intervals = c(0.95, 0.5)
+      intervals = c(0.5, 0.95)
     )
   }
 

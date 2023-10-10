@@ -26,7 +26,7 @@ map_dates_1d_df <- function(fit_summary, date_mapping) {
 }
 
 get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
-                                intervals = c(0.95, 0.5)) {
+                                intervals = c(0.5, 0.95)) {
   # T_shift: how much does the variable lead or lag the time from 1:T?
   date_mapping <- seq.Date(
     .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
@@ -37,7 +37,7 @@ get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
     median = median,
     function(x) {
       setNames(
-        quantile(x, (1 - intervals) / 2), paste0("lower_", intervals)
+        quantile(x, (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
       )
     },
     function(x) {
@@ -51,7 +51,7 @@ get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
 }
 
 get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo,
-                                    intervals = c(0.95, 0.5)) {
+                                    intervals = c(0.5, 0.95)) {
   # T_shift: how much does the variable lead or lag the time from 1:T?
   date_mapping <- seq.Date(
     .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
@@ -62,7 +62,7 @@ get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo,
     median = function(x) median(exp(x)),
     function(x) {
       setNames(
-        quantile(exp(x), (1 - intervals) / 2), paste0("lower_", intervals)
+        quantile(exp(x), (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
       )
     },
     function(x) {
@@ -91,13 +91,13 @@ get_draws_1d_date <- function(fit, variable, ndraws = NULL) {
 }
 
 get_summary_vector <- function(fit, var, varnames = NULL,
-                               intervals = c(0.95, 0.5)) {
+                               intervals = c(0.5, 0.95)) {
   fsummary <- fit$summary(var,
     mean = mean,
     median = median,
     function(x) {
       setNames(
-        quantile(x, (1 - intervals) / 2), paste0("lower_", intervals)
+        quantile(x, (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
       )
     },
     function(x) {
@@ -117,13 +117,13 @@ get_summary_vector <- function(fit, var, varnames = NULL,
 }
 
 get_summary_vector_log <- function(fit, var, varnames = NULL,
-                                   intervals = c(0.95, 0.5)) {
+                                   intervals = c(0.5, 0.95)) {
   fsummary <- fit$summary(var,
     mean = function(x) mean(exp(x)),
     median = function(x) median(exp(x)),
     function(x) {
       setNames(
-        quantile(exp(x), (1 - intervals) / 2), paste0("lower_", intervals)
+        quantile(exp(x), (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
       )
     },
     function(x) {
