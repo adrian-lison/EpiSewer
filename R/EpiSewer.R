@@ -245,7 +245,7 @@ run.EpiSewerJob <- function(job) {
   )
 
   if (fitting_successful) {
-    result$summary <- summarize_fit(fit_res, job$data, job$.metainfo)
+    result$summary <- try(summarize_fit(fit_res, job$data, job$metainfo))
     if (job$fit_opts$fitted) {
       fit_res$draws()
       try(fit_res$sampler_diagnostics(), silent = TRUE)

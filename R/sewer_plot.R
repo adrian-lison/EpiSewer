@@ -176,7 +176,7 @@ plot_concentration <- function(results, measurements = NULL,
     concentration_measured <- vctrs::vec_rbind(!!!lapply(
       results, function(res) {
         return(measurements[
-          measurements$date %in% res$job$.metainfo$measured_dates,
+          measurements$date %in% res$job$metainfo$measured_dates,
           c("date", "concentration")
         ])
       }
