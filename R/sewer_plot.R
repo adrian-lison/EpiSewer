@@ -38,6 +38,9 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
   }
 
+  ymin <- quantile(data_to_plot$lower_0.95, probs = 0.01)
+  ymax <- quantile(data_to_plot$upper_0.95, probs = 0.99)
+
   plot <- ggplot(data_to_plot, aes(x = date, color = model, fill = model)) +
     theme_bw() +
     scale_x_date(
@@ -47,7 +50,8 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     ) +
     xlab("Date") +
     ylab("Infections") +
-    theme(legend.title = element_blank())
+    theme(legend.title = element_blank()) +
+    coord_cartesian(ylim = c(ymin, ymax))
 
   if (draws) {
     plot <- plot +
@@ -108,6 +112,9 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
   }
 
+  ymin <- quantile(data_to_plot$lower_0.95, probs = 0.01)
+  ymax <- quantile(data_to_plot$upper_0.95, probs = 0.99)
+
   plot <- ggplot(data_to_plot, aes(x = date, color = model, fill = model)) +
     theme_bw() +
     scale_x_date(
@@ -118,7 +125,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     xlab("Date") +
     ylab(expression(R[t])) +
     theme(legend.title = element_blank()) +
-    geom_hline(yintercept = 1, linetype = "dashed")
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    coord_cartesian(ylim = c(ymin, ymax))
 
   if (draws) {
     plot <- plot +
@@ -173,7 +181,7 @@ plot_concentration <- function(results, measurements = NULL,
   }
 
   if (!is.null(measurements)) {
-    concentration_measured <- vctrs::vec_rbind(!!!lapply(
+    measurements_modeled <- vctrs::vec_rbind(!!!lapply(
       results, function(res) {
         return(measurements[
           measurements$date %in% res$job$metainfo$measured_dates,
@@ -181,12 +189,12 @@ plot_concentration <- function(results, measurements = NULL,
         ])
       }
     ), .names_to = "model")
-    concentration_measured$model <- forcats::fct_inorder(
-      as.character(concentration_measured$model),
+    measurements_modeled$model <- forcats::fct_inorder(
+      as.character(measurements_modeled$model),
       ordered = TRUE
     )
   } else {
-    concentration_measured <- NULL
+    measurements_modeled <- NULL
   }
 
   if (is.null(measurements)) {
@@ -199,10 +207,12 @@ plot_concentration <- function(results, measurements = NULL,
 
   if (!is.null(measurements)) {
     measurements <- measurements[
-      !is.na(measurements$concentration),
+      !is.na(measurements$concentration) &
+        measurements$date<=last_date,
     ]
-    concentration_measured <- concentration_measured[
-      !is.na(concentration_measured$concentration),
+    measurements_modeled <- measurements_modeled[
+      !is.na(measurements_modeled$concentration) &
+        measurements_modeled$date<=last_date,
     ]
   }
   concentration_pred <- concentration_pred[
@@ -236,9 +246,9 @@ plot_concentration <- function(results, measurements = NULL,
       }
     } +
     {
-      if (!is.null(concentration_measured)) {
+      if (!is.null(measurements_modeled)) {
         geom_point(
-          data = concentration_measured,
+          data = measurements_modeled,
           aes(y = concentration), color = "black", shape = 4
         )
       }
@@ -258,7 +268,7 @@ plot_concentration <- function(results, measurements = NULL,
     ) +
     xlab("Date") +
     ylab("Concentration [gene copies / L]") +
-    coord_cartesian(xlim = as.Date(c(first_date, last_date)))
+    coord_cartesian(xlim = as.Date(c(first_date, last_date+1)))
 
   if (length(unique(concentration_pred$model)) == 1) {
     plot <- plot +
