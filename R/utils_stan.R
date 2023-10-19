@@ -165,4 +165,34 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
   return(model_stan)
 }
 
+#' Computes a deterministic hash of a stanmodel, i.e. of the code from its main
+#' stan file and all included stan files
+get_hash_model <- function(stanmodel, only_functions = FALSE) {
+  stanmodelcode <- paste(stanmodel$code(), collapse = " ")
+  includes <- stringr::str_extract_all(
+    stanmodelcode,
+    "(?<=#include )functions/.*?\\.stan"
+  )[[1]]
+  include_files <- list.files(
+    stanmodel$include_paths(),
+    recursive = TRUE,
+    full.names = TRUE
+  )
+  include_files <- include_files[
+    sapply(
+      include_files,
+      function(x) any(stringr::str_detect(x, includes))
+    )
+  ]
+  all_digests <- sapply(c(stanmodel$stan_file(), include_files), function(x) {
+    digest::digest(file = x, algo = "md5")
+  })
+  final_hash <- digest::digest(
+    paste0(all_digests, collapse = ""),
+    algo = "md5",
+    serialize = FALSE
+  )
+  return(final_hash)
+}
+
 

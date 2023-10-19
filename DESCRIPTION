@@ -17,6 +17,7 @@ Depends:
 Imports: 
     cmdstanr,
     data.table,
+    digest,
     extraDistr,
     forcats,
     ggdist,

@@ -198,14 +198,17 @@ run.EpiSewerJob <- function(job) {
     job$fit_opts$sampler
   )
 
+  stanmodel <- job$model_stan$get_stan_model[[1]]()
+  fitting_successful <- FALSE
+
   result <- list()
   result$job <- job
+  result$hashes <- get_hashes(job, stanmodel)
 
-  fitting_successful <- FALSE
   fit_res <- tryCatch(
     {
       fit_res <- withWarnings(suppress_messages(
-        do.call(job$model_stan$get_stan_model[[1]]()$sample, arguments),
+        do.call(stanmodel$sample, arguments),
         "Registered S3 method overwritten by 'data.table'"
       ))
       if (length(fit_res$warnings) == 0) {
@@ -241,12 +244,8 @@ run.EpiSewerJob <- function(job) {
     }
   )
 
-  if (!fitting_successful) {
-    result$errors <- fit_res$errors
-    result$sampler_output <- fit_res$sampler_output
-  } else {
+  if (fitting_successful) {
     result$summary <- summarize_fit(fit_res, job$data, job$.metainfo)
-
     if (job$fit_opts$fitted) {
       fit_res$draws()
       try(fit_res$sampler_diagnostics(), silent = TRUE)
@@ -254,7 +253,30 @@ run.EpiSewerJob <- function(job) {
       try(fit_res$profiles(), silent = TRUE)
       result$fitted <- fit_res
     }
+  } else {
+    result$errors <- fit_res$errors
+    result$sampler_output <- fit_res$sampler_output
   }
 
   return(result)
+}
+
+#' Get hashes that uniquely identify an EpiSewer job.
+#'
+#' @param job An EpiSewer job object.
+#' @param stanmodel Optional, a stanmodel. Can be passed to avoid recompilation
+#'   of the model. If NULL (default), the model defined in `job` is taken.
+#'
+#' @return A `list` with hashes identifying the model, input, inits and
+#'   fit_opts.
+get_hashes <- function(job, stanmodel = NULL) {
+  hashes <- list()
+  if (is.null(stanmodel)) {
+    stanmodel <- job$model_stan$get_stan_model[[1]]()
+  }
+  hashes$model <- get_hash_model(stanmodel)
+  hashes$input <- digest::digest(job$data, algo = "md5")
+  hashes$fit_opts <- digest::digest(job$fit_opts, algo = "md5")
+  hashes$init <- digest::digest(job$init, algo = "md5")
+  return(hashes)
 }
