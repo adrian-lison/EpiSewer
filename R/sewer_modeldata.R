@@ -25,6 +25,20 @@ modeldata_update_metainfo <- function(modeldata) {
   )) {
     modeldata$.metainfo$length_R <- with(modeldata, L + S + D + T - G)
   }
+  if (modeldata_check(modeldata,
+                      required = c("residence_dist",
+                                   "shedding_dist",
+                                   "incubation_dist"),
+                      throw_error = FALSE
+  )) {
+    inc_shed_dist <- with(
+      modeldata, convolve(incubation_dist, rev(shedding_dist), type = "o")
+      )
+    total_dist <- with(
+      modeldata, convolve(inc_shed_dist, rev(residence_dist), type = "o")
+    )
+    modeldata$.metainfo$partial_window <- which(cumsum(total_dist)>0.9)[1]-1
+  }
   if (modeldata_check(
     modeldata,
     required = c(
