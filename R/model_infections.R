@@ -33,7 +33,7 @@
 #' @export
 model_infections <- function(
     generation_dist = generation_dist_assume(),
-    R = R_estimate_rw(),
+    R = R_estimate_splines(),
     seeding = seeding_estimate_rw(),
     infection_noise = infection_noise_estimate()) {
   verify_is_modeldata(generation_dist, "generation_dist")
@@ -340,9 +340,9 @@ R_estimate_rw <- function(
 #'   random walk over spline coefficients.
 #' @param coef_intercept_prior_sigma Prior (standard deviation) on the intercept
 #'   of the log random walk over spline coefficients.
-#' @param coef_sd_prior_mu Prior (mean) on the standard deviation of the random
-#'   walk over spline coefficients.
-#' @param coef_sd_prior_sigma Prior (standard deviation) on the standard
+#' @param coef_sd_prior_mu Prior (mean) on the daily standard deviation of the
+#'   random walk over spline coefficients.
+#' @param coef_sd_prior_sigma Prior (standard deviation) on the daily standard
 #'   deviation of the random walk over spline coefficients.
 #'
 #' @details `EpiSewer` uses a random walk on the B-spline coefficients for
@@ -352,30 +352,34 @@ R_estimate_rw <- function(
 #'   - A prior on the log intercept with mean 0 roughly equals a prior on
 #'   the unit intercept with mean 1. The prior on the intercept should reflect
 #'   your expectation of Rt at the beginning of the time series. If estimating
-#'   from the start of an epidemic, you might want to use a prior with
-#'   log(mean) > 0 (i.e. mean > 1) for the intercept.
-#'   - The prior on the standard deviation should be interpreted in terms of
+#'   from the start of an epidemic, you might want to use a prior with log(mean)
+#'   > 0 (i.e. mean > 1) for the intercept.
+#'   - The prior on the daily standard deviation should be interpreted in terms of
 #'   exponential multiplicative changes. For example, a standard deviation of
 #'   0.2 on the log scale roughly allows for multiplicative changes between
-#'   exp(-0.4) and exp(0.4) on the unit scale (using the 2 sigma rule).
+#'   exp(-0.4) and exp(0.4) on the unit scale (using the 2 sigma rule). Note
+#'   that the daily standard deviation is multiplied by `sqrt(knot_distance)` to
+#'   get the actual standard deviation for the coefficients. This way, the prior
+#'   is independent of the chosen `knot_distance`.
 #'
 #' @details The smoothness of the Rt estimates is influenced both by the knot
-#'   distance and by the standard deviation of the random walk on coefficients.
-#'   The latter also influences the uncertainty of Rt estimates towards the
-#'   present / date of estimation, when limited data signal is available.
+#'   distance and by the daily standard deviation of the random walk on
+#'   coefficients. The latter also influences the uncertainty of Rt estimates
+#'   towards the present / date of estimation, when limited data signal is
+#'   available.
 #'
 #' @details The priors of this component have the following functional form:
 #' - intercept of the log random walk over spline coefficients:
-#' `Normal`
+#'   `Normal`
 #' - standard deviation of the log random walk over spline coefficients:
-#' `Truncated normal`
+#'   `Truncated normal`
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {Rt models}
 R_estimate_splines <- function(
-    knot_distance = 1,
+    knot_distance = 7,
     spline_degree = 3,
     coef_intercept_prior_mu = 0,
     coef_intercept_prior_sigma = 0.5,
@@ -387,17 +391,34 @@ R_estimate_splines <- function(
   modeldata <- tbc(
     "spline_definition",
     {
-      knots <- seq(1, modeldata$.metainfo$length_R, by = knot_distance)
+      knots <- place_knots(
+        ts_length = modeldata$.metainfo$length_R,
+        knot_distance = knot_distance,
+        partial_window = modeldata$.metainfo$partial_window
+      )
       B <-
         splines::bs(
           1:modeldata$.metainfo$length_R,
-          knots = knots,
+          knots = knots$interior,
           degree = spline_degree,
-          intercept = FALSE
+          intercept = FALSE,
+          Boundary.knots = knots$boundary
         )
       modeldata$.metainfo$R_knots <- knots
       modeldata$.metainfo$B <- B
       modeldata$bs_n_basis <- ncol(B)
+      modeldata$bs_dists <- c(
+        rep( # left boundary basis functions
+          knots$interior[1]-knots$boundary[1], spline_degree - 1
+          ),
+        diff( # interior basis functions
+          knots$interior
+          ),
+        rep( # right boundary basis function
+          knots$boundary[2]-knots$interior[length(knots$interior)], 1
+          )
+      )
+
       B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
       modeldata$bs_n_w <- length(B_sparse$w)
       modeldata$bs_w <- B_sparse$w
@@ -406,9 +427,9 @@ R_estimate_splines <- function(
 
       modeldata$.init$bs_coeff_ar_start <- 0
       modeldata$.init$bs_coeff_ar_sd <- 0.1
-      modeldata$.init$bs_coeff_noise <- rep(0, modeldata$bs_n_basis - 1)
+      modeldata$.init$bs_coeff_noise_raw <- rep(0, modeldata$bs_n_basis - 1)
     },
-    required = ".metainfo$length_R",
+    required = c(".metainfo$length_R", ".metainfo$partial_window"),
     modeldata = modeldata
   )
 

@@ -68,7 +68,8 @@ data {
 
   // Basis spline (bs) configuration for smoothing R
   // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-G)
-  int<lower=0> bs_n_basis; // number of B-splines
+  int<lower=1> bs_n_basis; // number of B-splines
+  vector[bs_n_basis - 1] bs_dists; // distances between knots
   int<lower=0> bs_n_w; // number of nonzero entries in bs matrix
   vector[bs_n_w] bs_w; // nonzero entries in bs matrix
   array[bs_n_w] int bs_v; // column indices of bs_w
@@ -102,7 +103,7 @@ parameters {
   // log(R) time series prior
   real bs_coeff_ar_start; // intercept for random walk on log bs coeffs
   real<lower=0> bs_coeff_ar_sd; // sd for random walk on log bs coeffs
-  vector<multiplier=bs_coeff_ar_sd>[bs_n_basis - 1] bs_coeff_noise; // additive errors
+  vector[bs_n_basis - 1] bs_coeff_noise_raw; // additive errors (non-centered)
 
   // realized infections
   real iota_log_ar_start;
@@ -124,6 +125,7 @@ parameters {
   real<lower=0> cv;
 }
 transformed parameters {
+  vector[bs_n_basis - 1] bs_coeff_noise; // additive errors
   vector[bs_n_basis] bs_coeff; // Basis spline coefficients
   vector[L + S + D + T - G] R; // effective reproduction number
   vector[L + S + D + T] iota; // expected number of infections
@@ -133,6 +135,7 @@ transformed parameters {
   vector[n_samples] rho_log; // log expected concentrations in (composite) samplesles
 
   // Spline smoothing of R
+  bs_coeff_noise = bs_coeff_noise_raw .* (bs_coeff_ar_sd * sqrt(bs_dists));
   bs_coeff = exp(random_walk([bs_coeff_ar_start]', bs_coeff_noise, 0));
   R = csr_matrix_times_vector(L + S + D + T - G, bs_n_basis, bs_w, bs_v, bs_u, bs_coeff);
 
@@ -201,7 +204,7 @@ model {
   // R spline smoothing
   bs_coeff_ar_start ~ normal(bs_coeff_ar_start_prior[1], bs_coeff_ar_start_prior[2]); // starting prior
   bs_coeff_ar_sd ~ normal(bs_coeff_ar_sd_prior[1], bs_coeff_ar_sd_prior[2]) T[0, ]; // truncated normal
-  bs_coeff_noise ~ normal(0, bs_coeff_ar_sd); // Gaussian noise
+  bs_coeff_noise_raw ~ std_normal(); // Gaussian noise
 
   // Sampling of infections
   iota_log_ar_start ~ normal(iota_log_ar_start_prior[1], iota_log_ar_start_prior[2]);

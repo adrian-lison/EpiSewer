@@ -5,7 +5,7 @@
 \title{Smooth Rt estimates via smoothing splines}
 \usage{
 R_estimate_splines(
-  knot_distance = 1,
+  knot_distance = 7,
   spline_degree = 3,
   coef_intercept_prior_mu = 0,
   coef_intercept_prior_sigma = 0.5,
@@ -29,10 +29,10 @@ random walk over spline coefficients.}
 \item{coef_intercept_prior_sigma}{Prior (standard deviation) on the intercept
 of the log random walk over spline coefficients.}
 
-\item{coef_sd_prior_mu}{Prior (mean) on the standard deviation of the random
-walk over spline coefficients.}
+\item{coef_sd_prior_mu}{Prior (mean) on the daily standard deviation of the
+random walk over spline coefficients.}
 
-\item{coef_sd_prior_sigma}{Prior (standard deviation) on the standard
+\item{coef_sd_prior_sigma}{Prior (standard deviation) on the daily standard
 deviation of the random walk over spline coefficients.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
@@ -62,18 +62,23 @@ logarithmic scale (i.e. a geometric random walk):
 \item A prior on the log intercept with mean 0 roughly equals a prior on
 the unit intercept with mean 1. The prior on the intercept should reflect
 your expectation of Rt at the beginning of the time series. If estimating
-from the start of an epidemic, you might want to use a prior with
-log(mean) > 0 (i.e. mean > 1) for the intercept.
-\item The prior on the standard deviation should be interpreted in terms of
+from the start of an epidemic, you might want to use a prior with log(mean)
+}0 (i.e. mean > 1) for the intercept.
+\itemize{
+\item The prior on the daily standard deviation should be interpreted in terms of
 exponential multiplicative changes. For example, a standard deviation of
 0.2 on the log scale roughly allows for multiplicative changes between
-exp(-0.4) and exp(0.4) on the unit scale (using the 2 sigma rule).
+exp(-0.4) and exp(0.4) on the unit scale (using the 2 sigma rule). Note
+that the daily standard deviation is multiplied by \code{sqrt(knot_distance)} to
+get the actual standard deviation for the coefficients. This way, the prior
+is independent of the chosen \code{knot_distance}.
 }
 
 The smoothness of the Rt estimates is influenced both by the knot
-distance and by the standard deviation of the random walk on coefficients.
-The latter also influences the uncertainty of Rt estimates towards the
-present / date of estimation, when limited data signal is available.
+distance and by the daily standard deviation of the random walk on
+coefficients. The latter also influences the uncertainty of Rt estimates
+towards the present / date of estimation, when limited data signal is
+available.
 
 The priors of this component have the following functional form:
 \itemize{

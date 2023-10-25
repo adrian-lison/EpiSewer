@@ -41,6 +41,56 @@ weighted.median <- function(x, w) {
   return(x[ps])
 }
 
+#' Vectorized version of `rep` with `each` argument, `each` can be a vector
+rep_each_v <- function(x, each) {
+  unlist(mapply(function(i, e) rep(i, each = e), i = x, e = each))
+}
+
+
+#' Places knots for fitting B-splines to a time series
+#'
+#' @param ts_length Length of the time series
+#' @param knot_distance Normal distance between knots
+#' @param partial_window Window with only partial data towards the present in
+#'   which the knot distances will be shorter. This is to avoid erroneous
+#'   extrapolation of splines towards the present.
+#'
+#' @return A vector with knot positions.
+place_knots <- function(ts_length, knot_distance, partial_window = 30) {
+  if (!knot_distance>1) {
+    rlang::abort("Knot distance must be larger than one.")
+  }
+  if (!ts_length>knot_distance) {
+    rlang::abort("The length of the time series must be larger than the knot distance.")
+  }
+  if (!partial_window>0) {
+    rlang::abort("The `partial_window` must be larger than zero.")
+  }
+  # define knot distances close to present, i.e. in window with partial data
+  last_dists <- 2^seq(1, ceiling(log2(knot_distance)))
+  last_dists <- last_dists[last_dists<=knot_distance]
+  last_dists <- c(
+    rep(2, max(ceiling((partial_window-sum(last_dists))/2),1)),
+    last_dists
+    # rep_each_v(2:knot_distance, each = c(floor(partial_window/4),
+    #                                      rep(1,knot_distance-2))),
+    #rep(knot_distance, partial_window)
+    )
+  last_dists <- last_dists[1:which(cumsum(last_dists)>=partial_window)[1]]
+  last_dists <- last_dists[cumsum(last_dists)<ts_length+1]
+  # define knot distances for remaining window (full data)
+  remaining_knots <- (ts_length+1-sum(last_dists)) %/% knot_distance
+  if (remaining_knots > 0) {
+    all_dists <- c(last_dists, rep(knot_distance, remaining_knots))
+  } else {
+    all_dists <- last_dists
+  }
+  # get knot positions
+  int_knots <- rev(ts_length+1-cumsum(all_dists))
+  bound_knots <- c(min(int_knots) - diff(int_knots)[1], ts_length + 1)
+  return(list(interior = int_knots, boundary = bound_knots))
+}
+
 check_list_nested <- function(list_to_check, flat_var) {
   vars_levels <- stringr::str_split(flat_var, "\\$")
   presence <- sapply(vars_levels, function(levels) {
