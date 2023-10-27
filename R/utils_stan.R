@@ -165,9 +165,9 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
   return(model_stan)
 }
 
-#' Computes a deterministic hash of a stanmodel, i.e. of the code from its main
+#' Computes a checksum of a stanmodel, i.e. of the code from its main
 #' stan file and all included stan files
-get_hash_model <- function(stanmodel, only_functions = FALSE) {
+get_checksum_model <- function(stanmodel, only_functions = FALSE) {
   if ("try-error" %in% class(stanmodel)) {
     rlang::abort("There was an error compiling the stan model.")
   }
@@ -190,12 +190,12 @@ get_hash_model <- function(stanmodel, only_functions = FALSE) {
   all_digests <- sapply(c(stanmodel$stan_file(), include_files), function(x) {
     digest::digest(file = x, algo = "md5")
   })
-  final_hash <- digest::digest(
+  final_checksum <- digest::digest(
     paste0(all_digests, collapse = ""),
     algo = "md5",
     serialize = FALSE
   )
-  return(final_hash)
+  return(final_checksum)
 }
 
 

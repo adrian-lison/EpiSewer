@@ -410,7 +410,7 @@ We can further inspect our results object. It has three attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"     "hashes"  "summary" "fitted"
+#> [1] "job"       "summary"   "fitted"    "checksums"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -545,14 +545,14 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0.6082754 0.7733432 0.7691555 0.8166714
 ```
 
-Finally, the `hashes` attribute gives us several hashes that uniquely
-identify the job which was run. These can be used to check whether two
-job results used the same or different models, input data, fitting
-options, or inits. If all hashes are identical (and the seed is not
-NULL), then the results should also be identical.
+Finally, the `checksums` attribute gives us several checksums that
+uniquely identify the job which was run. These can be used to check
+whether two job results used the same or different models, input data,
+fitting options, or inits. If all checksums are identical (and the seed
+is not NULL), then the results should also be identical.
 
 ``` r
-ww_result$hashes
+ww_result$checksums
 #> $model
 #> [1] "628ed04c15688d9f64124147adacfa0d"
 #> 

@@ -203,7 +203,7 @@ run.EpiSewerJob <- function(job) {
 
   result <- list()
   result$job <- job
-  result$hashes <- get_hashes(job, stanmodel)
+  result$checksums <- get_checksums(job, stanmodel)
 
   fit_res <- tryCatch(
     {
@@ -261,22 +261,22 @@ run.EpiSewerJob <- function(job) {
   return(result)
 }
 
-#' Get hashes that uniquely identify an EpiSewer job.
+#' Get checksums that uniquely identify an EpiSewer job.
 #'
 #' @param job An EpiSewer job object.
 #' @param stanmodel Optional, a stanmodel. Can be passed to avoid recompilation
 #'   of the model. If NULL (default), the model defined in `job` is taken.
 #'
-#' @return A `list` with hashes identifying the model, input, inits and
+#' @return A `list` with checksums identifying the model, input, inits and
 #'   fit_opts.
-get_hashes <- function(job, stanmodel = NULL) {
-  hashes <- list()
+get_checksums <- function(job, stanmodel = NULL) {
+  checksums <- list()
   if (is.null(stanmodel)) {
     stanmodel <- job$model_stan$get_stan_model[[1]]()
   }
-  hashes$model <- get_hash_model(stanmodel)
-  hashes$input <- digest::digest(job$data, algo = "md5")
-  hashes$fit_opts <- digest::digest(job$fit_opts, algo = "md5")
-  hashes$init <- digest::digest(job$init, algo = "md5")
-  return(hashes)
+  checksums$model <- get_checksum_model(stanmodel)
+  checksums$input <- digest::digest(job$data, algo = "md5")
+  checksums$fit_opts <- digest::digest(job$fit_opts, algo = "md5")
+  checksums$init <- digest::digest(job$init, algo = "md5")
+  return(checksums)
 }
