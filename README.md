@@ -100,17 +100,17 @@ assumptions.
 ``` r
 str(data_zurich)
 #> List of 4
-#>  $ measurements:Classes 'data.table' and 'data.frame':   151 obs. of  2 variables:
-#>   ..$ date         : Date[1:151], format: "2022-01-01" "2022-01-02" ...
-#>   ..$ concentration: num [1:151] NA NA 456 748 574 ...
+#>  $ measurements:Classes 'data.table' and 'data.frame':   120 obs. of  2 variables:
+#>   ..$ date         : Date[1:120], format: "2022-01-01" "2022-01-02" ...
+#>   ..$ concentration: num [1:120] NA NA 456 748 574 ...
 #>   ..- attr(*, ".internal.selfref")=<externalptr> 
-#>  $ flows       :Classes 'data.table' and 'data.frame':   151 obs. of  2 variables:
-#>   ..$ date: Date[1:151], format: "2022-01-01" "2022-01-02" ...
-#>   ..$ flow: num [1:151] 3.41e+11 3.41e+11 1.59e+11 1.61e+11 3.72e+11 ...
+#>  $ flows       :Classes 'data.table' and 'data.frame':   120 obs. of  2 variables:
+#>   ..$ date: Date[1:120], format: "2022-01-01" "2022-01-02" ...
+#>   ..$ flow: num [1:120] 3.41e+11 3.41e+11 1.59e+11 1.61e+11 3.72e+11 ...
 #>   ..- attr(*, ".internal.selfref")=<externalptr> 
-#>  $ cases       :Classes 'data.table' and 'data.frame':   151 obs. of  2 variables:
-#>   ..$ date : Date[1:151], format: "2022-01-01" "2022-01-02" ...
-#>   ..$ cases: num [1:151] NA NA 323 367 348 ...
+#>  $ cases       :Classes 'data.table' and 'data.frame':   120 obs. of  2 variables:
+#>   ..$ date : Date[1:120], format: "2022-01-01" "2022-01-02" ...
+#>   ..$ cases: num [1:120] NA NA 323 367 348 ...
 #>   ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ units       :List of 2
 #>   ..$ concentration: chr "gc/mL"
@@ -132,11 +132,11 @@ data_zurich$measurements
 #>   4: 2022-01-04      747.8792
 #>   5: 2022-01-05      573.7020
 #>  ---                         
-#> 147: 2022-05-27      278.0198
-#> 148: 2022-05-28      238.0627
-#> 149: 2022-05-29      161.5694
-#> 150: 2022-05-30      600.0688
-#> 151: 2022-05-31      418.8482
+#> 116: 2022-04-26      182.3664
+#> 117: 2022-04-27      379.2421
+#> 118: 2022-04-28      439.7427
+#> 119: 2022-04-29      394.0033
+#> 120: 2022-04-30      293.1242
 ```
 
 To show the handling of missing data more clearly, we make our data
@@ -178,18 +178,18 @@ concentration (mL here in both cases).
 
 ``` r
 data_zurich$flows
-#>            date         flow
-#>   1: 2022-01-01 341163082483
-#>   2: 2022-01-02 341163082483
-#>   3: 2022-01-03 158972454250
-#>   4: 2022-01-04 160849294683
-#>   5: 2022-01-05 372301227483
-#>  ---                        
-#> 147: 2022-05-27 149443751917
-#> 148: 2022-05-28 142955378400
-#> 149: 2022-05-29 143776386433
-#> 150: 2022-05-30 151964157700
-#> 151: 2022-05-31 155315855550
+#>            date        flow
+#>   1: 2022-01-01 3.41163e+11
+#>   2: 2022-01-02 3.41163e+11
+#>   3: 2022-01-03 1.58972e+11
+#>   4: 2022-01-04 1.60849e+11
+#>   5: 2022-01-05 3.72301e+11
+#>  ---                       
+#> 116: 2022-04-26 3.30659e+11
+#> 117: 2022-04-27 2.06046e+11
+#> 118: 2022-04-28 1.58373e+11
+#> 119: 2022-04-29 1.52156e+11
+#> 120: 2022-04-30 2.08685e+11
 ```
 
 Note: In contrast to the concentration measurements, the flow data must
@@ -266,7 +266,7 @@ suggest_load_per_case(
   data_zurich$flows,
   ascertainment_prop = 1
 )
-#> [1] 6e+11
+#> [1] 5.9e+11
 ```
 
 Hence we will assume `6e+11 gc/person` as the average shedding load.
@@ -308,7 +308,7 @@ options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 500, iter_sampling = 1000, chains = 4))
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
 )
 ```
 
@@ -355,20 +355,23 @@ plot_concentration(ww_result, measurements = data_zurich$measurements, include_n
 
 Since the model fit looked decent at first glance, we now inspect our
 main parameter of interest, the effective reproduction number over time.
-Again, the ribbon shows the 95% credible interval.
+Again, the ribbon shows the 95% credible interval. We see that even with
+only two measurements per week, we get a fairly clear signal for R being
+above or below the critical threshold of 1.
 
 ``` r
 plot_R(ww_result)
 ```
 
-<img src="man/figures/README-R-1.png" width="100%" /> We can see that
-the estimates for R go back further into the past than our observations.
-This is due to the delay from infection to shedding, i.e. concentration
-measurements observed today are mostly a signal of infections in the
-past. This is also why the R estimates close to the present are strongly
-uncertain. The measurements observed until the present provide only a
-delayed signal about transmission dynamics, so the most recent R
-estimates are informed by only little data.
+<img src="man/figures/README-R-1.png" width="100%" />
+
+Note that the estimates for R go back further into the past than our
+observations. This is due to the delay from infection to shedding,
+i.e. concentration measurements observed today are mostly a signal of
+infections in the past. This is also why the R estimates close to the
+present are strongly uncertain. The measurements observed until the
+present provide only a delayed signal about transmission dynamics, so
+the most recent R estimates are informed by only little data.
 
 #### Latent parameters
 
@@ -407,7 +410,7 @@ We can further inspect our results object. It has three attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"     "summary" "fitted"
+#> [1] "job"     "hashes"  "summary" "fitted"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -417,9 +420,9 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "data"          "init"         
-#>  [5] "fit_opts"      "priors_text"   "meta_info"     "overwrite"    
-#>  [9] "model"         "model_stan"
+#>  [1] "job_name"      "jobarray_size" "model_stan"    "data"         
+#>  [5] "model"         "init"          "fit_opts"      "priors_text"  
+#>  [9] "metainfo"      "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
@@ -447,7 +450,7 @@ ww_result$job$model
 #> 
 #> infections
 #>  |- generation_dist_assume
-#>  |- R_estimate_rw
+#>  |- R_estimate_splines
 #>  |- seeding_estimate_rw
 #>  |- infection_noise_estimate
 ```
@@ -472,18 +475,18 @@ number.
 
 ``` r
 ww_result$summary$R
-#>            date     mean   median lower_0.95 lower_0.5 upper_0.95 upper_0.5
-#>   1: 2021-12-06 1.045315 1.048455  0.6545776 0.9272795   1.411848  1.165302
-#>   2: 2021-12-07 1.045749 1.048955  0.6712394 0.9291202   1.411490  1.164115
-#>   3: 2021-12-08 1.046740 1.048185  0.6976070 0.9357220   1.388787  1.160318
-#>   4: 2021-12-09 1.047307 1.049825  0.7063578 0.9420907   1.380422  1.156362
-#>   5: 2021-12-10 1.047131 1.051345  0.7073939 0.9462520   1.369877  1.150200
-#>  ---                                                                       
-#> 172: 2022-05-26 1.349490 1.333315  1.0293482 1.2221525   1.760449  1.463567
-#> 173: 2022-05-27 1.357525 1.337010  1.0278413 1.2225450   1.794444  1.476707
-#> 174: 2022-05-28 1.360521 1.340215  1.0174218 1.2183100   1.823932  1.481882
-#> 175: 2022-05-29 1.361005 1.336515  1.0081528 1.2142350   1.834631  1.487255
-#> 176: 2022-05-30 1.361629 1.338500  1.0040498 1.2054100   1.852623  1.492240
+#>            date      mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
+#>   1: 2021-12-06 1.0426791 1.0425000  0.7180512 0.9429652  1.147620   1.357138
+#>   2: 2021-12-07 1.0432292 1.0431400  0.7351968 0.9481753  1.142900   1.345717
+#>   3: 2021-12-08 1.0440299 1.0446050  0.7540923 0.9512257  1.137960   1.334841
+#>   4: 2021-12-09 1.0450871 1.0457950  0.7651638 0.9558753  1.135803   1.324241
+#>   5: 2021-12-10 1.0464089 1.0472550  0.7759100 0.9602262  1.133820   1.322272
+#>  ---                                                                         
+#> 140: 2022-04-24 0.9868777 0.9820210  0.7517854 0.9060957  1.064933   1.250580
+#> 141: 2022-04-25 0.9863933 0.9807570  0.7308977 0.9010367  1.068500   1.275355
+#> 142: 2022-04-26 0.9861018 0.9812930  0.7192404 0.8936360  1.073967   1.292529
+#> 143: 2022-04-27 0.9862395 0.9795155  0.6991881 0.8894863  1.080833   1.316732
+#> 144: 2022-04-28 0.9867506 0.9798795  0.6661445 0.8838173  1.085965   1.338514
 #>      seeding
 #>   1:    TRUE
 #>   2:    TRUE
@@ -491,15 +494,15 @@ ww_result$summary$R
 #>   4:    TRUE
 #>   5:    TRUE
 #>  ---        
-#> 172:   FALSE
-#> 173:   FALSE
-#> 174:   FALSE
-#> 175:   FALSE
-#> 176:   FALSE
+#> 140:   FALSE
+#> 141:   FALSE
+#> 142:   FALSE
+#> 143:   FALSE
+#> 144:   FALSE
 ```
 
-Finally, the `fitted` attribute provides access to all details of the
-fitted stan model. See
+The `fitted` attribute provides access to all details of the fitted stan
+model. See
 [cmdstanr](https://mc-stan.org/cmdstanr/reference/CmdStanMCMC.html) for
 details.
 
@@ -539,5 +542,26 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.8823145 0.8001372 0.8175664 0.8383984
+#> [1] 0.6082754 0.7733432 0.7691555 0.8166714
+```
+
+Finally, the `hashes` attribute gives us several hashes that uniquely
+identify the job which was run. These can be used to check whether two
+job results used the same or different models, input data, fitting
+options, or inits. If all hashes are identical (and the seed is not
+NULL), then the results should also be identical.
+
+``` r
+ww_result$hashes
+#> $model
+#> [1] "628ed04c15688d9f64124147adacfa0d"
+#> 
+#> $input
+#> [1] "034773afefcd7d0e3176f333f2bc0c8e"
+#> 
+#> $fit_opts
+#> [1] "458631d149cd4e1103587d05ea267b7f"
+#> 
+#> $init
+#> [1] "e03a62ec4353e326374c2e4b6d233f54"
 ```
