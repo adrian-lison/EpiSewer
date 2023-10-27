@@ -106,15 +106,13 @@ data and assumption arguments passed to the `EpiSewer` function.
 assumptions explicitly in the model component:
 
 ``` r
+# Leave out flows from the data
 ww_data <- sewer_data(
   measurements = SARS_CoV_2_Zurich$measurements,
   #flows = SARS_CoV_2_Zurich$flows
 )
 
-ww_sewage <- model_sewage(
-  flows = flows_observe(SARS_CoV_2_Zurich$flows)
-)
-
+# Leave out load per case from the assumptions
 ww_assumptions <- sewer_assumptions(
   generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
   incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
@@ -122,10 +120,17 @@ ww_assumptions <- sewer_assumptions(
   #load_per_case = 6e+11
 )
 
+# Provide flows directly to sewage module
+ww_sewage <- model_sewage(
+  flows = flows_observe(SARS_CoV_2_Zurich$flows)
+)
+
+# Provide load per case directly to shedding module
 ww_shedding <- model_shedding(
   load_per_case = load_per_case_assume(6e+11)
 )
 
+# Combine everything
 result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
