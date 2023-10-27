@@ -91,6 +91,35 @@ place_knots <- function(ts_length, knot_distance, partial_window = 30) {
   return(list(interior = int_knots, boundary = bound_knots))
 }
 
+logistic_find_k <- function(a, c) {
+  eq <- function(k) {
+    (a * c * k * exp(k)) / ((a + exp(k))^2) - 1
+  }
+  result <- uniroot(eq, interval = c(0.9, 2))
+  return(result$root)
+}
+
+logistic_find_a_k <- function(c) {
+  k_value <- 1
+  k_value_old <- 0
+  i <- 1
+  while (i<1000 && abs(k_value_old-k_value)>0.0001) {
+    a_value <- (c-1)/exp(-k_value)
+    k_value_old <- k_value
+    k_value <- logistic_find_k(a_value, c)
+    i <- i + 1
+  }
+  return(list(a = a_value, k = k_value))
+}
+
+logistic <- function(x, c, a, k) {
+  return(c / (1+a*exp(-k*x)))
+}
+
+logistic_deriv <- function(x, c, a, k) {
+  return(a*c*k*exp(k*x)/((a+exp(k*x))^2))
+}
+
 check_list_nested <- function(list_to_check, flat_var) {
   vars_levels <- stringr::str_split(flat_var, "\\$")
   presence <- sapply(vars_levels, function(levels) {

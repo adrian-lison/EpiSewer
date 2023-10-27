@@ -1,5 +1,6 @@
 functions {
   #include functions/helper_functions.stan
+  #include functions/link.stan
   #include functions/time_series.stan
   #include functions/approx_count_dist.stan
   #include functions/renewal.stan
@@ -76,6 +77,11 @@ data {
   array[L + S + D + T - G + 1] int bs_u; // row starting indices for bs_w plus padding
   array[2] real bs_coeff_ar_start_prior; // start hyperprior for random walk on log bs coeffs
   array[2] real bs_coeff_ar_sd_prior; // sd hyperprior for random walk on log bs coeffs
+
+  // Link function and corresponding hyperparameters
+  // first element: 0 = inv_softplus, 1 = scaled_logit
+  // other elements: hyperparameters for the respective link function
+  array[4] real R_link;
 }
 transformed data {
   vector[G] gi_rev = reverse(generation_dist);
@@ -97,6 +103,10 @@ transformed data {
       i_nz += 1;
       i_nonzero[i_nz] = n;
     }
+  }
+
+  if (R_link[1] < 0 || R_link[1] > 1) {
+    reject("Link function must be one of inv_softplus (0) or scaled_logit (1)");
   }
 }
 parameters {
@@ -136,8 +146,11 @@ transformed parameters {
 
   // Spline smoothing of R
   bs_coeff_noise = bs_coeff_noise_raw .* (bs_coeff_ar_sd * sqrt(bs_dists));
-  bs_coeff = exp(random_walk([bs_coeff_ar_start]', bs_coeff_noise, 0));
-  R = csr_matrix_times_vector(L + S + D + T - G, bs_n_basis, bs_w, bs_v, bs_u, bs_coeff);
+  bs_coeff = random_walk([bs_coeff_ar_start]', bs_coeff_noise, 0);
+
+  R = apply_link(csr_matrix_times_vector(
+    L + S + D + T - G, bs_n_basis, bs_w, bs_v, bs_u, bs_coeff
+    ), R_link);
 
   // renewal process
   iota[1 : G] = exp(random_walk([iota_log_ar_start]', iota_log_ar_noise, 0)); // seeding
@@ -172,7 +185,6 @@ transformed parameters {
         )[(S + 1) : (S + D + T)]
       )[(D + 1) : (D + T)];
   } else {
-
     kappa_log = log_convolve(
       shed_rev_log, // shedding load distribution
       load_realised_log // total load shed

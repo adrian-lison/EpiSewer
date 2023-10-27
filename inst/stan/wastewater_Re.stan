@@ -1,5 +1,6 @@
 functions {
   #include functions/helper_functions.stan
+  #include functions/link.stan
   #include functions/time_series.stan
   #include functions/approx_count_dist.stan
   #include functions/renewal.stan
@@ -80,6 +81,11 @@ data {
   array[ets_beta_fixed < 0 ? 2 : 0] real<lower=0> ets_beta_prior;
   real ets_phi_fixed; // fixed value used if non-negative
   array[ets_phi_fixed < 0 ? 2 : 0] real<lower=0> ets_phi_prior;
+
+  // Link function and corresponding hyperparameters
+  // first element: 0 = inv_softplus, 1 = scaled_logit
+  // other elements: hyperparameters for the respective link function
+  array[4] real R_link;
 }
 transformed data {
   vector[G] gi_rev = reverse(generation_dist);
@@ -101,6 +107,10 @@ transformed data {
       i_nz += 1;
       i_nonzero[i_nz] = n;
     }
+  }
+
+  if (R_link[1] < 0 || R_link[1] > 1) {
+    reject("Link function must be one of inv_softplus (0) or scaled_logit (1)");
   }
 }
 parameters {
@@ -142,16 +152,15 @@ transformed parameters {
   vector[T] pi_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
 
-  // ETS/Innovations state space process on log scale, starting value 1 on unit scale
-  R = softplus(
-    holt_damped_process(
-      [R_level_start, R_trend_start]',
-      ets_alpha_fixed < 0 ? ets_alpha[1] : ets_alpha_fixed,
-      ets_beta_fixed < 0 ? ets_beta[1] : ets_beta_fixed,
-      ets_phi_fixed < 0 ? ets_phi[1] : ets_phi_fixed,
-      R_noise,
-      0
-    ), 4);
+  // Innovations state space process implementing exponential smoothing
+  R = apply_link(holt_damped_process(
+    [R_level_start, R_trend_start]',
+    ets_alpha_fixed < 0 ? ets_alpha[1] : ets_alpha_fixed,
+    ets_beta_fixed < 0 ? ets_beta[1] : ets_beta_fixed,
+    ets_phi_fixed < 0 ? ets_phi[1] : ets_phi_fixed,
+    R_noise,
+    0
+  ), R_link);
 
   // infections and renewal process
   iota[1 : G] = exp(random_walk([iota_log_ar_start]', iota_log_ar_noise, 0)); // seeding

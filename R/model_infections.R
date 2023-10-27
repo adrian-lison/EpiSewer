@@ -127,6 +127,8 @@ generation_dist_assume <-
 #'   used to model the innovations in the state space process (for better
 #'   sampling efficiency).
 #'
+#' @inheritParams R_estimate_splines
+#'
 #' @details The innovations state space model consists of three components: a
 #'   level, a trend, and a dampening component.
 #' - The level is smoothed based on the levels from earlier time steps,
@@ -175,7 +177,9 @@ R_estimate_ets <- function(
     trend_prior_mu = 0,
     trend_prior_sigma = 0.1,
     sd_prior_mu = 0,
-    sd_prior_sigma = 0.05,
+    sd_prior_sigma = 0.1,
+    link = "inv_softplus",
+    R_max = 6,
     smooth_fixed = NULL,
     smooth_prior_shapes = c(50, 50),
     trend_smooth_fixed = NULL,
@@ -253,6 +257,8 @@ R_estimate_ets <- function(
     modeldata$.init$ets_phi <- 0.9
   }
 
+  modeldata <- add_link_function(link, R_max, modeldata)
+
   modeldata$ets_diff <- differenced
   modeldata$ets_noncentered <- noncentered
 
@@ -280,6 +286,7 @@ R_estimate_ets <- function(
 #' @param noncentered If `TRUE` (default), a non-centered parameterization is
 #'   used to model the innovations of the random walk (for better sampling
 #'   efficiency).
+#' @inheritParams R_estimate_ets
 #'
 #' @details The smoothness of Rt estimates is influenced by the prior on the
 #'   standard deviation of the random walk. It also influences the uncertainty
@@ -301,7 +308,9 @@ R_estimate_rw <- function(
     intercept_prior_mu = 1,
     intercept_prior_sigma = 0.8,
     sd_prior_mu = 0,
-    sd_prior_sigma = 0.05,
+    sd_prior_sigma = 0.1,
+    link = "inv_softplus",
+    R_max = 6,
     differenced = FALSE,
     noncentered = TRUE,
     modeldata = modeldata_init()) {
@@ -310,6 +319,8 @@ R_estimate_rw <- function(
     level_prior_sigma = intercept_prior_sigma,
     sd_prior_mu = sd_prior_mu,
     sd_prior_sigma = sd_prior_sigma,
+    link = link,
+    R_max = R_max,
     smooth_fixed = 1,
     trend_smooth_fixed = 0,
     dampen_fixed = 0,
@@ -344,6 +355,14 @@ R_estimate_rw <- function(
 #'   random walk over spline coefficients.
 #' @param coef_sd_prior_sigma Prior (standard deviation) on the daily standard
 #'   deviation of the random walk over spline coefficients.
+#' @param link Link function. Currently supported are `inv_softplus` (default)
+#'   and `scaled_logit`. Both of these links are configured to behave
+#'   approximately like the identity function around R=1, but become
+#'   increasingly non-linear below (and in the case of `scaled_logit` also
+#'   above) R=1.
+#' @param R_max If `link=scaled_logit` is used, a maximum reproduction number
+#'   must be assumed. This should be higher than any realistic R value for the
+#'   modeled pathogen. Default is 6.
 #'
 #' @details `EpiSewer` uses a random walk on the B-spline coefficients for
 #'   regularization. This allows to use small knot distances without obtaining
@@ -353,7 +372,7 @@ R_estimate_rw <- function(
 #'   the unit intercept with mean 1. The prior on the intercept should reflect
 #'   your expectation of Rt at the beginning of the time series. If estimating
 #'   from the start of an epidemic, you might want to use a prior with log(mean)
-#'   > 0 (i.e. mean > 1) for the intercept.
+#'   larger than 0 (i.e. mean larger than 1) for the intercept.
 #'   - The prior on the daily standard deviation should be interpreted in terms of
 #'   exponential multiplicative changes. For example, a standard deviation of
 #'   0.2 on the log scale roughly allows for multiplicative changes between
@@ -381,10 +400,12 @@ R_estimate_rw <- function(
 R_estimate_splines <- function(
     knot_distance = 7,
     spline_degree = 3,
-    coef_intercept_prior_mu = 0,
-    coef_intercept_prior_sigma = 0.5,
+    coef_intercept_prior_mu = 1,
+    coef_intercept_prior_sigma = 0.8,
     coef_sd_prior_mu = 0,
-    coef_sd_prior_sigma = 0.2,
+    coef_sd_prior_sigma = 0.5,
+    link = "inv_softplus",
+    R_max = 6,
     modeldata = modeldata_init()) {
   modeldata$.metainfo$R_estimate_approach <- "splines"
 
@@ -443,6 +464,8 @@ R_estimate_splines <- function(
     mu = coef_sd_prior_mu,
     sigma = coef_sd_prior_sigma
   )
+
+  modeldata <- add_link_function(link, R_max, modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_splines = c()
@@ -620,3 +643,30 @@ infection_noise_estimate <-
 
     return(modeldata)
   }
+
+add_link_function <- function(link, R_max, modeldata) {
+  # link function and hyperparameters
+  if (link == "inv_softplus") {
+    # first element: 0 = inv_softplus
+    # second element: sharpness of softplus function
+    # the last two entries are just placeholders for hyperparameters of
+    # other link functions
+    modeldata$R_link = c(0, 4, 0, 0)
+  } else if (link == "scaled_logit") {
+    # logistic function for scaled logit link
+    if (R_max < 3) {
+      rlang::abort("Please chose a maximum R value greater or equal to 3.")
+    }
+    modeldata$.metainfo$R_max <- R_max
+    a_k <- logistic_find_a_k(R_max)
+    # first element: 1 = scaled_logit
+    # hyperparameters are chosen such that R=1 at x+1, and is roughly
+    # linear with slope 1 around R=1
+    modeldata$R_link <- c(1, R_max, a_k$a, a_k$k)
+  } else {
+    rlang::abort(c(
+      paste0("'", link, "' is not a valid link function. ",
+             "Please use one of:"), "inv_softplus", "scaled_logit"))
+  }
+  return(modeldata)
+}
