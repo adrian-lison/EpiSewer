@@ -41,6 +41,13 @@ mark_outlier_spikes_median <- function(
     df, measurement_col, date_col = date, window = 5,
     threshold_factor = 5, mad_window = 14, mad_lower_quantile = 0.05) {
 
+  if (!requireNamespace("dplyr", quietly = TRUE)) {
+    stop(
+      "Package \"dplyr\" must be installed to use this function.",
+      call. = FALSE
+    )
+  }
+
   median_info <- df %>%
     group_by({{ date_col }}) %>%
     summarize(daily_median = median({{ measurement_col }}), .groups = "drop") %>%
