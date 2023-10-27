@@ -112,8 +112,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
   }
 
-  ymin <- min(0.7, quantile(data_to_plot$lower_0.95, probs = 0.01))
-  ymax <- max(1.5, quantile(data_to_plot$upper_0.95, probs = 0.99))
+  ymin <- min(0.6, quantile(data_to_plot$lower_0.95, probs = 0.01))
+  ymax <- max(1.6, quantile(data_to_plot$upper_0.95, probs = 0.99))
 
   plot <- ggplot(data_to_plot, aes(x = date, color = model, fill = model)) +
     theme_bw() +
