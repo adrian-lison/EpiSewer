@@ -101,7 +101,7 @@ sampler_stan_mcmc <- function(
     iter_sampling = 1000,
     adapt_delta = 0.99,
     max_treedepth = 15,
-    step_size = 0.1,
+    step_size = 0.01,
     parallel_chains = NULL,
     threads_per_chain = 1,
     seed = 0,
@@ -168,6 +168,9 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 #' Computes a deterministic hash of a stanmodel, i.e. of the code from its main
 #' stan file and all included stan files
 get_hash_model <- function(stanmodel, only_functions = FALSE) {
+  if ("try-error" %in% class(stanmodel)) {
+    rlang::abort("There was an error compiling the stan model.")
+  }
   stanmodelcode <- paste(stanmodel$code(), collapse = " ")
   includes <- stringr::str_extract_all(
     stanmodelcode,
