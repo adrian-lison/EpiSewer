@@ -281,7 +281,7 @@ ww_result <- EpiSewer(
   sewage = ww_sewage,
   shedding = ww_shedding,
   infections = ww_infections,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 500, iter_sampling = 1000, chains = 4))
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
 )
 ```
 
@@ -371,6 +371,6 @@ ww_result <- EpiSewer(
   sewage = ww_sewage,
   shedding = ww_shedding,
   infections = ww_infections,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 500, iter_sampling = 1000, chains = 4))
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
 )
 ```
