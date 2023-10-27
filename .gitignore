@@ -1,11 +1,13 @@
+inst/stan/*
+!inst/stan/*.*
+!inst/stan/functions/
+!inst/stan/functions/*.*
+
 .Rproj.user
 .Rhistory
 .Rdata
 .httr-oauth
 .DS_Store
-
-inst/stan/
-!inst/stan/*.*
 
 vignettes/*.html
 *.Rmd
