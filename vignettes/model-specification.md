@@ -47,9 +47,9 @@ EpiSewer::component_functions("infection_noise")
 
 Some components have multiple versions of the same modeling function
 type. For example, there are currently three approaches to estimate the
-reproduction number, namely `R_estimate_rw` (random walk),
-`R_estimate_ets` (exponential smoothing), and `R_estimate_splines`
-(smoothing splines).
+reproduction number, namely `R_estimate_splines` (smoothing splines),
+`R_estimate_rw` (random walk), and `R_estimate_ets` (exponential
+smoothing).
 
 ``` r
 EpiSewer::component_functions("R")
@@ -135,6 +135,6 @@ result <- EpiSewer(
 ```
 
 Note that if the same data or assumptions are supplied via the
-`sewer_data()`/`sewer_assumptions()` *and* the invidiual component,
+`sewer_data()`/`sewer_assumptions()` *and* the individual component,
 `EpiSewer` will compare both arguments and throw an error if they
 differ.

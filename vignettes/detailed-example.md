@@ -222,7 +222,7 @@ process leading to infected individuals:
 ``` r
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)),
-  R = R_estimate_rw(),
+  R = R_estimate_splines(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
 )
@@ -233,9 +233,9 @@ The module has the following epidemiological components:
 - `generation_dist`: We use the same generation time distribution as
   before.
 - `R`: This the effective reproduction number, our main parameter of
-  interest. We here estimate it via a random walk (`R_estimate_rw()`),
-  but there are other smoothing approaches available (see
-  `component_functions("R")`).
+  interest. We here estimate it via smoothing B-splines
+  (`R_estimate_splines()`), but there are other smoothing approaches
+  available (see `component_functions("R")`).
 - `seeding`: The renewal model used by `EpiSewer` requires a seeding
   phase during which the reproduction number cannot be modeled. We thus
   let the initial infections be estimated using a simple random walk
@@ -317,7 +317,7 @@ ww_result$job$model
 #> 
 #> infections
 #>  |- generation_dist_assume
-#>  |- R_estimate_rw
+#>  |- R_estimate_splines
 #>  |- seeding_estimate_rw
 #>  |- infection_noise_estimate
 ```
@@ -359,7 +359,7 @@ ww_shedding <- model_shedding(
 
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)),
-  R = R_estimate_rw(),
+  R = R_estimate_splines(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
 )
