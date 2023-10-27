@@ -16,7 +16,10 @@ modeldata_validate(
 \item{modeldata}{A \code{list} with all data variables (including priors) to be
 passed on to stan, alongside additional meta information and descriptions.}
 
-\item{assumptions}{}
+\item{data}{A list with observation data as provided by \code{\link[=sewer_data]{sewer_data()}}.}
+
+\item{assumptions}{A list with assumptions as provided by
+\code{\link[=sewer_assumptions]{sewer_assumptions()}}.}
 
 \item{model_stan}{A \code{list} with information about the stan model to be fitted
 and a function that returns the CmdStanModel object.}

@@ -10,7 +10,9 @@ R_estimate_ets(
   trend_prior_mu = 0,
   trend_prior_sigma = 0.1,
   sd_prior_mu = 0,
-  sd_prior_sigma = 0.05,
+  sd_prior_sigma = 0.1,
+  link = "inv_softplus",
+  R_max = 6,
   smooth_fixed = NULL,
   smooth_prior_shapes = c(50, 50),
   trend_smooth_fixed = NULL,
@@ -37,6 +39,16 @@ Rt.}
 
 \item{sd_prior_sigma}{Prior (standard deviation) on the standard deviation of
 the innovations.}
+
+\item{link}{Link function. Currently supported are \code{inv_softplus} (default)
+and \code{scaled_logit}. Both of these links are configured to behave
+approximately like the identity function around R=1, but become
+increasingly non-linear below (and in the case of \code{scaled_logit} also
+above) R=1.}
+
+\item{R_max}{If \code{link=scaled_logit} is used, a maximum reproduction number
+must be assumed. This should be higher than any realistic R value for the
+modeled pathogen. Default is 6.}
 
 \item{smooth_fixed}{Fixed value for the smoothing parameter
 (alpha). If NULL (default), the smoothing parameter is estimated, otherwise

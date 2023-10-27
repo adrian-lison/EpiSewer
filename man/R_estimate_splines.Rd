@@ -7,10 +7,12 @@
 R_estimate_splines(
   knot_distance = 7,
   spline_degree = 3,
-  coef_intercept_prior_mu = 0,
-  coef_intercept_prior_sigma = 0.5,
+  coef_intercept_prior_mu = 1,
+  coef_intercept_prior_sigma = 0.8,
   coef_sd_prior_mu = 0,
-  coef_sd_prior_sigma = 0.2,
+  coef_sd_prior_sigma = 0.5,
+  link = "inv_softplus",
+  R_max = 6,
   modeldata = modeldata_init()
 )
 }
@@ -34,6 +36,16 @@ random walk over spline coefficients.}
 
 \item{coef_sd_prior_sigma}{Prior (standard deviation) on the daily standard
 deviation of the random walk over spline coefficients.}
+
+\item{link}{Link function. Currently supported are \code{inv_softplus} (default)
+and \code{scaled_logit}. Both of these links are configured to behave
+approximately like the identity function around R=1, but become
+increasingly non-linear below (and in the case of \code{scaled_logit} also
+above) R=1.}
+
+\item{R_max}{If \code{link=scaled_logit} is used, a maximum reproduction number
+must be assumed. This should be higher than any realistic R value for the
+modeled pathogen. Default is 6.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -63,8 +75,7 @@ logarithmic scale (i.e. a geometric random walk):
 the unit intercept with mean 1. The prior on the intercept should reflect
 your expectation of Rt at the beginning of the time series. If estimating
 from the start of an epidemic, you might want to use a prior with log(mean)
-}0 (i.e. mean > 1) for the intercept.
-\itemize{
+larger than 0 (i.e. mean larger than 1) for the intercept.
 \item The prior on the daily standard deviation should be interpreted in terms of
 exponential multiplicative changes. For example, a standard deviation of
 0.2 on the log scale roughly allows for multiplicative changes between

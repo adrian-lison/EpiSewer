@@ -219,8 +219,9 @@ modeldata_check <- function(modeldata,
 #' @param defaults A `list` with default values to be used for modeldata
 #'   variables if not supplied in modeldata. For example, `numeric(0)` will
 #'   often be supplied for optional parameters.
-#' @param data
-#' @param assumptions
+#' @param data A list with observation data as provided by [sewer_data()].
+#' @param assumptions A list with assumptions as provided by
+#'   [sewer_assumptions()].
 #'
 #' @return If no error is thrown due to missing mandatory variables, the same
 #'   modeldata object is returned again, where optional variables have been

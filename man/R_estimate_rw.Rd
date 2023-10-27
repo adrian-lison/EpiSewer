@@ -8,7 +8,9 @@ R_estimate_rw(
   intercept_prior_mu = 1,
   intercept_prior_sigma = 0.8,
   sd_prior_mu = 0,
-  sd_prior_sigma = 0.05,
+  sd_prior_sigma = 0.1,
+  link = "inv_softplus",
+  R_max = 6,
   differenced = FALSE,
   noncentered = TRUE,
   modeldata = modeldata_init()
@@ -24,6 +26,16 @@ the random walk.}
 
 \item{sd_prior_sigma}{Prior (standard deviation) on the standard deviation of
 the random walk.}
+
+\item{link}{Link function. Currently supported are \code{inv_softplus} (default)
+and \code{scaled_logit}. Both of these links are configured to behave
+approximately like the identity function around R=1, but become
+increasingly non-linear below (and in the case of \code{scaled_logit} also
+above) R=1.}
+
+\item{R_max}{If \code{link=scaled_logit} is used, a maximum reproduction number
+must be assumed. This should be higher than any realistic R value for the
+modeled pathogen. Default is 6.}
 
 \item{differenced}{If \code{FALSE} (default), the random walk is applied to the
 absolute Rt time series. If \code{TRUE}, it is instead applied to the

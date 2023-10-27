@@ -10,7 +10,7 @@ sampler_stan_mcmc(
   iter_sampling = 1000,
   adapt_delta = 0.99,
   max_treedepth = 15,
-  step_size = 0.1,
+  step_size = 0.01,
   parallel_chains = NULL,
   threads_per_chain = 1,
   seed = 0,
