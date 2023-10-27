@@ -37,7 +37,7 @@ WW_data[, concentration := load / flow]
 setnames(WW_data, "new_cases", "cases")
 
 WW_data <- WW_data[
-  date >= as.Date("2022-01-01") & date < as.Date("2022-06-01"),
+  date >= as.Date("2022-01-01") & date < as.Date("2022-05-01"),
 ]
 
 SARS_CoV_2_Zurich <- list(
