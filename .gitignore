@@ -12,3 +12,4 @@ inst/stan/*
 vignettes/*.html
 *.Rmd
 data/
+local/
