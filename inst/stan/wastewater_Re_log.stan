@@ -99,7 +99,7 @@ transformed parameters {
   vector[L+S+T-G] R_log; // effective reproduction number
   vector[L+S+T] iota_log; // expected number of infections
   vector[S+T] lambda_log; // log expected number of symptom onsets
-  vector[T] kappa_log; // log expected daily concentrations
+  vector[T] pi_log; // log expected daily concentrations
   vector[n_measured] rho_log; // log expected concentrations in composite samples
 
   // ETS/Innovations state space process on log scale, starting value 1 on unit scale
@@ -122,11 +122,11 @@ transformed parameters {
   lambda_log = log_convolve(inc_rev_log, I_sample ? I_log : iota_log)[(L+1):(L+S+T)];
   
   // calculation of concentrations at measurement site by day (expected)
-  kappa_log = log_convolve(shed_rev_log, lambda_log)[(S+1):(S+T)] - log_flow;
+  pi_log = log_convolve(shed_rev_log, lambda_log)[(S+1):(S+T)] - log_flow;
   
   // calculation of concentrations in composite samples
   for (i in 1:n_measured) {
-    rho_log[i] = log_sum_exp(kappa_log[(measured_dates[i]-w+1):measured_dates[i]]) - log(w);
+    rho_log[i] = log_sum_exp(pi_log[(measured_dates[i]-w+1):measured_dates[i]]) - log(w);
   }
 }
 
@@ -168,7 +168,7 @@ generated quantities {
   // predicted measurements
   // note that we here assume the same measurement variance as from composite samples,
   // which may be smaller than that of hypothetical daily measurements
-  array[T] real predicted_concentration = lognormal3_rng(kappa_log, sigma);
+  array[T] real predicted_concentration = lognormal3_rng(pi_log, sigma);
   vector[L+S+T-G] R = exp(R_log); // effective reproduction number
   vector[L+S+T] iota = exp(iota_log); // expected number of infections
   vector[I_sample ? L+S+T : 0] I = exp(I_log);

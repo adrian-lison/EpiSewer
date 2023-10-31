@@ -148,8 +148,8 @@ transformed parameters {
   vector[L + S + D + T - G] R; // effective reproduction number
   vector[L + S + D + T] iota; // expected number of infections
   vector[S + D + T] lambda; // expected number of shedding onsets
-  vector[T] kappa_log; // log expected daily loads
-  vector[T] pi_log; // log expected daily concentrations
+  vector[T] pi_log; // log expected daily loads
+  vector[T] kappa_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
 
   // Innovations state space process implementing exponential smoothing
@@ -177,49 +177,49 @@ transformed parameters {
 
   // calculation of loads at measurement site by day (expected)
   // total load shed
-  vector[S + D + T] load_realised_log;
+  vector[S + D + T] omega_log;
   if (load_vari) {
-    load_realised_log = log(zeta);
+    omega_log = log(zeta);
   } else {
-    load_realised_log = log(load_mean) + log(lambda);
+    omega_log = log(load_mean) + log(lambda);
   }
   // distribution of load over time
   // this first convolves with the shedding load distribution and then
   // with the residence time distribution
   if (D>0) {
-    kappa_log = log_convolve(
+    pi_log = log_convolve(
       residence_rev_log, // residence time distribution
       log_convolve(
         shed_rev_log, // shedding load distribution
-        load_realised_log // total load shed
+        omega_log // total load shed
         )[(S + 1) : (S + D + T)]
       )[(D + 1) : (D + T)];
   } else {
 
-    kappa_log = log_convolve(
+    pi_log = log_convolve(
       shed_rev_log, // shedding load distribution
-      load_realised_log // total load shed
+      omega_log // total load shed
       )[(S + 1) : (S + T)];
   }
 
   // calculation of concentrations at measurement site by day (expected)
   // --> adjusted for flow and for date of sample effects
   if (K > 0) {
-    pi_log = kappa_log - log_flow + X * eta;
+    kappa_log = pi_log - log_flow + X * eta;
   } else {
-    pi_log = kappa_log - log_flow;
+    kappa_log = pi_log - log_flow;
   }
 
   // concentrations in (composite) samples
   if (w > 1) { // multi-day composite samples
     for (i in 1 : n_samples) {
         rho_log[i] = log_sum_exp(
-          pi_log[(sample_to_date[i] - w + 1) : sample_to_date[i]]
+          kappa_log[(sample_to_date[i] - w + 1) : sample_to_date[i]]
           ) - log(w);
     }
   } else { // individual day samples
      for (i in 1 : n_samples) {
-        rho_log[i] = pi_log[sample_to_date[i]];
+        rho_log[i] = kappa_log[sample_to_date[i]];
      }
   }
 }
@@ -293,7 +293,7 @@ model {
     target += lognormal4_lpdf(
       measured_concentrations[i_nonzero] |
         concentrations[i_nonzero],
-      cv
+      cv // coefficient of variation
       );
   }
 }
@@ -306,9 +306,9 @@ generated quantities {
     vector[T] pre_repl;
     vector[T] above_LOD; // will be a vector of 0s and 1s
     if (pr_noise) {
-      pre_repl = to_vector(normal_rng(pi_log, sqrt(log1p(tau[1]^2))));
+      pre_repl = to_vector(normal_rng(kappa_log, sqrt(log1p(tau[1]^2))));
     } else {
-      pre_repl = pi_log;
+      pre_repl = kappa_log;
     }
     if (LOD>0) {
      above_LOD = to_vector(bernoulli_rng(inv_logit(-hurdle_smooth(

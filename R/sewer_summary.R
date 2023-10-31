@@ -101,13 +101,13 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
   }
 
   summary[["expected_load"]] <- get_summary_1d_date_log(
-    fit, "kappa_log",
+    fit, "pi_log",
     T_shift = T_shift_load, .metainfo = .metainfo,
     intervals = c(0.5, 0.95)
   )
 
   summary[["expected_concentration"]] <- get_summary_1d_date_log(
-    fit, "pi_log",
+    fit, "kappa_log",
     T_shift = T_shift_load, .metainfo = .metainfo,
     intervals = c(0.5, 0.95)
   )
