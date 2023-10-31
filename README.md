@@ -1,5 +1,5 @@
 
-# EpiSewer: Estimate Reproduction Numbers from Wastewater Measurements
+# EpiSewer: Estimate Reproduction Numbers from Wastewater Measurements <img src='man/figures/EpiSewer_logo.png' align="right" height="120" />
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
@@ -308,6 +308,7 @@ options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
+  infections = model_infections(R = R_estimate_rw()),
   fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
 )
 ```
