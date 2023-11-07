@@ -165,30 +165,28 @@ transformed parameters {
   // convolution from infections to shedding onsets (expected)
   lambda = convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + D + T)];
 
-  // calculation of loads at measurement site by day (expected)
-  // total load shed
-  vector[S + D + T] omega_log; // realised total load (log)
+  // calculation of total loads shed each day (expected)
+  vector[D + T] omega_log;
   if (load_vari) {
-    omega_log = log(zeta);
+    omega_log = log_convolve(
+        shed_rev_log, // shedding load distribution
+        log(zeta) // total load shed
+        )[(S + 1) : (S + D + T)];
   } else {
-    omega_log = log(load_mean) + log(lambda);
+    omega_log = log_convolve(
+        shed_rev_log, // shedding load distribution
+        log(load_mean) + log(lambda) // total load shed
+        )[(S + 1) : (S + D + T)];
   }
-  // distribution of load over time
-  // this first convolves with the shedding load distribution and then
-  // with the residence time distribution
+
+  // calculation of total loads at sampling site (expected)
   if (D>0) {
     pi_log = log_convolve(
       residence_rev_log, // residence time distribution
-      log_convolve(
-        shed_rev_log, // shedding load distribution
-        omega_log // total load shed
-        )[(S + 1) : (S + D + T)]
+      omega_log
       )[(D + 1) : (D + T)];
   } else {
-    pi_log = log_convolve(
-      shed_rev_log, // shedding load distribution
-      omega_log // total load shed
-      )[(S + 1) : (S + T)];
+    pi_log = omega_log;
   }
 
   // calculation of concentrations at measurement site by day (expected)
