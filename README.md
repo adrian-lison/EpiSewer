@@ -307,7 +307,6 @@ options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  infections = model_infections(R = R_estimate_rw()),
   fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
 )
 ```
@@ -410,7 +409,7 @@ We can further inspect our results object. It has three attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"       "summary"   "fitted"    "checksums"
+#> [1] "job"       "checksums" "summary"   "fitted"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -426,7 +425,7 @@ names(ww_result$job)
 ```
 
 In particular, we can print a concise summary of the modeling details
-(the `EpiSewer`defaults in this case):
+(the `EpiSewer` defaults in this case):
 
 ``` r
 ww_result$job$model
@@ -554,14 +553,14 @@ is not NULL), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "628ed04c15688d9f64124147adacfa0d"
+#> [1] "d11ef59486988b081df29315265888ce"
 #> 
 #> $input
-#> [1] "034773afefcd7d0e3176f333f2bc0c8e"
+#> [1] "a6f000bef282725787009d376aac763c"
 #> 
 #> $fit_opts
 #> [1] "458631d149cd4e1103587d05ea267b7f"
 #> 
 #> $init
-#> [1] "e03a62ec4353e326374c2e4b6d233f54"
+#> [1] "10153170578738e71079bbe6fadb45e3"
 ```
