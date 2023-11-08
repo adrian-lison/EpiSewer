@@ -93,6 +93,8 @@ transformed data {
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T] log_flow = log(flow);
+  real LOD_log = log(LOD);
+  real LOD_sharpness_log = log(LOD_sharpness);
 
   int n_zero = num_zeros(measured_concentrations);
   array[n_zero] int<lower=0> i_zero;
@@ -277,12 +279,12 @@ model {
     // limit of detection
     if (LOD>0) {
      // below-LOD probabilities for zero measurements
-    target += sum(log_inv_logit(hurdle_smooth(
-      exp(concentrations[i_zero]), LOD, LOD_sharpness
+    target += sum(log_inv_logit(log_hurdle_smooth(
+      concentrations[i_zero], LOD_log, LOD_sharpness_log
       )));
       // above-LOD probabilities for non-zero measurements
-    target += sum(log1m_inv_logit(hurdle_smooth(
-      exp(concentrations[i_nonzero]), LOD, LOD_sharpness
+    target += sum(log1m_inv_logit(log_hurdle_smooth(
+      concentrations[i_zero], LOD_log, LOD_sharpness_log
       )));
     }
 
@@ -308,8 +310,8 @@ generated quantities {
       pre_repl = kappa_log;
     }
     if (LOD>0) {
-     above_LOD = to_vector(bernoulli_rng(inv_logit(-hurdle_smooth(
-      pre_repl, LOD, LOD_sharpness
+     above_LOD = to_vector(bernoulli_rng(inv_logit(-log_hurdle_smooth(
+      pre_repl, LOD_log, LOD_sharpness_log
       ))));
     } else {
       above_LOD = rep_vector(1, T);
