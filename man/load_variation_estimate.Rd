@@ -46,7 +46,7 @@ priors for at least one of these parameters when using both
 Also note that the accuracy of the variation model depends on
 the estimated number of cases to be on the right scale (which in turn
 depends on the assumed \code{load_per_case} to be roughly correct). This is
-because in the variation model, the population-level  coefficient of
+because in the variation model, the population-level coefficient of
 variation (CV) of shedding loads is proportional to the individual-level CV
 divided by the square root of the number of cases. If for example the
 assumed \code{load_per_case} is too small, the number of cases will be

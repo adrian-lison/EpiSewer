@@ -48,11 +48,11 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
 
 #' Estimate sample effects using a design matrix
 #'
-#' @description This option uses a linear regression model to estimate effects
-#'   of sample covariates on the concentration. Concentrations can be influenced
-#'   by sampling-related external factors, for example the time between sampling
-#'   and shipping to the lab (age-of-sample effect), or different sampling or
-#'   storage methods.
+#' @description This option uses a log-linear regression model to estimate
+#'   effects of sample covariates on the concentration. Concentrations can be
+#'   influenced by sampling-related external factors, for example the time
+#'   between sampling and shipping to the lab (age-of-sample effect), or
+#'   different sampling or storage methods.
 #'
 #' @param effect_prior_mu Prior (mean) on the regression coefficients.
 #' @param effect_prior_sigma Prior (standard deviation) on the regression
@@ -62,8 +62,8 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
 #'   modeled day. See [stats::model.matrix()] for construction of design
 #'   matrices.
 #'
-#' @details `EpiSewer` will fit a fixed-effects linear model, random effects are
-#'   currently not supported.
+#' @details `EpiSewer` will fit a fixed-effects log-linear model, random effects
+#'   are currently not supported.
 #'
 #' @details The priors of this component have the following functional form:
 #' - regression coefficients: `Normal`
@@ -118,18 +118,18 @@ sample_effects_estimate_matrix <- function(
 
 #' Estimate weekday sample effects
 #'
-#' @description This option uses a linear regression model to estimate sample
-#'   weekday effects on the concentration. Concentrations can be influenced by
-#'   the time between sampling and shipping to the lab (age-of-sample effect),
-#'   and if shipment follows a weekly batch scheme, the sampling weekday is a
-#'   good proxy for the age at shipment.
+#' @description This option uses a log-linear regression model to estimate
+#'   sample weekday effects on the concentration. Concentrations can be
+#'   influenced by the time between sampling and shipping to the lab
+#'   (age-of-sample effect), and if shipment follows a weekly batch scheme, the
+#'   sampling weekday is a good proxy for the age at shipment.
 #'
 #' @param effect_prior_mu Prior (mean) on the regression coefficients.
 #' @param effect_prior_sigma Prior (standard deviation) on the regression
 #'   coefficients.
 #'
 #' @details Effects are estimated for weekdays Monday - Saturday, with Sunday as
-#'   the baseline. `EpiSewer` will fit a fixed-effects linear model, random
+#'   the baseline. `EpiSewer` will fit a fixed-effects log-linear model, random
 #'   effects are currently not supported.
 #'
 #' @details The priors of this component have the following functional form:

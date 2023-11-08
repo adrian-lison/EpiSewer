@@ -31,15 +31,15 @@ initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
-This option uses a linear regression model to estimate sample
-weekday effects on the concentration. Concentrations can be influenced by
-the time between sampling and shipping to the lab (age-of-sample effect),
-and if shipment follows a weekly batch scheme, the sampling weekday is a
-good proxy for the age at shipment.
+This option uses a log-linear regression model to estimate
+sample weekday effects on the concentration. Concentrations can be
+influenced by the time between sampling and shipping to the lab
+(age-of-sample effect), and if shipment follows a weekly batch scheme, the
+sampling weekday is a good proxy for the age at shipment.
 }
 \details{
 Effects are estimated for weekdays Monday - Saturday, with Sunday as
-the baseline. \code{EpiSewer} will fit a fixed-effects linear model, random
+the baseline. \code{EpiSewer} will fit a fixed-effects log-linear model, random
 effects are currently not supported.
 
 The priors of this component have the following functional form:

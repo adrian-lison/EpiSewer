@@ -37,15 +37,15 @@ initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
-This option uses a linear regression model to estimate effects
-of sample covariates on the concentration. Concentrations can be influenced
-by sampling-related external factors, for example the time between sampling
-and shipping to the lab (age-of-sample effect), or different sampling or
-storage methods.
+This option uses a log-linear regression model to estimate
+effects of sample covariates on the concentration. Concentrations can be
+influenced by sampling-related external factors, for example the time
+between sampling and shipping to the lab (age-of-sample effect), or
+different sampling or storage methods.
 }
 \details{
-\code{EpiSewer} will fit a fixed-effects linear model, random effects are
-currently not supported.
+\code{EpiSewer} will fit a fixed-effects log-linear model, random effects
+are currently not supported.
 
 The priors of this component have the following functional form:
 \itemize{
