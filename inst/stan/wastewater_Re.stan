@@ -92,7 +92,7 @@ transformed data {
   vector[L + 1] inc_rev = reverse(incubation_dist);
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
-  vector[T] log_flow = log(flow);
+  vector[T] flow_log = log(flow);
   real LOD_log = log(LOD);
   real LOD_sharpness_log = log(LOD_sharpness);
 
@@ -204,9 +204,9 @@ transformed parameters {
   // calculation of concentrations at measurement site by day (expected)
   // --> adjusted for flow and for date of sample effects
   if (K > 0) {
-    kappa_log = pi_log - log_flow + X * eta;
+    kappa_log = pi_log - flow_log + X * eta;
   } else {
-    kappa_log = pi_log - log_flow;
+    kappa_log = pi_log - flow_log;
   }
 
   // concentrations in (composite) samples
