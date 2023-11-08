@@ -319,6 +319,11 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #' @family {LOD models}
 LOD_assume <- function(limit = NULL, sharpness = 10,
                        modeldata = modeldata_init()) {
+
+  if (sharpness<=0) {
+    rlang::abort("Sharpness parameter must be greater than zero.")
+  }
+
   modeldata <- tbp("LOD_assume",
     {
       modeldata$LOD <- limit
