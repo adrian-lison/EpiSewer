@@ -115,7 +115,7 @@ array[] real lognormal4_rng(vector mean_log, real cv) {
   *
   * @return The log of the normal density of y
   */
-real lognormallog_lpdf(vector y, vector mean_log, real cv) {
+real lognormal_log_lpdf(vector y, vector mean_log, real cv) {
   int n = num_elements(y);
   real sigma2 = log1p(cv^2);
   vector[n] mu = mean_log - sigma2/2;
@@ -133,7 +133,7 @@ real lognormallog_lpdf(vector y, vector mean_log, real cv) {
   *
   * @return vector with normal variates
   */
-array[] real lognormallog_rng(vector mean_log, real cv) {
+array[] real lognormal_log_rng(vector mean_log, real cv) {
   int n = num_elements(mean_log);
   real sigma2 = log1p(cv^2);
   vector[n] mu = mean_log - sigma2/2;

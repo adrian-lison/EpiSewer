@@ -270,7 +270,7 @@ model {
       nu_psi[1] ~ normal(nu_psi_prior[1], nu_psi_prior[2]); // truncated normal
       // lognormal distribution modeled as normal on the log scale
       // with mean = rho (mean_log = rho_log) and cv = nu_psi
-      target += lognormallog_lpdf(psi | rho_log, nu_psi[1]);
+      target += lognormal_log_lpdf(psi | rho_log, nu_psi[1]);
       concentrations = psi[measure_to_sample];
     } else {
       concentrations = rho_log[measure_to_sample];
@@ -305,7 +305,7 @@ generated quantities {
     vector[T] pre_repl;
     vector[T] above_LOD; // will be a vector of 0s and 1s
     if (pr_noise) {
-      pre_repl = to_vector(lognormallog_rng(kappa_log, nu_psi[1]));
+      pre_repl = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
     } else {
       pre_repl = kappa_log;
     }
