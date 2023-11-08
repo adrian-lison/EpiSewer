@@ -284,7 +284,7 @@ model {
       )));
       // above-LOD probabilities for non-zero measurements
     target += sum(log1m_inv_logit(log_hurdle_smooth(
-      concentrations[i_zero], LOD_log, LOD_sharpness_log
+      concentrations[i_nonzero], LOD_log, LOD_sharpness_log
       )));
     }
 
