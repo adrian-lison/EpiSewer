@@ -121,3 +121,21 @@ real lognormallog_lpdf(vector y, vector mean_log, real cv) {
   vector[n] mu = mean_log - sigma2/2;
   return normal_lpdf(y | mu, sqrt(sigma2));
 }
+
+/**
+  * Generate normal variates corresponding to a lognormal distribution on the
+  * log scale, with mean on log scale and coefficient of variation on unit scale
+  *
+  *
+  * @param mean_log vector of log of means
+  *
+  * @param cv coefficient of variation
+  *
+  * @return vector with normal variates
+  */
+array[] real lognormallog_rng(vector mean_log, real cv) {
+  int n = num_elements(mean_log);
+  real sigma2 = log1p(cv^2);
+  vector[n] mu = mean_log - sigma2/2;
+  return normal_rng(mu, sqrt(sigma2));
+}

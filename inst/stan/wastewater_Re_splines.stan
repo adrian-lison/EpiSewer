@@ -289,7 +289,7 @@ generated quantities {
     vector[T] pre_repl;
     vector[T] above_LOD; // will be a vector of 0s and 1s
     if (pr_noise) {
-      pre_repl = to_vector(normal_rng(kappa_log, sqrt(log1p(nu_psi[1]^2))));
+      pre_repl = to_vector(lognormallog_rng(kappa_log, nu_psi[1]));
     } else {
       pre_repl = kappa_log;
     }
