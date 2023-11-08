@@ -175,8 +175,8 @@ load_per_case_assume <-
 #' @family {load variation models}
 load_variation_none <- function(modeldata = modeldata_init()) {
   modeldata$load_vari <- 0
-  modeldata$nu_prior <- numeric(0)
-  modeldata$.init$nu <- numeric(0)
+  modeldata$nu_zeta_prior <- numeric(0)
+  modeldata$.init$nu_zeta <- numeric(0)
   modeldata$.init$zeta <- numeric(0)
 
   modeldata$.str$shedding[["load_variation"]] <- list(
@@ -201,7 +201,7 @@ load_variation_none <- function(modeldata = modeldata_init()) {
 #' @details Also note that the accuracy of the variation model depends on
 #'   the estimated number of cases to be on the right scale (which in turn
 #'   depends on the assumed `load_per_case` to be roughly correct). This is
-#'   because in the variation model, the population-level  coefficient of
+#'   because in the variation model, the population-level coefficient of
 #'   variation (CV) of shedding loads is proportional to the individual-level CV
 #'   divided by the square root of the number of cases. If for example the
 #'   assumed `load_per_case` is too small, the number of cases will be
@@ -225,11 +225,11 @@ load_variation_estimate <- function(
     cv_prior_sigma = 0.01,
     modeldata = modeldata_init()) {
   modeldata$load_vari <- 1
-  modeldata$nu_prior <- set_prior(
+  modeldata$nu_zeta_prior <- set_prior(
     "nu", "truncated normal",
     mu = cv_prior_mu, sigma = cv_prior_sigma
   )
-  modeldata$.init$nu <- as.array(cv_prior_mu)
+  modeldata$.init$nu_zeta <- as.array(cv_prior_mu)
   modeldata$.init$zeta <- tbe(
     rep(
       median(modeldata$measured_concentrations, na.rm = T),

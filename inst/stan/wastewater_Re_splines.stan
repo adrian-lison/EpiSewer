@@ -20,7 +20,7 @@ data {
 
   real<lower=0> load_mean; // mean load shed per person
     int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads
-  array[load_vari ? 2 : 0] real nu_prior; // Prior on individual-level load coefficient of variation
+  array[load_vari ? 2 : 0] real nu_zeta_prior; // Prior on individual-level load coefficient of variation
 
   vector<lower=0>[T] flow; // flow rate for normalization of measurements
 
@@ -30,9 +30,9 @@ data {
   array[K > 0 ? 2 : 0] real eta_prior; // prior for sample date effects
 
   // Noise
-  int<lower=0, upper=1> pr_noise; // Pre-replicate noise: Model variation before replication step?
-  array[pr_noise ? 2 : 0] real tau_prior; // Prior on coefficient of variation
-  array[2] real cv_prior; // Prior for coefficient of variation of lognormal likelihood for measurements
+  int<lower=0, upper=1> pr_noise; // Pre-replicate noise: Model variation before replication stage?
+  array[pr_noise ? 2 : 0] real nu_psi_prior; // Prior on coefficient of variation
+  array[2] real nu_upsilon_prior; // Prior for coefficient of variation of lognormal likelihood for measurements
 
   // Limit of detection
   real<lower=0> LOD;
@@ -123,16 +123,16 @@ parameters {
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
 
   // individual-level shedding load variation
-  array[load_vari ? 1 : 0] real<lower=0> nu; // coefficient of variation of individual-level load
+  array[load_vari ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
   vector[load_vari ? S + D + T : 0] zeta; // realized shedding load
 
   // sample date effects
   vector[K] eta;
 
-  // Scale of lognormal likelihood for measurements
-  array[pr_noise ? 1 : 0] real<lower=0> tau; // pre-replicaton coefficient of variation
-  vector<multiplier = (pr_noise ? tau[1] : 1)>[pr_noise ? n_samples : 0] psi; // realized noise before replication step
-  real<lower=0> cv;
+  // Coefficient of variation of lognormal likelihood for measurements
+  array[pr_noise ? 1 : 0] real<lower=0> nu_psi; // pre-replicaton coefficient of variation
+  vector<multiplier = (pr_noise ? nu_psi[1] : 1)>[pr_noise ? n_samples : 0] psi; // realized concentration before replication stage
+  real<lower=0> nu_upsilon;
 }
 transformed parameters {
   vector[bs_n_basis - 1] bs_coeff_noise; // additive errors
@@ -231,8 +231,8 @@ model {
 
   // Prior on individual-level shedding load variation
   if (load_vari) {
-    nu[1] ~ normal(nu_prior[1], nu_prior[2]); // truncated normal
-    target += gamma3_sum_lpdf(zeta | load_mean, nu[1], lambda);
+    nu_zeta[1] ~ normal(nu_zeta_prior[1], nu_zeta_prior[2]); // truncated normal
+    target += gamma3_sum_lpdf(zeta | load_mean, nu_zeta[1], lambda);
   }
 
   // Prior on sample date effects
@@ -240,19 +240,20 @@ model {
     eta ~ normal(eta_prior[1], eta_prior[2]);
   }
 
-  // Prior on scale of lognormal likelihood for measurements
-  if (pr_noise) {
-    tau[1] ~ normal(tau_prior[1], tau_prior[2]); // truncated normal
-    psi ~ normal(0, sqrt(log1p(tau[1]^2))); // from tau(=cv) to sigma (lognormal)
-  }
-  cv ~ normal(cv_prior[1], cv_prior[2]); // truncated normal
+  // Prior on cv of lognormal likelihood for measurements
+  nu_upsilon ~ normal(nu_upsilon_prior[1], nu_upsilon_prior[2]); // truncated normal
 
   // Likelihood
   {
     // accounting for pre-replicate noise
     vector[n_measured] concentrations;
     if (pr_noise) {
-      concentrations = (rho_log + psi)[measure_to_sample];
+      // Prior on cv of pre-replication concentrations
+      nu_psi[1] ~ normal(nu_psi_prior[1], nu_psi_prior[2]); // truncated normal
+      // lognormal distribution modeled as normal on the log scale
+      // with mean = rho (mean_log = rho_log) and cv = nu_psi
+      target += lognormallog_lpdf(psi | rho_log, nu_psi[1]);
+      concentrations = psi[measure_to_sample];
     } else {
       concentrations = rho_log[measure_to_sample];
     }
@@ -261,11 +262,11 @@ model {
     if (LOD>0) {
      // below-LOD probabilities for zero measurements
     target += sum(log_inv_logit(hurdle_smooth(
-      concentrations[i_zero], LOD, LOD_sharpness
+      exp(concentrations[i_zero]), LOD, LOD_sharpness
       )));
       // above-LOD probabilities for non-zero measurements
     target += sum(log1m_inv_logit(hurdle_smooth(
-      concentrations[i_nonzero], LOD, LOD_sharpness
+      exp(concentrations[i_nonzero]), LOD, LOD_sharpness
       )));
     }
 
@@ -273,7 +274,7 @@ model {
     target += lognormal4_lpdf(
       measured_concentrations[i_nonzero] |
         concentrations[i_nonzero],
-      cv // coefficient of variation (epsilon)
+      nu_upsilon // coefficient of variation (epsilon)
       );
   }
 }
@@ -286,7 +287,7 @@ generated quantities {
     vector[T] pre_repl;
     vector[T] above_LOD; // will be a vector of 0s and 1s
     if (pr_noise) {
-      pre_repl = to_vector(normal_rng(kappa_log, sqrt(log1p(tau[1]^2))));
+      pre_repl = to_vector(normal_rng(kappa_log, sqrt(log1p(nu_psi[1]^2))));
     } else {
       pre_repl = kappa_log;
     }
@@ -297,6 +298,6 @@ generated quantities {
     } else {
       above_LOD = rep_vector(1, T);
     }
-    predicted_concentration = above_LOD .* to_vector(lognormal4_rng(pre_repl, cv));
+    predicted_concentration = above_LOD .* to_vector(lognormal4_rng(pre_repl, nu_upsilon));
   }
 }

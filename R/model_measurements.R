@@ -214,16 +214,16 @@ noise_estimate <-
            modeldata = modeldata_init()) {
     modeldata$pr_noise <- replicates
 
-    modeldata$cv_prior <- set_prior("cv", "truncated normal",
+    modeldata$nu_upsilon_prior <- set_prior("nu_upsilon", "truncated normal",
       mu = cv_prior_mu, sigma = cv_prior_sigma
     )
 
     if (modeldata$pr_noise) {
-      modeldata$tau_prior <- set_prior(
-        "tau", "truncated normal",
+      modeldata$nu_psi_prior <- set_prior(
+        "nu_psi", "truncated normal",
         mu = pre_replicate_cv_prior_mu, sigma = pre_replicate_cv_prior_sigma
       )
-      modeldata$.init$tau <- as.array(pre_replicate_cv_prior_mu)
+      modeldata$.init$nu_psi <- as.array(pre_replicate_cv_prior_mu)
 
       modeldata$.init$psi <- tbe(
         rep(1e-4, modeldata$n_samples),
@@ -240,12 +240,12 @@ noise_estimate <-
         }
       }
     } else {
-      modeldata$tau_prior <- numeric(0)
-      modeldata$.init$tau <- numeric(0)
+      modeldata$nu_psi_prior <- numeric(0)
+      modeldata$.init$nu_psi <- numeric(0)
       modeldata$.init$psi <- numeric(0)
     }
 
-    modeldata$.init$cv <- 0.1 # 10% coefficient of variation
+    modeldata$.init$nu_upsilon <- 0.1 # 10% coefficient of variation
 
     if (replicates == TRUE) {
       .str_details <- c(replicates = replicates)
