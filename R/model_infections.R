@@ -339,18 +339,20 @@ R_estimate_rw <- function(
 #' Smooth Rt estimates via smoothing splines
 #'
 #' @description This option estimates the effective reproduction number using
-#'   regularized smoothing splines on a B-spline basis.
+#'   penalized B-splines.
 #'
 #' @param knot_distance Distance between spline breakpoints (knots) in days
-#'   (default is 1, i.e. a knot on each day). Placing knots further apart
-#'   increases the smoothness of Rt estimates and can speed up model fitting. If
-#'   knots are too far apart however, the estimates can become inaccurate.
+#'   (default is 7, i.e. one knot each week). Placing knots further apart
+#'   increases the smoothness of Rt estimates and can speed up model fitting.
+#'   The Rt time series remains surprisingly flexible even at larger knot
+#'   distances, but placing knots too far apart can lead to inaccurate
+#'   estimates.
 #' @param spline_degree Degree of the spline polynomials (default is 3 for cubic
 #'   splines).
-#' @param coef_intercept_prior_mu Prior (mean) on the intercept of the log
-#'   random walk over spline coefficients.
+#' @param coef_intercept_prior_mu Prior (mean) on the intercept of the random
+#'   walk over spline coefficients.
 #' @param coef_intercept_prior_sigma Prior (standard deviation) on the intercept
-#'   of the log random walk over spline coefficients.
+#'   of the random walk over spline coefficients.
 #' @param coef_sd_prior_mu Prior (mean) on the daily standard deviation of the
 #'   random walk over spline coefficients.
 #' @param coef_sd_prior_sigma Prior (standard deviation) on the daily standard
@@ -366,20 +368,25 @@ R_estimate_rw <- function(
 #'
 #' @details `EpiSewer` uses a random walk on the B-spline coefficients for
 #'   regularization. This allows to use small knot distances without obtaining
-#'   extremely wiggly Rt estimates. The random walk is modeled on the
-#'   logarithmic scale (i.e. a geometric random walk):
-#'   - A prior on the log intercept with mean 0 roughly equals a prior on
-#'   the unit intercept with mean 1. The prior on the intercept should reflect
+#'   extremely wiggly Rt estimates.
+#'   - The prior on the  random walk intercept should reflect
 #'   your expectation of Rt at the beginning of the time series. If estimating
-#'   from the start of an epidemic, you might want to use a prior with log(mean)
-#'   larger than 0 (i.e. mean larger than 1) for the intercept.
+#'   from the start of an epidemic, you might want to use a prior with mean
+#'   larger than 1 for the intercept.
 #'   - The prior on the daily standard deviation should be interpreted in terms of
-#'   exponential multiplicative changes. For example, a standard deviation of
-#'   0.2 on the log scale roughly allows for multiplicative changes between
-#'   exp(-0.4) and exp(0.4) on the unit scale (using the 2 sigma rule). Note
-#'   that the daily standard deviation is multiplied by `sqrt(knot_distance)` to
-#'   get the actual standard deviation for the coefficients. This way, the prior
-#'   is independent of the chosen `knot_distance`.
+#'   daily additive changes (this is at least true around Rt=1, and becomes less
+#'   true as Rt approaches 0 or its upper bound as defined by the `link`
+#'   function). For example, a standard deviation of 0.5 roughly allows the
+#'   spline coefficients to change by ±1 (using the 2 sigma rule) each day. The
+#'   daily standard deviation is multiplied by `sqrt(knot_distance)` to get the
+#'   actual standard deviation of the coefficients. This way, the prior is
+#'   independent of the chosen `knot_distance`. For example, if `knot_distance`
+#'   is 7 days, and a daily standard deviation of 0.5 is used, the coefficients
+#'   of two adjacent splines can differ by up to ±2.6. Note however that this
+#'   difference does not directly translate into a change of Rt by ±2.6, as Rt
+#'   is always the weighted sum of several basis functions at any given point.
+#'   It may therefore change much more gradually, depending on the distances
+#'   between knots.
 #'
 #' @details The smoothness of the Rt estimates is influenced both by the knot
 #'   distance and by the daily standard deviation of the random walk on
@@ -390,7 +397,7 @@ R_estimate_rw <- function(
 #' @details The priors of this component have the following functional form:
 #' - intercept of the log random walk over spline coefficients:
 #'   `Normal`
-#' - standard deviation of the log random walk over spline coefficients:
+#' - standard deviation of the random walk over spline coefficients:
 #'   `Truncated normal`
 #'
 #' @inheritParams template_model_helpers
@@ -660,7 +667,7 @@ add_link_function <- function(link, R_max, modeldata) {
     modeldata$.metainfo$R_max <- R_max
     a_k <- logistic_find_a_k(R_max)
     # first element: 1 = scaled_logit
-    # hyperparameters are chosen such that R=1 at x+1, and is roughly
+    # hyperparameters are chosen such that R=1 at x=1, and is roughly
     # linear with slope 1 around R=1
     modeldata$R_link <- c(1, R_max, a_k$a, a_k$k)
   } else {
