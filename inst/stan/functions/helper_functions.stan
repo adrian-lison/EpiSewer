@@ -31,20 +31,6 @@ Helper functions for primitive operations
   }
 
   /**
-  * Softplus activation function
-  */
-  vector softplus(vector x, real k) {
-    return(log1p_exp(k * x) / k);
-  }
-
-  /**
-  * Logistic
-  */
-  vector logistic(vector x, real c, real a, real k) {
-    return(c / (1 + a * exp(-k * x)));
-  }
-
-  /**
   * Element-wise log_sum_exp between two vectors
   */
   vector log_sum_exp_elementwise(vector x, vector y) {
