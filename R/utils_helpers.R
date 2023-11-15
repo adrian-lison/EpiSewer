@@ -72,9 +72,6 @@ place_knots <- function(ts_length, knot_distance, partial_window = 30) {
   last_dists <- c(
     rep(2, max(ceiling((partial_window-sum(last_dists))/2),1)),
     last_dists
-    # rep_each_v(2:knot_distance, each = c(floor(partial_window/4),
-    #                                      rep(1,knot_distance-2))),
-    #rep(knot_distance, partial_window)
     )
   last_dists <- last_dists[1:which(cumsum(last_dists)>=partial_window)[1]]
   last_dists <- last_dists[cumsum(last_dists)<ts_length+1]
