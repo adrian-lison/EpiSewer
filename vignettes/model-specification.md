@@ -2,7 +2,9 @@
 # Modeling in EpiSewer
 
 This is a conceptual overview over the modeling functionality in
-`EpiSewer`. See [here](detailed-example.md) for an example vignette.
+`EpiSewer`. See [here](model-definition.md) for a mathematical
+definition of the underlying generative model, and
+[here](detailed-example.md) for an example vignette.
 
 ## Modules
 

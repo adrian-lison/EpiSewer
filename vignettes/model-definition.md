@@ -1,8 +1,8 @@
 # EpiSewer model definition
 Adrian Lison\
-ETH Zurich, Department of Biosystems Science and Engineering, Zurich, Switzerland
+*ETH Zurich, Department of Biosystems Science and Engineering, Zurich, Switzerland*
 
-This document details the generative model used by EpiSewer to estimate reproduction numbers from wastewater concentration measurements. The model is structured into 5 modules, namely [infections](#infections-module), [shedding](#shedding-module), [sewage](#sewage-module), [sampling](#sampling-module), and [measurements](#measurements-module).
+This document details the generative model used by `EpiSewer` to estimate reproduction numbers from wastewater concentration measurements. The model is structured into 5 modules, namely [infections](#infections-module), [shedding](#shedding-module), [sewage](#sewage-module), [sampling](#sampling-module), and [measurements](#measurements-module).
 
 Note that below, the full model with all options is specified, while `EpiSewer` excludes certain parts of the model by default (e.g. no multi-day composite samples) - these have to be explicitly selected by the user to be included.
 
@@ -77,7 +77,7 @@ where the random walk variance $\sigma_{a}^2$ is scaled by $\delta_i$, the dista
 Knots are placed uniformly according to a user-specified knot distance, however the knot distance is heuristically reduced for dates close to the present (which are only partially informed by data) to avoid erroneous extrapolation.
 
 ### Infections
-EpiSewer uses a stochastic renewal model as described in earlier work[^semimechanistic][^generative_nowcasting] to model both expected and realized infections.
+`EpiSewer` uses a stochastic renewal model as described in earlier work[^semimechanistic][^generative_nowcasting] to model both expected and realized infections.
 
 #### Expected infections ($`\iota_t`$)
 
@@ -224,7 +224,7 @@ where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measuremen
 Note that if no replicates are modeled, then $\nu_\Upsilon$ measures the total variation and $\nu_\psi$ is not estimated.
 
 ## Estimation
-EpiSewer is directly fitted to observed concentration measurements $`y_{t,i}`$ (where $`t \leq T`$ is the index of the sample date and $i$ the index of the replicate out of $n_t$ replicates in total for date index $t$).
+`EpiSewer` is directly fitted to observed concentration measurements $`y_{t,i}`$ (where $`t \leq T`$ is the index of the sample date and $i$ the index of the replicate out of $n_t$ replicates in total for date index $t$).
 
 Using Markov Chain Monte Carlo (MCMC), we draw samples from the joint posterior distribution of $R_t$ and the other parameters 
 
