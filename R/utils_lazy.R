@@ -10,6 +10,9 @@ tbp <- function(f_name, f_expr,
   }
 
   f_lazy <- lazyeval::lazy(f_expr)
+  d_lazy <- as.list(calling_env)
+  d_lazy$modeldata <- NULL
+
   env_merge <- function(f_env = list(), data = list(), assumptions = list()) {
     for (r in required_data) {
       if (!(r %in% names(f_env) && !is.null(f_env[[r]]))) {
@@ -23,6 +26,7 @@ tbp <- function(f_name, f_expr,
     }
     return(f_env)
   }
+
   f_check <- function(f_env = list(), data = list(), assumptions = list()) {
     f_env <- env_merge(f_env, data, assumptions)
     if (all(c(required_data, required_assumptions) %in% names(f_env))) {
@@ -34,7 +38,11 @@ tbp <- function(f_name, f_expr,
       return(FALSE)
     }
   }
+
   f_func <- function(modeldata, data = list(), assumptions = list()) {
+    for(n in names(d_lazy)) {
+      assign(n, d_lazy[[n]], f_lazy$env)
+    }
     f_lazy$env <- env_merge(f_lazy$env, data, assumptions)
     f_lazy$env$modeldata <- modeldata
     lazyeval::lazy_eval(f_lazy) # apply function to modeldata
@@ -50,15 +58,20 @@ tbp <- function(f_name, f_expr,
     )
     return(f_lazy$env$modeldata)
   }
-  rm(modeldata, envir = calling_env)
-  calling_env$f_name <- f_name
-  calling_env$f_lazy <- f_lazy
-  calling_env$env_merge <- env_merge
-  calling_env$required_data <- required_data
-  calling_env$required_assumptions <- required_assumptions
-  environment(f_func) <- calling_env
 
-  if (f_check(calling_env)) {
+  copyenv <- new.env()
+  for(n in ls(calling_env, all.names=TRUE)) {
+    if (n!="modeldata") assign(n, get(n, calling_env), copyenv)
+  }
+  copyenv$f_name <- f_name
+  copyenv$f_lazy <- f_lazy
+  copyenv$d_lazy <- d_lazy
+  copyenv$env_merge <- env_merge
+  copyenv$required_data <- required_data
+  copyenv$required_assumptions <- required_assumptions
+  environment(f_func) <- copyenv
+
+  if (f_check(copyenv)) {
     calling_modeldata <- f_func(calling_modeldata)
   } else {
     tbp_o <- list(
@@ -71,8 +84,8 @@ tbp <- function(f_name, f_expr,
     )
     class(tbp_o) <- "tbp"
     calling_modeldata[[f_name]] <- tbp_o
-    return(calling_modeldata)
   }
+  return(calling_modeldata)
 }
 
 #' Print to-be-provided object
