@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_lazy.R
 \name{tbc}
 \alias{tbc}
-\title{To be computed}
+\title{Lazy-execute a function once all necessary inputs are available}
 \usage{
 tbc(
   f_name,
@@ -12,6 +12,27 @@ tbc(
   calling_env = rlang::caller_env()
 )
 }
+\arguments{
+\item{f_name}{Name of the "functions" that will be executed once all
+necessary inputs are available.}
+
+\item{f_expr}{Expression with arbitrary R code in which attributes are
+assigned to \code{modeldata.}}
+
+\item{required}{A character vector with the names of required inputs.}
+
+\item{modeldata}{Modeldata object in the calling function.}
+
+\item{calling_env}{Calling environment, should be \code{rlang::caller_env()}.}
+}
 \description{
-To be computed
+Lazy-execute a function once all necessary inputs are available
+}
+\details{
+The difference between \code{tbp} (to be provided) and \code{tbc} (to be
+computed) is that \code{tbp} is for promises based on data and assumptions, and
+\code{tbc} is for promises based on internal modeldata variables (typically in
+\code{.metainfo}). This means that there can also be cascades: once a \code{tbp} is
+resolved, this may lead to an update of some metainformation, such that a
+\code{tbc} can be resolved in the next update.
 }
