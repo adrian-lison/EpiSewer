@@ -6,7 +6,6 @@
 \usage{
 EpiSewerJob(
   job_name,
-  model_stan,
   modeldata,
   fit_opts,
   jobarray_size = 1,

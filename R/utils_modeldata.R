@@ -214,8 +214,6 @@ modeldata_check <- function(modeldata,
 #'
 #' @param modeldata A `list` with all data variables (including priors) to be
 #'   passed on to stan, alongside additional meta information and descriptions.
-#' @param model_stan A `list` with information about the stan model to be fitted
-#'   and a function that returns the CmdStanModel object.
 #' @param defaults A `list` with default values to be used for modeldata
 #'   variables if not supplied in modeldata. For example, `numeric(0)` will
 #'   often be supplied for optional parameters.
@@ -229,7 +227,6 @@ modeldata_check <- function(modeldata,
 modeldata_validate <- function(modeldata,
                                data = list(),
                                assumptions = list(),
-                               model_stan,
                                defaults = modeldata_defaults()) {
   if (!class(modeldata) == "modeldata") {
     rlang::abort("Please supply a modeldata object.")

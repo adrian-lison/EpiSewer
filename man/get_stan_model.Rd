@@ -5,7 +5,7 @@
 \title{Load stan model}
 \usage{
 get_stan_model(
-  modeldata = NULL,
+  model_metainfo = NULL,
   model_filename = NULL,
   model_folder = "stan",
   profile = TRUE,
@@ -15,12 +15,12 @@ get_stan_model(
 )
 }
 \arguments{
-\item{modeldata}{A \code{modeldata} object containing data and specifications of
-the model to be fitted. The required stan model is automatically inferred
-from the \code{modeldata}.}
+\item{model_metainfo}{A \code{list} containing meta information about the
+specified model to be fitted. The required stan model is automatically
+inferred from the \code{model_metainfo}.}
 
 \item{model_filename}{File name of a specific stan model to load. This is an
-alternative to supplying \code{modeldata}.}
+alternative to supplying \code{model_metainfo}.}
 
 \item{model_folder}{Path to the folder containing the stan models for
 \code{EpiSewer}.}
@@ -38,7 +38,8 @@ not fully reliable, it is sometimes necessary to force recompilation after
 having made changes to the stan code.}
 
 \item{package}{Name of the package in which to search for stan files
-(defaults to EpiSewer). If NULL, will search in the normal working directory.}
+(defaults to EpiSewer). If NULL, will search in the normal working
+directory.}
 }
 \value{
 A \code{list} containing the model definition and a link to the compiled

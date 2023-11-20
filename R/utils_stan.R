@@ -2,11 +2,11 @@
 #'
 #' @description Loads a specific stan model for model fitting in `EpiSewer`.
 #'
-#' @param modeldata A `modeldata` object containing data and specifications of
-#'   the model to be fitted. The required stan model is automatically inferred
-#'   from the `modeldata`.
+#' @param model_metainfo A `list` containing meta information about the
+#'   specified model to be fitted. The required stan model is automatically
+#'   inferred from the `model_metainfo`.
 #' @param model_filename File name of a specific stan model to load. This is an
-#'   alternative to supplying `modeldata`.
+#'   alternative to supplying `model_metainfo`.
 #' @param model_folder Path to the folder containing the stan models for
 #'   `EpiSewer`.
 #' @param profile Should profiling be run during model fitting? Default is
@@ -19,13 +19,14 @@
 #'   not fully reliable, it is sometimes necessary to force recompilation after
 #'   having made changes to the stan code.
 #' @param package Name of the package in which to search for stan files
-#'   (defaults to EpiSewer). If NULL, will search in the normal working directory.
+#'   (defaults to EpiSewer). If NULL, will search in the normal working
+#'   directory.
 #'
 #' @return A `list` containing the model definition and a link to the compiled
 #'   stan model.
 #' @export
 get_stan_model <- function(
-    modeldata = NULL,
+    model_metainfo = NULL,
     model_filename = NULL,
     model_folder = "stan",
     profile = TRUE,
@@ -35,27 +36,27 @@ get_stan_model <- function(
   model_stan <- list()
 
   if (is.null(model_filename)) {
-    if (is.null(modeldata)) {
+    if (is.null(model_metainfo)) {
       rlang::abort(
         c(
           "Please either provide ",
-          "`model_filename` and `model_folder` (i.e. path to a stan model)",
-          "or `modeldata` (so that a suitable stan model can be inferred)."
+          "`model_filename` and `model_folder` (i.e. path to a stan model) or",
+          "`model_metainfo` (to infer a suitable stan model)."
         )
       )
     }
-    if (modeldata$.metainfo$R_estimate_approach == "splines") {
+    if (model_metainfo$R_estimate_approach == "splines") {
       model_filename <- "wastewater_Re_splines.stan"
-    } else if (modeldata$.metainfo$R_estimate_approach == "ets") {
+    } else if (model_metainfo$R_estimate_approach == "ets") {
       model_filename <- "wastewater_Re.stan"
-    } else if (modeldata$.metainfo$R_estimate_approach == "rw") {
+    } else if (model_metainfo$R_estimate_approach == "rw") {
       model_filename <- "wastewater_Re.stan"
     } else {
       rlang::abort(
         paste(
           "No suitable model available,",
           "please supply a stan model yourself",
-          "using `get_stan_model`, or open an issue."
+          "in `model_stan_opts`, or open an issue."
         )
       )
     }
@@ -127,7 +128,8 @@ sampler_stan_mcmc <- function(
 #' Specify details of the stan model
 #'
 #' @param model_filename Name of the stan model file. If NULL (default), the
-#'   name of the model file is automatically inferred from `modeldata`.
+#'   name of the model file is automatically inferred based on the model
+#'   specification.
 #' @param model_folder (Relative) path to the folder containing the stan model.
 #' @param profile Should profiling be run during model fitting? Default is
 #'   `TRUE`. If `FALSE`, will remove all profiling statements from the model
@@ -212,7 +214,7 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
     ))
   })
 
-  model_stan[["get_stan_model"]] <- lapply(1:n_models, function(i) {
+  model_stan[["load_model"]] <- lapply(1:n_models, function(i) {
     function() {
       return(stanmodel_list[[i]])
     }

@@ -8,7 +8,6 @@ modeldata_validate(
   modeldata,
   data = list(),
   assumptions = list(),
-  model_stan,
   defaults = modeldata_defaults()
 )
 }
@@ -20,9 +19,6 @@ passed on to stan, alongside additional meta information and descriptions.}
 
 \item{assumptions}{A list with assumptions as provided by
 \code{\link[=sewer_assumptions]{sewer_assumptions()}}.}
-
-\item{model_stan}{A \code{list} with information about the stan model to be fitted
-and a function that returns the CmdStanModel object.}
 
 \item{defaults}{A \code{list} with default values to be used for modeldata
 variables if not supplied in modeldata. For example, \code{numeric(0)} will

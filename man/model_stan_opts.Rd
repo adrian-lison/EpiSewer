@@ -15,7 +15,8 @@ model_stan_opts(
 }
 \arguments{
 \item{model_filename}{Name of the stan model file. If NULL (default), the
-name of the model file is automatically inferred from \code{modeldata}.}
+name of the model file is automatically inferred based on the model
+specification.}
 
 \item{model_folder}{(Relative) path to the folder containing the stan model.}
 

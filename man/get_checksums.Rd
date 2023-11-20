@@ -4,13 +4,12 @@
 \alias{get_checksums}
 \title{Get checksums that uniquely identify an EpiSewer job.}
 \usage{
-get_checksums(job, stanmodel = NULL)
+get_checksums(job, stanmodel_instance)
 }
 \arguments{
 \item{job}{An EpiSewer job object.}
 
-\item{stanmodel}{Optional, a stanmodel. Can be passed to avoid recompilation
-of the model. If NULL (default), the model defined in \code{job} is taken.}
+\item{stanmodel_instance}{A stanmodel instance.}
 }
 \value{
 A \code{list} with checksums identifying the model, input, inits and

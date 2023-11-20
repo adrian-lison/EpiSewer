@@ -409,7 +409,7 @@ We can further inspect our results object. It has three attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"       "checksums" "summary"   "fitted"
+#> [1] "job"        "stan_model" "checksums"  "summary"    "fitted"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -419,9 +419,9 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "model_stan"    "data"         
-#>  [5] "model"         "init"          "fit_opts"      "priors_text"  
-#>  [9] "metainfo"      "overwrite"
+#> [1] "job_name"      "jobarray_size" "data"          "model"        
+#> [5] "init"          "fit_opts"      "priors_text"   "metainfo"     
+#> [9] "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
@@ -553,13 +553,13 @@ is not NULL), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "d11ef59486988b081df29315265888ce"
+#> [1] "b79c53ef87bac0fd32140d22029a1843"
 #> 
 #> $input
 #> [1] "a6f000bef282725787009d376aac763c"
 #> 
 #> $fit_opts
-#> [1] "458631d149cd4e1103587d05ea267b7f"
+#> [1] "0099b7f17b4a7762f7f9c26d9c606976"
 #> 
 #> $init
 #> [1] "10153170578738e71079bbe6fadb45e3"

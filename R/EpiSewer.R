@@ -54,23 +54,12 @@ EpiSewer <- function(
     measurements, sampling, sewage, shedding, infections
   )
 
-  model_stan <- get_stan_model(
-    modeldata = modeldata,
-    model_folder = fit_opts$model$model_folder,
-    profile = fit_opts$model$profile,
-    threads = fit_opts$model$threads,
-    force_recompile = fit_opts$model$force_recompile,
-    package = fit_opts$model$package
-    )
-
   modeldata <- modeldata_validate(
-    modeldata,
-    data = data, assumptions = assumptions, model_stan = model_stan
+    modeldata, data = data, assumptions = assumptions
   )
 
   job <- EpiSewerJob(
     job_name = paste("Job on", date()),
-    model_stan = model_stan,
     modeldata = modeldata,
     fit_opts = fit_opts,
     overwrite = TRUE,
@@ -155,7 +144,6 @@ sewer_assumptions <- function(generation_dist = NULL,
 
 #' Constructor for EpiSewerJob objects
 EpiSewerJob <- function(job_name,
-                        model_stan,
                         modeldata,
                         fit_opts,
                         jobarray_size = 1,
@@ -165,8 +153,6 @@ EpiSewerJob <- function(job_name,
 
   job[["job_name"]] <- job_name
   job[["jobarray_size"]] <- jobarray_size
-
-  job[["model_stan"]] <- model_stan
 
   # ToDo rlang::flatten is deprecated, replace
   data_arguments <- suppressWarnings(
@@ -211,17 +197,27 @@ setMethod("run", c("EpiSewerJob"), function(job) {
     job$fit_opts$sampler
   )
 
-  stanmodel <- job$model_stan$get_stan_model[[1]]()
   fitting_successful <- FALSE
-
   result <- list()
   result$job <- job
-  result$checksums <- get_checksums(job, stanmodel)
+
+  result$stan_model <- get_stan_model(
+    model_metainfo = job$metainfo,
+    model_folder = job$fit_opts$model$model_folder,
+    profile = job$fit_opts$model$profile,
+    threads = job$fit_opts$model$threads,
+    force_recompile = job$fit_opts$model$force_recompile,
+    package = job$fit_opts$model$package
+  )
+
+  stanmodel_instance <- result$stan_model$load_model[[1]]()
+
+  result$checksums <- get_checksums(job, stanmodel_instance)
 
   fit_res <- tryCatch(
     {
       fit_res <- withWarnings(suppress_messages(
-        do.call(stanmodel$sample, arguments),
+        do.call(stanmodel_instance$sample, arguments),
         "Registered S3 method overwritten by 'data.table'"
       ))
       if (length(fit_res$warnings) == 0) {
@@ -277,17 +273,13 @@ setMethod("run", c("EpiSewerJob"), function(job) {
 #' Get checksums that uniquely identify an EpiSewer job.
 #'
 #' @param job An EpiSewer job object.
-#' @param stanmodel Optional, a stanmodel. Can be passed to avoid recompilation
-#'   of the model. If NULL (default), the model defined in `job` is taken.
+#' @param stanmodel_instance A stanmodel instance.
 #'
 #' @return A `list` with checksums identifying the model, input, inits and
 #'   fit_opts.
-get_checksums <- function(job, stanmodel = NULL) {
+get_checksums <- function(job, stanmodel_instance) {
   checksums <- list()
-  if (is.null(stanmodel)) {
-    stanmodel <- job$model_stan$get_stan_model[[1]]()
-  }
-  checksums$model <- get_checksum_model(stanmodel)
+  checksums$model <- get_checksum_model(stanmodel_instance)
   checksums$input <- digest::digest(job$data, algo = "md5")
   checksums$fit_opts <- digest::digest(job$fit_opts, algo = "md5")
   checksums$init <- digest::digest(job$init, algo = "md5")
