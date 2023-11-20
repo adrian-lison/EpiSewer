@@ -1,91 +1,167 @@
-#' To be provided
+#' Check if all required data and assumptions have been provided.
+#'
+#' @param f_env The environment to be checked
+#' @param data A list with data
+#' @param assumptions A list with assumptions
+#' @param required_data A character vector with the names of required data
+#' @param required_assumptions A character vector with the names of required
+#'   assumptions
+#'
+#' @return TRUE if all required data and assumptions are present in `f_env`.
+check_provided <- function(f_env = list(), data = list(), assumptions = list(),
+                           required_data = c(), required_assumptions = c()) {
+  f_env <- update_env(f_env, data, assumptions, required_data, required_assumptions)
+  if (all(c(required_data, required_assumptions) %in% names(f_env))) {
+    missing <- sapply(
+      as.list(f_env)[c(required_data, required_assumptions)], is.null
+    )
+    return(!any(missing))
+  } else {
+    return(FALSE)
+  }
+}
+
+#' Add required data and assumptions to an environment
+#'
+#' @param f_env The environment to be updated
+#' @inheritParams check_provided
+#'
+#' @details Note that data and assumptions are only assigned to the environment
+#'   if the corresponding attributes are not yet present. If already present,
+#'   they are not overwritten.
+#'
+#' @return The updated environment, where all required data and assumptions that
+#'   were provided in `data` and `assumptions` were inserted if missing.
+update_env <- function(f_env = list(), data = list(), assumptions = list(),
+                       required_data = c(), required_assumptions = c()) {
+  for (r in required_data) {
+    if (!(r %in% names(f_env) && !is.null(f_env[[r]]))) {
+      f_env[[r]] <- data[[r]]
+    }
+  }
+  for (r in required_assumptions) {
+    if (!(r %in% names(f_env) && !is.null(f_env[[r]]))) {
+      f_env[[r]] <- assumptions[[r]]
+    }
+  }
+  return(f_env)
+}
+
+#' Copy an environment
+#'
+#' @param env The environment to be copied
+#' @param exclude Character vector with names to be excluded in the copy
+#'
+#' @details The new environment has the calling environment of `copy_env` as its
+#'   parent. This ensure that all functions in the namespace are accessible.
+#'
+#' @return A copy of the environment
+copy_env <- function(env, exclude = c()) {
+  copy <- new.env()
+  for(name in ls(env, all.names=TRUE)) {
+    if (!(name %in% exclude)) {
+      assign(name, get(name, env), copy)
+    }
+  }
+  return(copy)
+}
+
+#' Lazy-execute a function once all data and assumptions are provided
+#'
+#' @param f_name Name of the "functions" that will be executed once everything
+#'   is provided.
+#' @param f_expr Expression with arbitrary R code in which attributes are
+#'   assigned to `modeldata.`
+#' @param required_data A character vector with the names of required data.
+#' @param required_assumptions A character vector with the names of required.
+#' @param modeldata Modeldata object in the calling function.
+#' @param calling_env Calling environment, should be `rlang::caller_env()`.
+#'
+#' @details The difference between `tbp` (to be provided) and `tbc` (to be
+#'   computed) is that `tbp` is for promises based on data and assumptions, and
+#'   `tbc` is for promises based on internal modeldata variables (typically in
+#'   `.metainfo`). This means that there can also be cascades: once a `tbp` is
+#'   resolved, this may lead to an update of some metainformation, such that a
+#'   `tbc` can be resolved in the next update.
 tbp <- function(f_name, f_expr,
                 required_data = c(), required_assumptions = c(),
                 modeldata = NULL,
                 calling_env = rlang::caller_env()) {
   if (is.null(modeldata)) {
-    calling_modeldata <- calling_env$modeldata
+    modeldata_temp <- calling_env$modeldata
   } else {
-    calling_modeldata <- modeldata
+    modeldata_temp <- modeldata
   }
 
   f_lazy <- lazyeval::lazy(f_expr)
   d_lazy <- as.list(calling_env)
   d_lazy$modeldata <- NULL
 
-  env_merge <- function(f_env = list(), data = list(), assumptions = list()) {
-    for (r in required_data) {
-      if (!(r %in% names(f_env) && !is.null(f_env[[r]]))) {
-        f_env[[r]] <- data[[r]]
-      }
-    }
-    for (r in required_assumptions) {
-      if (!(r %in% names(f_env) && !is.null(f_env[[r]]))) {
-        f_env[[r]] <- assumptions[[r]]
-      }
-    }
-    return(f_env)
-  }
-
-  f_check <- function(f_env = list(), data = list(), assumptions = list()) {
-    f_env <- env_merge(f_env, data, assumptions)
-    if (all(c(required_data, required_assumptions) %in% names(f_env))) {
-      return(!any(sapply(
-        as.list(f_env)[c(required_data, required_assumptions)],
-        is.null
-      )))
-    } else {
-      return(FALSE)
-    }
-  }
-
-  f_func <- function(modeldata, data = list(), assumptions = list()) {
+  f_func <- function(modeldata,
+                     data = list(), assumptions = list(),
+                     required_data = c(), required_assumptions = c()) {
     for(n in names(d_lazy)) {
       assign(n, d_lazy[[n]], f_lazy$env)
     }
-    f_lazy$env <- env_merge(f_lazy$env, data, assumptions)
+    f_lazy$env <- update_env(
+      f_lazy$env, data = data, assumptions = assumptions,
+      required_data = required_data, required_assumptions = required_assumptions
+      )
     f_lazy$env$modeldata <- modeldata
-    lazyeval::lazy_eval(f_lazy) # apply function to modeldata
+
+    # apply function to modeldata
+    lazyeval::lazy_eval(f_lazy)
+
+    # register used data
     f_sewer_data <- list()
     f_sewer_data[[f_name]] <- as.list(f_lazy$env)[required_data]
     f_lazy$env$modeldata$.sewer_data <- c(
       f_lazy$env$modeldata$.sewer_data, f_sewer_data
     )
+
+    # register used assumptions
     f_sewer_assumptions <- list()
     f_sewer_assumptions[[f_name]] <- as.list(f_lazy$env)[required_assumptions]
     f_lazy$env$modeldata$.sewer_assumptions <- c(
       f_lazy$env$modeldata$.sewer_assumptions, f_sewer_assumptions
     )
+
     return(f_lazy$env$modeldata)
   }
 
-  copyenv <- new.env()
-  for(n in ls(calling_env, all.names=TRUE)) {
-    if (n!="modeldata") assign(n, get(n, calling_env), copyenv)
-  }
-  copyenv$f_name <- f_name
-  copyenv$f_lazy <- f_lazy
-  copyenv$d_lazy <- d_lazy
-  copyenv$env_merge <- env_merge
-  copyenv$required_data <- required_data
-  copyenv$required_assumptions <- required_assumptions
-  environment(f_func) <- copyenv
+  environment(f_func) <- list2env(list(
+    f_name = f_name,
+    f_lazy = f_lazy,
+    d_lazy = d_lazy,
+    update_env = update_env,
+    required_data = required_data,
+    required_assumptions = required_assumptions
+  ), copy_env(calling_env, exclude = "modeldata"))
 
-  if (f_check(copyenv)) {
-    calling_modeldata <- f_func(calling_modeldata)
+  all_provided <- check_provided(environment(f_func),
+    data = list(), assumptions = list(),
+    required_data = required_data,
+    required_assumptions = required_assumptions
+  )
+
+  if (all_provided) {
+    modeldata_temp <- f_func(
+      modeldata_temp, data = list(), assumptions = list(),
+      required_data = required_data, required_assumptions = required_assumptions
+    )
   } else {
-    tbp_o <- list(
-      name = f_name,
-      func = f_func,
-      check = f_check,
+    tbp_object <- list(
+      f_name = f_name,
+      f_func = f_func,
+      check_provided = check_provided,
       required_data = required_data,
       required_assumptions = required_assumptions,
       calling_f = tail(rlang::trace_back()$call, 2)[[1]]
     )
-    class(tbp_o) <- "tbp"
-    calling_modeldata[[f_name]] <- tbp_o
+    class(tbp_object) <- "tbp"
+    modeldata_temp[[f_name]] <- tbp_object
   }
-  return(calling_modeldata)
+  return(modeldata_temp)
 }
 
 #' Print to-be-provided object
@@ -107,9 +183,16 @@ print.tbp <- function(x) {
 }
 
 solve.tbp <- function(x, modeldata, data = list(), assumptions = list()) {
-  if (x$check(data = data, assumptions = assumptions)) {
-    modeldata <- x$func(modeldata, data, assumptions)
-    modeldata[[x$name]] <- NULL
+  provided <- x$check_provided(
+    data = data, assumptions = assumptions,
+    required_data = x$required_data, required_assumptions = x$required_assumptions
+    )
+  if (provided) {
+    modeldata <- x$f_func(
+      modeldata, data = data, assumptions = assumptions,
+      required_data = x$required_data, required_assumptions = x$required_assumptions
+      )
+    modeldata[[x$f_name]] <- NULL
   }
   return(modeldata)
 }
@@ -121,12 +204,16 @@ tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
   } else {
     lazy_r <- lazyeval::lazy(r_expr)
     lazy_r$env <- calling_env
-    tbe_o <- list()
-    tbe_o$lazy_r <- lazy_r
-    tbe_o$calling_f <- tail(rlang::trace_back()$call, 2)[[1]]
-    tbe_o$required <- required
-    class(tbe_o) <- "tbe"
-    return(tbe_o)
+
+    tbe_object <- list()
+    tbe_object <- list(
+      lazy_r = lazy_r,
+      required = required,
+      calling_f = tail(rlang::trace_back()$call, 2)[[1]]
+    )
+    class(tbe_object) <- "tbe"
+    return(tbe_object)
+
   }
 }
 
@@ -137,49 +224,69 @@ print.tbe <- function(x) {
 }
 
 solve.tbe <- function(x, modeldata, throw_error = TRUE) {
-  if (modeldata_check(
-    modeldata, x$required,
-    calling_env = x$calling_f, throw_error = throw_error
-  )) {
+  evaluate <- modeldata_check(
+    modeldata, x$required, calling_env = x$calling_f, throw_error = throw_error
+  )
+  if (evaluate) {
     return(lazyeval::lazy_eval(x$lazy_r, list(modeldata = modeldata)))
   } else {
     return(x)
   }
 }
 
-#' To be computed
+#' Lazy-execute a function once all necessary inputs are available
+#'
+#' @param f_name Name of the "functions" that will be executed once all
+#'   necessary inputs are available.
+#' @param f_expr Expression with arbitrary R code in which attributes are
+#'   assigned to `modeldata.`
+#' @param required A character vector with the names of required inputs.
+#' @param modeldata Modeldata object in the calling function.
+#' @param calling_env Calling environment, should be `rlang::caller_env()`.
+#'
+#' @details The difference between `tbp` (to be provided) and `tbc` (to be
+#'   computed) is that `tbp` is for promises based on data and assumptions, and
+#'   `tbc` is for promises based on internal modeldata variables (typically in
+#'   `.metainfo`). This means that there can also be cascades: once a `tbp` is
+#'   resolved, this may lead to an update of some metainformation, such that a
+#'   `tbc` can be resolved in the next update.
 tbc <- function(f_name, f_expr, required = c(), modeldata = NULL,
                 calling_env = rlang::caller_env()) {
   if (is.null(modeldata)) {
-    calling_modeldata <- calling_env$modeldata
+    modeldata_temp <- calling_env$modeldata
   } else {
-    calling_modeldata <- modeldata
+    modeldata_temp <- modeldata
   }
 
   f_lazy <- lazyeval::lazy(f_expr)
+  f_lazy$env <- copy_env(f_lazy$env, exclude = "modeldata")
+
   f_func <- function(modeldata) {
     f_lazy$env$modeldata <- modeldata
     lazyeval::lazy_eval(f_lazy)
     return(f_lazy$env$modeldata)
   }
-  rm(modeldata, envir = calling_env)
-  calling_env$f_lazy <- f_lazy
-  environment(f_func) <- calling_env
-  if (modeldata_check(
-    calling_modeldata,
-    required = required, throw_error = FALSE
+
+  environment(f_func) <- copy_env(calling_env, exclude = "modeldata")
+  environment(f_func)$f_lazy <- f_lazy
+
+  computable <- modeldata_check(
+    modeldata_temp, required = required, throw_error = FALSE
   )
-  ) {
-    new_modeldata <- f_func(calling_modeldata)
+
+  if (computable) {
+    modeldata_temp <- f_func(modeldata_temp)
   } else {
-    tbc_o <- list(name = f_name, func = f_func)
-    tbc_o$calling_f <- tail(rlang::trace_back()$call, 2)[[1]]
-    tbc_o$required <- required
-    class(tbc_o) <- "tbc"
-    new_modeldata <- calling_modeldata
-    new_modeldata[[f_name]] <- tbc_o
+    tbc_object <- list(
+      f_name = f_name,
+      f_func = f_func,
+      required = required,
+      calling_f <- tail(rlang::trace_back()$call, 2)[[1]]
+      )
+    class(tbc_object) <- "tbc"
+    modeldata_temp[[f_name]] <- tbc_object
   }
-  return(new_modeldata)
+  return(modeldata_temp)
 }
 
 #' Print to-be-computed object
@@ -192,13 +299,12 @@ print.tbc <- function(x) {
 }
 
 solve.tbc <- function(x, modeldata, throw_error = TRUE) {
-  if (modeldata_check(
-    modeldata, x$required,
-    calling_env = x$calling_f,
-    throw_error = throw_error
-  )) {
-    modeldata <- x$func(modeldata)
-    modeldata[[x$name]] <- NULL
+  computable <- modeldata_check(
+    modeldata, x$required, calling_env = x$calling_f, throw_error = throw_error
+  )
+  if (computable) {
+    modeldata <- x$f_func(modeldata)
+    modeldata[[x$f_name]] <- NULL
   }
   return(modeldata)
 }
