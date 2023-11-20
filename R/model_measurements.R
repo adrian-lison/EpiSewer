@@ -84,6 +84,10 @@ concentrations_observe <-
           )
         }
 
+        if (nrow(measurements)==0) {
+          rlang::abort("The provided measurements `data.frame` is empty.")
+        }
+
         measurements[[date_col]] <- as.Date(measurements[[date_col]])
 
         if (is.null(replicate_col)) {
