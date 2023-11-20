@@ -165,8 +165,10 @@ suppress_warnings <- function(.expr, .f, ...) {
   eval.parent(substitute(
     withCallingHandlers(.expr, warning = function(w) {
       cm <- conditionMessage(w)
-      cond <-
+      cond <- any(sapply(.f_list, function(.f) {
         if (is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm, ...)
+      }
+      ))
       if (cond) {
         invokeRestart("muffleWarning")
       }
@@ -174,16 +176,49 @@ suppress_warnings <- function(.expr, .f, ...) {
   ))
 }
 
-suppress_messages <- function(.expr, .f, ...) {
+suppress_messages <- function(.expr, .f_list, ...) {
   eval.parent(substitute(
-    withCallingHandlers(.expr, message = function(w) {
-      cm <- conditionMessage(w)
-      cond <-
-        if (is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm, ...)
-      if (cond) {
-        invokeRestart("muffleMessage")
+    withCallingHandlers(
+      .expr,
+      message = function(w) {
+        cm <- conditionMessage(w)
+        cond <- any(sapply(.f_list, function(.f) {
+          if (is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm, ...)
+        }
+          ))
+        if (cond) {
+          invokeRestart("muffleMessage")
+        }
       }
-    })
+    )
+  ))
+}
+
+suppress_messages_warnings <- function(.expr, .f_list, ...) {
+  eval.parent(substitute(
+    withCallingHandlers(
+      .expr,
+      message = function(w) {
+        cm <- conditionMessage(w)
+        cond <- any(sapply(.f_list, function(.f) {
+          if (is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm, ...)
+        }
+        ))
+        if (cond) {
+          invokeRestart("muffleMessage")
+        }
+      },
+      warning = function(w) {
+        cm <- conditionMessage(w)
+        cond <- any(sapply(.f_list, function(.f) {
+          if (is.character(.f)) grepl(.f, cm) else rlang::as_function(.f)(cm, ...)
+        }
+        ))
+        if (cond) {
+          invokeRestart("muffleWarning")
+        }
+      }
+    )
   ))
 }
 

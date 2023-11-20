@@ -59,7 +59,7 @@ EpiSewer <- function(
   )
 
   job <- EpiSewerJob(
-    job_name = paste("Job on", date()),
+    job_name = paste("EpiSewerJob", format(lubridate::now(), "%Y-%m-%d_%H-%M-%S")),
     modeldata = modeldata,
     fit_opts = fit_opts,
     overwrite = TRUE,
@@ -216,9 +216,13 @@ setMethod("run", c("EpiSewerJob"), function(job) {
 
   fit_res <- tryCatch(
     {
-      fit_res <- withWarnings(suppress_messages(
+      fit_res <- withWarnings(suppress_messages_warnings(
         do.call(stanmodel_instance$sample, arguments),
-        "Registered S3 method overwritten by 'data.table'"
+        c(
+          "Registered S3 method overwritten by 'data.table'",
+          "Cannot parse stat file, cannot read file: No such file or directory",
+          "cannot open file '/proc/stat': No such file or directory"
+        )
       ))
       if (length(fit_res$warnings) == 0) {
         fitting_successful <- TRUE
