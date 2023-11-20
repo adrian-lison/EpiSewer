@@ -196,9 +196,15 @@ EpiSewerJob <- function(job_name,
   return(job)
 }
 
-setGeneric("run", function(x) UseMethod("run", x))
+#' @export
+setClass("EpiSewerJob")
 
-run.EpiSewerJob <- function(job) {
+#' Run a job.
+#'
+#' @export
+setGeneric("run", function(job) UseMethod("run", job))
+
+setMethod("run", c("EpiSewerJob"), function(job) {
   arguments <- c(
     list(data = job$data),
     init = function() job$init,
@@ -266,7 +272,7 @@ run.EpiSewerJob <- function(job) {
   }
 
   return(result)
-}
+})
 
 #' Get checksums that uniquely identify an EpiSewer job.
 #'
