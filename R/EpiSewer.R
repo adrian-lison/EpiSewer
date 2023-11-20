@@ -54,7 +54,14 @@ EpiSewer <- function(
     measurements, sampling, sewage, shedding, infections
   )
 
-  model_stan <- get_stan_model(modeldata = modeldata)
+  model_stan <- get_stan_model(
+    modeldata = modeldata,
+    model_folder = fit_opts$model$model_folder,
+    profile = fit_opts$model$profile,
+    threads = fit_opts$model$threads,
+    force_recompile = fit_opts$model$force_recompile,
+    package = fit_opts$model$package
+    )
 
   modeldata <- modeldata_validate(
     modeldata,

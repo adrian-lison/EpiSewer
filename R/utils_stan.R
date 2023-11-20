@@ -10,13 +10,16 @@
 #' @param model_folder Path to the folder containing the stan models for
 #'   `EpiSewer`.
 #' @param profile Should profiling be run during model fitting? Default is
-#'   `TRUE`. Disabling profiling can decrease runtime in some cases.
+#'   `TRUE`. If `FALSE`, will remove all profiling statements from the model
+#'   before fitting. This can decrease runtime in some cases.
 #' @param threads Should multihreading be enabled? Default is `FALSE`, as
 #'   `EpiSewer` currently does not support within-chain parallelism.
 #' @param force_recompile If `FALSE` (default), the model is only recompiled if
 #'   changes to the model code are detected. However, as the change detection is
 #'   not fully reliable, it is sometimes necessary to force recompilation after
-#'   having made some changes to the stan code.
+#'   having made changes to the stan code.
+#' @param package Name of the package in which to search for stan files
+#'   (defaults to EpiSewer). If NULL, will search in the normal working directory.
 #'
 #' @return A `list` containing the model definition and a link to the compiled
 #'   stan model.
@@ -27,7 +30,8 @@ get_stan_model <- function(
     model_folder = "stan",
     profile = TRUE,
     threads = FALSE,
-    force_recompile = FALSE) {
+    force_recompile = FALSE,
+    package = "EpiSewer") {
   model_stan <- list()
 
   if (is.null(model_filename)) {
@@ -62,6 +66,7 @@ get_stan_model <- function(
   model_stan[["force_recompile"]] <- force_recompile
   model_stan[["threads"]] <- threads
   model_stan[["profile"]] <- profile
+  model_stan[["package"]] <- package
 
   model_stan <- update_compiled_stanmodel(model_stan, force_recompile)
 
@@ -77,10 +82,13 @@ get_stan_model <- function(
 #' @param fitted If `TRUE` (default), the fitted model object is also returned,
 #'   not only summaries of the model fitting. Note that this makes the results
 #'   object substantially larger.
+#' @param model Details about the model file to be used, see
+#'   [model_stan_opts()]. This also makes it possible for users to supply
+#'   customized models.
 #'
 #' @return A `list` with the model fitting options.
 #' @export
-set_fit_opts <- function(sampler = sampler_stan_mcmc(), fitted = TRUE) {
+set_fit_opts <- function(sampler = sampler_stan_mcmc(), fitted = TRUE, model = model_stan_opts()) {
   opts <- as.list(environment())
   return(opts)
 }
@@ -116,15 +124,63 @@ sampler_stan_mcmc <- function(
   return(opts)
 }
 
+#' Specify details of the stan model
+#'
+#' @param model_filename Name of the stan model file. If NULL (default), the
+#'   name of the model file is automatically inferred from `modeldata`.
+#' @param model_folder (Relative) path to the folder containing the stan model.
+#' @param profile Should profiling be run during model fitting? Default is
+#'   `TRUE`. If `FALSE`, will remove all profiling statements from the model
+#'   before fitting. This can decrease runtime in some cases.
+#' @param threads Should multihreading be enabled? Default is `FALSE`, as
+#'   `EpiSewer` currently does not support within-chain parallelism.
+#' @param force_recompile Should recompilation be forced before model fitting?
+#'   If `FALSE` (default), the model is only recompiled when changes to the
+#'   model code are detected. However, as the change detection is not fully
+#'   reliable, it is sometimes necessary to force recompilation after having
+#'   made changes to the stan code.
+#' @param package Name of the package in which to search for stan files
+#'   (defaults to EpiSewer). If NULL, will search in the normal working
+#'   directory, allowing users to provide their own customized model files.
+#'
+#' @return
+#' @export
+model_stan_opts <- function(model_filename = NULL, model_folder = "stan",
+                            profile = TRUE, threads = FALSE,
+                            force_recompile = FALSE, package = "EpiSewer") {
+  opts <- as.list(environment())
+  return(opts)
+}
+
 update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
   n_models <- length(model_stan$model_filename)
 
   model_path_list <- lapply(1:n_models, function(i) {
-    system.file(model_stan$model_folder,
-                model_stan$model_filename[[i]], package = "EpiSewer")
+    if (is.null(model_stan$package)) {
+      file.path(
+        model_stan$model_folder,
+        model_stan$model_filename[[i]]
+      )
+    } else {
+      system.file(
+        model_stan$model_folder,
+        model_stan$model_filename[[i]],
+        package = model_stan$package
+      )
+    }
+
   })
   include_paths_list <- lapply(1:n_models, function(i) {
-    system.file(model_stan$model_folder, package = "EpiSewer")
+    if (is.null(model_stan$package)) {
+      file.path(
+        model_stan$model_folder
+      )
+    } else {
+      system.file(
+        model_stan$model_folder,
+        package = model_stan$package
+      )
+    }
   }) # identical
 
   if (!model_stan$profile) {

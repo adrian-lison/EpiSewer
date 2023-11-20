@@ -4,7 +4,11 @@
 \alias{set_fit_opts}
 \title{Configure the model fitting}
 \usage{
-set_fit_opts(sampler = sampler_stan_mcmc(), fitted = TRUE)
+set_fit_opts(
+  sampler = sampler_stan_mcmc(),
+  fitted = TRUE,
+  model = model_stan_opts()
+)
 }
 \arguments{
 \item{sampler}{Which type of sampler should be used for model fitting?
@@ -13,6 +17,10 @@ Currently, only \code{\link[=sampler_stan_mcmc]{sampler_stan_mcmc()}} is support
 \item{fitted}{If \code{TRUE} (default), the fitted model object is also returned,
 not only summaries of the model fitting. Note that this makes the results
 object substantially larger.}
+
+\item{model}{Details about the model file to be used, see
+\code{\link[=model_stan_opts]{model_stan_opts()}}. This also allows to use model files customized by the
+user.}
 }
 \value{
 A \code{list} with the model fitting options.

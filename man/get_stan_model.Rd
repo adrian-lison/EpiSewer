@@ -10,7 +10,8 @@ get_stan_model(
   model_folder = "stan",
   profile = TRUE,
   threads = FALSE,
-  force_recompile = FALSE
+  force_recompile = FALSE,
+  package = "EpiSewer"
 )
 }
 \arguments{
@@ -25,7 +26,8 @@ alternative to supplying \code{modeldata}.}
 \code{EpiSewer}.}
 
 \item{profile}{Should profiling be run during model fitting? Default is
-\code{TRUE}. Disabling profiling can decrease runtime in some cases.}
+\code{TRUE}. If \code{FALSE}, will remove all profiling statements from the model
+before fitting. This can decrease runtime in some cases.}
 
 \item{threads}{Should multihreading be enabled? Default is \code{FALSE}, as
 \code{EpiSewer} currently does not support within-chain parallelism.}
@@ -34,6 +36,9 @@ alternative to supplying \code{modeldata}.}
 changes to the model code are detected. However, as the change detection is
 not fully reliable, it is sometimes necessary to force recompilation after
 having made some changes to the stan code.}
+
+\item{package}{Name of the package in which to search for stan files
+(defaults to EpiSewer). If NULL, will search in the normal working directory.}
 }
 \value{
 A \code{list} containing the model definition and a link to the compiled
