@@ -30,11 +30,11 @@ before fitting. This can decrease runtime in some cases.}
 If \code{FALSE} (default), the model is only recompiled when changes to the
 model code are detected. However, as the change detection is not fully
 reliable, it is sometimes necessary to force recompilation after having
-made some changes to the stan code.}
+made changes to the stan code.}
 
 \item{package}{Name of the package in which to search for stan files
 (defaults to EpiSewer). If NULL, will search in the normal working
-directory. This allows users to provide their own customized model files.}
+directory, allowing users to provide their own customized model files.}
 }
 \value{
 

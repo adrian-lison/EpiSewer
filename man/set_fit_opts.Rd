@@ -19,8 +19,8 @@ not only summaries of the model fitting. Note that this makes the results
 object substantially larger.}
 
 \item{model}{Details about the model file to be used, see
-\code{\link[=model_stan_opts]{model_stan_opts()}}. This also allows to use model files customized by the
-user.}
+\code{\link[=model_stan_opts]{model_stan_opts()}}. This also makes it possible for users to supply
+customized models.}
 }
 \value{
 A \code{list} with the model fitting options.
