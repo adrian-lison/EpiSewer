@@ -23,6 +23,7 @@ WW_data <- data.table::setDT(readr::read_delim(url,
 WW_data <- WW_data[!is.na(load), c("date", "load", "new_cases", "flow")]
 
 # convert units
+WW_data[, new_cases := new_cases * 471000/1e5] # from cases/100k pers/day to cases/day
 WW_data[, load := load * 471000/1e5] # from gc/100k pers/day to gc/day
 WW_data[, flow := flow * 1e+06] # from m3/day to mL/day
 
