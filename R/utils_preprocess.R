@@ -156,11 +156,13 @@ suggest_load_per_case <- function(measurements, cases,
   required_data_cols <- c(date_col, concentration_col)
   if (!all(required_data_cols %in% names(measurements))) {
     rlang::abort(
-      paste(
+      c(paste(
         "The following columns must be present",
         "in the provided measurements `data.frame`:",
         paste(required_data_cols, collapse = ", ")
-      )
+      ),
+      paste("Please adjust the `data.frame` or specify the right column",
+            "names via the `_col` arguments of this function."))
     )
   }
   measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
@@ -173,11 +175,13 @@ suggest_load_per_case <- function(measurements, cases,
   required_data_cols <- c(date_col, case_col)
   if (!all(required_data_cols %in% names(cases))) {
     rlang::abort(
-      paste(
+      c(paste(
         "The following columns must be present",
         "in the provided cases `data.frame`:",
         paste(required_data_cols, collapse = ", ")
-      )
+      ),
+      paste("Please adjust the `data.frame` or specify the right column",
+            "names via the `_col` arguments of this function."))
     )
   }
   cases = as.data.table(cases)[, .SD, .SDcols = required_data_cols]
@@ -213,11 +217,13 @@ suggest_load_per_case <- function(measurements, cases,
     required_data_cols <- c(date_col, flow_col)
     if (!all(required_data_cols %in% names(flows))) {
       rlang::abort(
-        paste(
+        c(paste(
           "The following columns must be present",
           "in the provided flows `data.frame`:",
           paste(required_data_cols, collapse = ", ")
-        )
+        ),
+        paste("Please adjust the `data.frame` or specify the right column",
+              "names via the `_col` arguments of this function."))
       )
     }
     flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]

@@ -106,11 +106,13 @@ flows_observe <-
         required_data_cols <- c(date_col, flow_col)
         if (!all(required_data_cols %in% names(flows))) {
           rlang::abort(
-            paste(
+            c(paste(
               "The following columns must be present",
               "in the provided flow `data.frame`:",
               paste(required_data_cols, collapse = ", ")
-            )
+            ),
+            paste("Please adjust the `data.frame` or specify the right column",
+                  "names via the `_col` arguments of this function."))
           )
         }
 
