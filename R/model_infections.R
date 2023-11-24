@@ -226,7 +226,7 @@ R_estimate_ets <- function(
     modeldata$ets_alpha_prior <- set_prior("ets_alpha", "beta",
       alpha = smooth_prior_shapes[1], beta = smooth_prior_shapes[2]
     )
-    modeldata$.init$ets_alpha <- 0.5
+    modeldata$.init$ets_alpha <- as.array(0.5)
   }
 
   if (is.null(trend_smooth_fixed)) {
@@ -240,7 +240,7 @@ R_estimate_ets <- function(
     modeldata$ets_beta_prior <- set_prior("ets_beta", "beta",
       alpha = trend_smooth_prior_shapes[1], beta = trend_smooth_prior_shapes[2]
     )
-    modeldata$.init$ets_beta <- 0.5
+    modeldata$.init$ets_beta <- as.array(0.5)
   }
 
   if (is.null(dampen_fixed)) {
@@ -254,7 +254,7 @@ R_estimate_ets <- function(
     modeldata$ets_phi_prior <- set_prior("ets_phi", "beta",
       alpha = dampen_prior_shapes[1], beta = dampen_prior_shapes[2]
     )
-    modeldata$.init$ets_phi <- 0.9
+    modeldata$.init$ets_phi <- as.array(0.9)
   }
 
   modeldata <- add_link_function(link, R_max, modeldata)
@@ -638,7 +638,7 @@ infection_noise_estimate <-
     )
 
     if (modeldata$I_overdispersion) {
-      modeldata$.init$I_xi <- 0.05
+      modeldata$.init$I_xi <- as.array(0.05)
     } else {
       modeldata$I_xi_prior <- numeric(0)
       modeldata$.init$I_xi <- numeric(0)
