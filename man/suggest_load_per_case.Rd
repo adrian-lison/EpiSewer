@@ -22,7 +22,8 @@ suggest_load_per_case(
 \arguments{
 \item{measurements}{A \code{data.frame} with each row representing one
 measurement. Must have at least a column with dates and a column with
-concentration measurements.}
+concentration measurements. If multiple measurements per date are provided,
+their arithmetic mean is used.}
 
 \item{cases}{A \code{data.frame} with each row representing one day. Must have at
 least a column with dates and a column with case numbers.}

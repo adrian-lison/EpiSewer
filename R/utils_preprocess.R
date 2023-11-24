@@ -87,7 +87,8 @@ mark_outlier_spikes_median <- function(
 #'
 #' @param measurements A `data.frame` with each row representing one
 #'   measurement. Must have at least a column with dates and a column with
-#'   concentration measurements.
+#'   concentration measurements. If multiple measurements per date are provided,
+#'   their arithmetic mean is used.
 #' @param cases A `data.frame` with each row representing one day. Must have at
 #'   least a column with dates and a column with case numbers.
 #' @param flows A `data.frame` with each row representing one day. Must have at
@@ -162,8 +163,12 @@ suggest_load_per_case <- function(measurements, cases,
       )
     )
   }
-  measurements = as.data.table(measurements)
-  measurements[, (date_col) := as.Date(get(date_col))]
+  measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
+  setnames(measurements, old = required_data_cols, new = c("date", "concentration"))
+  measurements[, date := as.Date(date)]
+  measurements <- measurements[
+    , .(concentration = mean(concentration, na.rm=T)), by = date
+    ]
 
   required_data_cols <- c(date_col, case_col)
   if (!all(required_data_cols %in% names(cases))) {
@@ -175,8 +180,12 @@ suggest_load_per_case <- function(measurements, cases,
       )
     )
   }
-  cases = as.data.table(cases)
-  cases[, (date_col) := as.Date(get(date_col))]
+  cases = as.data.table(cases)[, .SD, .SDcols = required_data_cols]
+  setnames(cases, old = required_data_cols, new = c("date", "case_numbers"))
+  cases[, date := as.Date(date)]
+  cases <- cases[
+    , .(case_numbers = mean(case_numbers, na.rm=T)), by = date
+  ]
 
   if (!(ascertainment_prop>0 && ascertainment_prop<=1)) {
     rlang::abort(paste(
@@ -192,7 +201,7 @@ suggest_load_per_case <- function(measurements, cases,
       "flow_constant: a constant flow value"
       ))
   } else if (is.null(flows)) {
-    measurements[[flow_col]] <- flow_constant
+    measurements[, flow := flow_constant]
   } else {
     if (!is.null(flow_constant)) {
       rlang::warn(paste(
@@ -206,18 +215,22 @@ suggest_load_per_case <- function(measurements, cases,
       rlang::abort(
         paste(
           "The following columns must be present",
-          "in the provided measurements `data.frame`:",
+          "in the provided flows `data.frame`:",
           paste(required_data_cols, collapse = ", ")
         )
       )
     }
-    flows = as.data.table(flows)
-    flows[, (date_col) := as.Date(get(date_col))]
+    flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]
+    setnames(flows, old = required_data_cols, new = c("date", "flow"))
+    flows[, date := as.Date(date)]
+    flows <- flows[
+      , .(flow = mean(flow, na.rm=T)), by = date
+    ]
     measurements <- merge(measurements, flows, by = "date")
   }
 
-  measurements[, load := get(concentration_col)*get(flow_col)]
-  cases[, (case_col) := get(case_col)/ascertainment_prop]
+  measurements[, load := concentration*flow]
+  cases[, case_numbers := case_numbers/ascertainment_prop]
   shift_weights <- shift_weights/sum(shift_weights)
 
   measurements <- rbindlist(mapply(function(s, w){
@@ -228,12 +241,12 @@ suggest_load_per_case <- function(measurements, cases,
       weight = w)]
   }, s = measurement_shift, w = shift_weights, SIMPLIFY = FALSE))
 
-  measurements <- measurements[!is.na(get(date_col)) & !is.na(load)]
-  cases <- cases[!is.na(get(date_col)) & !is.na(get(case_col))]
+  measurements <- measurements[!is.na(date) & !is.na(load)]
+  cases <- cases[!is.na(date) & !is.na(case_numbers)]
 
   combined <- merge(measurements, cases, by = "date")
-  lm_res <- lm(load ~ 0 + cases, combined, weights = combined$weight)
-  load_per_case <- unname(lm_res$coefficients["cases"])
+  lm_res <- lm(load ~ 0 + case_numbers, combined, weights = combined$weight)
+  load_per_case <- unname(lm_res$coefficients["case_numbers"])
   # round to a certain number of significant figures
   load_per_case <- signif(load_per_case, signif_fig)
   return(load_per_case)
