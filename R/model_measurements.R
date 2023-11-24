@@ -329,7 +329,7 @@ LOD_assume <- function(limit = NULL, sharpness = 10,
   if (sharpness<=0) {
     rlang::abort("Sharpness parameter must be greater than zero.")
   }
-
+  limit_of_detection <- limit
   modeldata <- tbp("LOD_assume",
     {
       modeldata$LOD <- limit
