@@ -169,40 +169,70 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   time. Can be further manipulated using [ggplot2] functions to adjust themes
 #'   and scales, and add further geoms.
 #' @export
-plot_concentration <- function(results, measurements = NULL,
-                               include_noise = TRUE, median = FALSE) {
-  if ("summary" %in% names(results)) {
-    results <- list(results) # only one result object passed, wrap in list
-  }
-  if (include_noise) {
-    concentration_pred <- combine_summaries(results, "concentration")
-  } else {
-    concentration_pred <- combine_summaries(results, "expected_concentration")
-  }
+plot_concentration <- function(results = NULL, measurements = NULL,
+                               include_noise = TRUE, median = FALSE,
+                               date_col = "date",
+                               concentration_col = "concentration") {
+
+  concentration_pred <- NULL
+  measurements_modeled <- NULL
 
   if (!is.null(measurements)) {
-    measurements_modeled <- vctrs::vec_rbind(!!!lapply(
-      results, function(res) {
-        return(measurements[
-          measurements$date %in% res$job$metainfo$measured_dates,
-          c("date", "concentration")
-        ])
-      }
-    ), .names_to = "model")
-    measurements_modeled$model <- forcats::fct_inorder(
-      as.character(measurements_modeled$model),
-      ordered = TRUE
-    )
-  } else {
-    measurements_modeled <- NULL
+    required_data_cols <- c(date_col, concentration_col)
+    if (!all(required_data_cols %in% names(measurements))) {
+      rlang::abort(
+        c(paste(
+          "The following columns must be present",
+          "in the provided measurements `data.frame`:",
+          paste(required_data_cols, collapse = ", ")
+        ),
+        paste("Please adjust the `data.frame` or specify the right column",
+              "names via the `_col` arguments of this function."))
+      )
+    }
+    measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
+    setnames(measurements, old = required_data_cols, new = c("date", "concentration"))
+  }
+
+  if (!is.null(results)) {
+    if ("summary" %in% names(results)) {
+      results <- list(results) # only one result object passed, wrap in list
+    }
+    if (include_noise) {
+      concentration_pred <- combine_summaries(results, "concentration")
+    } else {
+      concentration_pred <- combine_summaries(results, "expected_concentration")
+    }
+
+    if (!is.null(measurements)) {
+      measurements_modeled <- vctrs::vec_rbind(!!!lapply(
+        results, function(res) {
+          return(measurements[
+            measurements$date %in% res$job$metainfo$measured_dates,
+            c("date", "concentration")
+          ])
+        }
+      ), .names_to = "model")
+      measurements_modeled$model <- forcats::fct_inorder(
+        as.character(measurements_modeled$model),
+        ordered = TRUE
+      )
+    } else {
+      measurements_modeled <- NULL
+    }
   }
 
   if (is.null(measurements)) {
     first_date <- min(concentration_pred$date)
     last_date <- max(concentration_pred$date)
   } else {
+    if (!is.null(concentration_pred)) {
     first_date <- max(min(measurements$date), min(concentration_pred$date))
     last_date <- min(max(measurements$date), max(concentration_pred$date))
+    } else {
+      first_date <- min(measurements$date)
+      last_date <- max(measurements$date)
+    }
   }
 
   if (!is.null(measurements)) {
@@ -210,38 +240,51 @@ plot_concentration <- function(results, measurements = NULL,
       !is.na(measurements$concentration) &
         measurements$date<=last_date,
     ]
+  }
+  if (!is.null(measurements_modeled)) {
     measurements_modeled <- measurements_modeled[
       !is.na(measurements_modeled$concentration) &
         measurements_modeled$date<=last_date,
     ]
   }
+  if (!is.null(concentration_pred)) {
   concentration_pred <- concentration_pred[
     !is.na(concentration_pred$median),
   ]
+  }
 
-  plot <- ggplot(concentration_pred, aes(x = date)) +
+  plot <- ggplot(data.frame(), aes(x = date)) +
     {
       if (!is.null(measurements)) {
         geom_line(
           data = measurements,
           aes(y = concentration),
-          color = "grey", linetype = "dotted", size = 0.3
+          color = "#a6a6a6", linetype = "dotted", size = 0.3
         )
       }
     } +
-    geom_ribbon(
-      data = concentration_pred,
-      aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
-    ) +
-    geom_ribbon(
-      data = concentration_pred,
-      aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
-    ) +
+    {
+      if (!is.null(concentration_pred)) {
+        geom_ribbon(
+          data = concentration_pred,
+          aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
+        )
+      }
+    } +
+    {
+      if (!is.null(concentration_pred)) {
+        geom_ribbon(
+          data = concentration_pred,
+          aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
+        )
+      }
+    } +
     {
       if (!is.null(measurements)) {
         geom_point(
           data = measurements,
-          aes(y = concentration), color = "grey", shape = 4
+          aes(y = concentration),
+          color = ifelse(is.null(results),"black","#a6a6a6"), shape = 4
         )
       }
     } +
@@ -254,7 +297,7 @@ plot_concentration <- function(results, measurements = NULL,
       }
     } +
     {
-      if (median) {
+      if (median && !is.null(concentration_pred)) {
         geom_line(
           data = concentration_pred,
           aes(y = median, color = model)
@@ -270,7 +313,7 @@ plot_concentration <- function(results, measurements = NULL,
     ylab("Concentration [gene copies / L]") +
     coord_cartesian(xlim = as.Date(c(first_date, last_date+1)))
 
-  if (length(unique(concentration_pred$model)) == 1) {
+  if (is.null(concentration_pred) || length(unique(concentration_pred$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
       scale_color_manual(values = "black") +
