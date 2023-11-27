@@ -109,7 +109,7 @@ str(data_zurich)
 #>   ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ cases       :Classes 'data.table' and 'data.frame':   120 obs. of  2 variables:
 #>   ..$ date : Date[1:120], format: "2022-01-01" "2022-01-02" ...
-#>   ..$ cases: num [1:120] NA NA 323 367 348 ...
+#>   ..$ cases: num [1:120] NA NA 1520 1727 1639 ...
 #>   ..- attr(*, ".internal.selfref")=<externalptr> 
 #>  $ units       :List of 2
 #>   ..$ concentration: chr "gc/mL"
@@ -177,18 +177,18 @@ concentration (mL here in both cases).
 
 ``` r
 data_zurich$flows
-#>            date        flow
-#>   1: 2022-01-01 3.41163e+11
-#>   2: 2022-01-02 3.41163e+11
-#>   3: 2022-01-03 1.58972e+11
-#>   4: 2022-01-04 1.60849e+11
-#>   5: 2022-01-05 3.72301e+11
-#>  ---                       
-#> 116: 2022-04-26 3.30659e+11
-#> 117: 2022-04-27 2.06046e+11
-#> 118: 2022-04-28 1.58373e+11
-#> 119: 2022-04-29 1.52156e+11
-#> 120: 2022-04-30 2.08685e+11
+#>            date         flow
+#>   1: 2022-01-01 341163082483
+#>   2: 2022-01-02 341163082483
+#>   3: 2022-01-03 158972454250
+#>   4: 2022-01-04 160849294683
+#>   5: 2022-01-05 372301227483
+#>  ---                        
+#> 116: 2022-04-26 330658518200
+#> 117: 2022-04-27 206045734750
+#> 118: 2022-04-28 158372697017
+#> 119: 2022-04-29 152155673150
+#> 120: 2022-04-30 208684746067
 ```
 
 Note: In contrast to the concentration measurements, the flow data must
@@ -265,13 +265,13 @@ suggest_load_per_case(
   data_zurich$flows,
   ascertainment_prop = 1
 )
-#> [1] 5.9e+11
+#> [1] 1.3e+11
 ```
 
-Hence we will assume `6e+11 gc/person` as the average shedding load.
+Hence we will assume `1e+11 gc/person` as the average shedding load.
 
 ``` r
-load_per_case <- 6e+11
+load_per_case <- 1e+11
 ```
 
 #### Combining all assumptions
@@ -307,7 +307,19 @@ options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
+  measurements = model_measurements(LOD = LOD_assume(limit = 2),
+    noise = noise_estimate(
+     type = "constant",
+     #ddPCR_droplets_fixed = F,
+     #ddPCR_scaling_fixed = F
+     # ddPCR_prior_droplets_mu = 22000,
+     # ddPCR_prior_droplets_sigma = 1000,
+     # ddPCR_prior_scaling_mu = 1.73e-5,
+     # ddPCR_prior_scaling_sigma = 0.05e-5
+     )),
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4)),
+  infections = model_infections(infection_noise = infection_noise_estimate(overdispersion = TRUE, overdispersion_prior_mu = 0.1, overdispersion_prior_sigma = 0.001)),
+  run_fit = T
 )
 ```
 
@@ -337,9 +349,8 @@ decent fit on these missing days.
 plot_concentration(ww_result, measurements = data_zurich$measurements)
 ```
 
-<img src="man/figures/README-concentration-1.png" width="100%" />
-
-By default, the function `plot_concentration()` includes the modeled
+<img src="man/figures/README-concentration-1.png" width="100%" /> By
+default, the function `plot_concentration()` includes the modeled
 measurement noise in the predicted concentrations. If you only want to
 see the predicted expected concentration without noise, set
 `include_noise = FALSE`.
@@ -389,8 +400,8 @@ plot_load(ww_result)
 <img src="man/figures/README-load-1.png" width="100%" /> Next, we plot
 the estimated number of infections over time. The time series follows a
 very similar trend as the load. Using our assumed shedding load per case
-of 6e11, we can see that the peak load (roughly 3.3e14) corresponds to
-3.3e14/6e11=550 infections. The peak in infections shown below seems to
+of 1e11, we can see that the peak load (roughly 3.3e14) corresponds to
+3.3e14/1e11=3300 infections. The peak in infections shown below seems to
 be a bit higher, and it is also a bit earlier. The reason for this
 difference is that infected individuals only begin shedding after their
 infection and then shed over a longer period of time (as defined by the
@@ -475,17 +486,17 @@ number.
 ``` r
 ww_result$summary$R
 #>            date      mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#>   1: 2021-12-06 1.0426791 1.0425000  0.7180512 0.9429652  1.147620   1.357138
-#>   2: 2021-12-07 1.0432292 1.0431400  0.7351968 0.9481753  1.142900   1.345717
-#>   3: 2021-12-08 1.0440299 1.0446050  0.7540923 0.9512257  1.137960   1.334841
-#>   4: 2021-12-09 1.0450871 1.0457950  0.7651638 0.9558753  1.135803   1.324241
-#>   5: 2021-12-10 1.0464089 1.0472550  0.7759100 0.9602262  1.133820   1.322272
+#>   1: 2021-12-06 1.0560143 1.0590350  0.7253699 0.9506840  1.163542   1.379811
+#>   2: 2021-12-07 1.0570305 1.0587950  0.7400326 0.9566150  1.160950   1.370855
+#>   3: 2021-12-08 1.0581808 1.0585850  0.7553685 0.9603895  1.158545   1.360446
+#>   4: 2021-12-09 1.0594982 1.0574000  0.7689660 0.9648040  1.154475   1.348745
+#>   5: 2021-12-10 1.0610178 1.0591100  0.7780022 0.9701918  1.153317   1.339065
 #>  ---                                                                         
-#> 140: 2022-04-24 0.9868777 0.9820210  0.7517854 0.9060957  1.064933   1.250580
-#> 141: 2022-04-25 0.9863933 0.9807570  0.7308977 0.9010367  1.068500   1.275355
-#> 142: 2022-04-26 0.9861018 0.9812930  0.7192404 0.8936360  1.073967   1.292529
-#> 143: 2022-04-27 0.9862395 0.9795155  0.6991881 0.8894863  1.080833   1.316732
-#> 144: 2022-04-28 0.9867506 0.9798795  0.6661445 0.8838173  1.085965   1.338514
+#> 140: 2022-04-24 0.9919385 0.9865400  0.7636396 0.9081212  1.069568   1.246623
+#> 141: 2022-04-25 0.9911287 0.9862050  0.7441879 0.9024098  1.073062   1.272051
+#> 142: 2022-04-26 0.9910492 0.9852155  0.7220755 0.8976237  1.076300   1.288621
+#> 143: 2022-04-27 0.9914202 0.9830745  0.7027853 0.8961687  1.079720   1.311972
+#> 144: 2022-04-28 0.9919365 0.9799230  0.6788358 0.8885547  1.090078   1.345702
 #>      seeding
 #>   1:    TRUE
 #>   2:    TRUE
@@ -541,7 +552,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.6082754 0.7733432 0.7691555 0.8166714
+#> [1] 0.8369946 0.7609754 0.7535453 0.6629081
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -553,14 +564,14 @@ is not NULL), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "b79c53ef87bac0fd32140d22029a1843"
+#> [1] "90d21898f6fe5509deee6b67007a0708"
 #> 
 #> $input
-#> [1] "a6f000bef282725787009d376aac763c"
+#> [1] "de2fb978ff958d5546bbb2beb3ff84a0"
 #> 
 #> $fit_opts
 #> [1] "0099b7f17b4a7762f7f9c26d9c606976"
 #> 
 #> $init
-#> [1] "10153170578738e71079bbe6fadb45e3"
+#> [1] "4a36b1dcccaf20bd3959eaa8bae24452"
 ```
