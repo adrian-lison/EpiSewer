@@ -19,6 +19,18 @@ get_gamma_scale_alternative <- function(gamma_mean, gamma_sd) {
   return(1 / get_gamma_rate_alternative(gamma_mean, gamma_sd))
 }
 
+#' Get mean of a Gamma distribution given its shape and scale
+get_gamma_mean_alternative <- function(gamma_shape, gamma_scale) {
+  gamma_mean <- gamma_shape * gamma_scale
+  return(gamma_mean)
+}
+
+#' Get sd of a Gamma distribution given its shape and scale
+get_gamma_sd_alternative <- function(gamma_shape, gamma_scale) {
+  gamma_sd <- sqrt(gamma_shape) * gamma_scale
+  return(gamma_sd)
+}
+
 #' Get PMF of a discretized Gamma distribution
 #'
 #' @description This function accepts different parameterizations to specify a
