@@ -603,6 +603,13 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #'   of the Negative Binomial.
 #' @param overdispersion_prior_sigma Prior (standard deviation) on the
 #'   overdispersion parameter of the Negative Binomial.
+#' @param overdispersion_fixed Should the overdispersion parameter be fixed or
+#'   estimated? If `TRUE` (default), the overdispersion parameter is fixed to
+#'   `overdispersion_prior_mu`.
+#'
+#' @details The level of overdispersion is often unidentifiable from a single
+#'   time series of measurements. This is why the overdispersion is fixed to a
+#'   (comparably low) value by default.
 #'
 #' @details The priors of this component have the following functional form:
 #' - overdispersion parameter of the Negative Binomial: `Truncated normal`
@@ -613,13 +620,32 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #' @family {infection noise models}
 infection_noise_estimate <-
   function(overdispersion = FALSE,
-           overdispersion_prior_mu = 0,
-           overdispersion_prior_sigma = 1,
+           overdispersion_prior_mu = 0.05,
+           overdispersion_prior_sigma = 0.25,
+           overdispersion_fixed = TRUE,
            modeldata = modeldata_init()) {
     modeldata$I_overdispersion <- overdispersion
-    modeldata$I_xi_prior <- set_prior("I_xi", "normal",
-      mu = overdispersion_prior_mu, sigma = overdispersion_prior_sigma
-    )
+
+    if (overdispersion_prior_sigma == 0) {
+      overdispersion_fixed <- TRUE
+    }
+
+    if (overdispersion_fixed) {
+      modeldata$I_xi_fixed <- overdispersion_prior_mu
+    } else {
+      modeldata$I_xi_fixed <- -1
+    }
+
+    if (modeldata$I_overdispersion && !overdispersion_fixed) {
+      modeldata$I_xi_prior <- set_prior(
+        "I_xi", "normal",
+        mu = overdispersion_prior_mu, sigma = overdispersion_prior_sigma
+      )
+      modeldata$.init$I_xi <- as.array(0.05)
+    } else {
+      modeldata$I_xi_prior <- numeric(0)
+      modeldata$.init$I_xi <- numeric(0)
+    }
 
     modeldata$I_sample <- TRUE
     modeldata$.init$I <- tbe(
@@ -636,13 +662,6 @@ infection_noise_estimate <-
       ),
       c(".metainfo$initial_cases_crude", ".metainfo$length_I")
     )
-
-    if (modeldata$I_overdispersion) {
-      modeldata$.init$I_xi <- as.array(0.05)
-    } else {
-      modeldata$I_xi_prior <- numeric(0)
-      modeldata$.init$I_xi <- numeric(0)
-    }
 
     modeldata$.str$infections[["infection_noise"]] <- list(
       infection_noise_estimate = c()
