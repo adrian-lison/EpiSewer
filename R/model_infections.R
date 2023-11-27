@@ -579,6 +579,9 @@ seeding_estimate_rw <- function(
 infection_noise_none <- function(modeldata = modeldata_init()) {
   modeldata$I_sample <- FALSE
   modeldata$I_overdispersion <- FALSE
+  modeldata$I_xi_prior <- numeric(0)
+  modeldata$.init$I_xi <- numeric(0)
+  modeldata$I_xi_fixed <- -1
   modeldata$.init$I <- numeric(0)
   modeldata$.init$I_log <- numeric(0)
 
@@ -664,7 +667,7 @@ infection_noise_estimate <-
     )
 
     modeldata$.str$infections[["infection_noise"]] <- list(
-      infection_noise_estimate = c()
+      infection_noise_estimate = c(overdispersion = overdispersion)
     )
 
     return(modeldata)
