@@ -87,6 +87,25 @@ real lognormal4_lpdf(vector y, vector mean_log, real cv) {
 }
 
 /**
+  * The log of the lognormal density given mean on log scale and coefficient of
+  * variation on unit scale
+  *
+  * @param y vector with observed data
+  *
+  * @param mean_log vector of log of means
+  *
+  * @param cv vector with coefficients of variation for each observation
+  *
+  * @return The log of the lognormal density of y
+  */
+real lognormal4_lpdf(vector y, vector mean_log, vector cv) {
+  int n = num_elements(y);
+  vector[n] sigma2 = log1p(cv^2);
+  vector[n] mu = mean_log - sigma2/2;
+  return lognormal_lpdf(y | mu, sqrt(sigma2));
+}
+
+/**
   * Generate lognormal variate given mean on log scale and coefficient of
   * variation on unit scale
   *
@@ -99,6 +118,23 @@ real lognormal4_lpdf(vector y, vector mean_log, real cv) {
 array[] real lognormal4_rng(vector mean_log, real cv) {
   int n = num_elements(mean_log);
   real sigma2 = log1p(cv^2);
+  vector[n] mu = mean_log - sigma2/2;
+  return lognormal_rng(mu, sqrt(sigma2));
+}
+
+/**
+  * Generate lognormal variate given mean on log scale and coefficient of
+  * variation on unit scale
+  *
+  * @param mean_log vector of log of means
+  *
+  * @param cv vector with coefficients of variation for each observation
+  *
+  * @return Vector of lognormal variates
+  */
+array[] real lognormal4_rng(vector mean_log, vector cv) {
+  int n = num_elements(mean_log);
+  vector[n] sigma2 = log1p(cv^2);
   vector[n] mu = mean_log - sigma2/2;
   return lognormal_rng(mu, sqrt(sigma2));
 }
