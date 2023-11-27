@@ -226,7 +226,7 @@ load_variation_estimate <- function(
     modeldata = modeldata_init()) {
   modeldata$load_vari <- 1
   modeldata$nu_zeta_prior <- set_prior(
-    "nu", "truncated normal",
+    "nu_zeta", "truncated normal",
     mu = cv_prior_mu, sigma = cv_prior_sigma
   )
   modeldata$.init$nu_zeta <- as.array(cv_prior_mu)
