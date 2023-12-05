@@ -8,6 +8,13 @@ noise_estimate(
   replicates = FALSE,
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
+  type = "ddPCR",
+  ddPCR_prior_droplets_mu = 20000,
+  ddPCR_prior_droplets_sigma = 5000,
+  ddPCR_droplets_fixed = TRUE,
+  ddPCR_prior_scaling_mu = 1.5e-05,
+  ddPCR_prior_scaling_sigma = 5e-06,
+  ddPCR_scaling_fixed = FALSE,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   modeldata = modeldata_init()

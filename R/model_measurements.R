@@ -215,21 +215,73 @@ noise_estimate <-
   function(replicates = FALSE,
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
+           type = "ddPCR",
+           ddPCR_prior_droplets_mu = 20000,
+           ddPCR_prior_droplets_sigma = 5000,
+           ddPCR_droplets_fixed = TRUE,
+           ddPCR_prior_scaling_mu = 1.5e-5,
+           ddPCR_prior_scaling_sigma = 0.5e-5,
+           ddPCR_scaling_fixed = FALSE,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            modeldata = modeldata_init()) {
     modeldata$pr_noise <- replicates
 
-    modeldata$nu_upsilon_prior <- set_prior("nu_upsilon", "truncated normal",
+    modeldata$nu_upsilon_a_prior <- set_prior("nu_upsilon_a", "truncated normal",
       mu = cv_prior_mu, sigma = cv_prior_sigma
     )
+    modeldata$.init$nu_upsilon_a <- 0.1 # 10% coefficient of variation
+
+    if (type == "constant") {
+      modeldata$noise_type <- 0
+      modeldata$nu_upsilon_b_prior <- numeric(0)
+      modeldata$nu_upsilon_b_fixed <- -1 # dummy value
+      modeldata$.init$nu_upsilon_b <- numeric(0)
+      modeldata$nu_upsilon_c_prior <- numeric(0)
+      modeldata$nu_upsilon_c_fixed <- -1 # dummy value
+      modeldata$.init$nu_upsilon_c <- numeric(0)
+    } else if (type == "ddPCR") {
+      modeldata$noise_type <- 1
+      if (ddPCR_droplets_fixed) {
+        modeldata$nu_upsilon_b_fixed <- ddPCR_prior_droplets_mu * 1e-4
+        modeldata$nu_upsilon_b_prior <- numeric(0)
+        modeldata$.init$nu_upsilon_b <- numeric(0)
+      } else {
+        modeldata$nu_upsilon_b_fixed <- -1 # dummy value
+        modeldata$nu_upsilon_b_prior <- set_prior(
+          "nu_upsilon_b", "truncated normal",
+          mu = ddPCR_prior_droplets_mu * 1e-4, # scaling by 1e-4 for numerical reasons
+          sigma = ddPCR_prior_droplets_sigma * 1e-4
+        )
+        modeldata$.init$nu_upsilon_b <- as.array(1)
+      }
+
+      if (ddPCR_scaling_fixed) {
+        modeldata$nu_upsilon_c_fixed <- ddPCR_prior_scaling_mu * 1e+5
+        modeldata$nu_upsilon_c_prior <- numeric(0)
+        modeldata$.init$nu_upsilon_c <- numeric(0)
+      } else {
+        modeldata$nu_upsilon_c_fixed <- -1 # dummy value
+        modeldata$nu_upsilon_c_prior <- set_prior(
+          "nu_upsilon_c", "truncated normal",
+          mu = ddPCR_prior_scaling_mu * 1e+5, # scaling by 1e+5 for numerical reasons
+          sigma = ddPCR_prior_scaling_sigma * 1e+5
+        )
+        modeldata$.init$nu_upsilon_c <- as.array(1)
+      }
+
+    } else {
+      rlang::abort(
+      paste0("Noise type `", type, "` not supported. Available options: 'constant', `ddPCR`."),
+      )
+    }
 
     if (modeldata$pr_noise) {
       modeldata$nu_psi_prior <- set_prior(
         "nu_psi", "truncated normal",
         mu = pre_replicate_cv_prior_mu, sigma = pre_replicate_cv_prior_sigma
       )
-      modeldata$.init$nu_psi <- as.array(pre_replicate_cv_prior_mu)
+      modeldata$.init$nu_psi <- as.array(0.1)
 
       modeldata$.init$psi <- tbe(
         rep(1e-4, modeldata$n_samples),
@@ -250,8 +302,6 @@ noise_estimate <-
       modeldata$.init$nu_psi <- numeric(0)
       modeldata$.init$psi <- numeric(0)
     }
-
-    modeldata$.init$nu_upsilon <- 0.1 # 10% coefficient of variation
 
     if (replicates == TRUE) {
       .str_details <- c(replicates = replicates)
