@@ -4,18 +4,24 @@
 \alias{plot_sample_effects}
 \title{Plot estimated sample effects}
 \usage{
-plot_sample_effects(results)
+plot_sample_effects(results, model_levels = NULL)
 }
 \arguments{
-\item{results}{Results object returned by \code{\link[=EpiSewer]{EpiSewer()}} after model fitting.}
+\item{results}{Results object returned by \code{\link[=EpiSewer]{EpiSewer()}} after model fitting.
+Can also be a named \code{list} with results from different model runs, in which
+case all results are plotted together and distinguished by colors.}
+
+\item{model_levels}{A \code{character} vector with the names of the models to be
+included. The colors and legend will be ordered according to the order in
+\code{model_levels}.}
 }
 \value{
 A ggplot object showing the estimated effect sizes. Can be further
-manipulated using \link{ggplot2} functions to adjust themes and scales, and add
-further geoms.
+manipulated using \link{ggplot2} functions to adjust themes and scales, and to
+add further geoms.
 }
 \description{
 Plots estimated effect sizes for sample covariates with 95\%
-credible intervals. Only works if the \code{EpiSewer} model
-included sample covariates, see e.g. \code{\link[=sample_effects_estimate_matrix]{sample_effects_estimate_matrix()}}.
+credible intervals. Only works if the \code{EpiSewer} model included sample
+covariates, see e.g. \code{\link[=sample_effects_estimate_matrix]{sample_effects_estimate_matrix()}}.
 }

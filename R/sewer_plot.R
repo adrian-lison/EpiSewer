@@ -1,9 +1,11 @@
 #' Plot infections
 #'
-#' @description Plots the estimated number of infections over time from a fitted
-#'   `EpiSewer` model.
+#' @description Plots the estimated number of infections over time from one or
+#'   several fitted `EpiSewer` models.
 #'
 #' @param results Results object returned by [EpiSewer()] after model fitting.
+#'   Can also be a named `list` with results from different model runs, in which
+#'   case all results are plotted together and distinguished by colors.
 #' @param draws If `FALSE` (default), 50% and 95% Bayesian credible intervals
 #'   are shown. If `TRUE`, exemplary posterior samples are shown in a "spaghetti
 #'   plot" style.
@@ -12,15 +14,27 @@
 #'   Default is `FALSE`.
 #' @param median Should the estimated median be shown, or only the credible
 #'   intervals? Default is `FALSE` to avoid over-interpretation of the median.
+#' @param date_margin_left By how many days into the past should the plot be
+#'   expanded? Can also be negative to cut off some of the earliest dates.
+#' @param date_margin_right By how many days into the future should the plot be
+#'   expanded? Can also be negative to cut off some of the latest dates.
+#' @param base_model Name of the base model (in the named list provided to
+#'   `results`) which should be compared to the other models. This model will be
+#'   plotted in black and will not be part of the legend.
+#' @param model_levels A `character` vector with the names of the models to be
+#'   included. The colors and legend will be ordered according to the order in
+#'   `model_levels`.
 #'
 #' @return A ggplot object showing the time series of estimated infections,
 #'   either with credible intervals or as "spaghetti plot". Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and add
-#'   further geoms.
+#'   manipulated using [ggplot2] functions to adjust themes and scales, and to
+#'   add further geoms.
 #' @export
 #' @import ggplot2
 plot_infections <- function(results, draws = FALSE, ndraws = NULL,
-                            seeding = FALSE, median = FALSE) {
+                            seeding = FALSE, median = FALSE,
+                            date_margin_left = 0, date_margin_right = 0,
+                            base_model = "", model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -34,6 +48,10 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     )
   }
 
+  if (!is.null(model_levels)) {
+    data_to_plot$model <- factor(data_to_plot$model, levels = model_levels, ordered = TRUE)
+  }
+
   if (!seeding) {
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
   }
@@ -41,7 +59,11 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
   ymin <- quantile(data_to_plot$lower_0.95, probs = 0.01)
   ymax <- quantile(data_to_plot$upper_0.95, probs = 0.99)
 
-  plot <- ggplot(data_to_plot, aes(x = date, color = model, fill = model)) +
+  xmin <- as.Date(min(data_to_plot$date, na.rm = T)) - date_margin_left
+  xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
+
+  plot <- ggplot(data_to_plot[data_to_plot$model!=base_model,],
+                 aes(x = date)) +
     theme_bw() +
     scale_x_date(
       expand = c(0, 0),
@@ -51,22 +73,55 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     xlab("Date") +
     ylab("Infections") +
     theme(legend.title = element_blank()) +
-    coord_cartesian(ylim = c(ymin, ymax))
+    coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
+
+  if (!base_model %in% data_to_plot$model) {
+    rlang::abort(paste0(
+      'Base model "', base_model,
+      '" could not be found in the provided `results` list.'
+    ))
+  }
+  data_base_model <- data_to_plot[data_to_plot$model==base_model,]
+  data_base_model <- data_base_model[,setdiff(names(data_base_model), "model"), with = FALSE]
 
   if (draws) {
     plot <- plot +
-      geom_line(aes(y = I, group = .draw), size = 0.1, alpha = 0.9)
+      { if (base_model!="") {
+        geom_line(data = data_base_model,
+                  aes(y = I, group = .draw), size = 0.1, alpha = 0.9, color = "black")
+      }
+      } +
+      geom_line(aes(y = I, group = paste0(.draw, model), color = model), size = 0.1, alpha = 0.9)
   } else {
     plot <- plot +
+    { if (base_model!="") {
       geom_ribbon(
+        data = data_base_model,
         aes(ymin = lower_0.95, ymax = upper_0.95),
+        alpha = 0.2, color = NA, fill = "black"
+      )
+    }
+    } +
+      geom_ribbon(
+        aes(ymin = lower_0.95, ymax = upper_0.95, fill = model),
         alpha = 0.2, color = NA
       ) +
+      { if (base_model!="") {
+        geom_ribbon(
+          data = data_base_model,
+          aes(ymin = lower_0.5, ymax = upper_0.5),
+          alpha = 0.4, color = NA, fill = "black"
+        )
+      }
+      } +
       geom_ribbon(
-        aes(ymin = lower_0.5, ymax = upper_0.5),
+        aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
         alpha = 0.4, color = NA
       ) + {
-        if (median) geom_line(aes(y = median))
+        if (median && (base_model!="")) geom_line(data = data_base_model, aes(y = median), color = "black")
+      } +
+      {
+        if (median) geom_line(aes(y = median, color = model))
       }
   }
   if (length(unique(data_to_plot$model)) == 1) {
@@ -80,21 +135,22 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
 
 #' Plot the effective reproduction number
 #'
-#' @description Plots the effective reproduction number over time from a fitted
-#'   `EpiSewer` model.
+#' @description Plots the effective reproduction number over time from one or
+#'   several fitted `EpiSewer` models.
 #'
 #' @param results Results object returned by [EpiSewer()] after model fitting.
-#' @param seeding Should Rt from the seeding phase be shown as well?
-#'   Default is `FALSE`.
+#' @param seeding Should Rt from the seeding phase be shown as well? Default is
+#'   `FALSE`.
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the time series of estimated Rt,
-#'   either with credible intervals or as "spaghetti plot". Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and add
-#'   further geoms.
+#' @return A ggplot object showing the time series of estimated Rt, either with
+#'   credible intervals or as "spaghetti plot". Can be further manipulated using
+#'   [ggplot2] functions to adjust themes and scales, and to add further geoms.
 #' @export
 plot_R <- function(results, draws = FALSE, ndraws = NULL,
-                   seeding = FALSE, median = FALSE) {
+                   seeding = FALSE, median = FALSE,
+                   date_margin_left = 0, date_margin_right = 0,
+                   base_model = "", model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -108,6 +164,10 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     )
   }
 
+  if (!is.null(model_levels)) {
+    data_to_plot$model <- factor(data_to_plot$model, levels = model_levels, ordered = TRUE)
+  }
+
   if (!seeding) {
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
   }
@@ -115,7 +175,11 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
   ymin <- min(0.6, quantile(data_to_plot$lower_0.95, probs = 0.01))
   ymax <- max(1.6, quantile(data_to_plot$upper_0.95, probs = 0.99))
 
-  plot <- ggplot(data_to_plot, aes(x = date, color = model, fill = model)) +
+  xmin <- as.Date(min(data_to_plot$date, na.rm = T)) - date_margin_left
+  xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
+
+  plot <- ggplot(data_to_plot[data_to_plot$model!=base_model,],
+                 aes(x = date)) +
     theme_bw() +
     scale_x_date(
       expand = c(0, 0),
@@ -126,22 +190,55 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     ylab(expression(R[t])) +
     theme(legend.title = element_blank()) +
     geom_hline(yintercept = 1, linetype = "dashed") +
-    coord_cartesian(ylim = c(ymin, ymax))
+    coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
+
+  if (!base_model %in% data_to_plot$model) {
+    rlang::abort(paste0(
+      'Base model "', base_model,
+      '" could not be found in the provided `results` list.'
+    ))
+  }
+  data_base_model <- data_to_plot[data_to_plot$model==base_model,]
+  data_base_model <- data_base_model[,setdiff(names(data_base_model), "model"), with = FALSE]
 
   if (draws) {
     plot <- plot +
-      geom_line(aes(y = R, group = .draw), size = 0.1, alpha = 0.9)
+      { if (base_model!="") {
+        geom_line(data = data_base_model,
+                  aes(y = R, group = .draw), size = 0.1, alpha = 0.9, color = "black")
+        }
+      } +
+      geom_line(aes(y = R, group = paste0(.draw, model), color = model), size = 0.1, alpha = 0.9)
   } else {
     plot <- plot +
+      { if (base_model!="") {
+        geom_ribbon(
+          data = data_base_model,
+          aes(ymin = lower_0.95, ymax = upper_0.95),
+          alpha = 0.2, color = NA, fill = "black"
+        )
+      }
+      } +
       geom_ribbon(
-        aes(ymin = lower_0.95, ymax = upper_0.95),
+        aes(ymin = lower_0.95, ymax = upper_0.95, fill = model),
         alpha = 0.2, color = NA
       ) +
+      { if (base_model!="") {
+        geom_ribbon(
+          data = data_base_model,
+          aes(ymin = lower_0.5, ymax = upper_0.5),
+          alpha = 0.4, color = NA, fill = "black"
+        )
+      }
+      } +
       geom_ribbon(
-        aes(ymin = lower_0.5, ymax = upper_0.5),
+        aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
         alpha = 0.4, color = NA
       ) + {
-        if (median) geom_line(aes(y = median))
+        if (median && (base_model!="")) geom_line(data = data_base_model, aes(y = median), color = "black")
+      } +
+      {
+        if (median) geom_line(aes(y = median, color = model))
       }
   }
   if (length(unique(data_to_plot$model)) == 1) {
@@ -167,18 +264,27 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'
 #' @return A ggplot object showing predicted and observed concentrations over
 #'   time. Can be further manipulated using [ggplot2] functions to adjust themes
-#'   and scales, and add further geoms.
+#'   and scales, and to add further geoms.
 #' @export
 plot_concentration <- function(results = NULL, measurements = NULL,
                                include_noise = TRUE, median = FALSE,
                                date_col = "date",
-                               concentration_col = "concentration") {
+                               concentration_col = "concentration",
+                               outlier_col = NULL,
+                               date_margin_left = 0, date_margin_right = 0,
+                               base_model = "", model_levels = NULL) {
 
   concentration_pred <- NULL
   measurements_modeled <- NULL
 
   if (!is.null(measurements)) {
     required_data_cols <- c(date_col, concentration_col)
+    data_col_names <- c("date", "concentration")
+    if (!is.null(outlier_col)) {
+      required_data_cols <- c(required_data_cols, outlier_col)
+      data_col_names <- c(data_col_names, ".outlier")
+    }
+
     if (!all(required_data_cols %in% names(measurements))) {
       rlang::abort(
         c(paste(
@@ -191,8 +297,9 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       )
     }
     measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
-    setnames(measurements, old = required_data_cols, new = c("date", "concentration"))
+    setnames(measurements, old = required_data_cols, new = data_col_names)
   }
+
 
   if (!is.null(results)) {
     if ("summary" %in% names(results)) {
@@ -202,6 +309,10 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       concentration_pred <- combine_summaries(results, "concentration")
     } else {
       concentration_pred <- combine_summaries(results, "expected_concentration")
+    }
+
+    if (!is.null(model_levels)) {
+      concentration_pred$model <- factor(concentration_pred$model, levels = model_levels, ordered = TRUE)
     }
 
     if (!is.null(measurements)) {
@@ -223,17 +334,19 @@ plot_concentration <- function(results = NULL, measurements = NULL,
   }
 
   if (is.null(measurements)) {
-    first_date <- min(concentration_pred$date)
-    last_date <- max(concentration_pred$date)
+    first_date <- as.Date(min(concentration_pred$date))
+    last_date <- as.Date(max(concentration_pred$date))
   } else {
     if (!is.null(concentration_pred)) {
-    first_date <- max(min(measurements$date), min(concentration_pred$date))
-    last_date <- min(max(measurements$date), max(concentration_pred$date))
+    first_date <- as.Date(max(min(measurements$date), min(concentration_pred$date)))
+    last_date <-  as.Date(min(max(measurements$date), max(concentration_pred$date)))
     } else {
-      first_date <- min(measurements$date)
-      last_date <- max(measurements$date)
+      first_date <-  as.Date(min(measurements$date))
+      last_date <-  as.Date(max(measurements$date))
     }
   }
+  first_date <- first_date - date_margin_left
+  last_date <- last_date + date_margin_right
 
   if (!is.null(measurements)) {
     measurements <- measurements[
@@ -253,6 +366,17 @@ plot_concentration <- function(results = NULL, measurements = NULL,
   ]
   }
 
+  if (!base_model %in%concentration_pred$model) {
+    rlang::abort(paste0(
+      'Base model "', base_model,
+      '" could not be found in the provided `results` list.'
+      ))
+  }
+  concentration_pred_base_model <- concentration_pred[concentration_pred$model==base_model,]
+  concentration_pred_base_model <- concentration_pred_base_model[
+    ,setdiff(names(concentration_pred_base_model), "model"), with = FALSE
+    ]
+
   plot <- ggplot(data.frame(), aes(x = date)) +
     {
       if (!is.null(measurements)) {
@@ -264,17 +388,33 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       }
     } +
     {
-      if (!is.null(concentration_pred)) {
+      if (!is.null(concentration_pred) && base_model!="") {
         geom_ribbon(
-          data = concentration_pred,
-          aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
+          data = concentration_pred_base_model,
+          aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, fill = "black"
         )
       }
     } +
     {
       if (!is.null(concentration_pred)) {
         geom_ribbon(
-          data = concentration_pred,
+          data = concentration_pred[concentration_pred$model!=base_model, ],
+          aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
+        )
+      }
+    } +
+    {
+      if (!is.null(concentration_pred) && base_model!="") {
+        geom_ribbon(
+          data = concentration_pred_base_model,
+          aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.2, fill = "black"
+        )
+      }
+    } +
+    {
+      if (!is.null(concentration_pred)) {
+        geom_ribbon(
+          data = concentration_pred[concentration_pred$model!=base_model, ],
           aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
         )
       }
@@ -289,6 +429,15 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       }
     } +
     {
+      if (!is.null(measurements) && !is.null(outlier_col)) {
+        geom_point(
+          data = measurements |> filter(.outlier),
+          aes(y = concentration),
+          color = "red", shape = 4
+        )
+      }
+    } +
+    {
       if (!is.null(measurements_modeled)) {
         geom_point(
           data = measurements_modeled,
@@ -297,9 +446,17 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       }
     } +
     {
+      if (median && !is.null(concentration_pred) && base_model!="") {
+        geom_line(
+          data = concentration_pred_base_model,
+          aes(y = median), color = "black"
+        )
+      }
+    } +
+    {
       if (median && !is.null(concentration_pred)) {
         geom_line(
-          data = concentration_pred,
+          data = concentration_pred[concentration_pred$model!=base_model, ],
           aes(y = median, color = model)
         )
       }
@@ -330,39 +487,73 @@ plot_concentration <- function(results = NULL, measurements = NULL,
 #' @inheritParams plot_infections
 #'
 #' @return A ggplot object showing the estimated load over time. Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and add
-#'   further geoms.
+#'   manipulated using [ggplot2] functions to adjust themes and scales, and to
+#'   add further geoms.
 #'
 #' @export
-plot_load <- function(results, median = FALSE) {
+plot_load <- function(results, median = FALSE,
+                      date_margin_left = 0, date_margin_right = 0,
+                      base_model = "", model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
   load_pred <- combine_summaries(results, "expected_load")
 
-  first_date <- min(load_pred$date)
-  last_date <- max(load_pred$date)
+  xmin <- min(load_pred$date, na.rm = T) - date_margin_left
+  xmax <- max(load_pred$date, na.rm = T) + date_margin_right
 
-  plot <- ggplot(load_pred, aes(x = date)) +
+  if (!is.null(model_levels)) {
+    load_pred$model <- factor(load_pred$model, levels = model_levels, ordered = TRUE)
+  }
+
+  if (!base_model %in% load_pred$model) {
+    rlang::abort(paste0(
+      'Base model "', base_model,
+      '" could not be found in the provided `results` list.'
+    ))
+  }
+  data_base_model <- load_pred[load_pred$model==base_model,]
+  data_base_model <- data_base_model[,setdiff(names(data_base_model), "model"), with = FALSE]
+
+  plot <- ggplot(load_pred[load_pred$model!=base_model,],
+                 aes(x = date)) +
+    { if (base_model!="") {
+      geom_ribbon(
+        data = data_base_model,
+        aes(ymin = lower_0.95, ymax = upper_0.95),
+        alpha = 0.2, color = NA, fill = "black"
+      )
+    }
+    } +
     geom_ribbon(
-      data = load_pred,
       aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
     ) +
+    { if (base_model!="") {
+      geom_ribbon(
+        data = data_base_model,
+        aes(ymin = lower_0.5, ymax = upper_0.5),
+        alpha = 0.4, color = NA, fill = "black"
+      )
+    }
+    } +
     geom_ribbon(
-      data = load_pred,
       aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
     ) +
     {
-      if (median) geom_line(data = load_pred, aes(y = median, color = model))
+      if (median && (base_model!="")) geom_line(data = data_base_model, aes(y = median), color = "black")
+    } +
+    {
+      if (median) geom_line(aes(y = median, color = model))
     } +
     theme_bw() +
+    theme(legend.title = element_blank()) +
     scale_x_date(
       expand = c(0, 0),
       date_breaks = "1 month", date_labels = "%b\n%Y"
     ) +
     xlab("Date") +
     ylab("Load [gene copies / day]") +
-    coord_cartesian(xlim = as.Date(c(first_date, last_date)))
+    coord_cartesian(xlim = c(xmin, xmax))
 
   if (length(unique(load_pred$model)) == 1) {
     plot <- plot +
@@ -376,27 +567,44 @@ plot_load <- function(results, median = FALSE) {
 #' Plot estimated sample effects
 #'
 #' @description Plots estimated effect sizes for sample covariates with 95%
-#'   credible intervals. Only works if the `EpiSewer` model
-#'   included sample covariates, see e.g. [sample_effects_estimate_matrix()].
+#'   credible intervals. Only works if the `EpiSewer` model included sample
+#'   covariates, see e.g. [sample_effects_estimate_matrix()].
 #'
 #' @inheritParams plot_infections
 #'
 #' @return A ggplot object showing the estimated effect sizes. Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and add
-#'   further geoms.
+#'   manipulated using [ggplot2] functions to adjust themes and scales, and to
+#'   add further geoms.
 #' @export
-plot_sample_effects <- function(results) {
-  ggplot(results$summary$sample_effects, aes(y = variable)) +
+plot_sample_effects <- function(results, model_levels = NULL) {
+  if ("summary" %in% names(results)) {
+    results <- list(results) # only one result object passed, wrap in list
+  }
+  data_to_plot <- combine_summaries(results, "sample_effects")
+
+  if (!is.null(model_levels)) {
+    data_to_plot$model <- factor(data_to_plot$model, levels = model_levels, ordered = TRUE)
+  }
+
+  plot <- ggplot(data_to_plot[!is.na(data_to_plot$model),], aes(y = variable)) +
     geom_vline(xintercept = 0, linetype = "dashed") +
     ggdist::geom_pointinterval(
-      aes(x = median - 1, xmin = lower_0.95 - 1, xmax = upper_0.95 - 1),
-      fatten_point = 5,
+      aes(x = median - 1, xmin = lower_0.95 - 1, xmax = upper_0.95 - 1, color = model),
+      fatten_point = 5, position = position_dodge(width = 0.4)
     ) +
     theme_bw() +
+    theme(legend.title = element_blank()) +
     xlab("Percentage change") +
     ylab("Predictor") +
     scale_x_continuous(labels = scales::percent) +
     scale_y_discrete(limits = rev)
+  if (length(unique(data_to_plot$model)) == 1) {
+    plot <- plot +
+      theme(legend.position = "none") +
+      scale_color_manual(values = "black") +
+      scale_fill_manual(values = "black")
+  }
+  return(plot)
 }
 
 
@@ -413,7 +621,7 @@ plot_sample_effects <- function(results) {
 #' @return A plot showing the probability of non-detection (i.e. zero
 #'   measurement) for different concentrations below and above the assumed LOD.
 #'   Can be further manipulated using [ggplot2] functions to adjust themes and
-#'   scales, and add further geoms.
+#'   scales, and to add further geoms.
 #' @export
 #'
 #' @examples
