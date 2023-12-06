@@ -6,8 +6,9 @@
 \usage{
 infection_noise_estimate(
   overdispersion = FALSE,
-  overdispersion_prior_mu = 0,
-  overdispersion_prior_sigma = 1,
+  overdispersion_prior_mu = 0.05,
+  overdispersion_prior_sigma = 0.25,
+  overdispersion_fixed = TRUE,
   modeldata = modeldata_init()
 )
 }
@@ -21,6 +22,10 @@ of the Negative Binomial.}
 
 \item{overdispersion_prior_sigma}{Prior (standard deviation) on the
 overdispersion parameter of the Negative Binomial.}
+
+\item{overdispersion_fixed}{Should the overdispersion parameter be fixed or
+estimated? If \code{TRUE} (default), the overdispersion parameter is fixed to
+\code{overdispersion_prior_mu}.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -43,6 +48,10 @@ number of new infections generated at each time step, which can often speed
 up model fitting.
 }
 \details{
+The level of overdispersion is often unidentifiable from a single
+time series of measurements. This is why the overdispersion is fixed to a
+(comparably low) value by default.
+
 The priors of this component have the following functional form:
 \itemize{
 \item overdispersion parameter of the Negative Binomial: \verb{Truncated normal}

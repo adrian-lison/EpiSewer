@@ -30,6 +30,34 @@ concentration measurements.}
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
 
+\item{type}{One out of "constant" (default), or "ddPCR". If ddPCR, the
+coefficient of variation is modeled as a function of the expected
+concentration according to the statistical properties of ddPCR. In
+particular, this model predicts a higher coefficient of variation at
+smaller concentrations.}
+
+\item{ddPCR_prior_droplets_mu}{Prior (mean) on the number of droplets in the
+ddPCR reaction.}
+
+\item{ddPCR_prior_droplets_sigma}{Prior (standard deviation) on the number of
+droplets in the ddPCR reaction.}
+
+\item{ddPCR_droplets_fixed}{If TRUE (default), the number of droplets is
+fixed to the prior mean and not estimated. This is recommended if no
+replicates are available.}
+
+\item{ddPCR_prior_scaling_mu}{Prior (mean) on the concentration scaling
+factor for the ddPCR reaction. The concentration scaling factor is the
+droplet volume, scaled by the dilution of the wastewater in the ddPCR
+reaction. Note that the dilution accounts for all extraction steps, it is
+the ratio of wastewater to other liquids in the reaction.}
+
+\item{ddPCR_prior_scaling_sigma}{Prior (standard deviation) on the
+concentration scaling factor for the ddPCR reaction.}
+
+\item{ddPCR_scaling_fixed}{If TRUE, the concentration scaling factor is fixed
+to the prior mean and not estimated.}
+
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
 of concentrations before the replication stage.}
 
