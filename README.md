@@ -308,7 +308,7 @@ options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4, seed = 2))
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
 )
 ```
 
