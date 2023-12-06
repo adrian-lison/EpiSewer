@@ -215,7 +215,7 @@ noise_estimate <-
   function(replicates = FALSE,
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
-           type = "ddPCR",
+           type = "constant",
            ddPCR_prior_droplets_mu = 20000,
            ddPCR_prior_droplets_sigma = 5000,
            ddPCR_droplets_fixed = TRUE,
