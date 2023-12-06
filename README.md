@@ -21,6 +21,7 @@ easily configurable modeling components.
 ⭐ Non-daily / missing measurements  
 ⭐ Multiple measurements (replicates) per sample  
 ⭐ Multi-day composite samples  
+⭐ Accurate ddPCR noise model  
 ⭐ Limit of detection (LOD) model
 
 **Sampling**  
@@ -307,19 +308,7 @@ options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  measurements = model_measurements(LOD = LOD_assume(limit = 2),
-    noise = noise_estimate(
-     type = "constant",
-     #ddPCR_droplets_fixed = F,
-     #ddPCR_scaling_fixed = F
-     # ddPCR_prior_droplets_mu = 22000,
-     # ddPCR_prior_droplets_sigma = 1000,
-     # ddPCR_prior_scaling_mu = 1.73e-5,
-     # ddPCR_prior_scaling_sigma = 0.05e-5
-     )),
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4)),
-  infections = model_infections(infection_noise = infection_noise_estimate(overdispersion = TRUE, overdispersion_prior_mu = 0.1, overdispersion_prior_sigma = 0.001)),
-  run_fit = T
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4, seed = 2))
 )
 ```
 
