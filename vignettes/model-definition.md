@@ -46,10 +46,10 @@ This option uses an **innovations state space model** with additive errors to im
 
 ```math
 \begin{align*}
-    \text{link}(R_t) &= l_{t-1} + \phi' \, b_{t-1} + \epsilon_t \\
-    l_t &= l_{t-1} + \phi' \, b_{t-1} + \alpha' \, \epsilon_t \\
-    b_t &= \phi' \, b_{t-1} + \beta' \, \epsilon_t \\
-    \epsilon_t &\sim N(0,{\sigma_{\text{link}(R)}}^2),
+    \text{link}(R_t) &= l_{t-1} + \phi' \, b_{t-1} + \epsilon_t \\
+    l_t &= l_{t-1} + \phi' \, b_{t-1} + \alpha' \, \epsilon_t \\
+    b_t &= \phi' \, b_{t-1} + \beta' \, \epsilon_t \\
+    \epsilon_t &\sim N(0,{\sigma_{\text{link}(R)}}^2),
 \end{align*}
 ```
 
@@ -88,7 +88,7 @@ We require a seeding phase at the start of the modeled time period, when the ren
 \log(\iota_t)|\iota_{t-1} \sim N(\log(\iota_{t-1}),{\sigma_{\log(\iota)}}^2) \,|\, t \leq G
 ```
 
-with a normal prior on intercept $\log(\iota_1)$ and a zero-truncated normal prior on the standard deviation $\sigma_{\log(\iota)}$ of the random walk.
+with a normal prior on intercept $\log(\iota_1)$ and a zero-truncated normal prior on the standard deviation $\sigma_{\log(\iota)}$ of the random walk.
 
 ##### Renewal model
 ```math
@@ -158,7 +158,7 @@ and place a zero-truncated normal prior on $\nu_\zeta$.
 
 ### Load at sampling site ($`\pi_t`$)
 ```math
-\pi_t =  \sum_{d=0}^D \omega_{t-d}\, \tau^\text{res}_d
+\pi_t = \sum_{d=0}^D \omega_{t-d}\, \tau^\text{res}_d
 ```
 
 where $\tau^\text{res} = (\tau^\text{res}_0, \tau^\text{res}_1, \dots, \tau^\text{res}_D)$ is the sewer residence time distribution of pathogen particles.
@@ -218,10 +218,21 @@ Non-zero concentration measurements are modeled as log-normal distributed, i.e.
 ```math
 \Upsilon_{t,i} \,|\, \Upsilon_{t,i} > 0 \, \sim \text{Log-Normal}\left(\mu_{\Upsilon_{t}},\, \sigma_\Upsilon^2\right)
 ```
+where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$. Here, $\mu_{\Upsilon_{t}} = \log(\psi_t) - \frac{1}{2}\sigma_{\Upsilon}^2$ is the location and $\sigma_\Upsilon^2 = \log(1 + \nu_\Upsilon(\mu_\Upsilon)^2)$ the scale of the Log-Normal distribution.
 
-where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$. Here, $\mu_{\Upsilon_{t}} = \log(\psi_t) - \frac{1}{2}\sigma_{\Upsilon}^2$ is the location and $\sigma_\Upsilon^2 = \log(1 + \nu_\Upsilon^2)$ the scale of the Log-Normal distribution, with $\nu_\Upsilon$ being the coefficient of variation for the replication stage. This means that if, for example, the replication stage is PCR quantification, then $\nu_\Upsilon$ measures the noise from the PCR. We place a zero-truncated normal prior on $\nu_\Upsilon$.
+Here, $\nu_\Upsilon(\mu_\Upsilon)$ is the coefficient of variation for the replication stage and modeled as a function of the expected concentration:
+```math
+\nu_\Upsilon(\mu_\Upsilon) = a + \frac{1}{\sqrt{b}} \frac{\sqrt{exp(\mu_\Upsilon\, c) – 1}}{\mu_\Upsilon\, c}
+```
+with $a$, $b$ and $c$ as parameters to be estimated. The functional form is derived from the statistical properties of the binomial-distributed positive droplet counts in the ddPCR reaction, where
 
-Note that if no replicates are modeled, then $\nu_\Upsilon$ measures the total variation and $\nu_\psi$ is not estimated.
+- $a$ represents the coefficient of variation for noise independent of the distribution of gene copies to droplets,
+- $b$ represents the average number of droplets in the PCR reaction, and
+- $c$ represents the concentration scaling factor, which is the droplet volume scaled by the dilution of the wastewater in the PCR reaction. Note that here the dilution includes all extraction steps - it is the ratio of wastewater to other liquids in the reaction.
+
+We place zero-truncated normal priors on $a$, $b$, and $c$, respectively.
+
+If replicates are modeled and the replication stage is PCR quantification, then $\nu_\Upsilon$ measures the noise only from the PCR and $\nu_\psi$ all other noise. In this case, $a$ should typically be very small. In contrast, if no replicates are modeled, then $\nu_\Upsilon$ measures the total variation and $\nu_\psi$ is not estimated. In this case, $a$ will be larger.
 
 ## Estimation
 `EpiSewer` is directly fitted to observed concentration measurements $`y_{t,i}`$ (where $`t \leq T`$ is the index of the sample date and $i$ the index of the replicate out of $n_t$ replicates in total for date index $t$).
