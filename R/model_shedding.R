@@ -231,11 +231,8 @@ load_variation_estimate <- function(
   )
   modeldata$.init$nu_zeta <- as.array(cv_prior_mu)
   modeldata$.init$zeta <- tbe(
-    rep(
-      median(modeldata$measured_concentrations, na.rm = T),
-      modeldata$.metainfo$length_shedding
-    ),
-    c("measured_concentrations", ".metainfo$length_shedding")
+    rep(1, modeldata$.metainfo$length_shedding),
+    c(".metainfo$length_shedding")
   )
 
   modeldata$.str$shedding[["load_variation"]] <- list(

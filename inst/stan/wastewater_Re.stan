@@ -193,7 +193,7 @@ transformed parameters {
   if (load_vari) {
     omega_log = log_convolve(
         shed_rev_log, // shedding load distribution
-        log(zeta) // total load shed
+        log(load_mean) + log(zeta) // total load shed
         )[(S + 1) : (S + D + T)];
   } else {
     omega_log = log_convolve(
@@ -265,7 +265,7 @@ model {
   // Prior on individual-level shedding load variation
   if (load_vari) {
     nu_zeta[1] ~ normal(nu_zeta_prior[1], nu_zeta_prior[2]); // truncated normal
-    target += gamma3_sum_lpdf(zeta | load_mean, nu_zeta[1], lambda);
+    target += gamma3_sum_lpdf(zeta | 1, nu_zeta[1], lambda);
   }
 
   // Prior on sample date effects
