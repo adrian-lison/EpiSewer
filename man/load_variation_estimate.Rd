@@ -6,7 +6,7 @@
 \usage{
 load_variation_estimate(
   cv_prior_mu = 0.1,
-  cv_prior_sigma = 0.01,
+  cv_prior_sigma = 0.025,
   modeldata = modeldata_init()
 )
 }

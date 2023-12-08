@@ -34,7 +34,7 @@ variation of concentration measurements.}
 coefficient of variation is modeled as a function of the expected
 concentration according to the statistical properties of ddPCR. In
 particular, this model predicts a higher coefficient of variation at
-smaller concentrations.}
+smaller concentrations, which often leads to a better model fit.}
 
 \item{ddPCR_prior_droplets_mu}{Prior (mean) on the number of droplets in the
 ddPCR reaction.}
