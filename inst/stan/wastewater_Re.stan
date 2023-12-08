@@ -145,7 +145,7 @@ parameters {
 
   // individual-level shedding load variation
   array[load_vari ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
-  vector[load_vari ? S + D + T : 0] zeta; // realized shedding load
+  vector[load_vari ? S + D + T : 0] zeta_raw; // realized shedding load (non-centered)
 
   // sample date effects
   vector[K] eta;
@@ -161,6 +161,7 @@ transformed parameters {
   vector[L + S + D + T - G] R; // effective reproduction number
   vector[L + S + D + T] iota; // expected number of infections
   vector[S + D + T] lambda; // expected number of shedding onsets
+  vector<lower = 0>[load_vari ? S + D + T : 0] zeta; // realized shedding load
   vector[T] pi_log; // log expected daily loads
   vector[T] kappa_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
@@ -191,6 +192,7 @@ transformed parameters {
   // calculation of total loads shed each day (expected)
   vector[D + T] omega_log;
   if (load_vari) {
+    zeta = gamma_sum_approx(nu_zeta[1], lambda, zeta_raw);
     omega_log = log_convolve(
         shed_rev_log, // shedding load distribution
         log(load_mean) + log(zeta) // total load shed
@@ -265,7 +267,7 @@ model {
   // Prior on individual-level shedding load variation
   if (load_vari) {
     nu_zeta[1] ~ normal(nu_zeta_prior[1], nu_zeta_prior[2]); // truncated normal
-    target += gamma3_sum_lpdf(zeta | 1, nu_zeta[1], lambda);
+    zeta_raw ~ std_normal();
   }
 
   // Prior on sample date effects

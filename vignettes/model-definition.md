@@ -129,30 +129,33 @@ where $\tau^\text{inc} = (\tau^\text{inc}_0, \tau^\text{inc}_1, \dots, \tau^\tex
 ### Total load shed in catchment ($`\omega_t`$)
 
 ##### Option 1: Without individual-level variation
-```math
-\omega_t = \sum_{s=0}^S \zeta_{t-s}\, \tau^\text{shed}_s
-```
 
-where  $`\zeta_{t} = \mu^\text{load}\, \lambda_{t}`$  is the total load shed on day $t$, with an average total shedding load per person of $\mu^\text{load}$, and $\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S)$ is the distribution of shedding over time, with shedding up to $S$ days after symptom onset. 
+```math
+\omega_t = \sum_{s=0}^S \lambda_{t-s}\, \mu^\text{load}\, \tau^\text{shed}_s
+```
+where $`\lambda_{t}`$ is the expected number of individuals with symptom onset on day $t$, $`\mu^\text{load}`$ is the average total shedding load per person, and $`\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S)`$ is the distribution of shedding over time, with shedding up to $S$ days after symptom onset. 
 
 ##### Option 2: With individual-level variation
 ```math
-\omega_t = \sum_{s=0}^S \zeta_{t-s}\, \tau^\text{shed}_s
+\omega_t = \sum_{s=0}^S \zeta_{t-s}\, \mu^\text{load}\, \tau^\text{shed}_s
 ```
-
-where $`\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S)`$ is again the distribution of shedding over time, with shedding up to $S$ days after symptom onset, but $\zeta_t$ is now defined as the sum of i.i.d. gamma distributed individual shedding loads with mean $\mu^\text{load}$ and coefficient of variation  $\nu_\zeta$:
+where $`(\mu^\text{load})`$ is again the average total shedding load per person and $`(\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S))`$ the distribution of shedding over time, with shedding up to $S$ days after symptom onset. This is now multiplied by $\zeta_t$, which is defined as the sum of i.i.d. Gamma distributed individual relative shedding intensities with mean $1$ and coefficient of variation $\nu_\zeta$:
 
 ```math
-\zeta_t \sim \sum_{i=1}^{\Lambda_t}  \text{Gamma}(\text{mean} = \mu^\text{load}, \text{cv} = \nu_\zeta) = \text{Gamma}(\alpha = \frac{\Lambda_t}{\nu_\zeta^2}, \beta = \frac{1}{\mu^\text{load} \nu_\zeta^2})
+\zeta_t \sim \sum_{i=1}^{\Lambda_t} \, \text{Gamma}(\text{mean} = 1, \text{cv} = \nu_\zeta) = \text{Gamma}(\alpha = \frac{\Lambda_t}{\nu_\zeta^2}, \beta = \frac{1}{\nu_\zeta^2})
 ```
 
-where $\Lambda_t$ is the realized number of symptom onsets. We here approximate $\Lambda_t$ with its expectation $\lambda_t = E[\Lambda_t]$, i.e.
+where $\Lambda_t$ is the realized number of symptom onsets. That is, $\zeta_t$ describes the number of individuals with symptom onset on day $t$, weighted by their shedding intensity, where an intensity $<1$ indicates below-average shedding, and an intensity $>1$ indicates above-average shedding. The coefficient of variation  $\nu_\zeta$ describes how much the shedding intensity varies between individuals.
+
+We here approximate $\Lambda_t$ with its expectation $\lambda_t = E[\Lambda_t]$, i.e.
 
 ```math
 \zeta_t \sim \text{Gamma}(\alpha = \frac{\lambda_t}{\nu_\zeta^2}, \beta = \frac{1}{\mu^\text{load} \nu_\zeta^2}),
 ```
 
 and place a zero-truncated normal prior on $\nu_\zeta$.
+
+In the stan implementation, we use a normal approximation of the Gamma distribution for $\zeta_t$ to improve sampling efficiency. This approximation is highly accurate for sufficiently large $\lambda_t$, which will typically be the case.
 
 ## Sewage module
 
@@ -161,7 +164,7 @@ and place a zero-truncated normal prior on $\nu_\zeta$.
 \pi_t = \sum_{d=0}^D \omega_{t-d}\, \tau^\text{res}_d
 ```
 
-where $\tau^\text{res} = (\tau^\text{res}_0, \tau^\text{res}_1, \dots, \tau^\text{res}_D)$ is the sewer residence time distribution of pathogen particles.
+where $`(\tau^\text{res} = (\tau^\text{res}_0, \tau^\text{res}_1, \dots, \tau^\text{res}_D))`$ is the sewer residence time distribution of pathogen particles.
 
 ### Concentration at sampling site ($`\chi_t`$)
 ```math
@@ -177,7 +180,7 @@ where $\text{flow}_t$ is a measure of the total wastewater volume upstream from 
 \kappa_t = \chi_t + \boldsymbol{X} \, \eta
 ```
 
-where $\boldsymbol{X}$ is a $T \times K$ design matrix of $K$ different covariates describing the characteristics of samples on days 1 to $T$, and $\eta = (\eta_1, \eta_2, \dots, \eta_K)$ is a vector of coefficients which estimate the association of the sample covariates with the concentration. We place independent normal priors on $\eta_1, \eta_2, \dots, \eta_K$.
+where $\boldsymbol{X}$ is a $T \times K$ design matrix of $K$ different covariates describing the characteristics of samples on days 1 to $T$, and $`\eta = (\eta_1, \eta_2, \dots, \eta_K)`$ is a vector of coefficients which estimate the association of the sample covariates with the concentration. We place independent normal priors on $\eta_1, \eta_2, \dots, \eta_K$.
 
 Note that if on some days no samples were taken, the corresponding row of the design matrix $\boldsymbol{X}$ can be filled with arbitrary values, since they will not contribute to the likelihood.
 
@@ -218,7 +221,7 @@ Non-zero concentration measurements are modeled as log-normal distributed, i.e.
 ```math
 \Upsilon_{t,i} \,|\, \Upsilon_{t,i} > 0 \, \sim \text{Log-Normal}\left(\mu_{\Upsilon_{t}},\, \sigma_\Upsilon^2\right)
 ```
-where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$. Here, $\mu_{\Upsilon_{t}} = \log(\psi_t) - \frac{1}{2}\sigma_{\Upsilon}^2$ is the location and $\sigma_\Upsilon^2 = \log(1 + \nu_\Upsilon(\mu_\Upsilon)^2)$ the scale of the Log-Normal distribution.
+where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$. Here, $`\mu_{\Upsilon_{t}} = \log(\psi_t) - \frac{1}{2}\sigma_{\Upsilon}^2`$ is the location and $`\sigma_\Upsilon^2 = \log(1 + \nu_\Upsilon(\mu_\Upsilon)^2)`$ the scale of the Log-Normal distribution.
 
 Here, $\nu_\Upsilon(\mu_\Upsilon)$ is the coefficient of variation for the replication stage and modeled as a function of the expected concentration:
 ```math
