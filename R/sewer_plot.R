@@ -75,7 +75,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     theme(legend.title = element_blank()) +
     coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
 
-  if (!base_model %in% c("", data_to_plot$model)) {
+  if (!base_model %in% c("", as.character(data_to_plot$model))) {
     rlang::abort(paste0(
       'Base model "', base_model,
       '" could not be found in the provided `results` list.'
@@ -192,7 +192,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     geom_hline(yintercept = 1, linetype = "dashed") +
     coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
 
-  if (!base_model %in% c("", data_to_plot$model)) {
+  if (!base_model %in% c("", as.character(data_to_plot$model))) {
     rlang::abort(paste0(
       'Base model "', base_model,
       '" could not be found in the provided `results` list.'
@@ -366,7 +366,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
   ]
   }
 
-  if (!base_model %in% c("", concentration_pred$model)) {
+  if (!base_model %in% c("", as.character(concentration_pred$model))) {
     rlang::abort(paste0(
       'Base model "', base_model,
       '" could not be found in the provided `results` list.'
@@ -506,7 +506,7 @@ plot_load <- function(results, median = FALSE,
     load_pred$model <- factor(load_pred$model, levels = model_levels, ordered = TRUE)
   }
 
-  if (!base_model %in% c("", load_pred$model)) {
+  if (!base_model %in% c("", as.character(load_pred$model))) {
     rlang::abort(paste0(
       'Base model "', base_model,
       '" could not be found in the provided `results` list.'
