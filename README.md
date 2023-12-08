@@ -15,6 +15,8 @@ specifics of wastewater concentration measurements, offers comprehensive
 uncertainty quantification via MCMC sampling in `stan`, and provides
 easily configurable modeling components.
 
+<img src="man/figures/weekly_zurich_animated.gif" width="100%" />
+
 ## Model highlights
 
 **Measurements**  
