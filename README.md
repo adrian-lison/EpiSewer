@@ -5,6 +5,7 @@
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![MIT
 license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epinowcast/epinowcast/blob/master/LICENSE.md/)
+[![DOI](https://zenodo.org/badge/676114941.svg)](https://zenodo.org/doi/10.5281/zenodo.10569101)
 
 The `EpiSewer` R package provides a Bayesian generative model to
 estimate effective reproduction numbers from concentration measurements
