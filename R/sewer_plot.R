@@ -383,7 +383,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
         geom_line(
           data = measurements,
           aes(y = concentration),
-          color = "#a6a6a6", linetype = "dotted", size = 0.3
+          color = "#a6a6a6", linetype = "dotted", linewidth = 0.3
         )
       }
     } +
