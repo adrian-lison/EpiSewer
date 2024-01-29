@@ -219,7 +219,7 @@ droplets_observe <-
 #'   concentration measurements.
 #' @param cv_prior_sigma Prior (standard deviation) on the coefficient of
 #'   variation of concentration measurements.
-#' @param type One out of "constant" (default), or "ddPCR". If ddPCR, the
+#' @param cv_type One out of "constant" (default), or "ddPCR". If ddPCR, the
 #'   coefficient of variation is modeled as a function of the expected
 #'   concentration according to the statistical properties of ddPCR. In
 #'   particular, this model predicts a higher coefficient of variation at
@@ -257,7 +257,7 @@ noise_estimate <-
   function(replicates = FALSE,
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
-           type = "constant",
+           cv_type = "constant",
            ddPCR_prior_droplets_mu = 20000,
            ddPCR_prior_droplets_sigma = 5000,
            ddPCR_droplets_fixed = TRUE,
@@ -274,16 +274,16 @@ noise_estimate <-
     )
     modeldata$.init$nu_upsilon_a <- 0.1 # 10% coefficient of variation
 
-    if (type == "constant") {
-      modeldata$noise_type <- 0
+    if (cv_type == "constant") {
+      modeldata$cv_type <- 0
       modeldata$nu_upsilon_b_prior <- numeric(0)
       modeldata$nu_upsilon_b_fixed <- -1 # dummy value
       modeldata$.init$nu_upsilon_b <- numeric(0)
       modeldata$nu_upsilon_c_prior <- numeric(0)
       modeldata$nu_upsilon_c_fixed <- -1 # dummy value
       modeldata$.init$nu_upsilon_c <- numeric(0)
-    } else if (type == "ddPCR") {
-      modeldata$noise_type <- 1
+    } else if (cv_type == "ddPCR") {
+      modeldata$cv_type <- 1
       if (ddPCR_droplets_fixed) {
         modeldata$nu_upsilon_b_fixed <- ddPCR_prior_droplets_mu * 1e-4
         modeldata$nu_upsilon_b_prior <- numeric(0)
@@ -314,7 +314,7 @@ noise_estimate <-
 
     } else {
       rlang::abort(
-      paste0("Noise type `", type, "` not supported. Available options: 'constant', `ddPCR`."),
+      paste0("Noise type `", cv_type, "` not supported. Available options: 'constant', `ddPCR`."),
       )
     }
 
