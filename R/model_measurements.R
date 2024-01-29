@@ -46,6 +46,9 @@ model_measurements <- function(
 #'   samples are assumed to be equivolumetric composites over several dates. In
 #'   this case, the supplied dates represent the last day included in each
 #'   sample.
+#' @param distribution Parametric distribution for concentration measurements.
+#'   Currently supported are normal (default and recommended), and lognormal.
+#'   Distributions are truncated below zero if necessary.
 #' @param date_col Name of the column containing the dates.
 #' @param concentration_col Name of the column containing the measured
 #'   concentrations.
@@ -61,6 +64,7 @@ model_measurements <- function(
 concentrations_observe <-
   function(measurements = NULL,
            composite_window = 1,
+           distribution = "normal",
            date_col = "date",
            concentration_col = "concentration",
            replicate_col = NULL,
@@ -68,6 +72,16 @@ concentrations_observe <-
     if (!(composite_window %% 1 == 0 && composite_window > 0)) {
       rlang::abort(
         "The argument `composite_window` must be a positive integer."
+      )
+    }
+
+    if (!distribution %in% c("normal", "lognormal")) {
+      rlang::abort(
+        c(
+          "Only the following distributions are supported:",
+          "normal",
+          "lognormal"
+        )
       )
     }
 
@@ -158,6 +172,13 @@ concentrations_observe <-
     modeldata$.str$measurements[["concentrations"]] <- list(
       concentrations_observe = .str_details
     )
+
+    modeldata$obs_dist = switch(
+      distribution,
+      "normal" = 1,
+      "lognormal" = 2,
+      -1
+      )
 
     return(modeldata)
   }

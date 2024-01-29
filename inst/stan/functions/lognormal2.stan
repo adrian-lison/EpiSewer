@@ -115,11 +115,11 @@ real lognormal4_lpdf(vector y, vector mean_log, vector cv) {
   *
   * @return Vector of lognormal variates
   */
-array[] real lognormal4_rng(vector mean_log, real cv) {
+vector lognormal4_rng(vector mean_log, real cv) {
   int n = num_elements(mean_log);
   real sigma2 = log1p(cv^2);
   vector[n] mu = mean_log - sigma2/2;
-  return lognormal_rng(mu, sqrt(sigma2));
+  return to_vector(lognormal_rng(mu, sqrt(sigma2)));
 }
 
 /**
@@ -132,11 +132,11 @@ array[] real lognormal4_rng(vector mean_log, real cv) {
   *
   * @return Vector of lognormal variates
   */
-array[] real lognormal4_rng(vector mean_log, vector cv) {
+vector lognormal4_rng(vector mean_log, vector cv) {
   int n = num_elements(mean_log);
   vector[n] sigma2 = log1p(cv^2);
   vector[n] mu = mean_log - sigma2/2;
-  return lognormal_rng(mu, sqrt(sigma2));
+  return to_vector(lognormal_rng(mu, sqrt(sigma2)));
 }
 
 /**

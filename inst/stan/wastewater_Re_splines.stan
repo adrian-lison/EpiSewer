@@ -4,6 +4,7 @@ functions {
   #include functions/time_series.stan
   #include functions/approx_count_dist.stan
   #include functions/renewal.stan
+  #include functions/normal2.stan
   #include functions/lognormal2.stan
   #include functions/gamma2.stan
   #include functions/hurdle.stan
@@ -91,6 +92,11 @@ data {
   // first element: 0 = inv_softplus, 1 = scaled_logit
   // other elements: hyperparameters for the respective link function
   array[4] real R_link;
+
+  // Parametric distribution for observation likelihood
+  // 1 (default) = truncated normal
+  // 2 = lognormal
+  int<lower=1, upper=2> obs_dist;
 }
 transformed data {
   vector[G] gi_rev = reverse(generation_dist);
@@ -297,13 +303,16 @@ model {
       )));
     }
 
+    // concentration on unit scale
+    vector[n_measured - n_zero] concentrations_unit = exp(concentrations[i_nonzero]);
+
     // CV of each observation as a function of concentration
     vector[n_measured - n_zero] cv;
     if (noise_type == 0) { // constant
       cv = rep_vector(nu_upsilon_a, n_measured - n_zero);
     } else if (noise_type == 1) { // ddPCR
       cv = cv_ddPCR(
-        exp(concentrations[i_nonzero]),
+        concentrations_unit,
         nu_upsilon_a,
         (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4,
         (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5
@@ -311,11 +320,20 @@ model {
     }
 
     // measurements
-    target += lognormal4_lpdf(
-      measured_concentrations[i_nonzero] |
+    if (obs_dist == 1) {
+      measured_concentrations[i_nonzero] ~ normal(
+        concentrations_unit, concentrations_unit .* cv
+        ) T[0, ];
+    }
+    else if (obs_dist == 2) {
+      target += lognormal4_lpdf(
+        measured_concentrations[i_nonzero] |
         concentrations[i_nonzero], // log expectation
         cv // coefficient of variation
       );
+    } else {
+      reject("Distribution not supported.");
+    }
   }
 }
 generated quantities {
@@ -325,6 +343,7 @@ generated quantities {
   vector[T] predicted_concentration;
   {
     vector[T] pre_repl;
+    vector[T] exp_pre_repl;
     vector[T] cv;
     vector[T] above_LOD; // will be a vector of 0s and 1s
     if (pr_noise) {
@@ -340,17 +359,28 @@ generated quantities {
       above_LOD = rep_vector(1, T);
     }
 
+    exp_pre_repl = exp(pre_repl);
+
     if (noise_type == 0) {
       cv = rep_vector(nu_upsilon_a, T);
     } else if (noise_type == 1) {
       cv = cv_ddPCR(
-        exp(pre_repl),
+        exp_pre_repl,
         nu_upsilon_a,
         (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4,
         (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5
         );
     }
 
-    predicted_concentration = above_LOD .* to_vector(lognormal4_rng(pre_repl, cv));
+    vector[T] meas_conc;
+    if (obs_dist == 1) {
+      meas_conc = normal2_lb_rng(exp_pre_repl, cv, 0);
+    }
+    else if (obs_dist == 2) {
+      meas_conc = lognormal4_rng(pre_repl, cv);
+    } else {
+      reject("Distribution not supported.");
+    }
+    predicted_concentration = above_LOD .* meas_conc;
   }
 }
