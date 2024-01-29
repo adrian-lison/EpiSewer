@@ -256,7 +256,7 @@ model {
 
   // Prior on individual-level shedding load variation
   if (load_vari) {
-    nu_zeta[1] ~ normal(nu_zeta_prior[1], nu_zeta_prior[2]); // truncated normal
+    nu_zeta[1] ~ normal(nu_zeta_prior[1], nu_zeta_prior[2]) T[0, ]; // truncated normal
     zeta_raw ~ std_normal();
   }
 
@@ -266,13 +266,13 @@ model {
   }
 
   // Prior on cv of lognormal likelihood for measurements
-  nu_upsilon_a ~ normal(nu_upsilon_a_prior[1], nu_upsilon_a_prior[2]); // truncated normal
+  nu_upsilon_a ~ normal(nu_upsilon_a_prior[1], nu_upsilon_a_prior[2]) T[0, ]; // truncated normal
   if (cv_type > 0) {
     if (nu_upsilon_b_fixed < 0) {
-      nu_upsilon_b ~ normal(nu_upsilon_b_prior[1], nu_upsilon_b_prior[2]); // truncated normal
+      nu_upsilon_b ~ normal(nu_upsilon_b_prior[1], nu_upsilon_b_prior[2]) T[0, ]; // truncated normal
     }
     if (nu_upsilon_c_fixed < 0) {
-      nu_upsilon_c ~ normal(nu_upsilon_c_prior[1], nu_upsilon_c_prior[2]); // truncated normal
+      nu_upsilon_c ~ normal(nu_upsilon_c_prior[1], nu_upsilon_c_prior[2]) T[0, ]; // truncated normal
     }
   }
 
@@ -282,7 +282,7 @@ model {
     vector[n_measured] concentrations;
     if (pr_noise) {
       // Prior on cv of pre-replication concentrations
-      nu_psi[1] ~ normal(nu_psi_prior[1], nu_psi_prior[2]); // truncated normal
+      nu_psi[1] ~ normal(nu_psi_prior[1], nu_psi_prior[2]) T[0, ]; // truncated normal
       // lognormal distribution modeled as normal on the log scale
       // with mean = rho (mean_log = rho_log) and cv = nu_psi
       target += lognormal_log_lpdf(psi | rho_log, nu_psi[1]);
