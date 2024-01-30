@@ -9,10 +9,17 @@
   *
   * @return The log of the normal density of y
   */
-real normal2_lpdf(vector y, vector mean, vector cv) {
+real normal2_lpdf(vector y, vector mean, vector cv, real lb) {
   int n = num_elements(y);
   vector[n] sigma = mean .* cv;
-  return normal_lpdf(y | mean, sigma);
+  real tar = normal_lpdf(y | mean, sigma);
+  for (i in 1:n) {
+    if (y[i] < lb) {
+      tar += negative_infinity();
+      }
+  }
+  tar += -normal_lccdf(lb | mean, sigma);
+  return tar;
 }
 
 /**

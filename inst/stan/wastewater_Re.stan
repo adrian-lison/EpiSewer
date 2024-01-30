@@ -337,9 +337,12 @@ model {
 
     // measurements
     if (obs_dist == 1) {
-      measured_concentrations[i_nonzero] ~ normal(
-        concentrations_unit, concentrations_unit .* cv
-        ) T[0, ];
+      target += normal2_lpdf(
+        measured_concentrations[i_nonzero] |
+        concentrations_unit, // expectation
+        cv, // coefficient of variation
+        0 // truncate at zero
+      );
     }
     else if (obs_dist == 2) {
       target += lognormal4_lpdf(
