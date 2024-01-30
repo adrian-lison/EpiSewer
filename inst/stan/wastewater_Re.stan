@@ -310,11 +310,11 @@ model {
     // limit of detection
     if (LOD>0) {
      // below-LOD probabilities for zero measurements
-    target += sum(log_inv_logit(log_hurdle_smooth(
+    target += sum(log_hurdle_sigmoid_log(
       concentrations[i_zero], LOD_log, LOD_sharpness_log
-      )));
+      ));
       // above-LOD probabilities for non-zero measurements
-    target += sum(log1m_inv_logit(log_hurdle_smooth(
+    target += sum(log1m_exp(log_hurdle_sigmoid_log(
       concentrations[i_nonzero], LOD_log, LOD_sharpness_log
       )));
     }

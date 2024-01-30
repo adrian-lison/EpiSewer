@@ -1,5 +1,8 @@
 /**
-  * Returns a hurdle model probability on the logit scale
+  * Returns log probability of a logit sigmoid hurdle model
+  *
+  * The model uses a sigmoid function on the logit scale which has its
+  * inflection point at a specified threshold.
   *
   * @param x vector with inputs
   *
@@ -9,14 +12,18 @@
   *
   * @return The probability of being below the threshold, on the logit scale
   */
-vector hurdle_smooth(vector x, real threshold, real sharpness) {
-  return((threshold - x) / threshold * sharpness);
+vector log_hurdle_sigmoid(vector x, real threshold, real sharpness) {
+  return(log_inv_logit((threshold - x) / threshold * sharpness));
 }
 
 /**
-  * Returns a hurdle model probability on the logit scale from log scale inputs
+  * Returns log probability of a logit sigmoid hurdle model
+  * from log scale parameters
   *
-  * Uses log_sum_exp-style tricks for better efficiency and avoid direct
+  * The model uses a sigmoid function on the logit scale which has its
+  * inflection point at a specified threshold.
+  *
+  * Uses log_sum_exp-style tricks for better efficiency and avoids direct
   * exponentiation of the inputs. This is numerically more stable, especially
   * when the input and the threshold are not too far apart.
   *
@@ -28,7 +35,7 @@ vector hurdle_smooth(vector x, real threshold, real sharpness) {
   *
   * @return The probability of being below the threshold, on the logit scale
   */
-vector log_hurdle_smooth(vector x_log, real threshold_log, real sharpness_log) {
+vector log_hurdle_sigmoid_log(vector x_log, real threshold_log, real sharpness_log) {
   int n = num_elements(x_log);
   vector[n] hurdle = rep_vector(0, n);
   for (i in 1:n) {
@@ -42,6 +49,6 @@ vector log_hurdle_smooth(vector x_log, real threshold_log, real sharpness_log) {
       );
     }
   }
-  return(hurdle);
+  return(log_inv_logit(hurdle));
 }
 
