@@ -8,7 +8,7 @@ noise_estimate(
   replicates = FALSE,
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
-  type = "constant",
+  cv_type = "constant",
   ddPCR_prior_droplets_mu = 20000,
   ddPCR_prior_droplets_sigma = 5000,
   ddPCR_droplets_fixed = TRUE,
@@ -30,7 +30,7 @@ concentration measurements.}
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
 
-\item{type}{One out of "constant" (default), or "ddPCR". If ddPCR, the
+\item{cv_type}{One out of "constant" (default), or "ddPCR". If ddPCR, the
 coefficient of variation is modeled as a function of the expected
 concentration according to the statistical properties of ddPCR. In
 particular, this model predicts a higher coefficient of variation at
