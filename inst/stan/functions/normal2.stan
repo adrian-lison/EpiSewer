@@ -1,11 +1,14 @@
 /**
-  * The log of the normal density given mean and coefficient of variation (cv)
+  * The log of a normal density given mean and coefficient of variation (cv)
+  * with lower truncation
   *
   * @param y vector with observed data
   *
   * @param mean vector of means
   *
   * @param cv vector of coefficients of variation
+  *
+  * @param lb lower bound
   *
   * @return The log of the normal density of y
   */
@@ -24,10 +27,13 @@ real normal2_lpdf(vector y, vector mean, vector cv, real lb) {
 
 /**
   * Generate truncated normal variate given mean and coefficient of variation
+  * and lower truncation
   *
   * @param mean vector of means
   *
   * @param cv vector of coefficients of variation
+  *
+  * @param lb lower bound
   *
   * @return Vector of normal variates with mean exp(mean_log)
   * and standard deviation exp(sd_log)
