@@ -4,7 +4,7 @@
   *
   * @param concentration vector with concentrations (typically gc/mlWW)
   *
-  * @param a intercept of the CV (all other independent noise factors)
+  * @param a pre-PCR CV (all other noise factors)
   *
   * @param b number of droplets
   *
@@ -15,5 +15,6 @@
 vector cv_ddPCR(vector concentration, real a, real b, real c) {
   int n = num_elements(concentration);
   vector[n] conc_scaled = concentration * c;
-  return(a + sqrt(expm1(conc_scaled)/b) ./ conc_scaled);
+  vector[n] pre_PCR_factor = sqrt(1 + a^2 * b * conc_scaled);
+  return(pre_PCR_factor .* sqrt(expm1(conc_scaled)/b) ./ conc_scaled);
 }

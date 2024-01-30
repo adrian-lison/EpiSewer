@@ -37,7 +37,7 @@ data {
 
   // Coefficient of variation (CV) of lognormal likelihood of measurements
   int<lower=0, upper =1> cv_type; // 0 for constant, 1 for ddPCR
-  array[2] real nu_upsilon_a_prior; // prior for intercept of CV
+  array[2] real nu_upsilon_a_prior; // prior for pre-PCR CV
   real nu_upsilon_b_fixed;
   array[cv_type > 0 && nu_upsilon_b_fixed < 0 ? 2 : 0] real nu_upsilon_b_prior; // prior for parameter 2 of CV formula (number of droplets). Scaled by 1e-4 for numerical efficiency.
   real nu_upsilon_c_fixed;
