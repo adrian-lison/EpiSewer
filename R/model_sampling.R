@@ -46,6 +46,65 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
   return(modeldata)
 }
 
+#' Estimate weekday sample effects
+#'
+#' @description This option uses a log-linear regression model to estimate
+#'   sample weekday effects on the concentration. Concentrations can be
+#'   influenced by the time between sampling and shipping to the lab
+#'   (age-of-sample effect), and if shipment follows a weekly batch scheme, the
+#'   sampling weekday is a good proxy for the age at shipment.
+#'
+#' @param effect_prior_mu Prior (mean) on the regression coefficients.
+#' @param effect_prior_sigma Prior (standard deviation) on the regression
+#'   coefficients.
+#'
+#' @details Effects are estimated for weekdays Monday - Saturday, with Sunday as
+#'   the baseline. `EpiSewer` will fit a fixed-effects log-linear model, random
+#'   effects are currently not supported.
+#'
+#' @details The priors of this component have the following functional form:
+#' - regression coefficients: `Normal`
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {sample effect models}
+sample_effects_estimate_weekday <- function(
+    effect_prior_mu = 0,
+    effect_prior_sigma = 1,
+    modeldata = modeldata_init()) {
+  modeldata <- tbc(
+    "weekday_design_matrix",
+    {
+      weekdays <- lubridate::wday(
+        seq.Date(
+          modeldata$.metainfo$T_start_date,
+          modeldata$.metainfo$T_end_date,
+          by = "1 day"
+        ),
+        label = TRUE
+      )
+      design_matrix <- model.matrix(
+        ~wday,
+        data.frame(wday = weekdays),
+        contrasts.arg = list(wday = "contr.treatment")
+      )[, -1]
+      modeldata <-
+        sample_effects_estimate_matrix(
+          design_matrix, effect_prior_mu, effect_prior_sigma, modeldata
+        )
+    },
+    required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
+    modeldata = modeldata
+  )
+
+  modeldata$.str$sampling[["sample_effects"]] <- list(
+    sample_effects_estimate_weekday = c()
+  )
+
+  return(modeldata)
+}
+
 #' Estimate sample effects using a design matrix
 #'
 #' @description This option uses a log-linear regression model to estimate
@@ -111,65 +170,6 @@ sample_effects_estimate_matrix <- function(
 
   modeldata$.str$sampling[["sample_effects"]] <- list(
     sample_effects_estimate_matrix = c()
-  )
-
-  return(modeldata)
-}
-
-#' Estimate weekday sample effects
-#'
-#' @description This option uses a log-linear regression model to estimate
-#'   sample weekday effects on the concentration. Concentrations can be
-#'   influenced by the time between sampling and shipping to the lab
-#'   (age-of-sample effect), and if shipment follows a weekly batch scheme, the
-#'   sampling weekday is a good proxy for the age at shipment.
-#'
-#' @param effect_prior_mu Prior (mean) on the regression coefficients.
-#' @param effect_prior_sigma Prior (standard deviation) on the regression
-#'   coefficients.
-#'
-#' @details Effects are estimated for weekdays Monday - Saturday, with Sunday as
-#'   the baseline. `EpiSewer` will fit a fixed-effects log-linear model, random
-#'   effects are currently not supported.
-#'
-#' @details The priors of this component have the following functional form:
-#' - regression coefficients: `Normal`
-#'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
-#' @export
-#' @family {sample effect models}
-sample_effects_estimate_weekday <- function(
-    effect_prior_mu = 0,
-    effect_prior_sigma = 1,
-    modeldata = modeldata_init()) {
-  modeldata <- tbc(
-    "weekday_design_matrix",
-    {
-      weekdays <- lubridate::wday(
-        seq.Date(
-          modeldata$.metainfo$T_start_date,
-          modeldata$.metainfo$T_end_date,
-          by = "1 day"
-        ),
-        label = TRUE
-      )
-      design_matrix <- model.matrix(
-        ~wday,
-        data.frame(wday = weekdays),
-        contrasts.arg = list(wday = "contr.treatment")
-      )[, -1]
-      modeldata <-
-        sample_effects_estimate_matrix(
-          design_matrix, effect_prior_mu, effect_prior_sigma, modeldata
-        )
-    },
-    required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
-    modeldata = modeldata
-  )
-
-  modeldata$.str$sampling[["sample_effects"]] <- list(
-    sample_effects_estimate_weekday = c()
   )
 
   return(modeldata)
