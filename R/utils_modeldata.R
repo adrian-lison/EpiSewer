@@ -89,7 +89,10 @@ component_functions_ <- function(component, collapse = "\n",
     ))
   }
   all_fs <- names(rlang::ns_env("EpiSewer"))
-  arg_fs <- all_fs[stringr::str_detect(all_fs, paste0("^", component, "_"))]
+  arg_fs <- all_fs[stringr::str_detect(
+    # this excludes functions ending with _
+    all_fs, paste0("^", component, "_", ".*(?<!_)$")
+    )]
   if (length(arg_fs) > 0) {
     helpers <- paste0(prefix, arg_fs, suffix)
   } else {

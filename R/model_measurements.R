@@ -206,17 +206,18 @@ droplets_observe <-
     ))
   }
 
-#' Estimate measurement noise
+#' Estimate measurement noise (internal helper function)
 #'
 #' @description This option estimates the unexplained variation in wastewater
 #'   measurements. If multiple measurements (replicates) per sample are
 #'   provided, `EpiSewer` can also explicitly model variation before the
 #'   replication stage.
 #'
-#' @description Aside from a constant coefficient of variation model, a noise
-#'   model specialized for digital droplet PCR (`cv_type = "ddPCR"`) is
-#'   available, which may however also work with other quantification methods
-#'   such as qPCR.
+#' @description This helper function is called from [noise_estimate()] and
+#'   [noise_estimate_ddPCR()]. [noise_estimate()] is a constant coefficient of
+#'   variation model, [noise_estimate_ddPCR()] is a noise model specialized for
+#'   digital droplet PCR (`cv_type = "ddPCR"`), which may however
+#'   also work with other quantification methods such as qPCR.
 #'
 #' @param replicates Should replicates be used to explicitly model variation
 #'   before the replication stage?
@@ -249,34 +250,19 @@ droplets_observe <-
 #' @param pre_replicate_cv_prior_sigma Prior (standard deviation) on the
 #'   coefficient of variation of concentrations before the replication stage.
 #'
-#' @details The concentration scaling factor (see `ddPCR_prior_scaling_mu`,
-#'   `ddPCR_prior_scaling_sigma`, `ddPCR_scaling_fixed`) is the droplet volume,
-#'   scaled by the dilution of the wastewater in the ddPCR reaction. The
-#'   dilution accounts for all extraction and preparation steps. For example, if
-#'   the droplet volume is 4.5e-7 mL and the dilution of the wastewater is 100:3
-#'   (i.e. 100 gc/mL in the original wastewater sample correspond to 3 gc/mL in
-#'   the PCR reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 =
-#'   1.5e-5.
-#'
-#' @details The priors of this component have the following functional form:
-#' - coefficient of variation of concentration measurements: `Truncated normal`
-#' - coefficient of variation of concentration before the replication stage:
-#'   `Truncated normal`
-#'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
-#' @export
-noise_estimate <-
+noise_estimate_ <-
   function(replicates = FALSE,
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
            cv_type = "constant",
-           ddPCR_prior_droplets_mu = 20000,
-           ddPCR_prior_droplets_sigma = 5000,
-           ddPCR_droplets_fixed = TRUE,
-           ddPCR_prior_scaling_mu = 1.5e-5,
-           ddPCR_prior_scaling_sigma = 0.5e-5,
-           ddPCR_scaling_fixed = FALSE,
+           ddPCR_prior_droplets_mu = NULL,
+           ddPCR_prior_droplets_sigma = NULL,
+           ddPCR_droplets_fixed = NULL,
+           ddPCR_prior_scaling_mu = NULL,
+           ddPCR_prior_scaling_sigma = NULL,
+           ddPCR_scaling_fixed = NULL,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            modeldata = modeldata_init()) {
@@ -370,6 +356,115 @@ noise_estimate <-
     return(modeldata)
   }
 
+#' Estimate measurement noise
+#'
+#' @description This option estimates the unexplained variation in wastewater
+#'   measurements using a constant coefficient of variation model.
+#'
+#' @description If multiple measurements (replicates) per sample are provided,
+#'   `EpiSewer` can also explicitly model variation before the replication
+#'   stage.
+#'
+#' @description For a non-constant coefficient of variation model, see
+#'   [noise_estimate_ddPCR()].
+#'
+#' @details The priors of this component have the following functional form:
+#' - coefficient of variation of concentration measurements: `Truncated normal`
+#' - coefficient of variation of concentration before the replication stage:
+#'   `Truncated normal`
+#'
+#' @inheritParams noise_estimate_
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family [noise models]
+noise_estimate <-
+  function(replicates = FALSE,
+           cv_prior_mu = 0,
+           cv_prior_sigma = 1,
+           pre_replicate_cv_prior_mu = 0,
+           pre_replicate_cv_prior_sigma = 1,
+           modeldata = modeldata_init()) {
+    return(noise_estimate_(
+      replicates = replicates,
+      cv_prior_mu = cv_prior_mu,
+      cv_prior_sigma = cv_prior_sigma,
+      cv_type = "constant",
+      pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
+      pre_replicate_cv_prior_sigma = pre_replicate_cv_prior_sigma,
+      modeldata = modeldata
+      ))
+  }
+
+#' Estimate measurement noise for digital droplet PCR data
+#'
+#' @description This option estimates the unexplained variation in wastewater
+#'   measurements using a coefficient of variation model specialised for digital
+#'   droplet PCR. Specifically, the coefficient of variation is modeled as a
+#'   function of the expected concentration according to the statistical
+#'   properties of ddPCR.
+#'
+#' @description This model predicts a higher coefficient of variation at smaller
+#'   concentrations, which often leads to a better model fit, even for
+#'   measurements from other quantification methods such as qPCR.
+#'
+#' @description If multiple measurements (replicates) per sample are provided,
+#'   `EpiSewer` can also explicitly model variation before the replication
+#'   stage.
+#'
+#' @details The concentration scaling factor (see `ddPCR_prior_scaling_mu`,
+#'   `ddPCR_prior_scaling_sigma`, `ddPCR_scaling_fixed`) is the droplet volume,
+#'   scaled by the dilution of the wastewater in the ddPCR reaction. The
+#'   dilution accounts for all extraction and preparation steps. For example, if
+#'   the droplet volume is 4.5e-7 mL and the dilution of the wastewater is 100:3
+#'   (i.e. 100 gc/mL in the original wastewater sample correspond to 3 gc/mL in
+#'   the PCR reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 =
+#'   1.5e-5.
+#'
+#' @details The priors of this component have the following functional form:
+#' - coefficient of variation of concentration measurements: `Truncated normal`
+#' - prior for number of droplets in ddPCR: `Truncated normal`
+#' - prior for concentration scaling factor of ddPCR: `Truncated normal`
+#' - coefficient of variation of concentration before the replication stage:
+#'   `Truncated normal`
+#'
+#' @inheritParams noise_estimate_
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family [noise models]
+#' @seealso [LOD_estimate_ddPCR] for a limit of detection model specialised for
+#'   ddPCR.
+noise_estimate_ddPCR <-
+  function(replicates = FALSE,
+           cv_prior_mu = 0,
+           cv_prior_sigma = 1,
+           ddPCR_prior_droplets_mu = 20000,
+           ddPCR_prior_droplets_sigma = 5000,
+           ddPCR_droplets_fixed = TRUE,
+           ddPCR_prior_scaling_mu = 1.5e-5,
+           ddPCR_prior_scaling_sigma = 0.5e-5,
+           ddPCR_scaling_fixed = FALSE,
+           pre_replicate_cv_prior_mu = 0,
+           pre_replicate_cv_prior_sigma = 1,
+           modeldata = modeldata_init()) {
+    return(noise_estimate_(
+      replicates = replicates,
+      cv_prior_mu = cv_prior_mu,
+      cv_prior_sigma = cv_prior_sigma,
+      cv_type = "ddPCR",
+      ddPCR_prior_droplets_mu = ddPCR_prior_droplets_mu,
+      ddPCR_prior_droplets_sigma = ddPCR_prior_droplets_sigma,
+      ddPCR_droplets_fixed = ddPCR_droplets_fixed,
+      ddPCR_prior_scaling_mu = ddPCR_prior_scaling_mu,
+      ddPCR_prior_scaling_sigma = ddPCR_prior_scaling_sigma,
+      ddPCR_scaling_fixed = ddPCR_scaling_fixed,
+      pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
+      pre_replicate_cv_prior_sigma = pre_replicate_cv_prior_sigma,
+      modeldata = modeldata
+    ))
+  }
+
 #' Do not model a limit of detection
 #'
 #' @description This option drops all zero measurements from the likelihood and
@@ -457,7 +552,7 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
   return(modeldata)
 }
 
-#' Estimate a limit of detection model for ddPCR data
+#' Estimate a limit of detection model for digital droplet PCR data
 #'
 #' @description Pathogen concentrations below a certain threshold may not be
 #'   detectable and thus erroneously measured as 0. This option adjusts for a
@@ -470,8 +565,9 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
 #'
 #' @details The limit of detection is modeled using a hurdle model. The model
 #'   uses the number of droplets in the ddPCR reaction and the concentration
-#'   scaling factor as defined and estimated by [noise_estimate()]. It is
-#'   therefore necessary to specify `cv_type = "ddPCR"` in [noise_estimate()].
+#'   scaling factor as defined and estimated by [noise_estimate_ddPCR()]. It can
+#'   therefore only be used together with `noise = noise_estimate_ddPCR()` in
+#'   [model_measurements()].
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -492,8 +588,9 @@ LOD_estimate_ddPCR <- function(modeldata = modeldata_init()) {
     required_values = c(1),
     advice = paste0(
       'To use {.run [LOD_estimate_ddPCR()](EpiSewer::LOD_estimate_ddPCR()}, ',
-      'you must specify cv_type = "ddPCR" in ',
-      '{.run [noise_estimate()](EpiSewer::noise_estimate()}.'
+      'you must specify noise = ',
+      '{.run [noise_estimate_ddPCR()](EpiSewer::noise_estimate_ddPCR()} in ',
+      '{.run [model_measurements()](EpiSewer::model_measurements()}.'
       ),
     modeldata = modeldata
     )

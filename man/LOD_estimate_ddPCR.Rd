@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_measurements.R
 \name{LOD_estimate_ddPCR}
 \alias{LOD_estimate_ddPCR}
-\title{Estimate a limit of detection model for ddPCR data}
+\title{Estimate a limit of detection model for digital droplet PCR data}
 \usage{
 LOD_estimate_ddPCR(modeldata = modeldata_init())
 }
@@ -34,8 +34,9 @@ detection, but we don't know what the exact concentration was.
 \details{
 The limit of detection is modeled using a hurdle model. The model
 uses the number of droplets in the ddPCR reaction and the concentration
-scaling factor as defined and estimated by \code{\link[=noise_estimate]{noise_estimate()}}. It is
-therefore necessary to specify \code{cv_type = "ddPCR"} in \code{\link[=noise_estimate]{noise_estimate()}}.
+scaling factor as defined and estimated by \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}. It can
+therefore only be used together with \code{noise = noise_estimate_ddPCR()} in
+\code{\link[=model_measurements]{model_measurements()}}.
 }
 \seealso{
 Other {LOD models}: 

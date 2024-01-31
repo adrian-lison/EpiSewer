@@ -8,13 +8,6 @@ noise_estimate(
   replicates = FALSE,
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
-  cv_type = "constant",
-  ddPCR_prior_droplets_mu = 20000,
-  ddPCR_prior_droplets_sigma = 5000,
-  ddPCR_droplets_fixed = TRUE,
-  ddPCR_prior_scaling_mu = 1.5e-05,
-  ddPCR_prior_scaling_sigma = 5e-06,
-  ddPCR_scaling_fixed = FALSE,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   modeldata = modeldata_init()
@@ -29,33 +22,6 @@ concentration measurements.}
 
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
-
-\item{cv_type}{One out of "constant" (default), or "ddPCR". If ddPCR, the
-coefficient of variation is modeled as a function of the expected
-concentration according to the statistical properties of ddPCR. In
-particular, this model predicts a higher coefficient of variation at
-smaller concentrations, which often leads to a better model fit.}
-
-\item{ddPCR_prior_droplets_mu}{Prior (mean) on the number of droplets in the
-ddPCR reaction.}
-
-\item{ddPCR_prior_droplets_sigma}{Prior (standard deviation) on the number of
-droplets in the ddPCR reaction.}
-
-\item{ddPCR_droplets_fixed}{If TRUE (default), the number of droplets is
-fixed to the prior mean and not estimated. This is recommended if no
-replicates are available.}
-
-\item{ddPCR_prior_scaling_mu}{Prior (mean) on the concentration scaling
-factor for the ddPCR reaction. The concentration scaling factor is the
-droplet volume, scaled by the dilution of the wastewater in the ddPCR
-reaction. See details for further explanation.}
-
-\item{ddPCR_prior_scaling_sigma}{Prior (standard deviation) on the
-concentration scaling factor for the ddPCR reaction.}
-
-\item{ddPCR_scaling_fixed}{If TRUE, the concentration scaling factor is fixed
-to the prior mean and not estimated.}
 
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
 of concentrations before the replication stage.}
@@ -79,24 +45,16 @@ performed before model fitting (\code{.checks}).
 }
 \description{
 This option estimates the unexplained variation in wastewater
-measurements. If multiple measurements (replicates) per sample are
-provided, \code{EpiSewer} can also explicitly model variation before the
-replication stage.
+measurements using a constant coefficient of variation model.
 
-Aside from a constant coefficient of variation model, a
-noise model specialized for digital droplet PCR (\code{cv_type = "ddPCR"}) is
-available, which may however also work with other quantification
-methods such as qPCR.
+If multiple measurements (replicates) per sample are provided,
+\code{EpiSewer} can also explicitly model variation before the replication
+stage.
+
+For a non-constant coefficient of variation model, see
+\code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}.
 }
 \details{
-The concentration scaling factor (see \code{ddPCR_prior_scaling_mu},
-\code{ddPCR_prior_scaling_sigma}, \code{ddPCR_scaling_fixed}) is the droplet volume,
-scaled by the dilution of the wastewater in the ddPCR reaction. The
-dilution accounts for all extraction and preparation steps. For example, if
-the droplet volume is 4.5e-4 and the dilution of the wastewater is 30 (i.e.
-30 gc/mL in the original wastewater sample correspond to 1 gc/mL in the PCR
-reaction), then the overall scaling factor is 4.5e-4 / 30 = 1.5e-5.
-
 The priors of this component have the following functional form:
 \itemize{
 \item coefficient of variation of concentration measurements: \verb{Truncated normal}
@@ -104,3 +62,8 @@ The priors of this component have the following functional form:
 \verb{Truncated normal}
 }
 }
+\seealso{
+Other \link{noise models}: 
+\code{\link{noise_estimate_ddPCR}()}
+}
+\concept{\link{noise models}}
