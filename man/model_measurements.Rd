@@ -20,8 +20,8 @@ Modeling options:
 \item{noise}{Measurement noise due to unexplained variation in sampling
 and lab analysis. Modeling options:
 \itemize{
-\item \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}
 \item \code{\link[=noise_estimate]{noise_estimate()}}
+\item \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}
 }}
 
 \item{LOD}{Limit of detection. Concentrations below a certain threshold may

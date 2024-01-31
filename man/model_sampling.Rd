@@ -14,9 +14,9 @@ or different sampling or storage methods. \code{EpiSewer} allows to estimate
 such effects using covariates that describe differences between the samples.
 Modeling options:
 \itemize{
-\item \code{\link[=sample_effects_estimate_weekday]{sample_effects_estimate_weekday()}}
 \item \code{\link[=sample_effects_none]{sample_effects_none()}}
 \item \code{\link[=sample_effects_estimate_matrix]{sample_effects_estimate_matrix()}}
+\item \code{\link[=sample_effects_estimate_weekday]{sample_effects_estimate_weekday()}}
 }}
 }
 \value{

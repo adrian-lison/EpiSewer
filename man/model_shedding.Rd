@@ -42,8 +42,8 @@ sewage system. Modeling options:
 of shedding may vary between individuals. Modeling this variation can better
 account for uncertainty especially at low incidence. Modeling options:
 \itemize{
-\item \code{\link[=load_variation_estimate]{load_variation_estimate()}}
 \item \code{\link[=load_variation_none]{load_variation_none()}}
+\item \code{\link[=load_variation_estimate]{load_variation_estimate()}}
 }}
 }
 \value{

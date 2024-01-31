@@ -11,8 +11,8 @@ model_sewage(flows = flows_observe(), residence_dist = residence_dist_assume())
 to rainfall or industrial discharge, and directly influences pathogen
 concentrations in the wastewater. Modeling options:
 \itemize{
-\item \code{\link[=flows_assume]{flows_assume()}}
 \item \code{\link[=flows_observe]{flows_observe()}}
+\item \code{\link[=flows_assume]{flows_assume()}}
 }}
 
 \item{residence_dist}{Sewer residence time distribution for pathogen

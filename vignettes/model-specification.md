@@ -55,7 +55,7 @@ smoothing).
 
 ``` r
 EpiSewer::component_functions("R")
-#> [1] "R_estimate_rw()"      "R_estimate_ets()"     "R_estimate_splines()"
+#> [1] "R_estimate_ets()"     "R_estimate_splines()" "R_estimate_rw()"
 ```
 
 #### ❗ Modeling restrictions

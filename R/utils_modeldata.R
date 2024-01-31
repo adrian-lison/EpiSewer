@@ -59,10 +59,12 @@ verify_is_modeldata <- function(modeldata, arg_name) {
     )]
     if (length(arg_fs) > 0) {
       functions <- paste0(arg_fs, "()")
-      functions_cli <- paste0("{.help [",functions,"](EpiSewer::",functions,"}")
+      functions_cli <- paste0(
+        "{.help [", functions, "](EpiSewer::", functions, "}"
+      )
       error_msg <- paste(error_msg, "Available functions:")
       error_msg <- c(error_msg, functions_cli)
-      names(error_msg) <- c("!", rep("*", length(error_msg)-1))
+      names(error_msg) <- c("!", rep("*", length(error_msg) - 1))
     }
     cli::cli_abort(error_msg, call = rlang::caller_env())
   }
@@ -86,21 +88,44 @@ verify_is_modeldata <- function(modeldata, arg_name) {
 component_functions_ <- function(component, collapse = "\n",
                                  prefix = "- [", suffix = "()]") {
   if (!component %in% all_components()) {
-    cli::cli_abort(c(
+    err_message <- c(
       paste(
         "No valid component provided.",
         "Must be one out of:"
       ),
       all_components()
-    ))
+    )
+    names(err_message) <- c("!", rep("*", length(err_message) - 1))
+    cli::cli_abort(err_message)
   }
   all_fs <- names(rlang::ns_env("EpiSewer"))
   arg_fs <- all_fs[stringr::str_detect(
     # this excludes functions ending with _
     all_fs, paste0("^", component, "_", ".*(?<!_)$")
-    )]
-  if (length(arg_fs) > 0) {
-    helpers <- paste0(prefix, arg_fs, suffix)
+  )]
+
+  # sort values in arg_fs according to following scheme
+  # 1. values ending with "_none" first
+  # 2. values ending with "_observe" second
+  # 3. values ending with "_assume" third
+  # 4. values ending with "_estimate" fourth
+  # 5. values ending with "_estimate" plus another suffix fifth
+  arg_fs_none <- arg_fs[stringr::str_detect(arg_fs, "_none$")]
+  arg_fs_observe <- arg_fs[stringr::str_detect(arg_fs, "_observe$")]
+  arg_fs_assume <- arg_fs[stringr::str_detect(arg_fs, "_assume$")]
+  arg_fs_estimate <- arg_fs[stringr::str_detect(arg_fs, "_estimate$")]
+  arg_fs_estimate_other <- arg_fs[stringr::str_detect(arg_fs, "_estimate_")]
+  arg_fs_estimate_other <- arg_fs_estimate_other[
+    !arg_fs_estimate_other %in% c(
+      arg_fs_none, arg_fs_observe, arg_fs_assume, arg_fs_estimate
+    )
+  ]
+  arg_fs_sorted <- c(
+    arg_fs_none, arg_fs_observe, arg_fs_assume, arg_fs_estimate, arg_fs_estimate_other
+  )
+
+  if (length(arg_fs_sorted) > 0) {
+    helpers <- paste0(prefix, arg_fs_sorted, suffix)
   } else {
     helpers <- c()
   }
