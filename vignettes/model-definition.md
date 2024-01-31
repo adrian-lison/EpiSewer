@@ -206,7 +206,7 @@ where $\mu_\Psi = \log(\rho_t) - \frac{1}{2}\sigma_\Psi^2$ is the location and $
 We implement a hurdle model for the limit of detection, where the probability for a zero measurement is described by an exponentially decreasing function of the underlying concentration, i.e. 
 
 ```math
-P(\Upsilon_{t,i} = 0 | \Psi_t = \psi_t) = e^{-\psi_t\, c\, b \}
+P(\Upsilon_{t,i} = 0 | \Psi_t = \psi_t) = e^{-\psi_t\, c\, b}
 ```
 
 where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$, and $b$ and $c$ are parameters of the PCR. The PCR parameters are either estimated by the coefficient of variation model (see below, this may require informative priors and/or replicate measurements), or the product $c\, b$ can be back-calculated if the user provides an LOD value established from a lab experiment. The functional form of the LOD model is based on the statistical properties of digital droplet PCR and corresponds to a binomial likelihood for zero successes. For non-zero measurements, we conversely have
@@ -225,7 +225,7 @@ where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measuremen
 
 Specifically, $\nu_\Upsilon(\mu_\Upsilon)$ is the coefficient of variation for the replication stage and modeled as a function of the expected concentration:
 ```math
-\nu_\Upsilon(\mu_\Upsilon) = \frac{1}{\sqrt{b}}\, \frac{\sqrt{exp(\mu_\Upsilon\, c) – 1}}{\mu_\Upsilon\, c}\, \sqrt{1 + a^2\, b\, \mu_\Upsilon\, c\}
+\nu_\Upsilon(\mu_\Upsilon) = \frac{1}{\sqrt{b}}\, \frac{\sqrt{exp(\mu_\Upsilon\, c) – 1}}{\mu_\Upsilon\, c}\, \sqrt{1 + a^2\, b\, \mu_\Upsilon\, c}
 ```
 with $a$, $b$ and $c$ as parameters to be estimated. The functional form is derived from the statistical properties of the binomial-distributed positive droplet counts in the ddPCR reaction, where
 
