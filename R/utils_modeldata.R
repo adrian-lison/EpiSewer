@@ -155,6 +155,7 @@ set_prior <- function(param, dist = "normal", ...) {
 #'   returned (`TRUE` if all required variables are present)
 modeldata_check <- function(modeldata,
                             required,
+                            required_values = NULL,
                             descriptions = modeldata_descriptions(),
                             run_before = modeldata_var_requirements(),
                             advice = NULL,
@@ -164,7 +165,7 @@ modeldata_check <- function(modeldata,
     rlang::abort("Please supply a modeldata object.")
   }
 
-  var_check <- check_list_nested(modeldata, required)
+  var_check <- check_list_nested(modeldata, required, required_values)
   if (throw_error) {
     if (!all(var_check)) {
       missing_vars <- required[!var_check]
@@ -312,10 +313,14 @@ modeldata_validate <- function(modeldata,
   for (modeldata_sub in list(modeldata$.metainfo, modeldata, modeldata$.init)) {
     for (name in names(modeldata_sub)) {
       if (any(c("tbe", "tbc") %in% class(modeldata_sub[[name]]))) {
-        rlang::abort(paste0(
+        error_message <- paste0(
           "There is still information missing to compute ",
           "`", name, "`"
-        ))
+        )
+        if (!is.null(modeldata_sub[[name]]$advice)) {
+          error_message <- c(error_message, modeldata_sub[[name]]$advice)
+        }
+        cli::cli_abort(error_message)
       }
     }
   }

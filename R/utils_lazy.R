@@ -250,8 +250,9 @@ solve.tbe <- function(x, modeldata, throw_error = TRUE) {
 #'   `.metainfo`). This means that there can also be cascades: once a `tbp` is
 #'   resolved, this may lead to an update of some metainformation, such that a
 #'   `tbc` can be resolved in the next update.
-tbc <- function(f_name, f_expr, required = c(), modeldata = NULL,
-                calling_env = rlang::caller_env()) {
+tbc <- function(f_name, f_expr, required = c(), required_values = NULL,
+                advice = NULL,
+                modeldata = NULL, calling_env = rlang::caller_env()) {
   if (is.null(modeldata)) {
     modeldata_temp <- calling_env$modeldata
   } else {
@@ -271,7 +272,8 @@ tbc <- function(f_name, f_expr, required = c(), modeldata = NULL,
   environment(f_func)$f_lazy <- f_lazy
 
   computable <- modeldata_check(
-    modeldata_temp, required = required, throw_error = FALSE
+    modeldata_temp, required = required, required_values = required_values,
+    advice = advice, throw_error = FALSE
   )
 
   if (computable) {
@@ -281,6 +283,8 @@ tbc <- function(f_name, f_expr, required = c(), modeldata = NULL,
       f_name = f_name,
       f_func = f_func,
       required = required,
+      required_values = required_values,
+      advice = advice,
       calling_f <- tail(rlang::trace_back()$call, 2)[[1]]
       )
     class(tbc_object) <- "tbc"
@@ -300,7 +304,8 @@ print.tbc <- function(x) {
 
 solve.tbc <- function(x, modeldata, throw_error = TRUE) {
   computable <- modeldata_check(
-    modeldata, x$required, calling_env = x$calling_f, throw_error = throw_error
+    modeldata, x$required, required_values = x$required_values,
+    advice = x$advice, calling_env = x$calling_f, throw_error = throw_error
   )
   if (computable) {
     modeldata <- x$f_func(modeldata)

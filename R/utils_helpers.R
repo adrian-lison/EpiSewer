@@ -117,9 +117,12 @@ logistic_deriv <- function(x, c, a, k) {
   return(a*c*k*exp(k*x)/((a+exp(k*x))^2))
 }
 
-check_list_nested <- function(list_to_check, flat_var) {
+check_list_nested <- function(list_to_check, flat_var, var_vals = NULL) {
+  if (is.null(var_vals)) {
+    var_vals <- rep(NA, length(flat_var))
+  }
   vars_levels <- stringr::str_split(flat_var, "\\$")
-  presence <- sapply(vars_levels, function(levels) {
+  presence <- mapply(function(levels, value) {
     check_l <- list_to_check
     for (l in levels) {
       if (!(l %in% names(check_l))) {
@@ -130,10 +133,12 @@ check_list_nested <- function(list_to_check, flat_var) {
     }
     if (any(c("tbe", "tbc", "tbp") %in% class(check_l))) {
       return(FALSE)
+    } else if (!is.na(value)) {
+      return(check_l == value)
     } else {
       return(TRUE)
     }
-  })
+  }, levels = vars_levels, value = var_vals)
   return(presence)
 }
 
