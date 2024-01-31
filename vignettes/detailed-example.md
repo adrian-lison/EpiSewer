@@ -132,17 +132,18 @@ function for each option. To see all available options, you can use
 
 ``` r
 component_functions("LOD")
-#> [1] "LOD_none()"   "LOD_assume()"
+#> [1] "LOD_none()"           "LOD_assume()"         "LOD_estimate_ddPCR()"
 ```
 
 For example, we could assume a limit of detection of `2.56 gc/mL` (based
-on a lab experiment by EAWAG) as follows:
+on a lab experiment by EAWAG, this was the lowest concentration at which
+still 95% of replicates were positive) as follows:
 
 ``` r
 ww_measurements3 <- model_measurements(
   concentrations = concentrations_observe(measurements = measurements_sparse),
   noise = noise_estimate(cv_prior_mu = 0.5, cv_prior_sigma = 0.1), # prior on coefficient of variation
-  LOD = LOD_assume(limit = 2.56)
+  LOD = LOD_assume(limit = 2.56, prob = 0.95)
 )
 ```
 
@@ -274,14 +275,17 @@ which can now be passed to the `EpiSewer()` function to estimate the
 effective reproduction number:
 
 ``` r
+ww_measurements <- model_measurements()
 options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
+  data = sewer_data(measurements = measurements_sparse),
   measurements = ww_measurements,
   sampling = ww_sampling,
   sewage = ww_sewage,
   shedding = ww_shedding,
   infections = ww_infections,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4), model = model_stan_opts(package = "EpiSewer")),
+  run_fit = FALSE
 )
 ```
 
