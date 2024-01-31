@@ -213,10 +213,10 @@ droplets_observe <-
 #'   provided, `EpiSewer` can also explicitly model variation before the
 #'   replication stage.
 #'
-#' @description Aside from a constant coefficient of variation model, a
-#'   noise model specialized for digital droplet PCR (`cv_type = "ddPCR"`) is
-#'   available, which may however also work with other quantification
-#'   methods such as qPCR.
+#' @description Aside from a constant coefficient of variation model, a noise
+#'   model specialized for digital droplet PCR (`cv_type = "ddPCR"`) is
+#'   available, which may however also work with other quantification methods
+#'   such as qPCR.
 #'
 #' @param replicates Should replicates be used to explicitly model variation
 #'   before the replication stage?
@@ -253,9 +253,10 @@ droplets_observe <-
 #'   `ddPCR_prior_scaling_sigma`, `ddPCR_scaling_fixed`) is the droplet volume,
 #'   scaled by the dilution of the wastewater in the ddPCR reaction. The
 #'   dilution accounts for all extraction and preparation steps. For example, if
-#'   the droplet volume is 4.5e-4 and the dilution of the wastewater is 30 (i.e.
-#'   30 gc/mL in the original wastewater sample correspond to 1 gc/mL in the PCR
-#'   reaction), then the overall scaling factor is 4.5e-4 / 30 = 1.5e-5.
+#'   the droplet volume is 4.5e-7 mL and the dilution of the wastewater is 100:3
+#'   (i.e. 100 gc/mL in the original wastewater sample correspond to 3 gc/mL in
+#'   the PCR reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 =
+#'   1.5e-5.
 #'
 #' @details The priors of this component have the following functional form:
 #' - coefficient of variation of concentration measurements: `Truncated normal`
