@@ -684,7 +684,7 @@ add_link_function <- function(link, R_max, modeldata) {
   } else if (link == "scaled_logit") {
     # logistic function for scaled logit link
     if (R_max < 3) {
-      rlang::abort("Please chose a maximum R value greater or equal to 3.")
+      cli::cli_abort("Please chose a maximum R value greater or equal to 3.")
     }
     modeldata$.metainfo$R_max <- R_max
     a_k <- logistic_find_a_k(R_max)
@@ -693,7 +693,7 @@ add_link_function <- function(link, R_max, modeldata) {
     # linear with slope 1 around R=1
     modeldata$R_link <- c(1, R_max, a_k$a, a_k$k)
   } else {
-    rlang::abort(c(
+    cli::cli_abort(c(
       paste0("'", link, "' is not a valid link function. ",
              "Please use one of:"), "inv_softplus", "scaled_logit"))
   }

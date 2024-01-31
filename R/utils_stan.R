@@ -37,7 +37,7 @@ get_stan_model <- function(
 
   if (is.null(model_filename)) {
     if (is.null(model_metainfo)) {
-      rlang::abort(
+      cli::cli_abort(
         c(
           "Please either provide ",
           "`model_filename` and `model_folder` (i.e. path to a stan model) or",
@@ -52,7 +52,7 @@ get_stan_model <- function(
     } else if (model_metainfo$R_estimate_approach == "rw") {
       model_filename <- "wastewater_Re.stan"
     } else {
-      rlang::abort(
+      cli::cli_abort(
         paste(
           "No suitable model available,",
           "please supply a stan model yourself",
@@ -227,7 +227,7 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 #' stan file and all included stan files
 get_checksum_model <- function(stanmodel, only_functions = FALSE) {
   if ("try-error" %in% class(stanmodel)) {
-    rlang::abort("There was an error compiling the stan model.")
+    cli::cli_abort("There was an error compiling the stan model.")
   }
   stanmodelcode <- paste(stanmodel$code(), collapse = " ")
   includes <- stringr::str_extract_all(

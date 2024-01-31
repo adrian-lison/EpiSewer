@@ -229,7 +229,7 @@ setMethod("run", c("EpiSewerJob"), function(job) {
         fit_res <- fit_res$value
       } else {
         cat("\n")
-        rlang::warn(
+        cli::cli_warn(
           paste(
             "There was an error while fitting the model.",
             "Only the model input is returned."
@@ -246,7 +246,7 @@ setMethod("run", c("EpiSewerJob"), function(job) {
     },
     error = function(err) {
       cat("\n")
-      rlang::warn(c(
+      cli::cli_warn(c(
         paste(
           "There was an error while fitting the model.",
           "Only the model input is returned."

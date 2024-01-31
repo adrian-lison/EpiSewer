@@ -58,7 +58,7 @@ verify_is_modeldata <- function(modeldata, arg_name) {
       error_msg <- paste(error_msg, "Available functions:")
       error_msg <- c(error_msg, paste0(arg_fs, "()"))
     }
-    rlang::abort(error_msg, call = rlang::caller_env())
+    cli::cli_abort(error_msg, call = rlang::caller_env())
   }
 }
 
@@ -80,7 +80,7 @@ verify_is_modeldata <- function(modeldata, arg_name) {
 component_functions_ <- function(component, collapse = "\n",
                                  prefix = "- [", suffix = "()]") {
   if (!component %in% all_components()) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       paste(
         "No valid component provided.",
         "Must be one out of:"
@@ -162,7 +162,7 @@ modeldata_check <- function(modeldata,
                             throw_error = TRUE,
                             calling_env = rlang::caller_env()) {
   if (!class(modeldata) == "modeldata") {
-    rlang::abort("Please supply a modeldata object.")
+    cli::cli_abort("Please supply a modeldata object.")
   }
 
   var_check <- check_list_nested(modeldata, required, required_values)
@@ -195,7 +195,7 @@ modeldata_check <- function(modeldata,
         run_before_msg <- NULL
       }
       error_msg <- paste(c(error_msg, run_before_msg, advice), collapse = "\n")
-      rlang::abort(error_msg, call = calling_env)
+      cli::cli_abort(error_msg, call = calling_env)
     } else {
       return(all(var_check))
     }
@@ -230,7 +230,7 @@ modeldata_validate <- function(modeldata,
                                assumptions = list(),
                                defaults = modeldata_defaults()) {
   if (!class(modeldata) == "modeldata") {
-    rlang::abort("Please supply a modeldata object.")
+    cli::cli_abort("Please supply a modeldata object.")
   }
 
   # check for conflicting data
@@ -261,7 +261,7 @@ modeldata_validate <- function(modeldata,
         !identical(
           assumptions[[o]], modeldata$.sewer_assumptions[[comp]][o][[1]]
         )) {
-        rlang::abort(paste0(
+        cli::cli_abort(paste0(
           "You provided different assumptions for `", o,
           "` in sewer_assumptions() and ", comp, "()."
         ))
@@ -299,7 +299,7 @@ modeldata_validate <- function(modeldata,
             )
           )
         }
-        rlang::abort(c(
+        cli::cli_abort(c(
           paste0(
             "Please provide the following information to ", name, "():"
           ),
@@ -350,7 +350,7 @@ modeldata_combine <- function(...) {
 
   lapply(modeldata_sets, function(md) {
     if (!class(md) == "modeldata") {
-      rlang::abort("Please supply a modeldata object.")
+      cli::cli_abort("Please supply a modeldata object.")
     }
   })
 
@@ -409,7 +409,7 @@ modeldata_update <- function(modeldata,
                              data = list(), assumptions = list(),
                              throw_error = TRUE) {
   if (!class(modeldata) == "modeldata") {
-    rlang::abort("Please supply a modeldata object.")
+    cli::cli_abort("Please supply a modeldata object.")
   }
 
   modeldata <- modeldata_update_metainfo(modeldata)

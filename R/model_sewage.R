@@ -105,7 +105,7 @@ flows_observe <-
       {
         required_data_cols <- c(date_col, flow_col)
         if (!all(required_data_cols %in% names(flows))) {
-          rlang::abort(
+          cli::cli_abort(
             c(paste(
               "The following columns must be present",
               "in the provided flow `data.frame`:",
@@ -119,7 +119,7 @@ flows_observe <-
         flows[[date_col]] <- as.Date(flows[[date_col]])
 
         if (any(duplicated(flows[[date_col]]))) {
-          rlang::abort("Flow data is ambigious, duplicate dates found.")
+          cli::cli_abort("Flow data is ambigious, duplicate dates found.")
         }
 
         modeldata <- tbc(
@@ -137,7 +137,7 @@ flows_observe <-
                 origin = lubridate::origin
               )
             if (length(missing_flow_dates) > 0) {
-              rlang::abort(paste(
+              cli::cli_abort(paste(
                 "Missing flow values for the following dates:",
                 paste(missing_flow_dates, collapse = ", ")
               ))

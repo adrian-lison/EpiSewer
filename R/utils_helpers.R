@@ -58,13 +58,13 @@ rep_each_v <- function(x, each) {
 #' @return A vector with knot positions.
 place_knots <- function(ts_length, knot_distance, partial_window = 30) {
   if (!knot_distance>1) {
-    rlang::abort("Knot distance must be larger than one.")
+    cli::cli_abort("Knot distance must be larger than one.")
   }
   if (!ts_length>knot_distance) {
-    rlang::abort("The length of the time series must be larger than the knot distance.")
+    cli::cli_abort("The length of the time series must be larger than the knot distance.")
   }
   if (!partial_window>0) {
-    rlang::abort("The `partial_window` must be larger than zero.")
+    cli::cli_abort("The `partial_window` must be larger than zero.")
   }
   # define knot distances close to present, i.e. in window with partial data
   last_dists <- 2^seq(1, ceiling(log2(knot_distance)))
@@ -233,7 +233,7 @@ suppress_messages_warnings <- function(.expr, .f_list, ...) {
 #' tryCatch without wrapping them in a function call
 abort_f <- function(...) {
   return(function(err) {
-    rlang::abort(
+    cli::cli_abort(
       call = NULL, .trace_bottom = sys.frames()[[sys.nframe() - 4]], ...
     )
   })

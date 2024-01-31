@@ -70,13 +70,13 @@ concentrations_observe <-
            replicate_col = NULL,
            modeldata = modeldata_init()) {
     if (!(composite_window %% 1 == 0 && composite_window > 0)) {
-      rlang::abort(
+      cli::cli_abort(
         "The argument `composite_window` must be a positive integer."
       )
     }
 
     if (!distribution %in% c("normal", "lognormal")) {
-      rlang::abort(
+      cli::cli_abort(
         c(
           "Only the following distributions are supported:",
           "normal",
@@ -89,7 +89,7 @@ concentrations_observe <-
       {
         required_data_cols <- c(date_col, concentration_col, replicate_col)
         if (!all(required_data_cols %in% names(measurements))) {
-          rlang::abort(
+          cli::cli_abort(
             c(paste(
               "The following columns must be present",
               "in the provided measurements `data.frame`:",
@@ -101,14 +101,14 @@ concentrations_observe <-
         }
 
         if (nrow(measurements)==0) {
-          rlang::abort("The provided measurements `data.frame` is empty.")
+          cli::cli_abort("The provided measurements `data.frame` is empty.")
         }
 
         measurements[[date_col]] <- as.Date(measurements[[date_col]])
 
         if (is.null(replicate_col)) {
           if (any(duplicated(measurements[[date_col]]))) {
-            rlang::abort(
+            cli::cli_abort(
               paste(
                 "Duplicated dates found in measurements `data.frame`.",
                 "If your data contains replicate measurements, please add a",
@@ -200,7 +200,7 @@ droplets_observe <-
            droplets_col = "droplets",
            replicate_col = NULL,
            modeldata = modeldata_init()) {
-    rlang::abort(paste(
+    cli::cli_abort(paste(
       "Specification of measurements via ddPCR droplet count",
       "is not implemented yet."
     ))
@@ -325,7 +325,7 @@ noise_estimate <-
       }
 
     } else {
-      rlang::abort(
+      cli::cli_abort(
       paste0("Noise type `", cv_type, "` not supported. Available options: 'constant', `ddPCR`."),
       )
     }
@@ -344,7 +344,7 @@ noise_estimate <-
 
       modeldata$.checks$check_replicate_ids <- function(d) {
         if (!"replicate_ids" %in% names(d)) {
-          rlang::abort(paste(
+          cli::cli_abort(paste(
             "Variation before the replication stage can only be estimated with",
             "replicate measurements. Please specify a column `replicate_col`",
             "with replicate IDs in your data."
@@ -433,7 +433,7 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
                        modeldata = modeldata_init()) {
 
   if (!LOD_type %in% c("exponential", "ddPCR")) { # "ddPCR" is synonym
-    rlang::abort(
+    cli::cli_abort(
       'Currently, only LOD_type = "exponential" is supported.'
     )
   }

@@ -145,7 +145,7 @@ sample_effects_estimate_matrix <- function(
     "check_design_matrix",
     {
       if (!(modeldata$T == nrow(design_matrix))) {
-        rlang::abort(
+        cli::cli_abort(
           paste(
             "Mismatch: Modeled time period has",
             modeldata$T,

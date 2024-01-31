@@ -26,6 +26,7 @@ Imports:
     lubridate,
     Matrix,
     rlang,
+    cli,
     rstan,
     scales,
     splines,

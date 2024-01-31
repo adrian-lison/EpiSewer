@@ -76,7 +76,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
 
   if (!base_model %in% c("", as.character(data_to_plot$model))) {
-    rlang::abort(paste0(
+    cli::cli_abort(paste0(
       'Base model "', base_model,
       '" could not be found in the provided `results` list.'
     ))
@@ -193,7 +193,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
 
   if (!base_model %in% c("", as.character(data_to_plot$model))) {
-    rlang::abort(paste0(
+    cli::cli_abort(paste0(
       'Base model "', base_model,
       '" could not be found in the provided `results` list.'
     ))
@@ -286,7 +286,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     }
 
     if (!all(required_data_cols %in% names(measurements))) {
-      rlang::abort(
+      cli::cli_abort(
         c(paste(
           "The following columns must be present",
           "in the provided measurements `data.frame`:",
@@ -367,7 +367,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
   }
 
   if (!base_model %in% c("", as.character(concentration_pred$model))) {
-    rlang::abort(paste0(
+    cli::cli_abort(paste0(
       'Base model "', base_model,
       '" could not be found in the provided `results` list.'
       ))
@@ -507,7 +507,7 @@ plot_load <- function(results, median = FALSE,
   }
 
   if (!base_model %in% c("", as.character(load_pred$model))) {
-    rlang::abort(paste0(
+    cli::cli_abort(paste0(
       'Base model "', base_model,
       '" could not be found in the provided `results` list.'
     ))
@@ -629,7 +629,7 @@ plot_sample_effects <- function(results, model_levels = NULL) {
 #' plot_LOD(modeldata)
 plot_LOD <- function(modeldata) {
   if (!all(c("LOD_model", "LOD_scale") %in% names(modeldata))) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       "The following variables must be present in model data:",
       "LOD_model", "LOD_scale"
     ))
