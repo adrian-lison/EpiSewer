@@ -52,3 +52,36 @@ vector log_hurdle_sigmoid_log(vector x_log, real threshold_log, real sharpness_l
   return(log_inv_logit(hurdle));
 }
 
+/**
+  * Returns log probability of an exponential hurdle model
+  *
+  * The model uses a exponential function, the probability becomes 1 as x goes to zero.
+  *
+  * @param x vector with inputs
+  *
+  * @param threshold_log the hurdle threshold
+  *
+  * @param sharpness_log the sharpness of the threshold
+  *
+  * @return The probability of being below the threshold, on the logit scale
+  */
+vector log_hurdle_exponential(vector x, real scaling) {
+  return(-x * scaling);
+}
+
+/**
+  * Returns log probability of an exponential hurdle model for log scale inputs
+  *
+  * The model uses a exponential function, the probability becomes 1 as x goes to zero.
+  *
+  * @param x vector with inputs
+  *
+  * @param threshold_log the hurdle threshold
+  *
+  * @param sharpness_log the sharpness of the threshold
+  *
+  * @return The probability of being below the threshold, on the logit scale
+  */
+vector log_hurdle_exponential_log(vector x_log, real scaling) {
+  return(-exp(x_log) * scaling);
+}

@@ -213,6 +213,11 @@ droplets_observe <-
 #'   provided, `EpiSewer` can also explicitly model variation before the
 #'   replication stage.
 #'
+#' @description Aside from a constant coefficient of variation model, a
+#'   noise model specialized for digital droplet PCR (`cv_type = "ddPCR"`) is
+#'   available, which may however also work with other quantification
+#'   methods such as qPCR.
+#'
 #' @param replicates Should replicates be used to explicitly model variation
 #'   before the replication stage?
 #' @param cv_prior_mu Prior (mean) on the coefficient of variation of
@@ -234,8 +239,7 @@ droplets_observe <-
 #' @param ddPCR_prior_scaling_mu Prior (mean) on the concentration scaling
 #'   factor for the ddPCR reaction. The concentration scaling factor is the
 #'   droplet volume, scaled by the dilution of the wastewater in the ddPCR
-#'   reaction. Note that the dilution accounts for all extraction steps, it is
-#'   the ratio of wastewater to other liquids in the reaction.
+#'   reaction. See details for further explanation.
 #' @param ddPCR_prior_scaling_sigma Prior (standard deviation) on the
 #'   concentration scaling factor for the ddPCR reaction.
 #' @param ddPCR_scaling_fixed If TRUE, the concentration scaling factor is fixed
@@ -244,6 +248,14 @@ droplets_observe <-
 #'   of concentrations before the replication stage.
 #' @param pre_replicate_cv_prior_sigma Prior (standard deviation) on the
 #'   coefficient of variation of concentrations before the replication stage.
+#'
+#' @details The concentration scaling factor (see `ddPCR_prior_scaling_mu`,
+#'   `ddPCR_prior_scaling_sigma`, `ddPCR_scaling_fixed`) is the droplet volume,
+#'   scaled by the dilution of the wastewater in the ddPCR reaction. The
+#'   dilution accounts for all extraction and preparation steps. For example, if
+#'   the droplet volume is 4.5e-4 and the dilution of the wastewater is 30 (i.e.
+#'   30 gc/mL in the original wastewater sample correspond to 1 gc/mL in the PCR
+#'   reaction), then the overall scaling factor is 4.5e-4 / 30 = 1.5e-5.
 #'
 #' @details The priors of this component have the following functional form:
 #' - coefficient of variation of concentration measurements: `Truncated normal`
@@ -372,8 +384,8 @@ noise_estimate <-
 #' @export
 #' @family {LOD models}
 LOD_none <- function(modeldata = modeldata_init()) {
-  modeldata$LOD <- 0
-  modeldata$LOD_sharpness <- 0
+  modeldata$LOD_model <- 0
+  modeldata$LOD_scale <- numeric(0)
 
   modeldata$.str$measurements[["LOD"]] <- list(
     LOD_none = c()
@@ -393,39 +405,44 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #'   sample was likely below the limit of detection, but we don't know what the
 #'   exact concentration was.
 #'
-#' @param limit Limit of detection. The concentration below which measurements
-#'   will be determined as zero with substantial probability.
-#' @param sharpness Sharpness of the threshold, see details.
+#' @param limit Limit of detection. The concentration below which the pathogen
+#'   cannot be detected with sufficient probability, i.e. the measurement may be
+#'   zero although the pathogen is present in the sample.
+#' @param prob What desired probability of detection does the limit refer to?
+#'   Default is 95% (0.95): This means that the provided `limit` is the smallest
+#'   concentration at which the pathogen can still be detected with over 95%
+#'   probability.
+#' @param LOD_type The type of LOD model used. Currently, only "exponential" is
+#'   supported. This models an exponentially decreasing probability of zero
+#'   measurements / non-detection as a function of concentration. The
+#'   exponential model can be derived from the statistical properties of ddPCR,
+#'   but should also work well for other quantification methods such as qPCR.
 #'
-#' @details The limit of detection is highly specific to the quantification
-#'   approach and protocol. It is usually established from a dedicated lab
-#'   experiment.
-#'
-#' @details `EpiSewer` does not model a clear-cut limit of detection but rather
-#'   a gradual increase in the probability of zero measurements as
-#'   concentrations become smaller. This is achieved using a sigmodial curve
-#'   that has its inflection point at the supplied `limit`. The `sharpness`
-#'   argument determines the steepness of this curve.
+#' @details The limit of detection is specific to the quantification approach
+#'   and protocol. It is usually established from a dedicated lab experiment.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #'
-#' @seealso {Visualize the assumed limit of detection and its sharpness:}
+#' @seealso {Visualize the assumed LOD as a function of concentration:}
 #'   [plot_LOD()]
 #'
 #' @family {LOD models}
-LOD_assume <- function(limit = NULL, sharpness = 10,
+LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
                        modeldata = modeldata_init()) {
 
-  if (sharpness<=0) {
-    rlang::abort("Sharpness parameter must be greater than zero.")
+  if (!LOD_type %in% c("exponential", "ddPCR")) { # "ddPCR" is synonym
+    rlang::abort(
+      'Currently, only LOD_type = "exponential" is supported.'
+    )
   }
+
   limit_of_detection <- limit
   modeldata <- tbp("LOD_assume",
     {
-      modeldata$LOD <- limit
-      modeldata$LOD_sharpness <- sharpness
+      modeldata$LOD_model <- 1
+      modeldata$LOD_scale <- -log(1-prob)/limit
       return(modeldata)
     },
     required_assumptions = "limit_of_detection",
@@ -434,6 +451,54 @@ LOD_assume <- function(limit = NULL, sharpness = 10,
 
   modeldata$.str$measurements[["LOD"]] <- list(
     LOD_assume = c()
+  )
+
+  return(modeldata)
+}
+
+#' Estimate a limit of detection model for ddPCR data
+#'
+#' @description Pathogen concentrations below a certain threshold may not be
+#'   detectable and thus erroneously measured as 0. This option adjusts for a
+#'   limit of detection based on the statistical properties of digital droplet
+#'   PCR (ddPCR) and includes zero measurements in the likelihood.
+#'
+#' @description In effect, zero measurements provide a signal that the
+#'   concentration in the respective sample was likely below the limit of
+#'   detection, but we don't know what the exact concentration was.
+#'
+#' @details The limit of detection is modeled using a hurdle model. The model
+#'   uses the number of droplets in the ddPCR reaction and the concentration
+#'   scaling factor as defined and estimated by [noise_estimate()]. It is
+#'   therefore necessary to specify `cv_type = "ddPCR"` in [noise_estimate()].
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#'
+#' @family {LOD models}
+LOD_estimate_ddPCR <- function(modeldata = modeldata_init()) {
+
+  modeldata <- tbc("LOD_estimate_ddPCR",
+    {
+      modeldata$LOD_model <- 2
+      modeldata$LOD_scale <- numeric(0)
+      return(modeldata)
+    },
+    required = c(
+      "cv_type"
+      ),
+    required_values = c(1),
+    advice = paste0(
+      'To use {.run [LOD_estimate_ddPCR()](EpiSewer::LOD_estimate_ddPCR()}, ',
+      'you must specify cv_type = "ddPCR" in ',
+      '{.run [noise_estimate()](EpiSewer::noise_estimate()}.'
+      ),
+    modeldata = modeldata
+    )
+
+  modeldata$.str$measurements[["LOD"]] <- list(
+    LOD_estimate_ddPCR = c()
   )
 
   return(modeldata)

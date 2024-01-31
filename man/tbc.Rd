@@ -8,6 +8,8 @@ tbc(
   f_name,
   f_expr,
   required = c(),
+  required_values = NULL,
+  advice = NULL,
   modeldata = NULL,
   calling_env = rlang::caller_env()
 )

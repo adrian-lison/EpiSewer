@@ -49,8 +49,7 @@ replicates are available.}
 \item{ddPCR_prior_scaling_mu}{Prior (mean) on the concentration scaling
 factor for the ddPCR reaction. The concentration scaling factor is the
 droplet volume, scaled by the dilution of the wastewater in the ddPCR
-reaction. Note that the dilution accounts for all extraction steps, it is
-the ratio of wastewater to other liquids in the reaction.}
+reaction. See details for further explanation.}
 
 \item{ddPCR_prior_scaling_sigma}{Prior (standard deviation) on the
 concentration scaling factor for the ddPCR reaction.}
@@ -83,8 +82,21 @@ This option estimates the unexplained variation in wastewater
 measurements. If multiple measurements (replicates) per sample are
 provided, \code{EpiSewer} can also explicitly model variation before the
 replication stage.
+
+Aside from a constant coefficient of variation model, a
+noise model specialized for digital droplet PCR (\code{cv_type = "ddPCR"}) is
+available, which may however also work with other quantification
+methods such as qPCR.
 }
 \details{
+The concentration scaling factor (see \code{ddPCR_prior_scaling_mu},
+\code{ddPCR_prior_scaling_sigma}, \code{ddPCR_scaling_fixed}) is the droplet volume,
+scaled by the dilution of the wastewater in the ddPCR reaction. The
+dilution accounts for all extraction and preparation steps. For example, if
+the droplet volume is 4.5e-4 and the dilution of the wastewater is 30 (i.e.
+30 gc/mL in the original wastewater sample correspond to 1 gc/mL in the PCR
+reaction), then the overall scaling factor is 4.5e-4 / 30 = 1.5e-5.
+
 The priors of this component have the following functional form:
 \itemize{
 \item coefficient of variation of concentration measurements: \verb{Truncated normal}

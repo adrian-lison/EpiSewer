@@ -4,13 +4,28 @@
 \alias{LOD_assume}
 \title{Assume a limit of detection}
 \usage{
-LOD_assume(limit = NULL, sharpness = 10, modeldata = modeldata_init())
+LOD_assume(
+  limit = NULL,
+  prob = 0.95,
+  LOD_type = "exponential",
+  modeldata = modeldata_init()
+)
 }
 \arguments{
-\item{limit}{Limit of detection. The concentration below which measurements
-will be determined as zero with substantial probability.}
+\item{limit}{Limit of detection. The concentration below which the pathogen
+cannot be detected with sufficient probability, i.e. the measurement may be
+zero although the pathogen is present in the sample.}
 
-\item{sharpness}{Sharpness of the threshold, see details.}
+\item{prob}{What desired probability of detection does the limit refer to?
+Default is 95\% (0.95): This means that the provided \code{limit} is the smallest
+concentration at which the pathogen can still be detected with over 95\%
+probability.}
+
+\item{LOD_type}{The type of LOD model used. Currently, only "exponential" is
+supported. This models an exponentially decreasing probability of zero
+measurements / non-detection as a function of concentration. The
+exponential model can be derived from the statistical properties of ddPCR,
+but should also work well for other quantification methods such as qPCR.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -37,21 +52,15 @@ zero measurements provide a signal that the concentration in the respective
 sample was likely below the limit of detection, but we don't know what the
 exact concentration was.
 
-The limit of detection is highly specific to the quantification
-approach and protocol. It is usually established from a dedicated lab
-experiment.
-
-\code{EpiSewer} does not model a clear-cut limit of detection but rather
-a gradual increase in the probability of zero measurements as
-concentrations become smaller. This is achieved using a sigmodial curve
-that has its inflection point at the supplied \code{limit}. The \code{sharpness}
-argument determines the steepness of this curve.
+The limit of detection is specific to the quantification approach
+and protocol. It is usually established from a dedicated lab experiment.
 }
 \seealso{
-{Visualize the assumed limit of detection and its sharpness:}
+{Visualize the assumed LOD as a function of concentration:}
 \code{\link[=plot_LOD]{plot_LOD()}}
 
 Other {LOD models}: 
+\code{\link{LOD_estimate_ddPCR}()},
 \code{\link{LOD_none}()}
 }
 \concept{{LOD models}}

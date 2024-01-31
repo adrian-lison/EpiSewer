@@ -628,18 +628,18 @@ plot_sample_effects <- function(results, model_levels = NULL) {
 #' modeldata <- LOD_assume(limit = 1e7, sharpness = 10)
 #' plot_LOD(modeldata)
 plot_LOD <- function(modeldata) {
-  if (!all(c("LOD", "LOD_sharpness") %in% names(modeldata))) {
+  if (!all(c("LOD_model", "LOD_scale") %in% names(modeldata))) {
     rlang::abort(c(
       "The following variables must be present in model data:",
-      "LOD", "LOD_sharpness"
+      "LOD_model", "LOD_scale"
     ))
   }
   LOD_f <- function(x) {
-    plogis((modeldata$LOD - x) / modeldata$LOD * modeldata$LOD_sharpness)
+    exp(-x * modeldata$LOD_scale)
   }
   example_data <- data.frame(
-    x = seq(modeldata$LOD - modeldata$LOD * 0.75,
-      modeldata$LOD + modeldata$LOD * 0.75,
+    x = seq(0,
+      5.1,
       length.out = 100
     )
   )
@@ -650,6 +650,7 @@ plot_LOD <- function(modeldata) {
     xlab("True concentration") +
     ylab("Probability of non-detection") +
     coord_cartesian(ylim = c(0, 1)) +
-    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = expansion(add=c(0.01, 0.01))) +
+    scale_x_continuous(expand = expansion(add=c(0, 0))) +
     theme_bw()
 }

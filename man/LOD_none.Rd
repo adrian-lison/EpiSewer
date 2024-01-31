@@ -33,6 +33,7 @@ but not bias estimates.
 }
 \seealso{
 Other {LOD models}: 
-\code{\link{LOD_assume}()}
+\code{\link{LOD_assume}()},
+\code{\link{LOD_estimate_ddPCR}()}
 }
 \concept{{LOD models}}

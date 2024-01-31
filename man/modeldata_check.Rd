@@ -7,6 +7,7 @@
 modeldata_check(
   modeldata,
   required,
+  required_values = NULL,
   descriptions = modeldata_descriptions(),
   run_before = modeldata_var_requirements(),
   advice = NULL,

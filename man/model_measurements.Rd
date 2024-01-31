@@ -29,6 +29,7 @@ for the limit of detection using a hurdle model. Modeling options:
 \itemize{
 \item \code{\link[=LOD_none]{LOD_none()}}
 \item \code{\link[=LOD_assume]{LOD_assume()}}
+\item \code{\link[=LOD_estimate_ddPCR]{LOD_estimate_ddPCR()}}
 }}
 }
 \value{

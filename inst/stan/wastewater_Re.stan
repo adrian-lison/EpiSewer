@@ -44,8 +44,11 @@ data {
   array[cv_type > 0 && nu_upsilon_c_fixed < 0 ? 2 : 0] real nu_upsilon_c_prior; // prior for parameter 3 of CV formula (droplet size/(dilution of ww to PCR assay)). Scaled by 1e+5 for numerical efficiency.
 
   // Limit of detection
-  real<lower=0> LOD;
-  real<lower=0> LOD_sharpness;
+  // LOD_model = 0: no LOD
+  // LOD_model = 1: assumed LOD, LOD_scale provided
+  // LOD_model = 2: estimated LOD based on ddPCR model, needs ddPCR parameters
+  int<lower=0, upper=2> LOD_model;
+  array[(LOD_model == 1) ? 1 : 0] real<lower=0> LOD_scale;
 
   // Residence time distribution
   int<lower=0> D; // last day of shedding
@@ -108,8 +111,6 @@ transformed data {
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T] flow_log = log(flow);
-  real LOD_log = log(LOD);
-  real LOD_sharpness_log = log(LOD_sharpness);
 
   int n_zero = num_zeros(measured_concentrations);
   array[n_zero] int<lower=0> i_zero;
@@ -171,6 +172,7 @@ transformed parameters {
   vector[T] pi_log; // log expected daily loads
   vector[T] kappa_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
+  array[LOD_model > 0 ? 1 : 0] real<lower=0> LOD_hurdle_scale;
 
   // Innovations state space process implementing exponential smoothing
   R = apply_link(holt_damped_process(
@@ -240,6 +242,16 @@ transformed parameters {
         rho_log[i] = kappa_log[sample_to_date[i]];
      }
   }
+
+  // scale for LOD hurdle model
+  if (LOD_model == 1) {
+    LOD_hurdle_scale[1] = LOD_scale[1];
+  } else if (LOD_model == 2) {
+    LOD_hurdle_scale[1] = (
+    (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4 *
+    (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5
+    );
+  }
 }
 model {
   // Priors
@@ -307,20 +319,20 @@ model {
       concentrations = rho_log[measure_to_sample];
     }
 
+    // concentration on unit scale
+    vector[n_measured - n_zero] concentrations_unit = exp(concentrations);
+
     // limit of detection
-    if (LOD>0) {
-     // below-LOD probabilities for zero measurements
-    target += sum(log_hurdle_sigmoid_log(
-      concentrations[i_zero], LOD_log, LOD_sharpness_log
+    if (LOD_model > 0) {
+      // below-LOD probabilities for zero measurements
+      target += sum(log_hurdle_exponential(
+        concentrations_unit[i_zero], LOD_hurdle_scale[1]
       ));
       // above-LOD probabilities for non-zero measurements
-    target += sum(log1m_exp(log_hurdle_sigmoid_log(
-      concentrations[i_nonzero], LOD_log, LOD_sharpness_log
+      target += sum(log1m_exp(log_hurdle_exponential(
+        concentrations_unit[i_nonzero], LOD_hurdle_scale[1]
       )));
     }
-
-    // concentration on unit scale
-    vector[n_measured - n_zero] concentrations_unit = exp(concentrations[i_nonzero]);
 
     // CV of each observation as a function of concentration
     vector[n_measured - n_zero] cv;
@@ -328,7 +340,7 @@ model {
       cv = rep_vector(nu_upsilon_a, n_measured - n_zero);
     } else if (cv_type == 1) { // ddPCR
       cv = cv_ddPCR(
-        concentrations_unit,
+        concentrations_unit[i_nonzero],
         nu_upsilon_a,
         (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4,
         (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5
@@ -339,7 +351,7 @@ model {
     if (obs_dist == 1) {
       target += normal2_lpdf(
         measured_concentrations[i_nonzero] |
-        concentrations_unit, // expectation
+        concentrations_unit[i_nonzero], // expectation
         cv, // coefficient of variation
         0 // truncate at zero
       );
@@ -370,10 +382,10 @@ generated quantities {
     } else {
       pre_repl = kappa_log;
     }
-    if (LOD>0) {
-     above_LOD = to_vector(bernoulli_rng(inv_logit(-log_hurdle_smooth(
-      pre_repl, LOD_log, LOD_sharpness_log
-      ))));
+    if (LOD_model > 0) {
+     above_LOD = to_vector(bernoulli_rng(
+       1-exp(log_hurdle_exponential(pre_repl, LOD_hurdle_scale[1]))
+       ));
     } else {
       above_LOD = rep_vector(1, T);
     }
