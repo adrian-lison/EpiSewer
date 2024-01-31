@@ -53,10 +53,16 @@ verify_is_modeldata <- function(modeldata, arg_name) {
       "this argument."
     )
     all_fs <- names(rlang::ns_env("EpiSewer"))
-    arg_fs <- all_fs[stringr::str_detect(all_fs, paste0("^", arg_name, "_"))]
+    arg_fs <- all_fs[stringr::str_detect(
+      # this excludes functions ending with _
+      all_fs, paste0("^", arg_name, "_", ".*(?<!_)$")
+    )]
     if (length(arg_fs) > 0) {
+      functions <- paste0(arg_fs, "()")
+      functions_cli <- paste0("{.help [",functions,"](EpiSewer::",functions,"}")
       error_msg <- paste(error_msg, "Available functions:")
-      error_msg <- c(error_msg, paste0(arg_fs, "()"))
+      error_msg <- c(error_msg, functions_cli)
+      names(error_msg) <- c("!", rep("*", length(error_msg)-1))
     }
     cli::cli_abort(error_msg, call = rlang::caller_env())
   }

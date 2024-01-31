@@ -587,10 +587,10 @@ LOD_estimate_ddPCR <- function(modeldata = modeldata_init()) {
       ),
     required_values = c(1),
     advice = paste0(
-      'To use {.run [LOD_estimate_ddPCR()](EpiSewer::LOD_estimate_ddPCR()}, ',
+      'To use {.help [LOD_estimate_ddPCR()](EpiSewer::LOD_estimate_ddPCR()}, ',
       'you must specify noise = ',
-      '{.run [noise_estimate_ddPCR()](EpiSewer::noise_estimate_ddPCR()} in ',
-      '{.run [model_measurements()](EpiSewer::model_measurements()}.'
+      '{.help [noise_estimate_ddPCR()](EpiSewer::noise_estimate_ddPCR()} in ',
+      '{.help [model_measurements()](EpiSewer::model_measurements()}.'
       ),
     modeldata = modeldata
     )
