@@ -252,14 +252,24 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 
 #' Plot predicted concentration
 #'
-#' @description Plots the predicted concentration over time from a fitted
-#'   `EpiSewer` model.
+#' @description Plots measured and/or predicted concentrations over time. The
+#'   predicted concentrations are taken from a fitted `EpiSewer` model.
 #'
 #' @param measurements A `data.frame` with observed measurements, which will be
-#'   plotted alongside the predicted values. Useful to assess model fit.
+#'   plotted alongside the predicted values (useful to assess model fit). Can
+#'   also be used with `results = NULL`, in which case only the observed
+#'   measurements are plotted.
 #' @param include_noise If `TRUE` (default), concentrations including
 #'   measurement noise are shown. If `FALSE`, only the expected concentrations
 #'   are shown.
+#' @param mark_outliers If `TRUE`, outliers in the `measurements` are
+#'   highlighted in red. See also argument `outlier_col` below.
+#' @param concentration_col Name of the column in the measurements `data.frame`
+#'   which contains the measured concentration that should be plotted.
+#' @param date_col Name of the date column in the measurements `data.frame`.
+#' @param outlier_col Name of a logical column in the measurements `data.frame`
+#'   which identifies outlier measurements (for example added by
+#'   [mark_outlier_spikes_median()]).
 #' @inheritParams plot_infections
 #'
 #' @return A ggplot object showing predicted and observed concentrations over
@@ -268,11 +278,13 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #' @export
 plot_concentration <- function(results = NULL, measurements = NULL,
                                include_noise = TRUE, median = FALSE,
-                               date_col = "date",
-                               concentration_col = "concentration",
-                               outlier_col = NULL,
+                               mark_outliers = FALSE,
                                date_margin_left = 0, date_margin_right = 0,
-                               base_model = "", model_levels = NULL) {
+                               base_model = "", model_levels = NULL,
+                               concentration_col = "concentration",
+                               date_col = "date",
+                               outlier_col = "is_outlier"
+                               ) {
 
   concentration_pred <- NULL
   measurements_modeled <- NULL
@@ -280,7 +292,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
   if (!is.null(measurements)) {
     required_data_cols <- c(date_col, concentration_col)
     data_col_names <- c("date", "concentration")
-    if (!is.null(outlier_col)) {
+    if (mark_outliers) {
       required_data_cols <- c(required_data_cols, outlier_col)
       data_col_names <- c(data_col_names, ".outlier")
     }
@@ -299,7 +311,6 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
     setnames(measurements, old = required_data_cols, new = data_col_names)
   }
-
 
   if (!is.null(results)) {
     if ("summary" %in% names(results)) {
@@ -429,7 +440,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       }
     } +
     {
-      if (!is.null(measurements) && !is.null(outlier_col)) {
+      if (!is.null(measurements) && mark_outliers) {
         geom_point(
           data = measurements |> filter(.outlier),
           aes(y = concentration),
