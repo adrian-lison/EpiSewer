@@ -467,7 +467,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       date_breaks = "1 month", date_labels = "%b\n%Y"
     ) +
     xlab("Date") +
-    ylab("Concentration [gene copies / L]") +
+    ylab("Concentration [gene copies / mL]") +
     coord_cartesian(xlim = as.Date(c(first_date, last_date+1)))
 
   if (is.null(concentration_pred) || length(unique(concentration_pred$model)) == 1) {
