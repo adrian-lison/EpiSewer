@@ -54,9 +54,9 @@ mark_outlier_spikes_median <- function(
   }
 
   median_info <- df %>%
-    group_by({{ date_col }}) %>%
-    summarize(daily_median = median({{ measurement_col }}), .groups = "drop") %>%
-    transmute({{ date_col }},
+    dplyr::group_by({{ date_col }}) %>%
+    dplyr::summarize(daily_median = median({{ measurement_col }}), .groups = "drop") %>%
+    dplyr::transmute({{ date_col }},
       rolling_median = zoo::rollmedian(
         daily_median, window,
         align = "center", fill = NA
@@ -72,10 +72,10 @@ mark_outlier_spikes_median <- function(
     )
 
   df <- df %>%
-    left_join(median_info, by = rlang::as_string(ensym(date_col))) %>%
-    mutate(is_outlier = {{ measurement_col }} - rolling_median > threshold_factor *
+    dplyr::left_join(median_info, by = rlang::as_string(ensym(date_col))) %>%
+    dplyr::mutate(is_outlier = {{ measurement_col }} - rolling_median > threshold_factor *
       pmax(rolling_mad, lower_rolling_mad)) %>%
-    select(-c(rolling_median, rolling_mad, lower_rolling_mad))
+    dplyr::select(-c(rolling_median, rolling_mad, lower_rolling_mad))
 
   return(df)
 }
