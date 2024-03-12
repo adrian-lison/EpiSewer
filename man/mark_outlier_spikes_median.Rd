@@ -41,6 +41,8 @@ The provided \code{data.frame}, with an additional logical column
 \code{is_outlier}.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Uses a simple heuristic to detect positive outliers (i.e. unusually high
 spikes) in a time series. The approach is to compare a measurement with the
 median of measurements in a small centered window. If the measurements before

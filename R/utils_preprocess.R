@@ -1,5 +1,9 @@
 #' Mark outlier spikes in a measurement time series
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' @description
 #' Uses a simple heuristic to detect positive outliers (i.e. unusually high
 #' spikes) in a time series. The approach is to compare a measurement with the
 #' median of measurements in a small centered window. If the measurements before
@@ -37,6 +41,7 @@
 #'
 #' @return The provided `data.frame`, with an additional logical column
 #'   `is_outlier`.
+#' @export
 mark_outlier_spikes_median <- function(
     df, measurement_col, date_col = date, window = 5,
     threshold_factor = 5, mad_window = 14, mad_lower_quantile = 0.05) {
