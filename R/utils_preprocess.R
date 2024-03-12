@@ -59,11 +59,11 @@ mark_outlier_spikes_median <- function(
     dplyr::transmute({{ date_col }},
       rolling_median = zoo::rollmedian(
         daily_median, window,
-        align = "center", fill = NA
+        align = "center", fill = NA, na.rm = TRUE
       ),
       rolling_mad = zoo::rollapply(
         lag(daily_median), mad_window,
-        FUN = sd, align = "right", fill = NA
+        FUN = function(x) sd(x, na.rm = TRUE), align = "right", fill = NA
       ),
       lower_rolling_mad = quantile(
         rolling_mad, mad_lower_quantile,
