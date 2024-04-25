@@ -16,6 +16,7 @@ Depends:
     R (>= 3.5.0)
 Imports: 
     cmdstanr,
+    curl,
     data.table,
     digest,
     extraDistr,
