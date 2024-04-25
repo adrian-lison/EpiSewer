@@ -325,12 +325,12 @@ model {
     // limit of detection
     if (LOD_model > 0) {
       // below-LOD probabilities for zero measurements
-      target += sum(log_hurdle_exponential(
-        concentrations_unit[i_zero], LOD_hurdle_scale[1]
+      target += sum(log_hurdle_exponential_gamma(
+        concentrations_unit[i_zero], LOD_hurdle_scale[1], nu_upsilon_a
       ));
       // above-LOD probabilities for non-zero measurements
-      target += sum(log1m_exp(log_hurdle_exponential(
-        concentrations_unit[i_nonzero], LOD_hurdle_scale[1]
+      target += sum(log1m_exp(log_hurdle_exponential_gamma(
+        concentrations_unit[i_nonzero], LOD_hurdle_scale[1], nu_upsilon_a
       )));
     }
 
@@ -384,7 +384,9 @@ generated quantities {
     }
     if (LOD_model > 0) {
      above_LOD = to_vector(bernoulli_rng(
-       1-exp(log_hurdle_exponential(pre_repl, LOD_hurdle_scale[1]))
+       1-exp(log_hurdle_exponential_gamma(
+         pre_repl, LOD_hurdle_scale[1], nu_upsilon_a
+         ))
        ));
     } else {
       above_LOD = rep_vector(1, T);

@@ -53,35 +53,50 @@ vector log_hurdle_sigmoid_log(vector x_log, real threshold_log, real sharpness_l
 }
 
 /**
-  * Returns log probability of an exponential hurdle model
+  * Returns log probability of an exponential hurdle model assuming Gamma-distributed noise
   *
-  * The model uses a exponential function, the probability becomes 1 as x goes to zero.
+  * The model uses an exponential function, the probability becomes 1 as x goes to zero.
+  * Moreover, gamma-distributed noise around the inputs can be modeled. The
+  * stronger the noise is, the longer the probability will stay close to 1 even
+  * for larger values of x.
   *
   * @param x vector with inputs
   *
-  * @param threshold_log the hurdle threshold
+  * @param scaling scaling factor for input vector
   *
-  * @param sharpness_log the sharpness of the threshold
+  * @param cv coefficient of variation of the Gamma-distributed noise
   *
   * @return The probability of being below the threshold, on the logit scale
   */
-vector log_hurdle_exponential(vector x, real scaling) {
-  return(-x * scaling);
+vector log_hurdle_exponential_gamma(vector x, real scaling, real cv) {
+  if (cv == 0) {
+    return(-x * scaling);
+  } else {
+    real cv2 = cv^2;
+    return(-log1p(x * scaling * cv2)/cv2);
+  }
 }
 
 /**
   * Returns log probability of an exponential hurdle model for log scale inputs
   *
-  * The model uses a exponential function, the probability becomes 1 as x goes to zero.
+  * The model uses an exponential function, the probability becomes 1 as x goes to zero.
+  * Moreover, gamma-distributed noise around the inputs can be modeled. The
+  * stronger the noise is, the longer the probability will stay close to 1 even
+  * for larger values of x.
   *
   * @param x vector with inputs
   *
-  * @param threshold_log the hurdle threshold
+  * @param scaling scaling factor for input vector
   *
-  * @param sharpness_log the sharpness of the threshold
+  * @param cv coefficient of variation of the Gamma-distributed noise
   *
   * @return The probability of being below the threshold, on the logit scale
   */
-vector log_hurdle_exponential_log(vector x_log, real scaling) {
-  return(-exp(x_log) * scaling);
+vector log_hurdle_exponential_gamma_log(vector x_log, real scaling_log, real cv_log) {
+  if (cv_log == negative_infinity()) {
+    return(-exp(x_log + scaling_log));
+  } else {
+    return(-log1p_exp(x_log + scaling_log + 2*cv_log)/exp(2*cv_log));
+  }
 }
