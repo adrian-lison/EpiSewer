@@ -20,6 +20,17 @@ get_I_trajectories <- function(fit, T_shift, .metainfo, ndraws = 10) {
   return(fit_draws[])
 }
 
+get_iota_trajectories <- function(fit, T_shift, .metainfo, ndraws = 10) {
+  fit_draws <- get_draws_1d_date(fit, "iota", ndraws)
+  date_mapping <- seq.Date(
+    .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
+    by = "1 day"
+  )
+  fit_draws[, date := date_mapping[as.integer(date)]]
+  fit_draws[, c(".chain", ".iteration", "variable") := NULL]
+  return(fit_draws[])
+}
+
 #' Summarize parameters of interest
 #'
 #' @description This function summarizes important parameters of interest from a
@@ -81,6 +92,15 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
   summary[["expected_infections"]]$seeding <- FALSE
   summary[["expected_infections"]][1:(data$G * 2), "seeding"] <- TRUE
 
+  summary[["expected_infections_samples"]] <- get_iota_trajectories(
+    fit,
+    T_shift = T_shift_latent, .metainfo = .metainfo, ndraws = ndraws
+  )
+  summary[["expected_infections_samples"]]$seeding <- FALSE
+  summary[["expected_infections_samples"]][
+    1:(data$G * 2 * ndraws), "seeding"
+  ] <- TRUE
+
   if (data$I_sample) {
     summary[["infections"]] <- get_summary_1d_date(
       fit, "I",
@@ -98,6 +118,12 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
     summary[["infections_samples"]][
       1:(data$G * 2 * ndraws), "seeding"
     ] <- TRUE
+  } else {
+    summary[["infections"]] <- summary[["expected_infections"]]
+    summary[["infections_samples"]] <- summary[["expected_infections_samples"]]
+    colnames(summary[["infections_samples"]])[
+      colnames(summary[["infections_samples"]]) == "iota"
+      ] <- "I"
   }
 
   summary[["expected_load"]] <- get_summary_1d_date_log(
