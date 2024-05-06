@@ -181,7 +181,7 @@ transformed parameters {
     ets_beta_fixed < 0 ? ets_beta[1] : ets_beta_fixed,
     ets_phi_fixed < 0 ? ets_phi[1] : ets_phi_fixed,
     R_noise,
-    0
+    ets_diff
   ), R_link);
 
   // infections and renewal process
