@@ -56,8 +56,8 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
   }
 
-  ymin <- quantile(data_to_plot$lower_0.95, probs = 0.01)
-  ymax <- quantile(data_to_plot$upper_0.95, probs = 0.99)
+  ymin <- quantile(data_to_plot$lower_0.95, probs = 0.01, na.rm = T)
+  ymax <- quantile(data_to_plot$upper_0.95, probs = 0.99, na.rm = T)
 
   xmin <- as.Date(min(data_to_plot$date, na.rm = T)) - date_margin_left
   xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
@@ -172,8 +172,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
   }
 
-  ymin <- min(0.6, quantile(data_to_plot$lower_0.95, probs = 0.01))
-  ymax <- max(1.6, quantile(data_to_plot$upper_0.95, probs = 0.99))
+  ymin <- min(0.6, quantile(data_to_plot$lower_0.95, probs = 0.01, na.rm = T))
+  ymax <- max(1.6, quantile(data_to_plot$upper_0.95, probs = 0.99, na.rm = T))
 
   xmin <- as.Date(min(data_to_plot$date, na.rm = T)) - date_margin_left
   xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
