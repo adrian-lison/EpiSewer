@@ -37,12 +37,12 @@ get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
     median = median,
     function(x) {
       setNames(
-        quantile(x, (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
+        quantile(x, (1 - rev(intervals)) / 2, na.rm = T), paste0("lower_", rev(intervals))
       )
     },
     function(x) {
       setNames(
-        quantile(x, (1 + intervals) / 2), paste0("upper_", intervals)
+        quantile(x, (1 + intervals) / 2, na.rm = T), paste0("upper_", intervals)
       )
     }
   ), date_mapping)
