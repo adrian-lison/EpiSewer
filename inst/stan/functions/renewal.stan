@@ -69,6 +69,22 @@ vector log_renewal_process_deterministic(int T, vector R_log, int G, vector gi_r
   return(iota_log_tmp[(G+1):(G+T)]);
 }
 
+vector infectiousness(int T, int G, vector gi_rev, vector I) {
+  vector[T] infectiousness;
+  for (t in 1:T) {
+    infectiousness[t] = dot_product(gi_rev, I[t:(G+t-1)]);
+  }
+  return(infectiousness);
+}
+
+vector log_infectiousness(int T, int G, vector gi_rev_log, vector I_log) {
+  vector[T] infectiousness;
+  for (t in 1:T) {
+    infectiousness[t] = log_dot_product(gi_rev_log, I_log[t:(G+t-1)]);
+  }
+  return(infectiousness);
+}
+
 /**
 * Convolution of a time series
 *
