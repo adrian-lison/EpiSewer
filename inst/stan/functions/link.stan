@@ -32,7 +32,10 @@ Helper for link functions
         link[3], // hyperparameter a
         link[4] // hyperparameter k
         ));
-    } else {
-      reject("Link function must be one of inv_softplus (0) or scaled_logit (1)");
+    } else if (link[1] == 2) {
+      return(exp(x));
+    }
+    else {
+      reject("Link function must be one of inv_softplus (0), scaled_logit (1), or log (2)");
     }
   }
