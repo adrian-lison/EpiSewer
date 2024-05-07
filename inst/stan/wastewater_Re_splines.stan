@@ -190,7 +190,7 @@ transformed parameters {
   // calculation of total loads shed each day (expected)
   vector[D + T] omega_log;
   if (load_vari) {
-    zeta = gamma_sum_approx(nu_zeta[1], lambda, zeta_raw);
+    zeta = softplus(gamma_sum_approx(nu_zeta[1], lambda, zeta_raw), 10); // softplus as soft >0 constraint
     omega_log = log_convolve(
         shed_rev_log, // shedding load distribution
         log(load_mean) + log(zeta) // total load shed
