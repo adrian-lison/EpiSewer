@@ -16,7 +16,8 @@ plot_concentration(
   model_levels = NULL,
   concentration_col = "concentration",
   date_col = "date",
-  outlier_col = "is_outlier"
+  outlier_col = "is_outlier",
+  type = "time"
 )
 }
 \arguments{
@@ -61,6 +62,11 @@ which contains the measured concentration that should be plotted.}
 \item{outlier_col}{Name of a logical column in the measurements \code{data.frame}
 which identifies outlier measurements (for example added by
 \code{\link[=mark_outlier_spikes_median]{mark_outlier_spikes_median()}}).}
+
+\item{type}{If "time" (default), the concentration time series is plotted. If
+"pp_check", the observations are ordered by concentration and plotted
+against the predicted concentration (useful for posterior predictive
+checks).}
 }
 \value{
 A ggplot object showing predicted and observed concentrations over
@@ -70,4 +76,11 @@ and scales, and to add further geoms.
 \description{
 Plots measured and/or predicted concentrations over time. The
 predicted concentrations are taken from a fitted \code{EpiSewer} model.
+}
+\details{
+When plotting a posterior predictive check (\code{type="pp_check"}), each
+observed concentration is shown together with the 95\% Credible Interval of
+the posterior predictive distribution for that observation. The
+observations are ordered by concentration, which helps to visualize bias
+and variance of the predictions as a function of the concentration.
 }

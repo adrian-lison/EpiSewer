@@ -270,7 +270,17 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #' @param outlier_col Name of a logical column in the measurements `data.frame`
 #'   which identifies outlier measurements (for example added by
 #'   [mark_outlier_spikes_median()]).
+#' @param type If "time" (default), the concentration time series is plotted. If
+#'   "pp_check", the observations are ordered by concentration and plotted
+#'   against the predicted concentration (useful for posterior predictive
+#'   checks).
 #' @inheritParams plot_infections
+#'
+#' @details When plotting a posterior predictive check (`type="pp_check"`), each
+#'   observed concentration is shown together with the 95% Credible Interval of
+#'   the posterior predictive distribution for that observation. The
+#'   observations are ordered by concentration, which helps to visualize bias
+#'   and variance of the predictions as a function of the concentration.
 #'
 #' @return A ggplot object showing predicted and observed concentrations over
 #'   time. Can be further manipulated using [ggplot2] functions to adjust themes
@@ -283,8 +293,16 @@ plot_concentration <- function(results = NULL, measurements = NULL,
                                base_model = "", model_levels = NULL,
                                concentration_col = "concentration",
                                date_col = "date",
-                               outlier_col = "is_outlier"
+                               outlier_col = "is_outlier",
+                               type = "time"
                                ) {
+
+  if (!(type %in% c("time","pp_check"))) {
+    cli::cli_abort(paste0(
+      'Argument `type` must be either "time" (for plotting concentrations over',
+      ' time) or "pp_check" (for plotting a posterior predictive check).'
+    ))
+  }
 
   concentration_pred <- NULL
   measurements_modeled <- NULL
@@ -331,7 +349,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
         results, function(res) {
           return(measurements[
             measurements$date %in% res$job$metainfo$measured_dates,
-            c("date", "concentration")
+            .SD, .SDcols = data_col_names
           ])
         }
       ), .names_to = "model")
@@ -370,11 +388,30 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       !is.na(measurements_modeled$concentration) &
         measurements_modeled$date<=last_date,
     ]
+    setorderv(measurements_modeled, cols = "concentration")
+    measurements_modeled[
+      , obs_conc_ord := forcats::fct_inorder(
+        as.factor(concentration), ordered = TRUE
+      )
+    ]
+    setorderv(measurements_modeled, cols = "date")
   }
   if (!is.null(concentration_pred)) {
   concentration_pred <- concentration_pred[
     !is.na(concentration_pred$median),
   ]
+    if (!is.null(measurements_modeled)) {
+      concentration_pred <- merge(concentration_pred, measurements_modeled[, .SD, .SDcols=c("date", "obs_conc_ord")] , by = "date")
+    }
+  }
+
+  if (type == "pp_check") {
+    if (is.null(measurements_modeled) || is.null(concentration_pred)) {
+      cli::cli_abort(paste0(
+        'If you want to plot a posterior predictive check (type="pp_check")',
+        ', you must specify both the `results` and the `measurements` argument.'
+      ))
+    }
   }
 
   if (!base_model %in% c("", as.character(concentration_pred$model))) {
@@ -388,98 +425,166 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     ,setdiff(names(concentration_pred_base_model), "model"), with = FALSE
     ]
 
-  plot <- ggplot(data.frame(), aes(x = date)) +
-    {
-      if (!is.null(measurements)) {
-        geom_line(
-          data = measurements,
-          aes(y = concentration),
-          color = "#a6a6a6", linetype = "dotted", linewidth = 0.3
-        )
-      }
-    } +
-    {
-      if (!is.null(concentration_pred) && base_model!="") {
-        geom_ribbon(
-          data = concentration_pred_base_model,
-          aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, fill = "black"
-        )
-      }
-    } +
-    {
-      if (!is.null(concentration_pred)) {
-        geom_ribbon(
-          data = concentration_pred[concentration_pred$model!=base_model, ],
-          aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
-        )
-      }
-    } +
-    {
-      if (!is.null(concentration_pred) && base_model!="") {
-        geom_ribbon(
-          data = concentration_pred_base_model,
-          aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.2, fill = "black"
-        )
-      }
-    } +
-    {
-      if (!is.null(concentration_pred)) {
-        geom_ribbon(
-          data = concentration_pred[concentration_pred$model!=base_model, ],
-          aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
-        )
-      }
-    } +
-    {
-      if (!is.null(measurements)) {
-        geom_point(
-          data = measurements,
-          aes(y = concentration),
-          color = ifelse(is.null(results),"black","#a6a6a6"), shape = 4
-        )
-      }
-    } +
-    {
-      if (!is.null(measurements) && mark_outliers) {
-        geom_point(
-          data = measurements |> filter(.outlier),
-          aes(y = concentration),
-          color = "red", shape = 4
-        )
-      }
-    } +
-    {
-      if (!is.null(measurements_modeled)) {
-        geom_point(
-          data = measurements_modeled,
-          aes(y = concentration), color = "black", shape = 4
-        )
-      }
-    } +
-    {
-      if (median && !is.null(concentration_pred) && base_model!="") {
-        geom_line(
-          data = concentration_pred_base_model,
-          aes(y = median), color = "black"
-        )
-      }
-    } +
-    {
-      if (median && !is.null(concentration_pred)) {
-        geom_line(
-          data = concentration_pred[concentration_pred$model!=base_model, ],
-          aes(y = median, color = model)
-        )
-      }
-    } +
-    theme_bw() +
-    scale_x_date(
-      expand = c(0, 0),
-      date_breaks = "1 month", date_labels = "%b\n%Y"
-    ) +
-    xlab("Date") +
-    ylab("Concentration [gene copies / mL]") +
-    coord_cartesian(xlim = as.Date(c(first_date, last_date+1)))
+  if (type == "time") {
+    plot <- ggplot(data.frame(), aes(x = date)) +
+      {
+        if (!is.null(measurements)) {
+          geom_line(
+            data = measurements,
+            aes(y = concentration),
+            color = "#a6a6a6", linetype = "dotted", linewidth = 0.3
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && base_model!="") {
+          geom_ribbon(
+            data = concentration_pred_base_model,
+            aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, fill = "black"
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred)) {
+          geom_ribbon(
+            data = concentration_pred[concentration_pred$model!=base_model, ],
+            aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && base_model!="") {
+          geom_ribbon(
+            data = concentration_pred_base_model,
+            aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.2, fill = "black"
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred)) {
+          geom_ribbon(
+            data = concentration_pred[concentration_pred$model!=base_model, ],
+            aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
+          )
+        }
+      } +
+      {
+        if (!is.null(measurements)) {
+          geom_point(
+            data = measurements,
+            aes(y = concentration),
+            color = ifelse(is.null(results),"black","#a6a6a6"), shape = 4
+          )
+        }
+      } +
+      {
+        if (!is.null(measurements) && mark_outliers) {
+          geom_point(
+            data = measurements |> filter(.outlier),
+            aes(y = concentration),
+            color = "red", shape = 4
+          )
+        }
+      } +
+      {
+        if (!is.null(measurements_modeled)) {
+          geom_point(
+            data = measurements_modeled,
+            aes(y = concentration), color = "black", shape = 4
+          )
+        }
+      } +
+      {
+        if (median && !is.null(concentration_pred) && base_model!="") {
+          geom_line(
+            data = concentration_pred_base_model,
+            aes(y = median), color = "black"
+          )
+        }
+      } +
+      {
+        if (median && !is.null(concentration_pred)) {
+          geom_line(
+            data = concentration_pred[concentration_pred$model!=base_model, ],
+            aes(y = median, color = model)
+          )
+        }
+      } +
+      theme_bw() +
+      scale_x_date(
+        expand = c(0, 0),
+        date_breaks = "1 month", date_labels = "%b\n%Y"
+      ) +
+      xlab("Date") +
+      ylab("Concentration [gene copies / mL]") +
+      coord_cartesian(xlim = as.Date(c(first_date, last_date+1)))
+  }
+
+  if (type == "pp_check") {
+    plot <- ggplot(data.frame(), aes(x = obs_conc_ord)) +
+      {
+        if (!is.null(concentration_pred) && base_model!="" && median) {
+          ggdist::geom_pointinterval(
+            orientation = "vertical", fatten_point = 0.5,
+            interval_size_domain = c(0.5, 1),
+            data = concentration_pred_base_model,
+            aes(y=median, ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, color = "black"
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && base_model!="" && !median) {
+          ggdist::geom_interval(
+            orientation = "vertical",
+            interval_size_domain = c(0.5, 1),
+            data = concentration_pred_base_model,
+            aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, color = "black"
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && median) {
+          ggdist::geom_pointinterval(
+            orientation = "vertical", fatten_point = 0.5,
+            interval_size_domain = c(0.5, 1),
+            data = concentration_pred[concentration_pred$model!=base_model, ],
+            aes(y=median, ymin = lower_0.95, ymax = upper_0.95, color = model), alpha = 0.2
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && !median) {
+          ggdist::geom_interval(
+            orientation = "vertical", interval_size_domain = c(1, 26),
+            data = concentration_pred[concentration_pred$model!=base_model, ],
+            aes(ymin = lower_0.95, ymax = upper_0.95, color = model), alpha = 0.2
+          )
+        }
+      } +
+      {
+        if (!is.null(measurements_modeled)) {
+          geom_point(
+            data = measurements_modeled,
+            aes(y = concentration), color = "black", shape = 4
+          )
+        }
+      } +
+      {
+        if (!is.null(measurements_modeled) && mark_outliers) {
+          geom_point(
+            data = measurements_modeled |> filter(.outlier),
+            aes(y = concentration),
+            color = "red", shape = 4
+          )
+        }
+      } +
+      theme_bw() +
+      theme(
+        axis.text.x = element_blank()
+        ) +
+      xlab("Observations (ordered by concentration)") +
+      ylab("Concentration [gene copies / mL]")
+  }
 
   if (is.null(concentration_pred) || length(unique(concentration_pred$model)) == 1) {
     plot <- plot +
