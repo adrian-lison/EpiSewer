@@ -67,10 +67,10 @@ place_knots <- function(ts_length, knot_distance, partial_window = 30) {
     cli::cli_abort("The `partial_window` must be larger than zero.")
   }
   # define knot distances close to present, i.e. in window with partial data
-  last_dists <- 2^seq(1, ceiling(log2(knot_distance)))
+  last_dists <- 1+2^seq(1, ceiling(log2(knot_distance)))
   last_dists <- last_dists[last_dists<=knot_distance]
   last_dists <- c(
-    rep(2, max(ceiling((partial_window-sum(last_dists))/2),1)),
+    rep(3, max(ceiling((partial_window-sum(last_dists))/3),1)),
     last_dists
     )
   last_dists <- last_dists[1:which(cumsum(last_dists)>=partial_window)[1]]
@@ -84,6 +84,7 @@ place_knots <- function(ts_length, knot_distance, partial_window = 30) {
   }
   # get knot positions
   int_knots <- rev(ts_length+1-cumsum(all_dists))
+  int_knots <- c(min(int_knots) - diff(int_knots)[1], int_knots) # add one internal knot before t=0
   bound_knots <- c(min(int_knots) - diff(int_knots)[1], ts_length + 1)
   return(list(interior = int_knots, boundary = bound_knots))
 }
