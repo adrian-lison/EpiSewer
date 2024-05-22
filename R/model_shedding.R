@@ -229,7 +229,9 @@ load_variation_estimate <- function(
     "nu_zeta", "truncated normal",
     mu = cv_prior_mu, sigma = cv_prior_sigma
   )
-  modeldata$.init$nu_zeta <- as.array(cv_prior_mu+cv_prior_sigma/4)
+  modeldata$.init$nu_zeta <- as.array(init_from_normal_prior(
+    modeldata$nu_zeta_prior
+  ))
   modeldata$.init$zeta_raw <- tbe(
     rep(0, modeldata$.metainfo$length_shedding),
     c(".metainfo$length_shedding")

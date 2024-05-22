@@ -168,6 +168,30 @@ set_prior <- function(param, dist = "normal", ...) {
   return(prior_data)
 }
 
+#' Provide initialization value for a parameter based on the supplied prior
+#'
+#' @description Initialization using the prior is often better than initializing
+#'   with zero (and if the parameter is strictly positive, zero is not possible
+#'   at all). This function provides as init value the mean of the normal prior
+#'   plus 1/4 of the standard deviation. This ensure a positive init even if the
+#'   mean is zero (useful for truncated normal priors.)
+#'
+#' @param prior Prior for parameter as provided by [set_prior()]. Should be a
+#'   normal prior.
+#'
+#' @return Mean of the normal prior plus 1/4 of the standard deviation.
+init_from_normal_prior <- function(prior) {
+  prior_data_select <- !stringr::str_detect(names(prior), pattern = "_text$")
+  if (sum(prior_data_select) != 1) {
+    cli::cli_warn(paste(
+      "Could not init from normal prior:",
+      "Non-ambiguous prior format. Using 1e-2 as fallback."
+      ), .internal = TRUE)
+  }
+  prior_data <- prior[prior_data_select][[1]]
+  return(prior_data[1] + prior_data[2]/4)
+}
+
 #' Check modeldata object for required variables
 #'
 #' `modeldata_check` accepts various additional arguments which are turned into
