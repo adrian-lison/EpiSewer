@@ -89,6 +89,41 @@ place_knots <- function(ts_length, knot_distance, partial_window = 30) {
   return(list(interior = int_knots, boundary = bound_knots))
 }
 
+
+#' Obtain regression vector to estimate a linear trend
+#'
+#' @description This function provides the solution vector from a (weighted)
+#'   linear regression with one independent variable x, where x may represent
+#'   points in a time series.
+#'
+#' @param x A `vector` with observations of the single independent variable (for
+#'   example points in time).
+#' @param weights Optional, a `vector` with weights for each observation.
+#'
+#' @return A `vector` which contains the relevant row of the regression solution
+#'   matrix that represents the trend coefficient. By multiplying this vector
+#'   with the observed time series values y, you directly get the (weighted
+#'   least squares) estimate of the trend.
+#'
+#' @examples
+#' x = 1:6
+#' y = x*4 + rnorm(6, 0, 0.1)
+#' w <- c(0.1, 0.1, 0.1, 0.2, 0.2, 0.3) # weights
+#' trend_reg <- get_regression_linear_trend(x, weights = w)
+#' as.vector(trend_reg %*% y) # this gives you the trend estimate
+#' summary(lm(y ~ x, weights = w))$coefficients["x","Estimate"] # should be the same
+get_regression_linear_trend <- function(x, weights = rep(1/length(x), length(x))) {
+  if (length(weights) != length(x)) {
+    cli::cli_abort(
+      "Provided weights do not match number of observations.", .internal = TRUE
+      )
+  }
+  X <- matrix(c(rep(1,length(x)), x), byrow = F, ncol = 2)
+  W <- diag(weights)
+  trend_reg <- (solve(t(X) %*% W %*% X) %*% t(X) %*% W)[2,]
+  return(trend_reg)
+}
+
 logistic_find_k <- function(a, c) {
   eq <- function(k) {
     (a * c * k * exp(k)) / ((a + exp(k))^2) - 1

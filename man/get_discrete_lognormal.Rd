@@ -19,9 +19,9 @@ get_discrete_lognormal(
 
 \item{sdlog}{Log scale standard deviation (scale of lognormal).}
 
-\item{unit_mean}{Alternative parameterization: unit scale mean.}
+\item{unit_mean}{Alternative parameterization: unit/natural scale mean.}
 
-\item{unit_sd}{Alternative parameterization: unit scale sd.}
+\item{unit_sd}{Alternative parameterization: unit/natural scale sd.}
 
 \item{maxX}{Right truncation point. All probability mass beyond \code{maxX} will
 be assigned to \code{maxX}.}

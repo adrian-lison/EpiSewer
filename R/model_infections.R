@@ -482,88 +482,264 @@ R_estimate_splines <- function(
 }
 
 #' Estimate seeding infections
+#' Estimate constant seeding infections
+#'
+#' @description This option estimates a constant number of infections at the
+#'   start of the modeled time period.
+#'
+#' @inheritParams seeding_estimate_rw
+#'
+#' @details The seeding phase has the length of the maximum generation time
+#'   (during this time, the renewal model cannot be applied). It is here assumed
+#'   that the expected number of new infections stays constant over this time
+#'   period. This assumption can however be violated: While traditionally,
+#'   seeding refers to the first few (potentially imported) infections of an
+#'   epidemic, depending on what time period the model is fitted to, it may also
+#'   cover a different phase with stronger growth dynamics. Thus, if your data
+#'   starts in the middle of an epidemic wave, it is recommended to use
+#'   [seeding_estimate_rw()] instead of [seeding_estimate_constant()].
+#'
+#' @details If `intercept_prior_q5` or `intercept_prior_q95` are not specified
+#'   by the user, `EpiSewer` will compute a rough median empirical estimate of
+#'   the number of cases using the supplied wastewater measurements and shedding
+#'   assumptions, and then infer the missing quantiles based on this. If none of
+#'   the quantiles are provided, they are set to be roughly 1/10 and 10 times
+#'   the empirical median estimate. We note that this is a violation of Bayesian
+#'   principles (data must not be used to inform priors) - but a neglectable
+#'   one, since it only ensures that the seeding is modeled on the right order
+#'   of magnitude and does not have relevant impacts on later Rt estimates.
+#'
+#' @details The priors of this component have the following functional form:
+#' - initial number of infections (log scale): `Normal`
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+seeding_estimate_constant <- function(
+    intercept_prior_q5 = NULL,
+    intercept_prior_q95 = NULL,
+    modeldata = modeldata_init()) {
+
+  modeldata$seeding_model <- 0
+
+  modeldata <- add_seeding_intercept_prior(
+    intercept_prior_q5 = intercept_prior_q5,
+    intercept_prior_q95 = intercept_prior_q95,
+    calling_f_name = "seeding_estimate_constant",
+    modeldata = modeldata
+  )
+
+  modeldata$iota_log_seed_sd_prior <- numeric(0)
+  modeldata$.init$iota_log_seed_sd <- numeric(0)
+  modeldata$.init$iota_log_ar_noise <- numeric(0)
+
+  modeldata$iota_log_seed_trend_reg <- tbe(
+    rep(0, modeldata$.metainfo$length_seeding),
+    ".metainfo$length_seeding"
+  )
+
+  modeldata$.str$infections[["seeding"]] <- list(
+    seeding_estimate_fixed = c()
+  )
+
+  return(modeldata)
+}
+
+#' Estimate seeding infections using a random walk model
 #'
 #' @description This option estimates initial infections at the start of the
 #'   modeled time period, when the renewal model cannot be applied yet. It uses
-#'   a random walk to model these seeding infections.
+#'   a geometric random walk to model these seeding infections.
 #'
-#' @param intercept_prior_mu Prior (mean) on the intercept of the seeding random
-#'   walk. If NULL (default), this is set to a crude empirical estimate of the
-#'   number of cases (see details).
-#' @param intercept_prior_sigma Prior (standard deviation) on the intercept of
-#'   the seeding random walk.
-#' @param sd_prior_mu Prior (mean) on the standard deviation of the seeding
-#'   random walk.
-#' @param sd_prior_sigma Prior (standard deviation) on the standard deviation of
-#'   the seeding random walk.
+#' @param intercept_prior_q5 Prior (5% quantile) on the initial number of
+#'   infections. Can be interpreted as an approximate lower bound. If NULL
+#'   (default), this is computed from a crude empirical estimate of the number
+#'   of cases (see details).
+#' @param intercept_prior_q95 Prior (95% quantile) on the initial number of
+#'   infections. Can be interpreted as an approximate upper bound. If NULL
+#'   (default), this is computed from a crude empirical estimate of the number
+#'   of cases (see details).
+#' @param rel_change_prior_mu Prior (mean) on the relative change rate of the
+#'   geometric random walk during the seeding phase. The default value (0.05)
+#'   assumes that daily changes are +-5% on expectation and likely less than
+#'   +-10% per day.
+#' @param rel_change_prior_sigma Prior (standard deviation) on the relative
+#'   change rate of the geometric random walk during the seeding phase. This
+#'   expresses your uncertainty about the change rate. The default value (0.025)
+#'   assumes that the daily change rate could be 5% points higher or lower than
+#'   your prior mean. For example, if `rel_change_prior_mu = 0.05` and
+#'   `rel_change_prior_sigma = 0.025`, this means you expect the daily change
+#'   rate to be between 0 (0%) and 0.1 (10%).
 #'
 #' @details The seeding phase has the length of the maximum generation time
 #'   (during this time, the renewal model cannot be applied). Traditionally,
 #'   seeding refers to the first few (potentially imported) infections of an
 #'   epidemic, but depending on what time period the model is fitted to, this
-#'   may also cover a different phase with higher incidence levels.
+#'   may also cover a different phase with stronger growth dynamics.
 #'
-#' @details If `intercept_prior_mu` is not specified by the user, `EpiSewer`
-#'   will set it to a rough estimate of the number of cases using the supplied
-#'   wastewater measurements and shedding assumptions. We note that this is a
-#'   violation of Bayesian principles (data must not be used to inform priors) -
-#'   but a neglectable one, since it only ensures that the seeding is modeled on
-#'   the right order of magnitude and does not have relevant impacts on later Rt
-#'   estimates.
+#' @details If `intercept_prior_q5` or `intercept_prior_q95` are not specified
+#'   by the user, `EpiSewer` will compute a rough median empirical estimate of
+#'   the number of cases using the supplied wastewater measurements and shedding
+#'   assumptions, and then infer the missing quantiles based on this. If none of
+#'   the quantiles are provided, they are set to be roughly 1/10 and 10 times
+#'   the empirical median estimate. We note that this is a violation of Bayesian
+#'   principles (data must not be used to inform priors) - but a neglectable
+#'   one, since it only ensures that the seeding is modeled on the right order
+#'   of magnitude and does not have relevant impacts on later Rt estimates.
 #'
 #' @details The priors of this component have the following functional form:
-#' - intercept of the seeding random walk: `Normal`
-#' - standard deviation of the seeding random walk: `Truncated normal`
+#' - intercept of the random walk (log scale): `Normal`
+#' - standard deviation of the random walk (log scale): `Truncated normal`
+#'   The priors for these parameters are determined based on the user-supplied
+#'   arguments, using appropriate transformations and the two-sigma-rule of
+#'   thumb.
+#'
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 seeding_estimate_rw <- function(
-    intercept_prior_mu = NULL,
-    intercept_prior_sigma = 1,
-    sd_prior_mu = 0.05,
-    sd_prior_sigma = 0.025,
+    intercept_prior_q5 = NULL,
+    intercept_prior_q95 = NULL,
+    rel_change_prior_mu = 0.05,
+    rel_change_prior_sigma = 0.025,
     modeldata = modeldata_init()) {
-  if (!is.null(intercept_prior_mu)) {
-    modeldata$iota_log_ar_start_prior <- set_prior(
-      "iota_log_ar_start",
-      "normal",
-      mu = intercept_prior_mu,
-      sigma = intercept_prior_sigma
-    )
-  } else {
-    modeldata$iota_log_ar_start_prior <- tbe(
-      set_prior(
-        "iota_log_ar_start",
-        "normal (mu based on crude empirical estimate of cases)",
-        mu = log(modeldata$.metainfo$initial_cases_crude),
-        sigma = intercept_prior_sigma
-      ),
-      ".metainfo$initial_cases_crude"
-    )
-  }
 
-  modeldata$iota_log_ar_sd_prior <- set_prior(
-    "iota_log_ar_sd",
+  modeldata$seeding_model <- 1
+
+  modeldata <- add_seeding_intercept_prior(
+    intercept_prior_q5 = intercept_prior_q5,
+    intercept_prior_q95 = intercept_prior_q95,
+    calling_f_name = "seeding_estimate_rw",
+    modeldata = modeldata
+    )
+
+  modeldata$iota_log_seed_sd_prior <- set_prior(
+    "iota_log_seed_sd",
     "truncated normal",
-    mu = sd_prior_mu,
-    sigma = sd_prior_sigma
+    mu = rel_change_prior_mu,
+    sigma = rel_change_prior_sigma
   )
 
-  modeldata$.init$iota_log_ar_start <- tbe(
-    log(modeldata$.metainfo$initial_cases_crude),
-    ".metainfo$initial_cases_crude"
-  )
-  modeldata$.init$iota_log_ar_sd <- 1
+  modeldata$.init$iota_log_seed_sd <- 1
   modeldata$.init$iota_log_ar_noise <- tbe(
     rep(0, modeldata$.metainfo$length_seeding - 1),
     ".metainfo$length_seeding"
+  )
+
+  # compute regression vector for estimating log-linear trend of seeding phase
+  modeldata$iota_log_seed_trend_reg <- tbe(
+    get_regression_linear_trend(
+      1:modeldata$.metainfo$length_seeding,
+      weights = rev(modeldata$generation_dist)
+      ),
+    c(".metainfo$length_seeding", "generation_dist")
   )
 
   modeldata$.str$infections[["seeding"]] <- list(
     seeding_estimate_rw = c()
   )
 
+  return(modeldata)
+}
+
+add_seeding_intercept_prior <- function(
+    intercept_prior_q5, intercept_prior_q95,
+    calling_f_name,
+    modeldata = modeldata_init()) {
+
+  help_seeding_f <- paste0(
+    "{.help [",
+    calling_f_name,
+    "()](EpiSewer::",
+    calling_f_name,
+    "())}"
+  )
+
+  if (!is.null(intercept_prior_q5) && intercept_prior_q5 < 1) {
+    cli::cli_warn(paste0(
+      "Warning from ",
+      help_seeding_f, ": ",
+      "The 5% quantile (`intercept_prior_q5`) was slightly raised to be ",
+      "at least 1 infection."
+    ))
+    intercept_prior_q5 <- 1
+  }
+
+  if (!is.null(intercept_prior_q95) && intercept_prior_q95 < 10) {
+    cli::cli_warn(paste0(
+      "Warning from ",
+      help_seeding_f, ": ",
+      "The 95% quantile (`intercept_prior_q95`) was slightly raised to be ",
+      "at least 10 infections."
+    ))
+    intercept_prior_q95 <- 10
+  }
+
+  if (!is.null(intercept_prior_q5) && !is.null(intercept_prior_q95)) {
+    modeldata$iota_log_seed_intercept_prior <- set_prior_normal_log(
+      "iota_log_seed_intercept",
+      unit_q5 = intercept_prior_q5,
+      unit_q95 = intercept_prior_q95
+    )
+    modeldata$.init$iota_log_seed_intercept <- init_from_normal_prior(
+      modeldata$iota_log_seed_intercept_prior
+    )
+  } else {
+    modeldata <- tbc(
+      "seeding_prior",
+      {
+        cases_crude <- modeldata$.metainfo$initial_cases_crude
+        if (!is.null(intercept_prior_q5) && intercept_prior_q5 > cases_crude) {
+          cli::cli_warn(paste0(
+            "Warning from ",
+            help_seeding_f, ": ",
+            "You specified a lower quantile ",
+            paste0("(`intercept_prior_q5=", intercept_prior_q5, "`) "),
+            "that seems be quite large based on the data provided ",
+            "(greater than the crude median estimate of ",
+            round(cases_crude), " cases). ",
+            "The median is now assumed to be 2 times your 5% quantile. ",
+            "Please consider specifying a smaller 5% quantile or adjust other ",
+            "assumptions (e.g. ",
+            "{.help [load_per_case](EpiSewer::load_per_case_assume())}) ",
+            "if the crude median estimate seems wrong."
+          ))
+          cases_crude <- intercept_prior_q5 * 2
+        }
+        if (!is.null(intercept_prior_q95) && intercept_prior_q95 < cases_crude) {
+          cli::cli_warn(paste0(
+            "Warning from ",
+            help_seeding_f, ": ",
+            "You specified an upper quantile ",
+            paste0("(`intercept_prior_q95=", intercept_prior_q95, "`) "),
+            "that seems be quite low based on the data provided ",
+            "(lower than the crude median estimate of ",
+            round(cases_crude), " cases). ",
+            "The median is now assumed to be half of your 95% quantile. ",
+            "Please consider specifying a higher 95% quantile or adjust other ",
+            "assumptions (e.g. ",
+            "{.help [load_per_case](EpiSewer::load_per_case_assume())}) ",
+            "if the crude median estimate seems wrong."
+          ))
+          cases_crude <- intercept_prior_q95 / 2
+        }
+        modeldata$iota_log_seed_intercept_prior <- set_prior_normal_log(
+          "iota_log_seed_intercept",
+          unit_median = cases_crude,
+          unit_q5 = intercept_prior_q5,
+          unit_q95 = intercept_prior_q95,
+          unit_factor = 10,
+          paste_dist = " (mu based on crude empirical estimate of cases)"
+        )
+        modeldata$.init$iota_log_seed_intercept <- init_from_normal_prior(
+          modeldata$iota_log_seed_intercept_prior
+        )
+      },
+      required = ".metainfo$initial_cases_crude",
+      modeldata = modeldata
+    )
+  }
   return(modeldata)
 }
 

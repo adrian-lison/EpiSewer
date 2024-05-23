@@ -1,7 +1,6 @@
-## ---------------------------------------------------------------
-##                Discretized delay distributions               -
-## ---------------------------------------------------------------
+# Gamma ----
 
+## Parameterization ----
 #' Get shape of a Gamma distribution given its mean and sd
 get_gamma_shape_alternative <- function(gamma_mean, gamma_sd) {
   gamma_shape <- (gamma_mean / gamma_sd)^2
@@ -30,6 +29,8 @@ get_gamma_sd_alternative <- function(gamma_shape, gamma_scale) {
   gamma_sd <- sqrt(gamma_shape) * gamma_scale
   return(gamma_sd)
 }
+
+## Discretized ----
 
 #' Get PMF of a discretized Gamma distribution
 #'
@@ -152,6 +153,77 @@ get_discrete_gamma_shifted <- function(
   return(res)
 }
 
+# Log-Normal ----
+
+erf <- function(x) 2 * pnorm(x * sqrt(2)) - 1 # error-function
+erfinv <- function (x) qnorm((1 + x)/2)/sqrt(2) # inverse error function
+
+## Parameterization ----
+
+#' Compute mu parameter of Log-Normal from other quantities.
+#'
+#' @param unit_q5 5% quantile of distribution.
+#' @param unit_q95 95% quantile of distribution.
+#'
+#' @details Currently, only conversion from quantiles is supported, but other
+#' alternatives may be added.
+#'
+#' @return Mu parameter of Log-Normal distribution.
+get_lognormal_mu_alternative <- function(unit_q5, unit_q95) {
+  erfq5 <- erfinv(2*0.05-1)
+  erfq95 <- erfinv(2*0.95-1)
+  if (unit_q5 > unit_q95) {
+    cli::cli_abort(paste(
+      "Lower quantile `unit_q5` must not be larger",
+      "than upper quantile `unit_q95`."
+    ))
+  }
+  mu = (log(unit_q5)/erfq5 - log(unit_q95)/erfq95) / (1/erfq5 - 1/erfq95)
+  return(mu)
+}
+
+#' Compute sigma parameter of Log-Normal from other quantities.
+#'
+#' @param mu Mu parameter of Log-Normal distribution.
+#' @inheritParams get_lognormal_mu_alternative
+#'
+#' @details Currently, only conversion from mu + a quantile is supported, but
+#'   other alternatives may be added.
+#'
+#' @return Sigma parameter of Log-Normal distribution.
+get_lognormal_sigma_alternative <- function(mu,
+                                            unit_q5 = NULL, unit_q95 = NULL) {
+  if (is.null(unit_q5) && is.null(unit_q95)) {
+    cli::cli_abort(
+      "Either `unit_q5` or `unit_q95` must be supplied together with mu."
+      )
+  }
+  if (!is.null(unit_q5) && !is.null(unit_q95)) {
+    cli::cli_warn(paste(
+      "Both `unit_q5` and `unit_q95` were supplied together with mu,",
+      "using only `unit_q95` to compute sigma."
+    ))
+  }
+  if (!is.null(unit_q95)) {
+    if (unit_q95 < exp(mu)) {
+      cli::cli_abort(
+        "Upper quantile `unit_q95` must not be less than exp(mu)."
+      )
+    }
+    sigma = (log(unit_q95) - mu)/(sqrt(2) * erfinv(2*0.95-1))
+  } else if (!is.null(unit_q5)) {
+    if (unit_q5 > exp(mu)) {
+      cli::cli_abort(
+        "Lower quantile `unit_q5` must not be greater than exp(mu)."
+      )
+    }
+    sigma = (log(unit_q5) - mu)/(sqrt(2) * erfinv(2*0.05-1))
+  }
+  return(sigma)
+}
+
+## Discretized ----
+
 #' Get PMF of a discretized lognormal distribution
 #'
 #' This function accepts both log-scale and unit-scale parameters to specify a
@@ -159,8 +231,8 @@ get_discrete_gamma_shifted <- function(
 #'
 #' @param meanlog Log scale mean (location of lognormal).
 #' @param sdlog Log scale standard deviation (scale of lognormal).
-#' @param unit_mean Alternative parameterization: unit scale mean.
-#' @param unit_sd Alternative parameterization: unit scale sd.
+#' @param unit_mean Alternative parameterization: unit/natural scale mean.
+#' @param unit_sd Alternative parameterization: unit/natural scale sd.
 #' @param maxX Right truncation point. All probability mass beyond `maxX` will
 #'   be assigned to `maxX`.
 #' @param include_zero Should the distribution explicitly cover X=0, or should
@@ -215,6 +287,8 @@ get_discrete_lognormal <- function(
 
   return(probs)
 }
+
+# Distribution validation ----
 
 check_dist <- function(dist, name = "probability distribution") {
   if (!is.numeric(dist)) {

@@ -70,9 +70,10 @@ data {
   vector<lower=0>[G] generation_dist; // generation interval distribution
   // --> probability for a delay of one comes first (zero excluded)
 
-  // Hyperpriors of random walk for seeding infections
-  array[2] real iota_log_ar_start_prior;
-  array[2] real iota_log_ar_sd_prior;
+  // Hyperpriors for seeding of infections
+  int<lower=0, upper=1> seeding_model; // 0 for fixed, 1 for random walk
+  array[2] real iota_log_seed_intercept_prior;
+  array[seeding_model == 1 ? 2 : 0] real iota_log_seed_sd_prior;
 
   // Stochastic (=1) or deterministic (=0) renewal process?
   int<lower=0, upper=1> I_sample;
@@ -133,10 +134,12 @@ parameters {
   real<lower=0> bs_coeff_ar_sd; // sd for random walk on log bs coeffs
   vector[bs_n_basis - 1] bs_coeff_noise_raw; // additive errors (non-centered)
 
+  // seeding
+  real iota_log_seed_intercept;
+  array[seeding_model == 1 ? 1 : 0] real<lower=0> iota_log_seed_sd;
+  vector<multiplier=(seeding_model == 1 ? iota_log_seed_sd[1] : 1)>[seeding_model == 1 ? G - 1 : 0] iota_log_ar_noise;
+
   // realized infections
-  real iota_log_ar_start;
-  real<lower=0> iota_log_ar_sd;
-  vector<multiplier=iota_log_ar_sd>[G - 1] iota_log_ar_noise;
   array[I_overdispersion && I_xi_fixed < 0 ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
 
@@ -174,8 +177,13 @@ transformed parameters {
     L + S + D + T - G, bs_n_basis, bs_w, bs_v, bs_u, bs_coeff
     ), R_link);
 
+  // seeding
+  if (seeding_model == 0) {
+    iota[1 : G] = exp(rep_vector(iota_log_seed_intercept, G));
+  } else if (seeding_model == 1) {
+    iota[1 : G] = exp(random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0));
+  }
   // renewal process
-  iota[1 : G] = exp(random_walk([iota_log_ar_start]', iota_log_ar_noise, 0)); // seeding
   if (I_sample) {
     iota[(G + 1) : (L + S + D + T)] = renewal_process_stochastic(
       (L + S + D + T - G), R, G, gi_rev, I);
@@ -249,10 +257,14 @@ model {
   bs_coeff_ar_sd ~ normal(bs_coeff_ar_sd_prior[1], bs_coeff_ar_sd_prior[2]) T[0, ]; // truncated normal
   bs_coeff_noise_raw ~ std_normal(); // Gaussian noise
 
+  // Seeding
+  iota_log_seed_intercept ~ normal(iota_log_seed_intercept_prior[1], iota_log_seed_intercept_prior[2]);
+  if (seeding_model == 1) {
+    iota_log_seed_sd[1] ~ normal(iota_log_seed_sd_prior[1], iota_log_seed_sd_prior[2]) T[0, ]; // truncated normal
+    iota_log_ar_noise ~ normal(0, iota_log_seed_sd[1]); // Gaussian noise
+  }
+
   // Sampling of infections
-  iota_log_ar_start ~ normal(iota_log_ar_start_prior[1], iota_log_ar_start_prior[2]);
-  iota_log_ar_sd ~ normal(iota_log_ar_sd_prior[1], iota_log_ar_sd_prior[2]) T[0, ]; // truncated normal
-  iota_log_ar_noise ~ normal(0, iota_log_ar_sd); // Gaussian noise
   if (I_sample) {
     if (I_overdispersion) {
       if (I_xi_fixed < 0) {

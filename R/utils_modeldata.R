@@ -168,6 +168,87 @@ set_prior <- function(param, dist = "normal", ...) {
   return(prior_data)
 }
 
+
+#' Define a normal prior in modeldata
+#'
+#' @param param Name of the parameter for which the prior is defined.
+#' @param mu Mean.
+#' @param sigma Standard deviation.
+#' @param two_sigma Two times the standard deviation. Useful for defining priors
+#'   via the two-sigma rule-of-thumb (approximately 95% of probability mass).
+#'
+#' @return Prior specification for modeldata.
+set_prior_normal <- function(param, mu, sigma = NULL, two_sigma = NULL) {
+  if (is.null(sigma)) {
+    if (is.null(two_sigma)) {
+      cli::cli_abort(
+        "Either sigma or two_sigma must be supplied for the normal prior",
+        .internal = TRUE
+        )
+    } else {
+      sigma <- two_sigma / 2
+    }
+  }
+  return(set_prior(param = param, dist = "normal", mu = mu, sigma = sigma))
+}
+
+#' Define a normal prior on the log scale in modeldata using median and factor
+#'
+#' @description This parameterization is useful to define a best guess for the
+#'   value of a parameter (median), and a maximum factor by which we expect to
+#'   deviate from that guess.
+#'
+#' @param param Name of the parameter for which the prior is defined.
+#' @param unit_median Median on the unit/natural scale.
+#' @param unit_q5 5% quantile of the distribution on the unit scale.
+#' @param unit_q95 95% quantile of the distribution on the unit scale.
+#' @param unit_factor By which factor do we expect the true parameter value to
+#'   differ at most from our prior median? For example, `unit_factor = 2` would
+#'   mean that we expect the true parameter to be at most twice our prior
+#'   median, and at least half of our prior median. This uses the two-sigma
+#'   rule-of-thumb. Must be specified together with `unit_median.`
+#' @param paste_dist Additional information that should be pasted to the dist
+#'   description.
+#'
+#' @details A normal prior on the log scale is effectively a log-normal prior on
+#'   the unit/natural scale.
+#'
+#' @return Prior specification for modeldata.
+set_prior_normal_log <- function(param,
+                                 unit_median = NULL,
+                                 unit_q5 = NULL, unit_q95 = NULL,
+                                 unit_factor = NULL, paste_dist = "") {
+  if (!is.null(unit_median)) {
+    mu = log(unit_median)
+    if (!is.null(unit_q5) || !is.null(unit_q95)) {
+      sigma = get_lognormal_sigma_alternative(
+        mu = mu, unit_q5 = unit_q5, unit_q95 = unit_q95
+        )
+    } else if (!is.null(unit_factor)) {
+      sigma = log(unit_factor)/2
+    } else {
+      cli::cli_abort(paste(
+        "You need to specify one additional argument besides",
+        "`unit_median` to define the prior."
+        ))
+    }
+  } else {
+    if (!is.null(unit_q5) && !is.null(unit_q95)) {
+      mu = get_lognormal_mu_alternative(unit_q5 = unit_q5, unit_q95 = unit_q95)
+      sigma = get_lognormal_sigma_alternative(mu = mu, unit_q95 = unit_q95)
+    } else {
+      cli::cli_abort(paste(
+        "Please specify either `unit_median`, or both `unit_q5` and",
+        "`unit_q95` to define the prior."
+      ))
+    }
+  }
+  prior = set_prior(
+    param = param, dist = paste0("normal", paste_dist), mu = mu , sigma = sigma
+    )
+  return(prior)
+}
+
 #' Provide initialization value for a parameter based on the supplied prior
 #'
 #' @description Initialization using the prior is often better than initializing
