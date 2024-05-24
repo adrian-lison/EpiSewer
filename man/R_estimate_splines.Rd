@@ -72,13 +72,13 @@ penalized B-splines.
 regularization. This allows to use small knot distances without obtaining
 extremely wiggly Rt estimates.
 \itemize{
-\item The prior on the  random walk intercept should reflect
+\item The prior on the random walk intercept should reflect
 your expectation of Rt at the beginning of the time series. If estimating
 from the start of an epidemic, you might want to use a prior with mean
 larger than 1 for the intercept.
-\item The prior on the daily standard deviation should be interpreted in terms of
-daily additive changes (this is at least true around Rt=1, and becomes less
-true as Rt approaches 0 or its upper bound as defined by the \code{link}
+\item The prior on the daily standard deviation should be interpreted in terms
+of daily additive changes (this is at least true around Rt=1, and becomes
+less true as Rt approaches 0 or its upper bound as defined by the \code{link}
 function). For example, a standard deviation of 0.5 roughly allows the
 spline coefficients to change by ±1 (using the 2 sigma rule) each day. The
 daily standard deviation is multiplied by \code{sqrt(knot_distance)} to get the
@@ -96,11 +96,13 @@ The smoothness of the Rt estimates is influenced both by the knot
 distance and by the daily standard deviation of the random walk on
 coefficients. The latter also influences the uncertainty of Rt estimates
 towards the present / date of estimation, when limited data signal is
-available.
+available. Absent sufficient data signal, Rt estimates will tend to stay at
+the current level (which corresponds to assuming unchanged transmission
+dynamics).
 
 The priors of this component have the following functional form:
 \itemize{
-\item intercept of the log random walk over spline coefficients:
+\item intercept of the random walk over spline coefficients:
 \code{Normal}
 \item standard deviation of the random walk over spline coefficients:
 \verb{Truncated normal}
@@ -109,6 +111,7 @@ The priors of this component have the following functional form:
 \seealso{
 Other {Rt models}: 
 \code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_fast}()},
 \code{\link{R_estimate_rw}()}
 }
 \concept{{Rt models}}

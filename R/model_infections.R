@@ -369,13 +369,13 @@ R_estimate_rw <- function(
 #' @details `EpiSewer` uses a random walk on the B-spline coefficients for
 #'   regularization. This allows to use small knot distances without obtaining
 #'   extremely wiggly Rt estimates.
-#'   - The prior on the  random walk intercept should reflect
+#'   - The prior on the random walk intercept should reflect
 #'   your expectation of Rt at the beginning of the time series. If estimating
 #'   from the start of an epidemic, you might want to use a prior with mean
 #'   larger than 1 for the intercept.
-#'   - The prior on the daily standard deviation should be interpreted in terms of
-#'   daily additive changes (this is at least true around Rt=1, and becomes less
-#'   true as Rt approaches 0 or its upper bound as defined by the `link`
+#'   - The prior on the daily standard deviation should be interpreted in terms
+#'   of daily additive changes (this is at least true around Rt=1, and becomes
+#'   less true as Rt approaches 0 or its upper bound as defined by the `link`
 #'   function). For example, a standard deviation of 0.5 roughly allows the
 #'   spline coefficients to change by ±1 (using the 2 sigma rule) each day. The
 #'   daily standard deviation is multiplied by `sqrt(knot_distance)` to get the
@@ -392,10 +392,12 @@ R_estimate_rw <- function(
 #'   distance and by the daily standard deviation of the random walk on
 #'   coefficients. The latter also influences the uncertainty of Rt estimates
 #'   towards the present / date of estimation, when limited data signal is
-#'   available.
+#'   available. Absent sufficient data signal, Rt estimates will tend to stay at
+#'   the current level (which corresponds to assuming unchanged transmission
+#'   dynamics).
 #'
 #' @details The priors of this component have the following functional form:
-#' - intercept of the log random walk over spline coefficients:
+#' - intercept of the random walk over spline coefficients:
 #'   `Normal`
 #' - standard deviation of the random walk over spline coefficients:
 #'   `Truncated normal`
@@ -481,7 +483,208 @@ R_estimate_splines <- function(
   return(modeldata)
 }
 
-#' Estimate seeding infections
+#' Estimate Rt in fast mode
+#'
+#' @description This option estimates the effective reproduction number Rt using
+#'   an approximation of the generative renewal model. It is considerably faster
+#'   than the fully generative options, but slightly less exact. It is
+#'   recommended to check the results of this method against a fully generative
+#'   version like [R_estimate_splines()] before using it for real-time R
+#'   estimation. See the details for an explanation of the method and its
+#'   limitations.
+#'
+#' @param inf_sd_prior_mu Prior (mean) on the standard deviation of daily
+#'   changes in infections. Infection numbers are modeled on the log scale, thus
+#'   the standard deviation can be roughly interpreted in terms of percentage
+#'   changes. A higher standard deviation will lead to more volatile infections
+#'   and more uncertainty in R estimates. The default (`inf_sd_prior_mu = 0.05`)
+#'   allows daily growth/decline rates of up +-10%. We suggest to only decrease
+#'   this if you are very certain that the modeled scenario has lower maximum
+#'   growth/decline rates, and to increase this if you expect a more extreme
+#'   scenario. Note that the smoothness of the infection curve is also
+#'   influenced by the exponential smoothing parameters (`inf_smooth`,
+#'   `inf_trend_smooth`). Still, `inf_sd_prior_mu` is the primary hyperparameter
+#'   to adjust if you think the estimated infection trajectory is too volatile /
+#'   not flexible enough.
+#' @param inf_sd_prior_sigma Prior (standard deviation) on standard deviation of
+#'   daily changes of infections. This reflects uncertainty around
+#'   `inf_sd_prior_mu`. The default (`inf_sd_prior_mu=0.025`) allows the
+#'   standard deviation to be roughly 0.5 higher or lower than
+#'   `inf_sd_prior_mu`. For the default setting with `inf_sd_prior_mu = 0.05`,
+#'   this means that growth/decline rates of up to +-20% are still supported by
+#'   the prior.
+#' @param inf_smooth Smoothing parameter (alpha) for infections. The infection
+#'   time series is smoothed based on earlier time steps, with exponentially
+#'   decaying weights, as controlled by the alpha parameter. The default is 0.5,
+#'   *smaller* values will lead to *stronger* smoothing, and *larger* values to
+#'   *less* smoothing.
+#' @param inf_trend_smooth Trend smoothing parameter (beta) for infections. The
+#'   exponential trend in infections is also smoothed based on the trend over
+#'   earlier time steps, with exponentially decaying weights, as controlled by
+#'   the beta parameter. Default is 0.5, *smaller* values will lead to
+#'   *stronger* smoothing of the trend (useful for longer generation times),
+#'   and *larger* values to *less* smoothing of the trend (useful for shorter
+#'   generation times).
+#' @param inf_trend_dampen Trend dampening parameter (phi) for infections. The
+#'   exponential trend in infections is dampened over time (exponential growth
+#'   will not continue for ever). This mainly influences the trend towards the
+#'   present. For the default value (0.9), the trend will only roughly half as
+#'   strong after two weeks. Note that increasing phi to close to 1 can reduce
+#'   sampling speed.
+#' @param knot_distance The infection time series is smoothed using penalized
+#'   B-splines. The distance between spline breakpoints (knots) is 7 days by
+#'   default. Placing knots further apart increases the smoothness of the
+#'   infection time series and can speed up model fitting. Placing knots closer
+#'   to each other increases the volatility of the infections. Note however that
+#'   the uncertainty of R estimates produced by [R_estimate_fast()] is also
+#'   sensitive to the smoothness of the infection time series, i.e. changing the
+#'   knot distance can make the R estimates appear more or less uncertain. This
+#'   effect is however rather small since the regularization of the spline
+#'   coefficients adjusts for the knot distance.
+#' @param spline_degree Degree of the spline polynomials (default is 3 for cubic
+#'   splines).
+#' @param R_prior_mean
+#' @param R_prior_sd
+#' @param R_window Smoothing window size for R estimates. Default is 1 (i.e. no
+#'   smoothing). This is provided for compatibility with the EpiEstim method by
+#'   Cori et al., which assumes that R stays constant over a certain time
+#'   window. However, this can artificially reduce the uncertainty of the R
+#'   estimates and is therefore generally not recommended. It also means that R
+#'   cannot be estimated up to the present because the smoothing window must be
+#'   centered.
+#'
+#' @details This method uses an approximation of the renewal model to estimate
+#'   the effective reproduction number. Instead of generating the infections
+#'   through a renewal process, the infection time series is estimated using a
+#'   non-parametric smoothing prior that mimics the characteristics of a renewal
+#'   process. Rt is then computed from the infection time series by applying the
+#'   classical renewal equation. This still gives Bayesian estimates of Rt and
+#'   the infection time series, but is less exact than a fully generative model.
+#'
+#' @details To smooth the infection time series, penalized B-splines similar to
+#'   the ones in [R_estimate_splines()] are used, but they are applied to the
+#'   expected number of infections on the log scale, not Rt. The spline
+#'   coefficients are themselves smoothed using an exponential smoothing prior
+#'   with a trend component. The trend component is important as it reflects the
+#'   default assumption of constant transmission dynamics that leads to
+#'   exponential growth in infections. This ensures consistent results of
+#'   `R_estimate_fast()` also towards the present.
+#'
+#' @details The method can also model infection noise as specified by
+#'   [infection_noise_estimate()]. To account for the autocorrelation of
+#'   infection noise, a correction that applies the renewal model specifically
+#'   to the noise component is used. This correction is most accurate when R is
+#'   close to 1 and less accurate when it is far from 1.
+#'
+#' @details The main limitation of `R_estimate_fast()` is that its priors and
+#'   hyperparameters are less interpretable and thus difficult to specify. In
+#'   particular the assumed generation time distribution is only used for R
+#'   estimation but does not inform the smoothness of the expected infection
+#'   time series. Instead, the smoothness is determined by the spline settings
+#'   and exponential smoothing parameters, which are difficult to translate into
+#'   a generation time assumption. The best approach is therefore to compare
+#'   estimates from `R_estimate_fast()` with those from another method like
+#'   [R_estimate_splines()] for a pathogen of interest and to carefully adjust
+#'   the smoothing hyperparameters if needed.
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {Rt models}
+R_estimate_fast <- function(
+    inf_sd_prior_mu = 0.05,
+    inf_sd_prior_sigma = 0.025,
+    inf_smooth = 0.75,
+    inf_trend_smooth = 0.75,
+    inf_trend_dampen = 0.9,
+    knot_distance = 7,
+    spline_degree = 3,
+    R_prior_mean = 1,
+    R_prior_sd = 1,
+    R_window = 1,
+    modeldata = modeldata_init()) {
+  modeldata$.metainfo$R_estimate_approach <- "fast"
+
+  modeldata <- tbc(
+    "spline_definition",
+    {
+      knots <- place_knots(
+        ts_length = with(modeldata$.metainfo, length_I - length_seeding),
+        knot_distance = knot_distance,
+        partial_window = modeldata$.metainfo$partial_window
+      )
+      B <-
+        splines::bs(
+          1:with(modeldata$.metainfo, length_I - length_seeding),
+          knots = knots$interior,
+          degree = spline_degree,
+          intercept = FALSE,
+          Boundary.knots = knots$boundary
+        )
+      modeldata$.metainfo$R_knots <- knots
+      modeldata$.metainfo$B <- B
+      modeldata$bs_n_basis <- ncol(B)
+      modeldata$bs_dists <- c(
+        rep( # left boundary basis functions
+          knots$interior[1]-knots$boundary[1], spline_degree - 1
+        ),
+        diff( # interior basis functions
+          knots$interior
+        ),
+        rep( # right boundary basis function
+          knots$boundary[2]-knots$interior[length(knots$interior)], 1
+        )
+      )
+
+      B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
+      modeldata$bs_n_w <- length(B_sparse$w)
+      modeldata$bs_w <- B_sparse$w
+      modeldata$bs_v <- B_sparse$v
+      modeldata$bs_u <- B_sparse$u
+
+      modeldata$.init$bs_coeff_noise_raw <- rep(0, sum(modeldata$bs_dists))
+    },
+    required = c(
+      ".metainfo$length_I",
+      ".metainfo$length_seeding",
+      ".metainfo$partial_window"
+      ),
+    modeldata = modeldata
+  )
+
+  modeldata$inf_ar_sd_prior <- set_prior(
+    "inf_ar_sd",
+    "truncated normal",
+    mu = inf_sd_prior_mu,
+    sigma = inf_sd_prior_sigma
+  )
+  modeldata$.init$inf_ar_sd <- init_from_normal_prior(
+    modeldata$inf_ar_sd_prior
+  )
+
+  R_prior_shape = get_gamma_shape_alternative(
+    gamma_mean = R_prior_mean, gamma_sd = R_prior_sd
+  )
+  R_prior_scale = get_gamma_scale_alternative(
+    gamma_mean = R_prior_mean, gamma_sd = R_prior_sd
+  )
+  modeldata$R_prior <- set_prior(
+    "R", "Gamma", shape = R_prior_shape, scale = R_prior_scale
+  )
+
+  modeldata$inf_smooth <- inf_smooth
+  modeldata$inf_trend_smooth <- inf_trend_smooth
+  modeldata$inf_trend_dampen <- inf_trend_dampen
+
+  modeldata$R_w <- R_window
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_fast = c()
+  )
+
+  return(modeldata)
+}
+
 #' Estimate constant seeding infections
 #'
 #' @description This option estimates a constant number of infections at the
@@ -840,6 +1043,13 @@ infection_noise_estimate <-
         modeldata$.metainfo$length_I
       ),
       c(".metainfo$initial_cases_crude", ".metainfo$length_I")
+    )
+    modeldata$.init$I_raw <- tbe(
+      rep(
+        0,
+        modeldata$.metainfo$length_I
+      ),
+      c(".metainfo$length_I")
     )
 
     modeldata$.str$infections[["infection_noise"]] <- list(

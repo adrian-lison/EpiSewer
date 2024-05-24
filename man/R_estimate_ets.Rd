@@ -145,6 +145,7 @@ The priors of this component have the following functional form:
 }
 \seealso{
 Other {Rt models}: 
+\code{\link{R_estimate_fast}()},
 \code{\link{R_estimate_rw}()},
 \code{\link{R_estimate_splines}()}
 }
