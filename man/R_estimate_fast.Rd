@@ -12,8 +12,6 @@ R_estimate_fast(
   inf_trend_dampen = 0.9,
   knot_distance = 7,
   spline_degree = 3,
-  R_prior_mean = 1,
-  R_prior_sd = 1,
   R_window = 1,
   modeldata = modeldata_init()
 )
@@ -134,10 +132,10 @@ close to 1 and less accurate when it is far from 1.
 The main limitation of \code{R_estimate_fast()} is that its priors and
 hyperparameters are less interpretable and thus difficult to specify. In
 particular the assumed generation time distribution is only used for R
-estimation but does not inform the smoothness of the infection time series.
-Instead, the smoothness is determined by the spline settings and
-exponential smoothing parameters, which are difficult to translate into a
-generation time assumption. The best approach is therefore to compare
+estimation but does not inform the smoothness of the expected infection
+time series. Instead, the smoothness is determined by the spline settings
+and exponential smoothing parameters, which are difficult to translate into
+a generation time assumption. The best approach is therefore to compare
 estimates from \code{R_estimate_fast()} with those from another method like
 \code{\link[=R_estimate_splines]{R_estimate_splines()}} for a pathogen of interest and to carefully adjust
 the smoothing hyperparameters if needed.

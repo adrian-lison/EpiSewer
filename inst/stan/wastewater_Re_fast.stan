@@ -82,8 +82,7 @@ data {
   real I_xi_fixed; // fixed overdispersion parameter
   array[I_overdispersion && I_xi_fixed < 0 ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
 
-  array[2] real R_prior;
-  int<lower=1> R_w; // smoothing window
+  int<lower=1> R_w; // R smoothing window (compatibility with Cori et al.)
 
   // Basis spline (bs) configuration for smoothing R
   // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-G)
@@ -400,20 +399,16 @@ generated quantities {
   {
     vector[L + S + D + T] infs;
     vector[L + S + D + T - G] infness;
-    //vector[L + S + D + T] inf_noise = rep_vector(0, L + S + D + T);
     if (I_sample) {
       infs = I;
-      //inf_noise[(G+1):(L + S + D + T)] = infectiousness((L + S + D + T - G), G, gi_rev, I-iota);
     } else {
       infs = iota;
     }
     infness = infectiousness((L + S + D + T - G), G, gi_rev, infs);
 
-    //R = (R_prior[1] + (iota + I_noise_correction)[(G+1):(L + S + D + T)]) ./ ((1/R_prior[2]) + infness);
     int max_t = L + S + D + T - G;
     for (t in (R_w_half+1):(max_t-R_w_half)) {
-      R[t] = (R_prior[1] + sum(softplus(iota + I_noise_correction, 10)[(G+t-R_w_half):(G+t+R_w_half)])) ./ ((1/R_prior[2]) + sum(infness[(t-R_w_half):(t+R_w_half)]));
-      //R[t] = gamma_rng(R_prior[1] + sum((iota + I_noise_correction)[(G+t-R_w_half):(G+t+R_w_half)]), (1/R_prior[2]) + sum(infness[(t-R_w_half):(t+R_w_half)]));
+      R[t] = (sum(softplus(iota + I_noise_correction, 10)[(G+t-R_w_half):(G+t+R_w_half)])) ./ sum(infness[(t-R_w_half):(t+R_w_half)]);
     }
   }
 

@@ -543,8 +543,6 @@ R_estimate_splines <- function(
 #'   coefficients adjusts for the knot distance.
 #' @param spline_degree Degree of the spline polynomials (default is 3 for cubic
 #'   splines).
-#' @param R_prior_mean
-#' @param R_prior_sd
 #' @param R_window Smoothing window size for R estimates. Default is 1 (i.e. no
 #'   smoothing). This is provided for compatibility with the EpiEstim method by
 #'   Cori et al., which assumes that R stays constant over a certain time
@@ -599,8 +597,6 @@ R_estimate_fast <- function(
     inf_trend_dampen = 0.9,
     knot_distance = 7,
     spline_degree = 3,
-    R_prior_mean = 1,
-    R_prior_sd = 1,
     R_window = 1,
     modeldata = modeldata_init()) {
   modeldata$.metainfo$R_estimate_approach <- "fast"
@@ -667,9 +663,6 @@ R_estimate_fast <- function(
   )
   R_prior_scale = get_gamma_scale_alternative(
     gamma_mean = R_prior_mean, gamma_sd = R_prior_sd
-  )
-  modeldata$R_prior <- set_prior(
-    "R", "Gamma", shape = R_prior_shape, scale = R_prior_scale
   )
 
   modeldata$inf_smooth <- inf_smooth
