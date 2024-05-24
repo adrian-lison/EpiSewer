@@ -975,7 +975,8 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #'   Poisson distributed. If `TRUE`, new infections are modeled as Negative
 #'   Binomial distributed.
 #' @param overdispersion_prior_mu Prior (mean) on the overdispersion parameter
-#'   of the Negative Binomial.
+#'   of the Negative Binomial. The default of 0.1 corresponds to 10%
+#'   overdispersion.
 #' @param overdispersion_prior_sigma Prior (standard deviation) on the
 #'   overdispersion parameter of the Negative Binomial.
 #' @param overdispersion_fixed Should the overdispersion parameter be fixed or
@@ -985,6 +986,8 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #' @details The level of overdispersion is often unidentifiable from a single
 #'   time series of measurements. This is why the overdispersion is fixed to a
 #'   (comparably low) value by default.
+#'   time series of measurements. This is why the overdispersion is fixed by
+#'   default.
 #'
 #' @details The priors of this component have the following functional form:
 #' - overdispersion parameter of the Negative Binomial: `Truncated normal`
@@ -996,6 +999,7 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 infection_noise_estimate <-
   function(overdispersion = FALSE,
            overdispersion_prior_mu = 0.05,
+           overdispersion_prior_mu = 0.1,
            overdispersion_prior_sigma = 0.25,
            overdispersion_fixed = TRUE,
            modeldata = modeldata_init()) {
