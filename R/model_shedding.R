@@ -36,7 +36,7 @@ model_shedding <- function(
     incubation_dist = incubation_dist_assume(),
     shedding_dist = shedding_dist_assume(),
     load_per_case = load_per_case_assume(),
-    load_variation = load_variation_none()) {
+    load_variation = load_variation_estimate()) {
   verify_is_modeldata(incubation_dist, "incubation_dist")
   verify_is_modeldata(shedding_dist, "shedding_dist")
   verify_is_modeldata(load_per_case, "load_per_case")
@@ -193,19 +193,17 @@ load_variation_none <- function(modeldata = modeldata_init()) {
 #'   mean equal to the average `load_per_case` and a coefficient of variation to
 #'   be estimated.
 #'
-#' @details Measurement noise and individual-level load variation might not be
-#'   jointly identifiable. It may therefore be necessary to use informative
-#'   priors for at least one of these parameters when using both
-#'   [noise_estimate()] and [load_variation_estimate()].
+#' @details Note that measurement noise and individual-level load variation
+#'   might not be jointly identifiable.
 #'
-#' @details Also note that the accuracy of the variation model depends on
-#'   the estimated number of cases to be on the right scale (which in turn
-#'   depends on the assumed `load_per_case` to be roughly correct). This is
-#'   because in the variation model, the population-level coefficient of
-#'   variation (CV) of shedding loads is proportional to the individual-level CV
-#'   divided by the square root of the number of cases. If for example the
-#'   assumed `load_per_case` is too small, the number of cases will be
-#'   overestimated, which has effects in two directions:
+#' @details Also note that the accuracy of the variation model depends on the
+#'   estimated number of cases to be on the right scale (which in turn depends
+#'   on the assumed `load_per_case` to be roughly correct). This is because in
+#'   the variation model, the population-level coefficient of variation (CV) of
+#'   shedding loads is proportional to the individual-level CV divided by the
+#'   square root of the number of cases. If for example the assumed
+#'   `load_per_case` is too small, the number of cases will be overestimated,
+#'   which has effects in two directions:
 #'   - the individual-level CV will be overestimated (especially if the prior
 #'   on the individual-level CV is weak)
 #'   - the population-level CV will be underestimated (especially if the prior
@@ -221,8 +219,8 @@ load_variation_none <- function(modeldata = modeldata_init()) {
 #' @export
 #' @family {load variation models}
 load_variation_estimate <- function(
-    cv_prior_mu = 0.1,
-    cv_prior_sigma = 0.025,
+    cv_prior_mu = 0,
+    cv_prior_sigma = 1,
     modeldata = modeldata_init()) {
   modeldata$load_vari <- 1
   modeldata$nu_zeta_prior <- set_prior(
