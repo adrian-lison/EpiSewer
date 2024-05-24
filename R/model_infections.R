@@ -984,8 +984,6 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #'   `overdispersion_prior_mu`.
 #'
 #' @details The level of overdispersion is often unidentifiable from a single
-#'   time series of measurements. This is why the overdispersion is fixed to a
-#'   (comparably low) value by default.
 #'   time series of measurements. This is why the overdispersion is fixed by
 #'   default.
 #'
@@ -998,7 +996,6 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #' @family {infection noise models}
 infection_noise_estimate <-
   function(overdispersion = FALSE,
-           overdispersion_prior_mu = 0.05,
            overdispersion_prior_mu = 0.1,
            overdispersion_prior_sigma = 0.25,
            overdispersion_fixed = TRUE,

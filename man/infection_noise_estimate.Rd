@@ -6,7 +6,7 @@
 \usage{
 infection_noise_estimate(
   overdispersion = FALSE,
-  overdispersion_prior_mu = 0.05,
+  overdispersion_prior_mu = 0.1,
   overdispersion_prior_sigma = 0.25,
   overdispersion_fixed = TRUE,
   modeldata = modeldata_init()
@@ -18,7 +18,8 @@ Poisson distributed. If \code{TRUE}, new infections are modeled as Negative
 Binomial distributed.}
 
 \item{overdispersion_prior_mu}{Prior (mean) on the overdispersion parameter
-of the Negative Binomial.}
+of the Negative Binomial. The default of 0.1 corresponds to 10\%
+overdispersion.}
 
 \item{overdispersion_prior_sigma}{Prior (standard deviation) on the
 overdispersion parameter of the Negative Binomial.}
@@ -49,8 +50,8 @@ up model fitting.
 }
 \details{
 The level of overdispersion is often unidentifiable from a single
-time series of measurements. This is why the overdispersion is fixed to a
-(comparably low) value by default.
+time series of measurements. This is why the overdispersion is fixed by
+default.
 
 The priors of this component have the following functional form:
 \itemize{
