@@ -51,6 +51,8 @@ get_stan_model <- function(
       model_filename <- "wastewater_Re.stan"
     } else if (model_metainfo$R_estimate_approach == "rw") {
       model_filename <- "wastewater_Re.stan"
+    } else if (model_metainfo$R_estimate_approach == "fast") {
+      model_filename <- "wastewater_Re_fast.stan"
     } else {
       cli::cli_abort(
         paste(

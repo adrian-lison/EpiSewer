@@ -6,12 +6,12 @@
 * @param R Effective reproduction number
 *
 * @param G Maximum generation interval
-* 
+*
 * @param gi_rev The generation interval distribution in reversed format
 *
 * @param I The sampled infections (see model block). These should include the
 * seeded infections from time (1-G):0, the vector thus has length G+T
-* 
+*
 * @return The expected infections from time 1:T
 */
 vector renewal_process_stochastic(int T, vector R, int G, vector gi_rev, vector I) {
@@ -20,6 +20,14 @@ vector renewal_process_stochastic(int T, vector R, int G, vector gi_rev, vector 
     iota[t] = R[t] * dot_product(gi_rev, I[t:(G+t-1)]);
   }
   return(iota);
+}
+
+vector log_renewal_process_stochastic(int T, vector R_log, int G, vector gi_rev_log, vector I_log) {
+  vector[T] iota_log;
+  for (t in 1:T) {
+    iota_log[t] = R_log[t] + log_dot_product(gi_rev_log, I_log[t:(G+t-1)]);
+  }
+  return(iota_log);
 }
 
 array[] vector renewal_process_stochastic_noncentered(int T, vector R, int G, vector gi_rev, vector iota, vector I_raw, real I_xi) {
@@ -45,14 +53,6 @@ array[] vector log_renewal_process_stochastic_noncentered(int T, vector R_log, i
    return {iota_log_tmp, I_log};
 }
 
-vector log_renewal_process_stochastic(int T, vector R_log, int G, vector gi_rev_log, vector I_log) {
-  vector[T] iota_log;
-  for (t in 1:T) {
-    iota_log[t] = R_log[t] + log_dot_product(gi_rev_log, I_log[t:(G+t-1)]);
-  }
-  return(iota_log);
-}
-
 vector renewal_process_deterministic(int T, vector R, int G, vector gi_rev, vector iota) {
   vector[G+T] iota_tmp = iota;
   for (t in 1:T) {
@@ -69,13 +69,39 @@ vector log_renewal_process_deterministic(int T, vector R_log, int G, vector gi_r
   return(iota_log_tmp[(G+1):(G+T)]);
 }
 
+// Approximation for autocorrelated infection noise
+// added to expected infection time series
+vector renewal_noise_correction(int T, int G, vector gi_rev, vector I_noise) {
+  vector[G+T] noise_tmp = I_noise;
+  for (t in 1:T) {
+    noise_tmp[G+t] = I_noise[G+t] + dot_product(gi_rev, noise_tmp[t:(G+t-1)]);
+  }
+  return((noise_tmp-I_noise)[(G+1):(G+T)]);
+}
+
+vector infectiousness(int T, int G, vector gi_rev, vector I) {
+  vector[T] infectiousness;
+  for (t in 1:T) {
+    infectiousness[t] = dot_product(gi_rev, I[t:(G+t-1)]);
+  }
+  return(infectiousness);
+}
+
+vector log_infectiousness(int T, int G, vector gi_rev_log, vector I_log) {
+  vector[T] infectiousness;
+  for (t in 1:T) {
+    infectiousness[t] = log_dot_product(gi_rev_log, I_log[t:(G+t-1)]);
+  }
+  return(infectiousness);
+}
+
 /**
 * Convolution of a time series
 *
 * @param f The weight function, e.g. the incubation period distribution
 *
 * @param g The time series to be convolved, e.g. infections
-* 
+*
 * @return The convolved time series. The first length(f)-1 elements are NA
 * because the convolved values can only be computed starting from length(f).
 */
@@ -95,7 +121,7 @@ vector convolve(vector f, vector g) {
 * @param f The weight function, e.g. the incubation period distribution
 *
 * @param g The time series to be convolved, e.g. infections
-* 
+*
 * @return The convolved log time series. The first length(f)-1 elements are NA
 * because the convolved values can only be computed starting from length(f).
 */

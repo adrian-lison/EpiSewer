@@ -12,7 +12,7 @@ Time series process functions
        return cumulative_sum(append_row(start_values[1], increments));
      } else {
       vector[diff_order] next_start = start_values[2:(diff_order+1)];
-      int next_n = num_elements(increments) + diff_order - 1;
+      int next_n = num_elements(increments) + diff_order;
       vector[next_n] diffs = random_walk(next_start, increments, diff_order - 1);
       return cumulative_sum(append_row(start_values[1], diffs));
     }
@@ -45,30 +45,46 @@ Time series process functions
   vector holt_damped_process(vector start_values, real alpha, real beta_star, real phi, vector noise, int diff_order) {
     if (diff_order == 0) {
       int n = 1 + num_elements(noise); // n = 1 (for start value) + length of noise
-      vector[n] y; // observations
-      vector[n] epsilons = append_row(0, noise); // innovations
+      vector[n] y; // observations (from 1:n)
+      vector[n] epsilons = append_row(0, noise); // innovations (from 1:n)
+      // We want y_1 to be equal to the start value/intercept, hence epsilon_1 must have zero noise.
+      // --> epsilons = [epsilon_1, epsilon_2, ...] = [0, noise_1, ...]
+      // - 2) We also need to model epsilon_0, as we need it for l_0 and b_0 (they define y_1). Since we neither want epsilon_0 to affect y_1, we also set it to zero.
+      // Therefore, we add two zeros to the head of the noise vector:
 
-      // Compute level values
-      vector[n] level = start_values[1] + alpha * cumulative_sum(append_row(0, epsilons))[1:n];
 
-      // Compute trend values
+      // Level values (from l_0:l_n-1)
+      // --> l_{t} = l_0 + sum(epsilon_{1:t})
+      vector[n] level;
+      level[1] = start_values[1]; // l_0
+      level[2:n] = start_values[1] + alpha * cumulative_sum(epsilons[1:(n-1)]); // l_1:l_n-1, note index shift for epsilon
+
+      // Trend values (from b_0:b_n-1)
       vector[n] trend;
       real beta = alpha * beta_star; // below, we always need the product of alpha and beta*
       if (phi == 0) {
         // special case: no trend
         trend = rep_vector(0, n);
-      } else if (phi == 1) {
-        // special case: trend, no dampening
-        trend = start_values[2] + cumulative_sum(beta * cumulative_sum(append_row(0, epsilons))[1:n]);
       } else {
-        // general case: trend and dampening
-        vector[n] b = rep_vector(0, n);
-        for (t in 2:n) { b[t] = phi * b[t - 1] + beta * epsilons[t - 1]; }
-        trend = start_values[2] + phi * cumulative_sum(b);
+        trend[1] = 0; // b_0, assume no trend for y_0 -> y_1 (so that y_1 corresponds to the supplied intercept without trend)
+        trend[2] = start_values[2]; // b_1, assume that trend starts for step y_1 -> y_2
+        if (phi == 1) {
+          // special case: trend, no dampening (vectorized)
+          trend[3:n] = trend[2] + beta * cumulative_sum(epsilons[2:(n-1)]); // b_2:b_n-1, note index shift for epsilon
+        } else {
+          // general case: trend and dampening
+          for (t in 3:n) { trend[t] = phi * trend[t - 1] + beta * epsilons[t-1]; } // b_2:b_n-1, note index shift for epsilon
+        }
+        // update level: l_t = l_{t-1} + b{t-1} + alpha * epsilon_t
+        // --> l_t = alpha * sum(epsilon_{0:t}) + sum(b_{0:t-1})
+        // --> For l_0, we also need b_{-1} (assume it is 0)!
+        level = level + phi * cumulative_sum(append_row(0,trend)[1:n]); // update l_0:l_n-1
       }
 
       // Compute observations
-      y = level + trend + epsilons;
+      // the y values correspond to y_t, i.e. from y_1 to y_T
+      // y_t = l_{t-1} + b_{t-1} + epsilon_t
+      y = level + phi * trend + epsilons[1:n];
       return y;
     } else {
       vector[diff_order+1] next_start = start_values[2:(diff_order+2)];

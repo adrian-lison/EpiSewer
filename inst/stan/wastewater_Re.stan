@@ -70,9 +70,10 @@ data {
   vector<lower=0>[G] generation_dist; // generation interval distribution
   // --> probability for a delay of one comes first (zero excluded)
 
-  // Hyperpriors of random walk for seeding infections
-  array[2] real iota_log_ar_start_prior;
-  array[2] real iota_log_ar_sd_prior;
+  // Hyperpriors for seeding infections
+  int<lower=0, upper=1> seeding_model; // 0 for fixed, 1 for random walk
+  array[2] real iota_log_seed_intercept_prior;
+  array[seeding_model == 1 ? 2 : 0] real iota_log_seed_sd_prior;
 
   // Stochastic (=1) or deterministic (=0) renewal process?
   int<lower=0, upper=1> I_sample;
@@ -143,10 +144,12 @@ parameters {
   array[ets_beta_fixed < 0 ? 1 : 0] real<lower=0, upper=1> ets_beta; // smoothing parameter for the trend
   array[ets_phi_fixed < 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
 
+  // seeding
+  real iota_log_seed_intercept;
+  array[seeding_model == 1 ? 1 : 0] real<lower=0> iota_log_seed_sd;
+  vector<multiplier=(seeding_model == 1 ? iota_log_seed_sd[1] : 1)>[seeding_model == 1 ? G - 1 : 0] iota_log_ar_noise;
+
   // realized infections
-  real iota_log_ar_start;
-  real<lower=0> iota_log_ar_sd;
-  vector<multiplier=iota_log_ar_sd>[G - 1] iota_log_ar_noise;
   array[I_overdispersion && I_xi_fixed < 0 ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
 
@@ -181,11 +184,16 @@ transformed parameters {
     ets_beta_fixed < 0 ? ets_beta[1] : ets_beta_fixed,
     ets_phi_fixed < 0 ? ets_phi[1] : ets_phi_fixed,
     R_noise,
-    0
+    ets_diff
   ), R_link);
 
-  // infections and renewal process
-  iota[1 : G] = exp(random_walk([iota_log_ar_start]', iota_log_ar_noise, 0)); // seeding
+  // seeding
+  if (seeding_model == 0) {
+    iota[1 : G] = exp(rep_vector(iota_log_seed_intercept, G));
+  } else if (seeding_model == 1) {
+    iota[1 : G] = exp(random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0));
+  }
+  // renewal process
   if (I_sample) {
     iota[(G + 1) : (L + S + D + T)] = renewal_process_stochastic(
       (L + S + D + T - G), R, G, gi_rev, I);
@@ -200,7 +208,7 @@ transformed parameters {
   // calculation of total loads shed each day (expected)
   vector[D + T] omega_log;
   if (load_vari) {
-    zeta = gamma_sum_approx(nu_zeta[1], lambda, zeta_raw);
+    zeta = softplus(gamma_sum_approx(nu_zeta[1], lambda, zeta_raw), 10); // softplus as soft >0 constraint
     omega_log = log_convolve(
         shed_rev_log, // shedding load distribution
         log(load_mean) + log(zeta) // total load shed
@@ -265,10 +273,14 @@ model {
   R_sd ~ normal(R_sd_prior[1], R_sd_prior[2]) T[0, ]; // truncated normal
   R_noise ~ normal(0, R_sd); // Gaussian noise
 
+  // Seeding
+  iota_log_seed_intercept ~ normal(iota_log_seed_intercept_prior[1], iota_log_seed_intercept_prior[2]);
+  if (seeding_model == 1) {
+    iota_log_seed_sd[1] ~ normal(iota_log_seed_sd_prior[1], iota_log_seed_sd_prior[2]) T[0, ]; // truncated normal
+    iota_log_ar_noise ~ normal(0, iota_log_seed_sd[1]); // Gaussian noise
+  }
+
   // Sampling of infections
-  iota_log_ar_start ~ normal(iota_log_ar_start_prior[1], iota_log_ar_start_prior[2]);
-  iota_log_ar_sd ~ normal(iota_log_ar_sd_prior[1], iota_log_ar_sd_prior[2]) T[0, ]; // truncated normal
-  iota_log_ar_noise ~ normal(0, iota_log_ar_sd); // Gaussian noise
   if (I_sample) {
     if (I_overdispersion) {
       if (I_xi_fixed < 0) {

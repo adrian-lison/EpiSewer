@@ -74,12 +74,15 @@ data {
   int<lower=0, upper=1> seeding_model; // 0 for fixed, 1 for random walk
   array[2] real iota_log_seed_intercept_prior;
   array[seeding_model == 1 ? 2 : 0] real iota_log_seed_sd_prior;
+  row_vector[G] iota_log_seed_trend_reg;
 
   // Stochastic (=1) or deterministic (=0) renewal process?
   int<lower=0, upper=1> I_sample;
   int<lower=0, upper=I_sample> I_overdispersion; // whether to model overdispersion via a negative binomial
   real I_xi_fixed; // fixed overdispersion parameter
   array[I_overdispersion && I_xi_fixed < 0 ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
+
+  int<lower=1> R_w; // R smoothing window (compatibility with Cori et al.)
 
   // Basis spline (bs) configuration for smoothing R
   // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-G)
@@ -88,14 +91,11 @@ data {
   int<lower=0> bs_n_w; // number of nonzero entries in bs matrix
   vector[bs_n_w] bs_w; // nonzero entries in bs matrix
   array[bs_n_w] int bs_v; // column indices of bs_w
-  array[L + S + D + T - G + 1] int bs_u; // row starting indices for bs_w plus padding
-  array[2] real bs_coeff_ar_start_prior; // start hyperprior for random walk on log bs coeffs
-  array[2] real bs_coeff_ar_sd_prior; // sd hyperprior for random walk on log bs coeffs
-
-  // Link function and corresponding hyperparameters
-  // first element: 0 = inv_softplus, 1 = scaled_logit
-  // other elements: hyperparameters for the respective link function
-  array[4] real R_link;
+  array[L + S + D + T + 1 - G] int bs_u; // row starting indices for bs_w plus padding
+  array[2] real inf_ar_sd_prior; // sd hyperprior for random walk on log bs coeffs
+  real<lower=0, upper=1> inf_smooth;
+  real<lower=0, upper=1> inf_trend_smooth;
+  real<lower=0, upper=1> inf_trend_dampen;
 
   // Parametric distribution for observation likelihood
   // 1 (default) = truncated normal
@@ -108,6 +108,13 @@ transformed data {
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T] flow_log = log(flow);
+
+  int R_w_half;
+
+  int bs_n = to_int(sum(bs_dists));
+  array[bs_n_basis] int bs_select = to_int(to_array_1d(
+    cumulative_sum(append_row(1, bs_dists))
+    ));
 
   int n_zero = num_zeros(measured_concentrations);
   array[n_zero] int<lower=0> i_zero;
@@ -124,15 +131,20 @@ transformed data {
     }
   }
 
-  if (R_link[1] < 0 || R_link[1] > 1) {
-    reject("Link function must be one of inv_softplus (0) or scaled_logit (1)");
+  if ((R_w % 2)==0) {
+    reject("Smoothing window size for R must be an odd number.");
+  } else {
+    if (R_w == 1) {
+      R_w_half = 0;
+    } else {
+      R_w_half = (R_w - 1) %/% 2;
+    }
   }
 }
 parameters {
-  // log(R) time series prior
-  real bs_coeff_ar_start; // intercept for random walk on log bs coeffs
-  real<lower=0> bs_coeff_ar_sd; // sd for random walk on log bs coeffs
-  vector[bs_n_basis - 1] bs_coeff_noise_raw; // additive errors (non-centered)
+  // log(iota) time series prior
+  real<lower=0> inf_ar_sd; // sd for random walk on log bs coeffs
+  vector[bs_n] bs_coeff_noise_raw; // additive errors (non-centered)
 
   // seeding
   real iota_log_seed_intercept;
@@ -141,7 +153,7 @@ parameters {
 
   // realized infections
   array[I_overdispersion && I_xi_fixed < 0 ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
-  vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
+  vector[I_sample ? L + S + D + T : 0] I_raw; // infection noise
 
   // individual-level shedding load variation
   array[load_vari ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
@@ -158,10 +170,10 @@ parameters {
   array[(cv_type > 0) && (nu_upsilon_c_fixed < 0) ? 1 : 0] real<lower=0> nu_upsilon_c;
 }
 transformed parameters {
-  vector[bs_n_basis - 1] bs_coeff_noise; // additive errors
   vector[bs_n_basis] bs_coeff; // Basis spline coefficients
-  vector[L + S + D + T - G] R; // effective reproduction number
   vector[L + S + D + T] iota; // expected number of infections
+  vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
+  vector[I_sample ? L + S + D + T : 0] I_noise_correction; // correction for approximate infection noise
   vector[S + D + T] lambda; // expected number of shedding onsets
   vector<lower = 0>[load_vari ? S + D + T : 0] zeta; // realized shedding load
   vector[T] pi_log; // log expected daily loads
@@ -169,27 +181,45 @@ transformed parameters {
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
   array[LOD_model > 0 ? 1 : 0] real<lower=0> LOD_hurdle_scale;
 
-  // Spline smoothing of R
-  bs_coeff_noise = bs_coeff_noise_raw .* (bs_coeff_ar_sd * sqrt(bs_dists));
-  bs_coeff = random_walk([bs_coeff_ar_start]', bs_coeff_noise, 0);
-
-  R = apply_link(csr_matrix_times_vector(
-    L + S + D + T - G, bs_n_basis, bs_w, bs_v, bs_u, bs_coeff
-    ), R_link);
-
   // seeding
-  if (seeding_model == 0) {
-    iota[1 : G] = exp(rep_vector(iota_log_seed_intercept, G));
-  } else if (seeding_model == 1) {
-    iota[1 : G] = exp(random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0));
+  {
+    vector[G] iota_log_seed;
+    if (seeding_model == 0) {
+      iota_log_seed = rep_vector(iota_log_seed_intercept, G);
+    } else if (seeding_model == 1) {
+      iota_log_seed = random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0);
+    }
+    iota[1 : G] = exp(iota_log_seed);
+
+    // Spline smoothing of infections
+    bs_coeff = holt_damped_process(
+      [iota_log_seed[G], iota_log_seed_trend_reg * iota_log_seed]',
+      inf_smooth,
+      inf_trend_smooth,
+      inf_trend_dampen,
+      bs_coeff_noise_raw * inf_ar_sd, 0)[bs_select];
+
+    iota[(G+1) : (L + S + D + T)] = apply_link(csr_matrix_times_vector(
+      L + S + D + T - G, bs_n_basis, bs_w, bs_v, bs_u, bs_coeff
+     ), rep_array(2, 1)); // log link
   }
-  // renewal process
+
   if (I_sample) {
-    iota[(G + 1) : (L + S + D + T)] = renewal_process_stochastic(
-      (L + S + D + T - G), R, G, gi_rev, I);
-  } else {
-    iota[(G + 1) : (L + S + D + T)] = renewal_process_deterministic(
-      (L + S + D + T - G), R, G, gi_rev, iota);
+    vector[L + S + D + T] I_noise;
+    if (I_overdispersion) {
+      if (I_xi_fixed < 0) {
+        I_noise = I_raw .* sqrt(iota .* (1 + iota * (I_xi[1] ^ 2))); // approximates negative binomial
+      } else {
+        I_noise = I_raw .* sqrt(iota .* (1 + iota * (I_xi_fixed ^ 2))); // approximates negative binomial
+      }
+    } else {
+      I_noise = I_raw .* sqrt(iota); // approximates Poisson
+    }
+    I_noise_correction[1:G] = rep_vector(0, G);
+    I_noise_correction[(G + 1):(L + S + D + T)] = renewal_noise_correction(
+      (L + S + D + T - G), G, gi_rev, I_noise
+      );
+    I[1 : (L + S + D + T)] = softplus(iota + I_noise_correction + I_noise, 10);
   }
 
   // convolution from infections to shedding onsets (expected)
@@ -252,9 +282,8 @@ transformed parameters {
 model {
   // Priors
 
-  // R spline smoothing
-  bs_coeff_ar_start ~ normal(bs_coeff_ar_start_prior[1], bs_coeff_ar_start_prior[2]); // starting prior
-  bs_coeff_ar_sd ~ normal(bs_coeff_ar_sd_prior[1], bs_coeff_ar_sd_prior[2]) T[0, ]; // truncated normal
+  // Infections spline smoothing
+  inf_ar_sd ~ normal(inf_ar_sd_prior[1], inf_ar_sd_prior[2]) T[0, ]; // truncated normal
   bs_coeff_noise_raw ~ std_normal(); // Gaussian noise
 
   // Seeding
@@ -269,13 +298,9 @@ model {
     if (I_overdispersion) {
       if (I_xi_fixed < 0) {
         I_xi[1] ~ normal(I_xi_prior[1], I_xi_prior[2]) T[0, ]; // truncated normal
-        I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota .* (1 + iota * (I_xi[1] ^ 2)))); // approximates negative binomial
-      } else {
-        I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota .* (1 + iota * (I_xi_fixed ^ 2)))); // approximates negative binomial
       }
-    } else {
-      I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota)); // approximates Poisson
     }
+    I_raw[1 : (L + S + D + T)] ~ std_normal();
   }
 
   // Prior on individual-level shedding load variation
@@ -368,6 +393,26 @@ generated quantities {
   // note that we here assume the same measurement variance as from composite samples,
   // which may be smaller than that of hypothetical daily measurements
   vector[T] predicted_concentration;
+    array[L + S + D + T - G] real R; // effective reproduction number
+
+  // reproduction number
+  {
+    vector[L + S + D + T] infs;
+    vector[L + S + D + T - G] infness;
+    if (I_sample) {
+      infs = I;
+    } else {
+      infs = iota;
+    }
+    infness = infectiousness((L + S + D + T - G), G, gi_rev, infs);
+
+    int max_t = L + S + D + T - G;
+    for (t in (R_w_half+1):(max_t-R_w_half)) {
+      R[t] = (sum(softplus(iota + I_noise_correction, 10)[(G+t-R_w_half):(G+t+R_w_half)])) ./ sum(infness[(t-R_w_half):(t+R_w_half)]);
+    }
+  }
+
+  // concentrations
   {
     vector[T] pre_repl;
     vector[T] exp_pre_repl;

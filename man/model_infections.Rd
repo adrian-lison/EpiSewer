@@ -27,6 +27,7 @@ smoothing (ets), and smoothing splines. Modeling options:
 \item \code{\link[=R_estimate_ets]{R_estimate_ets()}}
 \item \code{\link[=R_estimate_splines]{R_estimate_splines()}}
 \item \code{\link[=R_estimate_rw]{R_estimate_rw()}}
+\item \code{\link[=R_estimate_fast]{R_estimate_fast()}}
 }}
 
 \item{seeding}{Seeding of initial infections. The renewal model used by
@@ -34,6 +35,7 @@ smoothing (ets), and smoothing splines. Modeling options:
 time. For these initial infections, a simple seeding model instead of the
 renewal model must be used. Modeling options:
 \itemize{
+\item \code{\link[=seeding_estimate_constant]{seeding_estimate_constant()}}
 \item \code{\link[=seeding_estimate_rw]{seeding_estimate_rw()}}
 }}
 

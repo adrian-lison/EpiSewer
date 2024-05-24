@@ -81,6 +81,7 @@ The priors of this component have the following functional form:
 \seealso{
 Other {Rt models}: 
 \code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_fast}()},
 \code{\link{R_estimate_splines}()}
 }
 \concept{{Rt models}}
