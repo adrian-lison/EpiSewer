@@ -658,13 +658,6 @@ R_estimate_fast <- function(
     modeldata$inf_ar_sd_prior
   )
 
-  R_prior_shape = get_gamma_shape_alternative(
-    gamma_mean = R_prior_mean, gamma_sd = R_prior_sd
-  )
-  R_prior_scale = get_gamma_scale_alternative(
-    gamma_mean = R_prior_mean, gamma_sd = R_prior_sd
-  )
-
   modeldata$inf_smooth <- inf_smooth
   modeldata$inf_trend_smooth <- inf_trend_smooth
   modeldata$inf_trend_dampen <- inf_trend_dampen
