@@ -225,11 +225,16 @@ droplets_observe <-
 #'   concentration measurements.
 #' @param cv_prior_sigma Prior (standard deviation) on the coefficient of
 #'   variation of concentration measurements.
-#' @param cv_type One out of "constant" (default), or "ddPCR". If ddPCR, the
-#'   coefficient of variation is modeled as a function of the expected
-#'   concentration according to the statistical properties of ddPCR. In
-#'   particular, this model predicts a higher coefficient of variation at
-#'   smaller concentrations, which often leads to a better model fit.
+#' @param cv_type One out of "constant" (default), "constant_var", or "ddPCR".
+#'   If "constant", the coefficient of variation is estimated as a
+#'   constant/single parameter for all observations. If "ddPCR", the coefficient
+#'   of variation is modeled as a function of the expected concentration
+#'   according to the statistical properties of ddPCR. In particular, this model
+#'   predicts a higher coefficient of variation at smaller concentrations, which
+#'   often leads to a better model fit. If "constant_var", not the coefficient
+#'   of variation but the variance of measurements is modeled as constant. This
+#'   is usually a misspecification and is only supported for comparison
+#'   purposes.
 #' @param ddPCR_prior_droplets_mu Prior (mean) on the number of droplets in the
 #'   ddPCR reaction.
 #' @param ddPCR_prior_droplets_sigma Prior (standard deviation) on the number of
@@ -311,9 +316,20 @@ noise_estimate_ <-
         modeldata$.init$nu_upsilon_c <- as.array(1)
       }
 
+    } else if (cv_type == "constant_var") {
+      modeldata$cv_type <- 2
+      modeldata$nu_upsilon_b_prior <- numeric(0)
+      modeldata$nu_upsilon_b_fixed <- -1 # dummy value
+      modeldata$.init$nu_upsilon_b <- numeric(0)
+      modeldata$nu_upsilon_c_prior <- numeric(0)
+      modeldata$nu_upsilon_c_fixed <- -1 # dummy value
+      modeldata$.init$nu_upsilon_c <- numeric(0)
     } else {
       cli::cli_abort(
-      paste0("Noise type `", cv_type, "` not supported. Available options: 'constant', `ddPCR`."),
+        paste0(
+          "Noise type `", cv_type, "` not supported. Available options: ",
+          "'constant', `ddPCR`, `constant_var`."
+        ),
       )
     }
 
@@ -459,6 +475,69 @@ noise_estimate_ddPCR <-
       ddPCR_prior_scaling_mu = ddPCR_prior_scaling_mu,
       ddPCR_prior_scaling_sigma = ddPCR_prior_scaling_sigma,
       ddPCR_scaling_fixed = ddPCR_scaling_fixed,
+      pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
+      pre_replicate_cv_prior_sigma = pre_replicate_cv_prior_sigma,
+      modeldata = modeldata
+    ))
+  }
+
+#' Estimate measurement noise with constant variance
+#'
+#' @description This option estimates the unexplained variation in wastewater
+#'   measurements using a constant variance model. This is usually a
+#'   misspecification and is only supported for comparison purposes.
+#'
+#' @description For a constant coefficient of variation model, see
+#'   [noise_estimate()], and for a non-constant coefficient of variation model,
+#'   see [noise_estimate_ddPCR()].
+#'
+#' @description If multiple measurements (replicates) per sample are provided,
+#'   `EpiSewer` can also explicitly model variation before the replication
+#'   stage.
+#'
+#' @details Note that although this model keeps the variance constant, the prior
+#'   for the measurement noise is still in terms of the (average) coefficient of
+#'   variation (CV). This makes prior specification easier since it the CV is
+#'   unitless.
+#'
+#' @details The priors of this component have the following functional form:
+#' - coefficient of variation of concentration measurements: `Truncated normal`
+#' - coefficient of variation of concentration before the replication stage:
+#'   `Truncated normal`
+#'
+#' @inheritParams noise_estimate_
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family [noise models]
+noise_estimate_constant_var <-
+  function(replicates = FALSE,
+           cv_prior_mu = 0,
+           cv_prior_sigma = 1,
+           pre_replicate_cv_prior_mu = 0,
+           pre_replicate_cv_prior_sigma = 1,
+           warn = TRUE,
+           modeldata = modeldata_init()) {
+    cli::cli_warn(paste(
+      "You have specified",
+      paste0(
+        "{.help [noise_estimate_constant_var()]",
+        "(EpiSewer::noise_estimate_constant_var())}"
+        ),
+      "as the model component for measurement noise.",
+      "Note that modeling a constant variance",
+      "is likely a model misspecification and should only be used for ",
+      "comparison purposes with better models like",
+      "{.help [noise_estimate()](EpiSewer::noise_estimate())} or",
+      "{.help [noise_estimate_ddPCR()](EpiSewer::noise_estimate_ddPCR())}.",
+      "You can specify",
+      "{.code noise_estimate_constant_var(warn=TRUE)} to disable this warning."
+      ))
+    return(noise_estimate_(
+      replicates = replicates,
+      cv_prior_mu = cv_prior_mu,
+      cv_prior_sigma = cv_prior_sigma,
+      cv_type = "constant_var",
       pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
       pre_replicate_cv_prior_sigma = pre_replicate_cv_prior_sigma,
       modeldata = modeldata

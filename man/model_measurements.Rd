@@ -22,6 +22,7 @@ and lab analysis. Modeling options:
 \itemize{
 \item \code{\link[=noise_estimate]{noise_estimate()}}
 \item \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}
+\item \code{\link[=noise_estimate_constant_var]{noise_estimate_constant_var()}}
 }}
 
 \item{LOD}{Limit of detection. Concentrations below a certain threshold may

@@ -30,11 +30,16 @@ concentration measurements.}
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
 
-\item{cv_type}{One out of "constant" (default), or "ddPCR". If ddPCR, the
-coefficient of variation is modeled as a function of the expected
-concentration according to the statistical properties of ddPCR. In
-particular, this model predicts a higher coefficient of variation at
-smaller concentrations, which often leads to a better model fit.}
+\item{cv_type}{One out of "constant" (default), "constant_var", or "ddPCR".
+If "constant", the coefficient of variation is estimated as a
+constant/single parameter for all observations. If "ddPCR", the coefficient
+of variation is modeled as a function of the expected concentration
+according to the statistical properties of ddPCR. In particular, this model
+predicts a higher coefficient of variation at smaller concentrations, which
+often leads to a better model fit. If "constant_var", not the coefficient
+of variation but the variance of measurements is modeled as constant. This
+is usually a misspecification and is only supported for comparison
+purposes.}
 
 \item{ddPCR_prior_droplets_mu}{Prior (mean) on the number of droplets in the
 ddPCR reaction.}
@@ -86,6 +91,6 @@ replication stage.
 This helper function is called from \code{\link[=noise_estimate]{noise_estimate()}} and
 \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}. \code{\link[=noise_estimate]{noise_estimate()}} is a constant coefficient of
 variation model, \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}} is a noise model specialized for
-digital droplet PCR (\code{cv_type = "ddPCR"}), which may however
-also work with other quantification methods such as qPCR.
+digital droplet PCR (\code{cv_type = "ddPCR"}), which may however also work with
+other quantification methods such as qPCR.
 }
