@@ -30,6 +30,20 @@ vector log_renewal_process_stochastic(int T, vector R_log, int G, vector gi_rev_
   return(iota_log);
 }
 
+/*
+* // Example of how  non-centered renewal process can be modeled in EpiSewer:
+*  array[2] vector[L + S + D + T] renewal_res = renewal_process_stochastic_noncentered(
+*    (L + S + D + T - G), R, G, gi_rev, iota, I_raw, I_overdispersion ? I_xi[1] : 0
+*  ); // this returns an array with 2 elements
+*  iota = renewal_res[1]; // expected
+*  I = renewal_res[2]; // realized
+*
+* // Then in model block:
+*  I_raw[1 : (L + S + D + T)] ~ std_normal();
+*
+* // Note however that the non-centered parameterization does not work well for
+* // the renewal model (longer runtime and higher chance of divergent transitions).
+*/
 array[] vector renewal_process_stochastic_noncentered(int T, vector R, int G, vector gi_rev, vector iota, vector I_raw, real I_xi) {
   vector[G+T] iota_tmp = iota;
   vector[G+T] I;
