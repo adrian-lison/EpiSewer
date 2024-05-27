@@ -298,8 +298,8 @@ Now that we have the data and the necessary assumptions, we can use
 `EpiSewer` to estimate the effective reproduction number. We here use
 the default model and settings provided by `EpiSewer`. With the helper
 function `set_fit_opts()` we specify our sampling approach: we apply
-Hamiltonian MCMC sampling via stan, using 4 chains with 1000 warmup and
-1000 sampling iterations each.
+Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
+500 sampling iterations each.
 
 Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
@@ -311,7 +311,7 @@ options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 500, iter_sampling = 500, chains = 4))
 )
 ```
 
