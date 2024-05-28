@@ -400,7 +400,10 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     !is.na(concentration_pred$median),
   ]
     if (!is.null(measurements_modeled)) {
-      concentration_pred <- merge(concentration_pred, measurements_modeled[, .SD, .SDcols=c("date", "obs_conc_ord")] , by = "date")
+      concentration_pred <- merge(
+        concentration_pred, measurements_modeled[
+          , .SD, .SDcols=c("date", "obs_conc_ord")] ,
+        by = "date", all.x = TRUE)
     }
   }
 
