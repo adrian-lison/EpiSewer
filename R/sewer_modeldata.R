@@ -127,3 +127,20 @@ all_components <- function() {
   )
   return(components)
 }
+
+all_parameters <- function(print = FALSE) {
+  params <- as.data.frame(matrix(c(
+    'measurement_noise_cv','nu_upsilon_a','Coefficient of variation (measurement noise)',
+    'ddPCR_droplets','nu_upsilon_b','Number of droplets in ddPCR',
+    'ddPCR_scaling','nu_upsilon_c','Concentration conversion factor in ddPCR',
+    'pre_replicate_cv','nu_psi','Coefficient of variation (pre-PCR noise)',
+    'load_variation_cv','nu_zeta','Individual-level coefficient of load variation',
+    'infection_overdispersion','I_xi','Overdispersion of infections',
+    'seeding_intercept','iota_log_seed_intercept','Initial number of infections'
+  ), byrow = T, ncol = 3, dimnames = list(c(),c('short_name','raw_name','long_name'))))
+  if (print) {
+    return(c(paste(apply(params, 1, function(x) paste0("- `",x["short_name"],"` (",x["raw_name"],"): ",x["long_name"])), collapse = "\n")))
+  } else {
+    return(params)
+  }
+}

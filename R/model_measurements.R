@@ -268,7 +268,8 @@ noise_estimate_ <-
            modeldata = modeldata_init()) {
     modeldata$pr_noise <- replicates
 
-    modeldata$nu_upsilon_a_prior <- set_prior("nu_upsilon_a", "truncated normal",
+    modeldata$nu_upsilon_a_prior <- set_prior(
+      "nu_upsilon_a", "truncated normal",
       mu = cv_prior_mu, sigma = cv_prior_sigma
     )
     modeldata$.init$nu_upsilon_a <- 0.1 # 10% coefficient of variation

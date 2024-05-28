@@ -138,7 +138,6 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
 #' @description Plots the effective reproduction number over time from one or
 #'   several fitted `EpiSewer` models.
 #'
-#' @param results Results object returned by [EpiSewer()] after model fitting.
 #' @param seeding Should Rt from the seeding phase be shown as well? Default is
 #'   `FALSE`.
 #' @inheritParams plot_infections
@@ -769,4 +768,98 @@ plot_LOD <- function(modeldata) {
     scale_y_continuous(expand = expansion(add=c(0.01, 0.01))) +
     scale_x_continuous(expand = expansion(add=c(0, 0))) +
     theme_bw()
+}
+
+#' Visually compare prior and posterior of a model parameter
+#'
+#' @param result Results object returned by [EpiSewer()] after model fitting. In
+#'   contrast to other plotting functions, this cannot be a list of multiple
+#'   result objects, because prior-posterior plots of multiple results
+#'   simultaneously are currently not supported.
+#' @param param_name Name of the single parameter to be plotted. This can either
+#'   be the raw name of the parameter in the stan model, or it can be the
+#'   semantic name from the single parameter dictionary (see details). Note that
+#'   this must be a single parameter, it cannot be a parameter array. Also, only
+#'   original parameters (not transformed parameters) for which a prior can be
+#'   specified in `EpiSewer` are supported.
+#'
+#' @details The following parameters can be visualized (if in the model):
+#' `r all_parameters(TRUE)`
+#'
+#' @return A plot showing the density of the prior (grey) and posterior (blue)
+#'   for the respective parameter. Can be further manipulated using [ggplot2]
+#'   functions to adjust themes and scales, and to add further geoms.
+#' @export
+plot_prior_posterior <- function(result, param_name) {
+  if (!(class(result) == "list" && "summary" %in% names(result))) {
+    cli::cli_abort(paste(
+      "For prior-posterior visualization,",
+      "please supply an `EpiSewer` results object."
+      ))
+  }
+  if (!"fitted" %in% names(result)) {
+    cli::cli_abort(paste(
+      "Prior-posterior visualization is only possible if the fitted model is",
+      "stored in the EpiSewer results object. Please use",
+      "{.code set_fit_opts(fitted = TRUE)} when running `EpiSewer`."
+      ))
+  }
+  all_params <- all_parameters()
+
+  if (param_name %in% all_params$short_name) {
+    param_i <- which(all_params$short_name == param_name)
+    param_name <- all_params[param_i, "short_name"]
+    raw_name <- all_params[param_i, "raw_name"]
+    param_name_long <- all_params[param_i, "long_name"]
+  } else if (param_name %in% all_parameters()$raw_name) {
+    param_i <- which(all_params$raw_name == param_name)
+    param_name <- all_params[param_i, "short_name"]
+    raw_name <- all_params[param_i, "raw_name"]
+    param_name_long <- all_params[param_i, "long_name"]
+  } else {
+    raw_name <- param_name
+  }
+
+  tryCatch(
+    param_draws <- as.vector(result$fitted$draws(raw_name)),
+    error = function(e) {
+      cli::cli_abort(paste0(
+        "Parameter `", raw_name, "` not found in model fit."
+      ), call = NULL)
+    }
+  )
+
+  prior_params <- result$job$data[[paste0(raw_name, "_prior")]]
+  prior_dist_type <- stringr::str_extract(
+    result$job$priors_text[[paste0(raw_name, "_prior_text")]], "(?<=dist = ).+?(?=,)"
+  )
+
+  if (prior_dist_type == "normal") {
+    prior_draws <- rnorm(2000, mean = prior_params[1], sd = prior_params[2])
+  } else if (prior_dist_type == "truncated normal") {
+    prior_draws <- extraDistr::rtnorm(
+      2000, mean = prior_params[1], sd = prior_params[2], a = 0
+      )
+  } else if (prior_dist_type == "beta") {
+    prior_draws <- rbeta(2000, mean = prior_params[1], sd = prior_params[2])
+  } else {
+    cli::cli_abort(paste0(
+      "Distribution type `", prior_dist_type, "` not supported for prior visualization."
+    ))
+  }
+
+  x_lower = min(quantile(prior_draws, 0.01), quantile(param_draws, 0.01))
+  x_upper = max(quantile(prior_draws, 0.99), quantile(param_draws, 0.99))
+
+  prior_posterior_plot <- ggplot() +
+    geom_density((aes(x=prior_draws)), fill = "#a6a6a6", colour = "#808080", alpha = 0.7) +
+    geom_density((aes(x=param_draws)), fill = "#273f76", colour = "#19294d",alpha = 0.7) +
+    xlab(param_name_long) +
+    ylab("Density") +
+    theme_bw() +
+    coord_cartesian(xlim = c(x_lower, x_upper)) +
+    scale_x_continuous(expand = expansion(add = c(0,0))) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05)))
+
+  return(prior_posterior_plot)
 }
