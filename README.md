@@ -404,7 +404,34 @@ slightly delayed and blurred signal of the infections.
 plot_infections(ww_result)
 ```
 
-<img src="man/figures/README-infections-1.png" width="100%" />
+<img src="man/figures/README-infections-1.png" width="100%" /> We can
+also compare the prior and posterior distribution for certain parameters
+of the model to see how much they were informed by the data. For
+example, we can inspect the coefficient of variation (CV) of the
+observation noise:
+
+``` r
+plot_prior_posterior(ww_result, "measurement_noise_cv")
+```
+
+<img src="man/figures/README-prior_posterior_noise_cv-1.png" width="100%" />
+As we can see, the prior (in grey) and posterior (in blue) differ
+substantially, indicating that this parameter is well informed by the
+data.
+
+We can also inspect the CV for the individual-level variation in
+shedding loads which is estimated by EpiSewer:
+
+``` r
+plot_prior_posterior(ww_result, "load_variation_cv")
+```
+
+<img src="man/figures/README-prior_posterior_load_cv-1.png" width="100%" />
+As we can see here, the prior and posterior are almost identical, which
+shows that this parameter cannot be really estimated from the data.
+Thus, our uncertainty about individual-level shedding load variation is
+not reduced by fitting to the data and solely informed by our broad
+prior.
 
 ### More details
 
@@ -448,13 +475,13 @@ ww_result$job$model
 #>  |- incubation_dist_assume
 #>  |- shedding_dist_assume
 #>  |- load_per_case_assume
-#>  |- load_variation_none
+#>  |- load_variation_estimate
 #> 
 #> infections
 #>  |- generation_dist_assume
 #>  |- R_estimate_splines
 #>  |- seeding_estimate_rw
-#>  |- infection_noise_estimate
+#>  |- infection_noise_estimate (overdispersion = FALSE)
 ```
 
 ➡️ Check out the [model specification](vignettes/model-specification.md)
@@ -467,9 +494,11 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#> [1] "R"                      "R_samples"              "expected_infections"   
-#> [4] "infections"             "infections_samples"     "expected_load"         
-#> [7] "expected_concentration" "concentration"
+#> [1] "R"                           "R_samples"                  
+#> [3] "expected_infections"         "expected_infections_samples"
+#> [5] "infections"                  "infections_samples"         
+#> [7] "expected_load"               "expected_concentration"     
+#> [9] "concentration"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -478,17 +507,17 @@ number.
 ``` r
 ww_result$summary$R
 #>            date      mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#>   1: 2021-12-06 1.0560143 1.0590350  0.7253699 0.9506840  1.163542   1.379811
-#>   2: 2021-12-07 1.0570305 1.0587950  0.7400326 0.9566150  1.160950   1.370855
-#>   3: 2021-12-08 1.0581808 1.0585850  0.7553685 0.9603895  1.158545   1.360446
-#>   4: 2021-12-09 1.0594982 1.0574000  0.7689660 0.9648040  1.154475   1.348745
-#>   5: 2021-12-10 1.0610178 1.0591100  0.7780022 0.9701918  1.153317   1.339065
+#>   1: 2021-12-06 1.0677532 1.0597600  0.7376447 0.9644702  1.168880   1.392586
+#>   2: 2021-12-07 1.0686402 1.0612000  0.7641206 0.9684573  1.163675   1.383842
+#>   3: 2021-12-08 1.0696771 1.0627000  0.7790942 0.9695755  1.162902   1.379000
+#>   4: 2021-12-09 1.0708548 1.0631000  0.7895383 0.9734535  1.161805   1.367851
+#>   5: 2021-12-10 1.0721631 1.0644950  0.8011415 0.9788717  1.161825   1.358601
 #>  ---                                                                         
-#> 140: 2022-04-24 0.9919385 0.9865400  0.7636396 0.9081212  1.069568   1.246623
-#> 141: 2022-04-25 0.9911287 0.9862050  0.7441879 0.9024098  1.073062   1.272051
-#> 142: 2022-04-26 0.9910492 0.9852155  0.7220755 0.8976237  1.076300   1.288621
-#> 143: 2022-04-27 0.9914202 0.9830745  0.7027853 0.8961687  1.079720   1.311972
-#> 144: 2022-04-28 0.9919365 0.9799230  0.6788358 0.8885547  1.090078   1.345702
+#> 140: 2022-04-24 0.9772645 0.9715175  0.7512149 0.8977970  1.052825   1.226163
+#> 141: 2022-04-25 0.9771118 0.9699495  0.7359722 0.8900868  1.056298   1.250144
+#> 142: 2022-04-26 0.9771515 0.9729495  0.7167654 0.8845507  1.061923   1.281037
+#> 143: 2022-04-27 0.9774270 0.9738840  0.6972232 0.8773860  1.070855   1.309254
+#> 144: 2022-04-28 0.9778231 0.9760445  0.6676156 0.8707375  1.075880   1.340137
 #>      seeding
 #>   1:    TRUE
 #>   2:    TRUE
@@ -544,7 +573,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.8369946 0.7609754 0.7535453 0.6629081
+#> [1] 0.8404351 0.8599965 0.7253768 0.8287051
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -556,14 +585,14 @@ is not NULL), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "90d21898f6fe5509deee6b67007a0708"
+#> [1] "77c97cfa2bfba2be740b2fbae8ae59b1"
 #> 
 #> $input
-#> [1] "de2fb978ff958d5546bbb2beb3ff84a0"
+#> [1] "079bf4474da23e47636126383424f64c"
 #> 
 #> $fit_opts
-#> [1] "0099b7f17b4a7762f7f9c26d9c606976"
+#> [1] "3d0f79a45e43b33e7c77ffaee9760d1c"
 #> 
 #> $init
-#> [1] "4a36b1dcccaf20bd3959eaa8bae24452"
+#> [1] "4c66acdaea245b71fe10c9366a583479"
 ```
