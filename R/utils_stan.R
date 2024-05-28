@@ -110,7 +110,7 @@ sampler_stan_mcmc <- function(
     chains = 4,
     iter_warmup = 500,
     iter_sampling = 500,
-    adapt_delta = 0.99,
+    adapt_delta = 0.995,
     max_treedepth = 15,
     step_size = 0.01,
     parallel_chains = NULL,
