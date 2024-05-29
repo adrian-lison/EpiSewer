@@ -36,12 +36,12 @@ data {
   array[pr_noise ? 2 : 0] real nu_psi_prior; // Prior on coefficient of variation fpr pre-replicate noise
 
   // Coefficient of variation (CV) of lognormal likelihood of measurements
-  int<lower=0, upper =1> cv_type; // 0 for constant, 1 for ddPCR
+  int<lower=0, upper=2> cv_type; // 0 for constant, 1 for ddPCR, 2 for constant_var
   array[2] real nu_upsilon_a_prior; // prior for pre-PCR CV
   real nu_upsilon_b_fixed;
-  array[cv_type > 0 && nu_upsilon_b_fixed < 0 ? 2 : 0] real nu_upsilon_b_prior; // prior for parameter 2 of CV formula (number of droplets). Scaled by 1e-4 for numerical efficiency.
+  array[cv_type == 1 && nu_upsilon_b_fixed < 0 ? 2 : 0] real nu_upsilon_b_prior; // prior for parameter 2 of CV formula (number of droplets). Scaled by 1e-4 for numerical efficiency.
   real nu_upsilon_c_fixed;
-  array[cv_type > 0 && nu_upsilon_c_fixed < 0 ? 2 : 0] real nu_upsilon_c_prior; // prior for parameter 3 of CV formula (droplet size/(dilution of ww to PCR assay)). Scaled by 1e+5 for numerical efficiency.
+  array[cv_type == 1 && nu_upsilon_c_fixed < 0 ? 2 : 0] real nu_upsilon_c_prior; // prior for parameter 3 of CV formula (droplet size/(dilution of ww to PCR assay)). Scaled by 1e+5 for numerical efficiency.
 
   // Limit of detection
   // LOD_model = 0: no LOD
@@ -166,8 +166,8 @@ parameters {
   array[pr_noise ? 1 : 0] real<lower=0> nu_psi; // pre-replicaton coefficient of variation
   vector<multiplier = (pr_noise ? nu_psi[1] : 1)>[pr_noise ? n_samples : 0] psi; // realized concentration before replication stage
   real<lower=0> nu_upsilon_a;
-  array[(cv_type > 0) && (nu_upsilon_b_fixed < 0) ? 1 : 0] real<lower=0> nu_upsilon_b;
-  array[(cv_type > 0) && (nu_upsilon_c_fixed < 0) ? 1 : 0] real<lower=0> nu_upsilon_c;
+  array[(cv_type == 1) && (nu_upsilon_b_fixed < 0) ? 1 : 0] real<lower=0> nu_upsilon_b;
+  array[(cv_type == 1) && (nu_upsilon_c_fixed < 0) ? 1 : 0] real<lower=0> nu_upsilon_c;
 }
 transformed parameters {
   vector[bs_n_basis] bs_coeff; // Basis spline coefficients
@@ -316,7 +316,7 @@ model {
 
   // Prior on cv of lognormal likelihood for measurements
   nu_upsilon_a ~ normal(nu_upsilon_a_prior[1], nu_upsilon_a_prior[2]) T[0, ]; // truncated normal
-  if (cv_type > 0) {
+  if (cv_type == 1) {
     if (nu_upsilon_b_fixed < 0) {
       nu_upsilon_b ~ normal(nu_upsilon_b_prior[1], nu_upsilon_b_prior[2]) T[0, ]; // truncated normal
     }
@@ -365,6 +365,11 @@ model {
         nu_upsilon_a,
         (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4,
         (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5
+        );
+    } else if (cv_type == 2) {
+      cv = (
+        nu_upsilon_a * mean(measured_concentrations[i_nonzero]) /
+        concentrations_unit[i_nonzero]
         );
     }
 
@@ -443,6 +448,11 @@ generated quantities {
         nu_upsilon_a,
         (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4,
         (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5
+        );
+    } else if (cv_type == 2) {
+      cv = (
+        nu_upsilon_a * mean(measured_concentrations[i_nonzero]) /
+        exp_pre_repl
         );
     }
 
