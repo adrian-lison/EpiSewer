@@ -919,7 +919,7 @@ add_seeding_intercept_prior <- function(
           unit_q5 = intercept_prior_q5,
           unit_q95 = intercept_prior_q95,
           unit_factor = 10,
-          paste_dist = " (mu based on crude empirical estimate of cases)"
+          paste_dist = ", (mu based on crude empirical estimate of cases)"
         )
         modeldata$.init$iota_log_seed_intercept <- init_from_normal_prior(
           modeldata$iota_log_seed_intercept_prior

@@ -17,7 +17,9 @@ plot_R(
 )
 }
 \arguments{
-\item{results}{Results object returned by \code{\link[=EpiSewer]{EpiSewer()}} after model fitting.}
+\item{results}{Results object returned by \code{\link[=EpiSewer]{EpiSewer()}} after model fitting.
+Can also be a named \code{list} with results from different model runs, in which
+case all results are plotted together and distinguished by colors.}
 
 \item{draws}{If \code{FALSE} (default), 50\% and 95\% Bayesian credible intervals
 are shown. If \code{TRUE}, exemplary posterior samples are shown in a "spaghetti
