@@ -428,17 +428,18 @@ generated quantities {
     } else {
       pre_repl = kappa_log;
     }
+
+    exp_pre_repl = exp(pre_repl);
+
     if (LOD_model > 0) {
      above_LOD = to_vector(bernoulli_rng(
        1-exp(log_hurdle_exponential_gamma(
-         pre_repl, LOD_hurdle_scale[1], nu_upsilon_a
+         exp_pre_repl, LOD_hurdle_scale[1], nu_upsilon_a
          ))
        ));
     } else {
       above_LOD = rep_vector(1, T);
     }
-
-    exp_pre_repl = exp(pre_repl);
 
     if (cv_type == 0) {
       cv = rep_vector(nu_upsilon_a, T);
