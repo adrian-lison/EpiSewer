@@ -113,11 +113,25 @@ transformed data {
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T] flow_log = log(flow);
 
+  real LOD_expected_scale;
+  if (LOD_model == 1) {
+    LOD_expected_scale = LOD_scale[1];
+  } else if (LOD_model == 2) {
+    LOD_expected_scale = (
+    (nu_upsilon_b_fixed < 0 ? nu_upsilon_b_prior[1] : nu_upsilon_b_fixed) * 1e4 *
+    (nu_upsilon_c_fixed < 0 ? nu_upsilon_c_prior[1] : nu_upsilon_c_fixed) * 1e-5
+    );
+  }
+  real LOD_irrelevant = -log(1e-4)/LOD_expected_scale; // concentrations above this value are irrelevant for LOD model (probability of non-detection is virtually zero)
+
   int n_zero = num_zeros(measured_concentrations);
+  int notsmall = num_zeros(fmax(0, LOD_irrelevant - measured_concentrations));
   array[n_zero] int<lower=0> i_zero;
   array[n_measured - n_zero] int<lower=0> i_nonzero;
+  array[n_measured - n_zero - notsmall] int<lower=0> i_nonzero_small;
   int i_z = 0;
   int i_nz = 0;
+  int i_nzs = 0;
   for (n in 1:n_measured) {
     if (measured_concentrations[n] == 0) {
       i_z += 1;
@@ -125,6 +139,10 @@ transformed data {
     } else {
       i_nz += 1;
       i_nonzero[i_nz] = n;
+      if (measured_concentrations[n] < LOD_irrelevant) {
+        i_nzs += 1;
+        i_nonzero_small[i_nzs] = n;
+      }
     }
   }
 
@@ -342,7 +360,7 @@ model {
       ));
       // above-LOD probabilities for non-zero measurements
       target += sum(log1m_exp(log_hurdle_exponential_gamma(
-        concentrations_unit[i_nonzero], LOD_hurdle_scale[1], nu_upsilon_a
+        concentrations_unit[i_nonzero_small], LOD_hurdle_scale[1], nu_upsilon_a
       )));
     }
 
