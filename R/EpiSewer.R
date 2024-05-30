@@ -266,6 +266,8 @@ setMethod("run", c("EpiSewerJob"), function(job) {
       try(fit_res$profiles(), silent = TRUE)
       result$fitted <- fit_res
     }
+    result$diagnostics <- try(fit_res$diagnostic_summary())
+    result$runtime <- try(fit_res$time())
   } else {
     result$errors <- fit_res$errors
     result$sampler_output <- fit_res$sampler_output
