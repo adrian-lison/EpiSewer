@@ -130,7 +130,7 @@ get_discrete_gamma <- function(gamma_shape,
 #'   Gamma distribution.
 #' @export
 get_discrete_gamma_shifted <- function(
-    gamma_mean = 4.8, gamma_sd = 2.3, maxX = 10) {
+    gamma_mean, gamma_sd, maxX = 10) {
   k <- 1:maxX
   if (gamma_sd < 0) {
     stop("gamma_sd must be >=0.")

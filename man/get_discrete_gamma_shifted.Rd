@@ -4,7 +4,7 @@
 \alias{get_discrete_gamma_shifted}
 \title{Get PMF of a discretized shifted Gamma distribution}
 \usage{
-get_discrete_gamma_shifted(gamma_mean = 4.8, gamma_sd = 2.3, maxX = 10)
+get_discrete_gamma_shifted(gamma_mean, gamma_sd, maxX = 10)
 }
 \arguments{
 \item{gamma_mean}{Mean of the shifted Gamma distribution.}
