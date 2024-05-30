@@ -94,19 +94,19 @@ vector renewal_noise_correction(int T, int G, vector gi_rev, vector I_noise) {
 }
 
 vector infectiousness(int T, int G, vector gi_rev, vector I) {
-  vector[T] infectiousness;
+  vector[T] infness;
   for (t in 1:T) {
-    infectiousness[t] = dot_product(gi_rev, I[t:(G+t-1)]);
+    infness[t] = dot_product(gi_rev, I[t:(G+t-1)]);
   }
-  return(infectiousness);
+  return(infness);
 }
 
 vector log_infectiousness(int T, int G, vector gi_rev_log, vector I_log) {
-  vector[T] infectiousness;
+  vector[T] infness;
   for (t in 1:T) {
-    infectiousness[t] = log_dot_product(gi_rev_log, I_log[t:(G+t-1)]);
+    infness[t] = log_dot_product(gi_rev_log, I_log[t:(G+t-1)]);
   }
-  return(infectiousness);
+  return(infness);
 }
 
 /**
