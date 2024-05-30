@@ -756,14 +756,11 @@ plot_LOD <- function(modeldata) {
     exp(-x * modeldata$LOD_scale)
   }
   example_data <- data.frame(
-    x = seq(0,
-      5.1,
-      length.out = 100
-    )
+    x = seq(0, -log(0.01)/modeldata$LOD_scale, length.out = 100)
   )
   example_data$y <- LOD_f(example_data$x)
   ggplot(example_data, aes(x = x, y = y)) +
-    geom_vline(xintercept = modeldata$LOD, linetype = "dashed") +
+    geom_vline(xintercept = -log(0.05)/modeldata$LOD_scale, linetype = "dashed") +
     geom_line() +
     xlab("True concentration") +
     ylab("Probability of non-detection") +
@@ -844,7 +841,9 @@ plot_prior_posterior <- function(result, param_name) {
       2000, mean = prior_params[1], sd = prior_params[2], a = 0
       )
   } else if (prior_dist_type == "beta") {
-    prior_draws <- rbeta(2000, mean = prior_params[1], sd = prior_params[2])
+    prior_draws <- rbeta(
+      2000, shape1 = prior_params[1], shape2 = prior_params[2]
+      )
   } else {
     cli::cli_abort(paste0(
       "Distribution type `", prior_dist_type, "` not supported for prior visualization."
