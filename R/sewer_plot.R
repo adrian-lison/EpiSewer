@@ -414,6 +414,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
         ', you must specify both the `results` and the `measurements` argument.'
       ))
     }
+    concentration_pred <- concentration_pred[!is.na(obs_conc_ord),]
   }
 
   if (!base_model %in% c("", as.character(concentration_pred$model))) {
