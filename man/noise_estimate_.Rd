@@ -17,6 +17,8 @@ noise_estimate_(
   ddPCR_scaling_fixed = NULL,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
+  prePCR_noise_type = "log-normal",
+  use_taylor_approx = TRUE,
   modeldata = modeldata_init()
 )
 }
@@ -25,7 +27,8 @@ noise_estimate_(
 before the replication stage?}
 
 \item{cv_prior_mu}{Prior (mean) on the coefficient of variation of
-concentration measurements.}
+concentration measurements. Note that when \code{replicates=TRUE}, this is only
+the CV after the replication stage (see details for more explanation).}
 
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
@@ -63,10 +66,22 @@ concentration scaling factor for the ddPCR reaction.}
 to the prior mean and not estimated.}
 
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
-of concentrations before the replication stage.}
+of concentrations \emph{before} the replication stage.}
 
 \item{pre_replicate_cv_prior_sigma}{Prior (standard deviation) on the
-coefficient of variation of concentrations before the replication stage.}
+coefficient of variation of concentrations \emph{before} the replication stage.}
+
+\item{prePCR_noise_type}{The parametric distribution to assume for noise
+before the PCR assay. Currently supported are "log-normal" and "gamma". The
+choice of the parametric distribution typically makes no relevant
+difference for the noise model, but can make a relevant difference for the
+LOD model if \code{\link[=LOD_estimate_ddPCR]{LOD_estimate_ddPCR()}} is used.}
+
+\item{use_taylor_approx}{If TRUE (default), a Taylor expansion approximation
+is used to estimate the CV of measurements under pre-PCR noise. The
+approximation is very accurate, unless concentrations are extremely high
+(so high that the quality of the measurements from ddPCR would anyway be
+questionable).}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

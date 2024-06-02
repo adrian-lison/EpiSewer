@@ -19,16 +19,17 @@ noise_estimate_constant_var(
 before the replication stage?}
 
 \item{cv_prior_mu}{Prior (mean) on the coefficient of variation of
-concentration measurements.}
+concentration measurements. Note that when \code{replicates=TRUE}, this is only
+the CV after the replication stage (see details for more explanation).}
 
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
 
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
-of concentrations before the replication stage.}
+of concentrations \emph{before} the replication stage.}
 
 \item{pre_replicate_cv_prior_sigma}{Prior (standard deviation) on the
-coefficient of variation of concentrations before the replication stage.}
+coefficient of variation of concentrations \emph{before} the replication stage.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

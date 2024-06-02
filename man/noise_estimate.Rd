@@ -18,16 +18,17 @@ noise_estimate(
 before the replication stage?}
 
 \item{cv_prior_mu}{Prior (mean) on the coefficient of variation of
-concentration measurements.}
+concentration measurements. Note that when \code{replicates=TRUE}, this is only
+the CV after the replication stage (see details for more explanation).}
 
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
 
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
-of concentrations before the replication stage.}
+of concentrations \emph{before} the replication stage.}
 
 \item{pre_replicate_cv_prior_sigma}{Prior (standard deviation) on the
-coefficient of variation of concentrations before the replication stage.}
+coefficient of variation of concentrations \emph{before} the replication stage.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -55,10 +56,26 @@ For a non-constant coefficient of variation model, see
 \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}.
 }
 \details{
+When \code{replicates=TRUE}, two coefficients of variation are estimated:
+\itemize{
+\item the CV before the replication stage (see \code{pre_replicate_cv_prior_mu})
+\item the CV after the replication stage (see \code{cv_prior_mu})
+}
+
+The meaning of these CV estimates depends on the type of replicates. If the
+replicates are biological replicates (i.e. independently processed), then
+\code{cv} estimates the noise in the preprocessing and PCR, and
+\code{pre_replicate_cv} estimates the noise from anything before preprocessing
+(e.g. sampling noise and all other unexplained variation). In contrast, if
+the replicates are technical replicates (i.e. several PCR runs of the same
+preprocessed sample), then \code{cv} estimates only the PCR noise, and
+\code{pre_replicate_cv} estimates all other noise (including preprocessing
+noise.)
+
 The priors of this component have the following functional form:
 \itemize{
-\item coefficient of variation of concentration measurements: \verb{Truncated normal}
-\item coefficient of variation of concentration before the replication stage:
+\item coefficient of variation of concentration measurements (\code{cv}): \verb{Truncated normal}
+\item coefficient of variation of concentration before the replication stage (\code{pre_replicate_cv}):
 \verb{Truncated normal}
 }
 }

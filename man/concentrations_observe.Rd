@@ -11,6 +11,8 @@ concentrations_observe(
   date_col = "date",
   concentration_col = "concentration",
   replicate_col = NULL,
+  n_averaged = 1,
+  n_averaged_col = NULL,
   modeldata = modeldata_init()
 )
 }
@@ -38,6 +40,18 @@ concentrations.}
 measurement. This is used to identify multiple measurements made of a
 sample from the same date. Should be \code{NULL} if only one measurement per
 date was made.}
+
+\item{n_averaged}{The number of replicates over which the measurements have
+been averaged. This is typically used as an alternative to providing
+several replicates per sample (i.e. the concentration provided in the
+\code{measurements} \code{data.frame} is the arithmetic mean of several replicates).
+Can be either a single number (it is then assumed that the number of
+averaged replicates is the same for each observation) or a vector (one
+value for each observation).}
+
+\item{n_averaged_col}{Name of the column in the \code{measurements} data.frame
+containing the number of replicates over which the measurements have been
+averaged. This is an alternative to specifying \code{n_averaged}.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

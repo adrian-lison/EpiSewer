@@ -16,6 +16,8 @@ noise_estimate_ddPCR(
   ddPCR_scaling_fixed = FALSE,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
+  prePCR_noise_type = "log-normal",
+  use_taylor_approx = TRUE,
   modeldata = modeldata_init()
 )
 }
@@ -24,7 +26,12 @@ noise_estimate_ddPCR(
 before the replication stage?}
 
 \item{cv_prior_mu}{Prior (mean) on the coefficient of variation of
-concentration measurements.}
+concentration measurements. Note that in contrast to using
+\code{\link[=noise_estimate]{noise_estimate()}}, this does \emph{not} include the technical noise of the
+digital PCR. This is because the dPCR noise is explicitly modeled (using
+the number of partitions and conversion factor). Moreover, when
+\code{replicates=TRUE}, this is only the CV after the replication stage (see
+details for more explanation).}
 
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
@@ -51,10 +58,22 @@ concentration scaling factor for the ddPCR reaction.}
 to the prior mean and not estimated.}
 
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
-of concentrations before the replication stage.}
+of concentrations \emph{before} the replication stage.}
 
 \item{pre_replicate_cv_prior_sigma}{Prior (standard deviation) on the
-coefficient of variation of concentrations before the replication stage.}
+coefficient of variation of concentrations \emph{before} the replication stage.}
+
+\item{prePCR_noise_type}{The parametric distribution to assume for noise
+before the PCR assay. Currently supported are "log-normal" and "gamma". The
+choice of the parametric distribution typically makes no relevant
+difference for the noise model, but can make a relevant difference for the
+LOD model if \code{\link[=LOD_estimate_ddPCR]{LOD_estimate_ddPCR()}} is used.}
+
+\item{use_taylor_approx}{If TRUE (default), a Taylor expansion approximation
+is used to estimate the CV of measurements under pre-PCR noise. The
+approximation is very accurate, unless concentrations are extremely high
+(so high that the quality of the measurements from ddPCR would anyway be
+questionable).}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -95,12 +114,28 @@ the droplet volume is 4.5e-7 mL and the dilution of the wastewater is 100:3
 the PCR reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 =
 1.5e-5.
 
+When \code{replicates=TRUE}, two coefficients of variation are estimated:
+\itemize{
+\item the CV before the replication stage (see \code{pre_replicate_cv_prior_mu})
+\item the CV after the replication stage (see \code{cv_prior_mu})
+}
+
+The meaning of these CV estimates depends on the type of replicates. If the
+replicates are biological replicates (i.e. independently processed), then
+\code{cv} estimates the noise in the preprocessing before the PCR, and
+\code{pre_replicate_cv} estimates the noise from anything before preprocessing
+(e.g. sampling noise and all other unexplained variation). In contrast, if
+the replicates are technical replicates (i.e. several PCR runs of the same
+preprocessed sample), then \code{cv} estimates only unexplained PCR noise
+(should be close to zero), and \code{pre_replicate_cv} estimates all other noise
+(including preprocessing noise.)
+
 The priors of this component have the following functional form:
 \itemize{
-\item coefficient of variation of concentration measurements: \verb{Truncated normal}
+\item coefficient of variation of concentration measurements (\code{cv}): \verb{Truncated normal}
 \item prior for number of droplets in ddPCR: \verb{Truncated normal}
 \item prior for concentration scaling factor of ddPCR: \verb{Truncated normal}
-\item coefficient of variation of concentration before the replication stage:
+\item coefficient of variation of concentration before the replication stage (\code{pre_replicate_cv}):
 \verb{Truncated normal}
 }
 }

@@ -17,6 +17,7 @@ data {
   array[n_samples] int<lower=1, upper=T> sample_to_date; // index mapping samples to dates
   array[n_measured] int<lower=1, upper=n_samples> measure_to_sample; // index mapping measurements to samples
   vector<lower=0>[n_measured] measured_concentrations; // measured concentrations
+  vector<lower=0>[n_measured] n_averaged; // number of averaged technical replicates per measurement (is vector for vectorization)
   int<lower=1> w; // composite window: how many past days the samples cover,
   // e.g. 1 for individual day samples, 7 for weekly composite samples, ...
 
@@ -41,7 +42,9 @@ data {
   real nu_upsilon_b_fixed;
   array[cv_type == 1 && nu_upsilon_b_fixed < 0 ? 2 : 0] real nu_upsilon_b_prior; // prior for parameter 2 of CV formula (number of droplets). Scaled by 1e-4 for numerical efficiency.
   real nu_upsilon_c_fixed;
-  array[cv_type == 1 && nu_upsilon_c_fixed < 0 ? 2 : 0] real nu_upsilon_c_prior; // prior for parameter 3 of CV formula (droplet size/(dilution of ww to PCR assay)). Scaled by 1e+5 for numerical efficiency.
+  array[cv_type == 1 && nu_upsilon_c_fixed < 0 ? 2 : 0] real nu_upsilon_c_prior; // prior for parameter 3 of CV formula (droplet size*(scaling factor, i.e. exp_conc_assay/exp_conc_ww)). Scaled by 1e+5 for numerical efficiency.
+  array[cv_type == 1 ? 1 : 0] int <lower=0, upper=1> cv_pre_type; // 0 for gamma, 1 for log-normal
+  array[cv_type == 1 ? 1 : 0] int <lower=0, upper=1> cv_pre_approx_taylor; // 0 for no Taylor expansion approximation, 1 for Taylor expansion approximation
 
   // Limit of detection
   // LOD_model = 0: no LOD
@@ -113,6 +116,7 @@ transformed data {
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T] flow_log = log(flow);
 
+  // Upper relevant bound for LOD model
   real LOD_expected_scale;
   if (LOD_model == 1) {
     LOD_expected_scale = LOD_scale[1];
@@ -144,6 +148,15 @@ transformed data {
         i_nonzero_small[i_nzs] = n;
       }
     }
+  }
+
+  // number of averaged technical replicates per date
+  real n_averaged_median = quantile(n_averaged, 0.5);
+  vector[T] n_averaged_all = rep_vector(n_averaged_median, T);
+  for (i in 1:n_measured) {
+    // note that if several measurements per sample exist,
+    // the number of replicates of the last one will be used for that date
+    n_averaged_all[sample_to_date[measure_to_sample[i]]] = n_averaged[i];
   }
 
   if (R_link[1] < 0 || R_link[1] > 1) {
@@ -366,16 +379,19 @@ model {
 
     // CV of each observation as a function of concentration
     vector[n_measured - n_zero] cv;
-    if (cv_type == 0) { // constant
+    if (cv_type == 0) { // constant cv
       cv = rep_vector(nu_upsilon_a, n_measured - n_zero);
     } else if (cv_type == 1) { // ddPCR
-      cv = cv_ddPCR(
+      cv = cv_ddPCR_pre(
         concentrations_unit[i_nonzero],
         nu_upsilon_a,
         (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4,
-        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5
+        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5,
+        n_averaged[i_nonzero],
+        cv_pre_type[1],
+        cv_pre_approx_taylor[1]
         );
-    } else if (cv_type == 2) {
+    } else if (cv_type == 2) { // constant variance
       cv = (
         nu_upsilon_a * mean(measured_concentrations[i_nonzero]) /
         concentrations_unit[i_nonzero]
@@ -433,11 +449,14 @@ generated quantities {
     if (cv_type == 0) {
       cv = rep_vector(nu_upsilon_a, T);
     } else if (cv_type == 1) {
-      cv = cv_ddPCR(
+      cv = cv_ddPCR_pre(
         exp_pre_repl,
         nu_upsilon_a,
         (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4,
-        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5
+        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5,
+        n_averaged_all,
+        cv_pre_type[1],
+        cv_pre_approx_taylor[1]
         );
     } else if (cv_type == 2) {
       cv = (

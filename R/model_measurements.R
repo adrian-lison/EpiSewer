@@ -56,6 +56,16 @@ model_measurements <- function(
 #'   measurement. This is used to identify multiple measurements made of a
 #'   sample from the same date. Should be `NULL` if only one measurement per
 #'   date was made.
+#' @param n_averaged The number of replicates over which the measurements have
+#'   been averaged. This is typically used as an alternative to providing
+#'   several replicates per sample (i.e. the concentration provided in the
+#'   `measurements` `data.frame` is the arithmetic mean of several replicates).
+#'   Can be either a single number (it is then assumed that the number of
+#'   averaged replicates is the same for each observation) or a vector (one
+#'   value for each observation).
+#' @param n_averaged_col Name of the column in the `measurements` data.frame
+#'   containing the number of replicates over which the measurements have been
+#'   averaged. This is an alternative to specifying `n_averaged`.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -68,6 +78,8 @@ concentrations_observe <-
            date_col = "date",
            concentration_col = "concentration",
            replicate_col = NULL,
+           n_averaged = 1,
+           n_averaged_col = NULL,
            modeldata = modeldata_init()) {
     if (!(composite_window %% 1 == 0 && composite_window > 0)) {
       cli::cli_abort(
@@ -130,7 +142,6 @@ concentrations_observe <-
         modeldata$w <- composite_window
         modeldata$.metainfo$composite_window <- composite_window
 
-
         measured <- !is.na(measurements[[concentration_col]])
         modeldata$n_measured <- sum(measured)
         modeldata$n_samples <- length(
@@ -151,6 +162,31 @@ concentrations_observe <-
         modeldata$.metainfo$measured_dates <- as.Date(
           measurements[[date_col]][measured]
         )
+
+        if (!is.null(n_averaged_col)){
+          if (!n_averaged_col %in% names(measurements)) {
+            cli::cli_abort(paste0(
+                "The column `", n_averaged_col, "` does not exist in the ",
+                "measurements `data.frame`."
+              ))
+          }
+          modeldata$n_averaged <- as.numeric(measurements[[n_averaged_col]][measured])
+          if (any(is.na(modeldata$n_averaged))) {
+            cli::cli_abort(paste0(
+                "The column `", n_averaged_col, "` contains missing ",
+                "values for some of the observed measurements."
+              ))
+          }
+        } else if (length(n_averaged) == 1) {
+          modeldata$n_averaged <- rep(n_averaged, modeldata$n_samples)
+        } else if (length(n_averaged) == modeldata$n_samples) {
+          modeldata$n_averaged <- n_averaged
+        } else {
+          cli::cli_abort(paste(
+              "The length of `n_averaged` must be either 1 or equal to the",
+              "number of samples."
+            ))
+        }
 
         if (!is.null(replicate_col)) {
           modeldata$replicate_ids <- as.integer(
@@ -216,13 +252,14 @@ droplets_observe <-
 #' @description This helper function is called from [noise_estimate()] and
 #'   [noise_estimate_ddPCR()]. [noise_estimate()] is a constant coefficient of
 #'   variation model, [noise_estimate_ddPCR()] is a noise model specialized for
-#'   digital droplet PCR (`cv_type = "ddPCR"`), which may however
-#'   also work with other quantification methods such as qPCR.
+#'   digital droplet PCR (`cv_type = "ddPCR"`), which may however also work with
+#'   other quantification methods such as qPCR.
 #'
 #' @param replicates Should replicates be used to explicitly model variation
 #'   before the replication stage?
 #' @param cv_prior_mu Prior (mean) on the coefficient of variation of
-#'   concentration measurements.
+#'   concentration measurements. Note that when `replicates=TRUE`, this is only
+#'   the CV after the replication stage (see details for more explanation).
 #' @param cv_prior_sigma Prior (standard deviation) on the coefficient of
 #'   variation of concentration measurements.
 #' @param cv_type One out of "constant" (default), "constant_var", or "ddPCR".
@@ -251,9 +288,21 @@ droplets_observe <-
 #' @param ddPCR_scaling_fixed If TRUE, the concentration scaling factor is fixed
 #'   to the prior mean and not estimated.
 #' @param pre_replicate_cv_prior_mu Prior (mean) on the coefficient of variation
-#'   of concentrations before the replication stage.
+#'   of concentrations *before* the replication stage.
 #' @param pre_replicate_cv_prior_sigma Prior (standard deviation) on the
-#'   coefficient of variation of concentrations before the replication stage.
+#'   coefficient of variation of concentrations *before* the replication stage.
+#'
+#' @param prePCR_noise_type The parametric distribution to assume for noise
+#'   before the PCR assay. Currently supported are "log-normal" and "gamma". The
+#'   choice of the parametric distribution typically makes no relevant
+#'   difference for the noise model, but can make a relevant difference for the
+#'   LOD model if [LOD_estimate_ddPCR()] is used.
+#'
+#' @param use_taylor_approx If TRUE (default), a Taylor expansion approximation
+#'   is used to estimate the CV of measurements under pre-PCR noise. The
+#'   approximation is very accurate, unless concentrations are extremely high
+#'   (so high that the quality of the measurements from ddPCR would anyway be
+#'   questionable).
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -270,6 +319,8 @@ noise_estimate_ <-
            ddPCR_scaling_fixed = NULL,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
+           prePCR_noise_type = "log-normal",
+           use_taylor_approx = TRUE,
            modeldata = modeldata_init()) {
     modeldata$pr_noise <- replicates
 
@@ -287,6 +338,8 @@ noise_estimate_ <-
       modeldata$nu_upsilon_c_prior <- numeric(0)
       modeldata$nu_upsilon_c_fixed <- -1 # dummy value
       modeldata$.init$nu_upsilon_c <- numeric(0)
+      modeldata$cv_pre_type <- numeric(0)
+      modeldata$cv_pre_approx_taylor <- numeric(0)
     } else if (cv_type == "ddPCR") {
       modeldata$cv_type <- 1
       if (ddPCR_droplets_fixed) {
@@ -317,6 +370,18 @@ noise_estimate_ <-
         modeldata$.init$nu_upsilon_c <- as.array(1)
       }
 
+      if (prePCR_noise_type == "gamma") {
+        modeldata$cv_pre_type <- 0
+      } else if (prePCR_noise_type == "log-normal") {
+        modeldata$cv_pre_type <- 1
+      } else {
+        cli::cli_abort(paste0(
+            "`prePCR_noise_type = ", prePCR_noise_type, "` not supported.",
+            "Available options: 'gamma', `log-normal`."
+          ))
+      }
+      modeldata$cv_pre_approx_taylor <- use_taylor_approx
+
     } else if (cv_type == "constant_var") {
       modeldata$cv_type <- 2
       modeldata$nu_upsilon_b_prior <- numeric(0)
@@ -325,6 +390,8 @@ noise_estimate_ <-
       modeldata$nu_upsilon_c_prior <- numeric(0)
       modeldata$nu_upsilon_c_fixed <- -1 # dummy value
       modeldata$.init$nu_upsilon_c <- numeric(0)
+      modeldata$cv_pre_type <- numeric(0)
+      modeldata$cv_pre_approx_taylor <- numeric(0)
     } else {
       cli::cli_abort(
         paste0(
@@ -385,9 +452,23 @@ noise_estimate_ <-
 #' @description For a non-constant coefficient of variation model, see
 #'   [noise_estimate_ddPCR()].
 #'
+#' @details When `replicates=TRUE`, two coefficients of variation are estimated:
+#' - the CV before the replication stage (see `pre_replicate_cv_prior_mu`)
+#' - the CV after the replication stage (see `cv_prior_mu`)
+#'
+#' The meaning of these CV estimates depends on the type of replicates. If the
+#' replicates are biological replicates (i.e. independently processed), then
+#' `cv` estimates the noise in the preprocessing and PCR, and
+#' `pre_replicate_cv` estimates the noise from anything before preprocessing
+#' (e.g. sampling noise and all other unexplained variation). In contrast, if
+#' the replicates are technical replicates (i.e. several PCR runs of the same
+#' preprocessed sample), then `cv` estimates only the PCR noise, and
+#' `pre_replicate_cv` estimates all other noise (including preprocessing
+#' noise.)
+#'
 #' @details The priors of this component have the following functional form:
-#' - coefficient of variation of concentration measurements: `Truncated normal`
-#' - coefficient of variation of concentration before the replication stage:
+#' - coefficient of variation of concentration measurements (`cv`): `Truncated normal`
+#' - coefficient of variation of concentration before the replication stage (`pre_replicate_cv`):
 #'   `Truncated normal`
 #'
 #' @inheritParams noise_estimate_
@@ -429,6 +510,14 @@ noise_estimate <-
 #'   `EpiSewer` can also explicitly model variation before the replication
 #'   stage.
 #'
+#' @param cv_prior_mu Prior (mean) on the coefficient of variation of
+#'   concentration measurements. Note that in contrast to using
+#'   [noise_estimate()], this does *not* include the technical noise of the
+#'   digital PCR. This is because the dPCR noise is explicitly modeled (using
+#'   the number of partitions and conversion factor). Moreover, when
+#'   `replicates=TRUE`, this is only the CV after the replication stage (see
+#'   details for more explanation).
+#'
 #' @details The concentration scaling factor (see `ddPCR_prior_scaling_mu`,
 #'   `ddPCR_prior_scaling_sigma`, `ddPCR_scaling_fixed`) is the droplet volume,
 #'   scaled by the dilution of the wastewater in the ddPCR reaction. The
@@ -438,11 +527,25 @@ noise_estimate <-
 #'   the PCR reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 =
 #'   1.5e-5.
 #'
+#' @details When `replicates=TRUE`, two coefficients of variation are estimated:
+#' - the CV before the replication stage (see `pre_replicate_cv_prior_mu`)
+#' - the CV after the replication stage (see `cv_prior_mu`)
+#'
+#' The meaning of these CV estimates depends on the type of replicates. If the
+#' replicates are biological replicates (i.e. independently processed), then
+#' `cv` estimates the noise in the preprocessing before the PCR, and
+#' `pre_replicate_cv` estimates the noise from anything before preprocessing
+#' (e.g. sampling noise and all other unexplained variation). In contrast, if
+#' the replicates are technical replicates (i.e. several PCR runs of the same
+#' preprocessed sample), then `cv` estimates only unexplained PCR noise
+#' (should be close to zero), and `pre_replicate_cv` estimates all other noise
+#' (including preprocessing noise.)
+#'
 #' @details The priors of this component have the following functional form:
-#' - coefficient of variation of concentration measurements: `Truncated normal`
+#' - coefficient of variation of concentration measurements (`cv`): `Truncated normal`
 #' - prior for number of droplets in ddPCR: `Truncated normal`
 #' - prior for concentration scaling factor of ddPCR: `Truncated normal`
-#' - coefficient of variation of concentration before the replication stage:
+#' - coefficient of variation of concentration before the replication stage (`pre_replicate_cv`):
 #'   `Truncated normal`
 #'
 #' @inheritParams noise_estimate_
@@ -464,6 +567,8 @@ noise_estimate_ddPCR <-
            ddPCR_scaling_fixed = FALSE,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
+           prePCR_noise_type = "log-normal",
+           use_taylor_approx = TRUE,
            modeldata = modeldata_init()) {
     return(noise_estimate_(
       replicates = replicates,
@@ -478,6 +583,8 @@ noise_estimate_ddPCR <-
       ddPCR_scaling_fixed = ddPCR_scaling_fixed,
       pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
       pre_replicate_cv_prior_sigma = pre_replicate_cv_prior_sigma,
+      prePCR_noise_type = prePCR_noise_type,
+      use_taylor_approx = use_taylor_approx,
       modeldata = modeldata
     ))
   }
