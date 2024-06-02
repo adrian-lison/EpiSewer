@@ -60,43 +60,31 @@ vector log_hurdle_sigmoid_log(vector x_log, real threshold_log, real sharpness_l
   * stronger the noise is, the longer the probability will stay close to 1 even
   * for larger values of x.
   *
-  * @param x vector with inputs
+  * @param lambda vector with concentrations (typically gc/mlWW)
   *
-  * @param scaling scaling factor for input vector
+  * @param nu_pre pre-PCR CV (all other noise factors)
   *
-  * @param cv coefficient of variation of the Gamma-distributed noise
+  * @param m number of partitions
   *
-  * @return The probability of being below the threshold, on the logit scale
-  */
-vector log_hurdle_exponential_gamma(vector x, real scaling, real cv) {
-  if (cv == 0) {
-    return(-x * scaling);
-  } else {
-    real cv2 = cv^2;
-    return(-log1p(x * scaling * cv2)/cv2);
-  }
-}
-
-/**
-  * Returns log probability of an exponential hurdle model for log scale inputs
+  * @param c conversion factor c = sv, i.e. should be partition volume v
+  * multiplied by scaling factor s (concentration in assay / concentration in wastewater)
   *
-  * The model uses an exponential function, the probability becomes 1 as x goes to zero.
-  * Moreover, gamma-distributed noise around the inputs can be modeled. The
-  * stronger the noise is, the longer the probability will stay close to 1 even
-  * for larger values of x.
+  * @param n number of replicates that are averaged
   *
-  * @param x vector with inputs
-  *
-  * @param scaling scaling factor for input vector
-  *
-  * @param cv coefficient of variation of the Gamma-distributed noise
+  * @param pre_type type of pre-PCR noise (0: gamma, 1: log-normal)
   *
   * @return The probability of being below the threshold, on the logit scale
   */
-vector log_hurdle_exponential_gamma_log(vector x_log, real scaling_log, real cv_log) {
-  if (cv_log == negative_infinity()) {
-    return(-exp(x_log + scaling_log));
+vector log_hurdle_exponential(vector lambda, vector hurdle_scale, real nu_pre, int pre_type) {
+  if (nu_pre == 0) {
+    return(lambda .* (-hurdle_scale));
   } else {
-    return(-log1p_exp(x_log + scaling_log + 2*cv_log)/exp(2*cv_log));
+    if (pre_type == 0) {
+        return(log_E_exp_gamma(lambda, nu_pre, -hurdle_scale));
+    } else if (pre_type == 1) {
+        return(log_E_exp_lnorm(lambda, nu_pre, -hurdle_scale));
+    } else {
+    reject("Unknown pre-PCR noise type");
+    }
   }
 }

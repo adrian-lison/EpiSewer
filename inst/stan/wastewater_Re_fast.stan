@@ -211,7 +211,7 @@ transformed parameters {
   vector[T] pi_log; // log expected daily loads
   vector[T] kappa_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
-  array[LOD_model > 0 ? 1 : 0] real<lower=0> LOD_hurdle_scale;
+  array[LOD_model > 0 ? 1 : 0] vector<lower=0>[n_measured] LOD_hurdle_scale;
 
   // seeding
   {
@@ -303,11 +303,12 @@ transformed parameters {
 
   // scale for LOD hurdle model
   if (LOD_model == 1) {
-    LOD_hurdle_scale[1] = LOD_scale[1];
+    LOD_hurdle_scale[1] = rep_vector(LOD_scale[1], n_measured);
   } else if (LOD_model == 2) {
     LOD_hurdle_scale[1] = (
     (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4 *
-    (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5
+    (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5 *
+    n_averaged
     );
   }
 }
@@ -378,12 +379,18 @@ model {
     // limit of detection
     if (LOD_model > 0) {
       // below-LOD probabilities for zero measurements
-      target += sum(log_hurdle_exponential_gamma(
-        concentrations_unit[i_zero], LOD_hurdle_scale[1], nu_upsilon_a
+      target += sum(log_hurdle_exponential(
+        concentrations_unit[i_zero],
+        LOD_hurdle_scale[1][i_zero], // LOD scale (c * m * n)
+        cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
+        cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
       ));
       // above-LOD probabilities for non-zero measurements
-      target += sum(log1m_exp(log_hurdle_exponential_gamma(
-        concentrations_unit[i_nonzero_small], LOD_hurdle_scale[1], nu_upsilon_a
+      target += sum(log1m_exp(log_hurdle_exponential(
+        concentrations_unit[i_nonzero_small],
+        LOD_hurdle_scale[1][i_nonzero_small], // LOD scale (c * m * n)
+        cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
+        cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
       )));
     }
 
@@ -467,11 +474,25 @@ generated quantities {
     exp_pre_repl = exp(pre_repl);
 
     if (LOD_model > 0) {
-     above_LOD = to_vector(bernoulli_rng(
-       1-exp(log_hurdle_exponential_gamma(
-         exp_pre_repl, LOD_hurdle_scale[1], nu_upsilon_a
-         ))
-       ));
+      vector[T] LOD_hurdle_scale_all;
+      // scale for LOD hurdle model
+      if (LOD_model == 1) {
+        LOD_hurdle_scale_all = rep_vector(LOD_scale[1], T);
+      } else if (LOD_model == 2) {
+        LOD_hurdle_scale_all = (
+        (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4 *
+        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5 *
+        n_averaged_all
+        );
+      }
+      above_LOD = to_vector(bernoulli_rng(
+        1-exp(log_hurdle_exponential(
+          exp_pre_repl, // lambda (concentration)
+          LOD_hurdle_scale_all,
+          cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
+          cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
+          ))
+          ));
     } else {
       above_LOD = rep_vector(1, T);
     }

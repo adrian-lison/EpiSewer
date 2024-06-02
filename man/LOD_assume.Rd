@@ -53,7 +53,15 @@ sample was likely below the limit of detection, but we don't know what the
 exact concentration was.
 
 The limit of detection is specific to the quantification approach
-and protocol. It is usually established from a dedicated lab experiment.
+and protocol. It is usually established from a dedicated lab experiment
+(serial dilution experiment). It his here assumed that this experiment did
+not cover a large fraction of the preprocessing noise to find an optimal
+configuration for the exponential model.
+
+If used together with \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}, EpiSewer will also
+model the effect of pre-PCR noise on the LOD. This means that the modeled
+LOD could be slightly higher than specified under \code{limit}, depending on the
+estimated pre-PCR noise.
 }
 \seealso{
 {Visualize the assumed LOD as a function of concentration:}

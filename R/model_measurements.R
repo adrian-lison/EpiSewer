@@ -702,7 +702,15 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #'   but should also work well for other quantification methods such as qPCR.
 #'
 #' @details The limit of detection is specific to the quantification approach
-#'   and protocol. It is usually established from a dedicated lab experiment.
+#'   and protocol. It is usually established from a dedicated lab experiment
+#'   (serial dilution experiment). It his here assumed that this experiment did
+#'   not cover a large fraction of the preprocessing noise to find an optimal
+#'   configuration for the exponential model.
+#'
+#' @details If used together with [noise_estimate_ddPCR()], EpiSewer will also
+#'   model the effect of pre-PCR noise on the LOD. This means that the modeled
+#'   LOD could be slightly higher than specified under `limit`, depending on the
+#'   estimated pre-PCR noise.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
