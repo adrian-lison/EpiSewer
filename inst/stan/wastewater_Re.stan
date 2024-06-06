@@ -364,7 +364,7 @@ model {
     }
 
     // concentration on unit scale
-    vector[n_measured - n_zero] concentrations_unit = exp(concentrations);
+    vector[n_measured] concentrations_unit = exp(concentrations);
 
     // limit of detection
     if (LOD_model > 0) {
