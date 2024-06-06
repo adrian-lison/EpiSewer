@@ -483,7 +483,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       {
         if (!is.null(measurements) && mark_outliers) {
           geom_point(
-            data = measurements |> filter(.outlier),
+            data = measurements[.outlier == TRUE, ],
             aes(y = concentration),
             color = "red", shape = 4
           )
