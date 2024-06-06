@@ -178,8 +178,8 @@ concentrations_observe <-
               ))
           }
         } else if (length(n_averaged) == 1) {
-          modeldata$n_averaged <- rep(n_averaged, modeldata$n_samples)
-        } else if (length(n_averaged) == modeldata$n_samples) {
+          modeldata$n_averaged <- rep(n_averaged, modeldata$n_measured)
+        } else if (length(n_averaged) == modeldata$n_measured) {
           modeldata$n_averaged <- n_averaged
         } else {
           cli::cli_abort(paste(
@@ -626,7 +626,8 @@ noise_estimate_constant_var <-
            pre_replicate_cv_prior_sigma = 1,
            warn = TRUE,
            modeldata = modeldata_init()) {
-    cli::cli_warn(paste(
+    if (warn) {
+      cli::cli_warn(paste(
       "You have specified",
       paste0(
         "{.help [noise_estimate_constant_var()]",
@@ -641,6 +642,7 @@ noise_estimate_constant_var <-
       "You can specify",
       "{.code noise_estimate_constant_var(warn=TRUE)} to disable this warning."
       ))
+    }
     return(noise_estimate_(
       replicates = replicates,
       cv_prior_mu = cv_prior_mu,
