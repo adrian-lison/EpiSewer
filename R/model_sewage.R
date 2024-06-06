@@ -142,6 +142,9 @@ flows_observe <-
                 paste(missing_flow_dates, collapse = ", ")
               ))
             }
+            if (any(flows[[flow_col]]==0)) {
+              cli::cli_abort("Flow data must not contain zero flows.")
+            }
             flows <-
               flows[flows[[date_col]] >= modeldata$.metainfo$T_start_date &
                 flows[[date_col]] <= modeldata$.metainfo$T_end_date, ]
