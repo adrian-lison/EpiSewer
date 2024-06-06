@@ -4,9 +4,16 @@
 \alias{LOD_estimate_ddPCR}
 \title{Estimate a limit of detection model for digital droplet PCR data}
 \usage{
-LOD_estimate_ddPCR(modeldata = modeldata_init())
+LOD_estimate_ddPCR(drop_prob = 1e-10, modeldata = modeldata_init())
 }
 \arguments{
+\item{drop_prob}{Probability for non-detection below which likelihood
+contributions of observed concentrations are dropped from LOD model. This
+avoids numerical issues of the LOD model at high concentrations (very small
+non-detection probabilities) that can otherwise affect sampling speed.
+Since these likelihood contributions will be virtually zero for almost all
+samples anyway, parameter estimates are practically not affected.}
+
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
 also be an already partly specified model returned by other \code{EpiSewer}

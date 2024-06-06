@@ -8,6 +8,7 @@ LOD_assume(
   limit = NULL,
   prob = 0.95,
   LOD_type = "exponential",
+  drop_prob = 1e-10,
   modeldata = modeldata_init()
 )
 }
@@ -26,6 +27,13 @@ supported. This models an exponentially decreasing probability of zero
 measurements / non-detection as a function of concentration. The
 exponential model can be derived from the statistical properties of ddPCR,
 but should also work well for other quantification methods such as qPCR.}
+
+\item{drop_prob}{Probability for non-detection below which likelihood
+contributions of observed concentrations are dropped from LOD model. This
+avoids numerical issues of the LOD model at high concentrations (very small
+non-detection probabilities) that can otherwise affect sampling speed.
+Since these likelihood contributions will be virtually zero for almost all
+samples anyway, parameter estimates are practically not affected.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

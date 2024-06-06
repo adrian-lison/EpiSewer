@@ -669,6 +669,7 @@ noise_estimate_constant_var <-
 LOD_none <- function(modeldata = modeldata_init()) {
   modeldata$LOD_model <- 0
   modeldata$LOD_scale <- numeric(0)
+  modeldata$LOD_drop_prob <- 0
 
   modeldata$.str$measurements[["LOD"]] <- list(
     LOD_none = c()
@@ -700,6 +701,12 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #'   measurements / non-detection as a function of concentration. The
 #'   exponential model can be derived from the statistical properties of ddPCR,
 #'   but should also work well for other quantification methods such as qPCR.
+#' @param drop_prob Probability for non-detection below which likelihood
+#'   contributions of observed concentrations are dropped from LOD model. This
+#'   avoids numerical issues of the LOD model at high concentrations (very small
+#'   non-detection probabilities) that can otherwise affect sampling speed.
+#'   Since these likelihood contributions will be virtually zero for almost all
+#'   samples anyway, parameter estimates are practically not affected.
 #'
 #' @details The limit of detection is specific to the quantification approach
 #'   and protocol. It is usually established from a dedicated lab experiment
@@ -721,6 +728,7 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #'
 #' @family {LOD models}
 LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
+                       drop_prob = 1e-10,
                        modeldata = modeldata_init()) {
 
   if (!LOD_type %in% c("exponential", "ddPCR")) { # "ddPCR" is synonym
@@ -740,6 +748,8 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
     modeldata = modeldata
   )
 
+  modeldata$LOD_drop_prob <- drop_prob
+
   modeldata$.str$measurements[["LOD"]] <- list(
     LOD_assume = c()
   )
@@ -758,6 +768,13 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
 #'   concentration in the respective sample was likely below the limit of
 #'   detection, but we don't know what the exact concentration was.
 #'
+#' @param drop_prob Probability for non-detection below which likelihood
+#'   contributions of observed concentrations are dropped from LOD model. This
+#'   avoids numerical issues of the LOD model at high concentrations (very small
+#'   non-detection probabilities) that can otherwise affect sampling speed.
+#'   Since these likelihood contributions will be virtually zero for almost all
+#'   samples anyway, parameter estimates are practically not affected.
+#'
 #' @details The limit of detection is modeled using a hurdle model. The model
 #'   uses the number of droplets in the ddPCR reaction and the concentration
 #'   scaling factor as defined and estimated by [noise_estimate_ddPCR()]. It can
@@ -769,7 +786,7 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
 #' @export
 #'
 #' @family {LOD models}
-LOD_estimate_ddPCR <- function(modeldata = modeldata_init()) {
+LOD_estimate_ddPCR <- function(drop_prob = 1e-10, modeldata = modeldata_init()) {
 
   modeldata <- tbc("LOD_estimate_ddPCR",
     {
@@ -789,6 +806,8 @@ LOD_estimate_ddPCR <- function(modeldata = modeldata_init()) {
       ),
     modeldata = modeldata
     )
+
+  modeldata$LOD_drop_prob <- drop_prob
 
   modeldata$.str$measurements[["LOD"]] <- list(
     LOD_estimate_ddPCR = c()

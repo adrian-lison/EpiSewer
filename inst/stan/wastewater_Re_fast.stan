@@ -52,6 +52,7 @@ data {
   // LOD_model = 2: estimated LOD based on ddPCR model, needs ddPCR parameters
   int<lower=0, upper=2> LOD_model;
   array[(LOD_model == 1) ? 1 : 0] real<lower=0> LOD_scale;
+  real<lower=0, upper=1> LOD_drop_prob; // probability threshold for non-detection below which log likelihood contributions of observed concentrations are dropped from LOD model
 
   // Residence time distribution
   int<lower=0> D; // last day of shedding
@@ -111,47 +112,6 @@ transformed data {
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T] flow_log = log(flow);
-  int R_w_half; // half of R smoothing window
-
-  // Number of steps between spline coefficients
-  int bs_n = to_int(sum(bs_dists));
-  array[bs_n_basis] int bs_select = to_int(to_array_1d(
-    cumulative_sum(append_row(1, bs_dists))
-    ));
-
-  // Upper relevant bound for LOD model
-  real LOD_expected_scale;
-  if (LOD_model == 1) {
-    LOD_expected_scale = LOD_scale[1];
-  } else if (LOD_model == 2) {
-    LOD_expected_scale = (
-    (nu_upsilon_b_fixed < 0 ? nu_upsilon_b_prior[1] : nu_upsilon_b_fixed) * 1e4 *
-    (nu_upsilon_c_fixed < 0 ? nu_upsilon_c_prior[1] : nu_upsilon_c_fixed) * 1e-5
-    );
-  }
-  real LOD_irrelevant = -log(1e-4)/LOD_expected_scale; // concentrations above this value are irrelevant for LOD model (probability of non-detection is virtually zero)
-
-  int n_zero = num_zeros(measured_concentrations);
-  int notsmall = num_zeros(fmax(0, LOD_irrelevant - measured_concentrations));
-  array[n_zero] int<lower=0> i_zero;
-  array[n_measured - n_zero] int<lower=0> i_nonzero;
-  array[n_measured - n_zero - notsmall] int<lower=0> i_nonzero_small;
-  int i_z = 0;
-  int i_nz = 0;
-  int i_nzs = 0;
-  for (n in 1:n_measured) {
-    if (measured_concentrations[n] == 0) {
-      i_z += 1;
-      i_zero[i_z] = n;
-    } else {
-      i_nz += 1;
-      i_nonzero[i_nz] = n;
-      if (measured_concentrations[n] < LOD_irrelevant) {
-        i_nzs += 1;
-        i_nonzero_small[i_nzs] = n;
-      }
-    }
-  }
 
   // number of averaged technical replicates per date
   real n_averaged_median = quantile(n_averaged, 0.5);
@@ -162,7 +122,54 @@ transformed data {
     n_averaged_all[sample_to_date[measure_to_sample[i]]] = n_averaged[i];
   }
 
+  // Number of steps between spline coefficients
+  int bs_n = to_int(sum(bs_dists));
+  array[bs_n_basis] int bs_select = to_int(to_array_1d(
+    cumulative_sum(append_row(1, bs_dists))
+    ));
+
+  // Upper relevant bound for LOD model
+  real conc_drop_prob;
+  if (LOD_model == 0) {
+    conc_drop_prob = positive_infinity();
+  } else {
+    real LOD_expected_scale;
+    if (LOD_model == 1) {
+      LOD_expected_scale = LOD_scale[1];
+    } else if (LOD_model == 2) {
+      LOD_expected_scale = (
+      (nu_upsilon_b_fixed < 0 ? nu_upsilon_b_prior[1] : nu_upsilon_b_fixed) * 1e4 *
+      (nu_upsilon_c_fixed < 0 ? nu_upsilon_c_prior[1] : nu_upsilon_c_fixed) * 1e-5 *
+      n_averaged_median
+      );
+    }
+    conc_drop_prob = -log(LOD_drop_prob)/LOD_expected_scale; // concentrations above this value are irrelevant for LOD model (probability of non-detection is virtually zero)
+  }
+
+  int n_zero = num_zeros(measured_concentrations);
+  int n_dropLOD = num_zeros(fmax(0, conc_drop_prob - measured_concentrations));
+  array[n_zero] int<lower=0> i_zero;
+  array[n_measured - n_zero] int<lower=0> i_nonzero;
+  array[n_measured - n_zero - n_dropLOD] int<lower=0> i_nonzero_LOD;
+  int i_z = 0;
+  int i_nz = 0;
+  int i_nzs = 0;
+  for (n in 1:n_measured) {
+    if (measured_concentrations[n] == 0) {
+      i_z += 1;
+      i_zero[i_z] = n;
+    } else {
+      i_nz += 1;
+      i_nonzero[i_nz] = n;
+      if (measured_concentrations[n] < conc_drop_prob) {
+        i_nzs += 1;
+        i_nonzero_LOD[i_nzs] = n;
+      }
+    }
+  }
+
   // half R smoothing window
+  int R_w_half; // half of R smoothing window
   if ((R_w % 2)==0) {
     reject("Smoothing window size for R must be an odd number.");
   } else {
@@ -387,8 +394,8 @@ model {
       ));
       // above-LOD probabilities for non-zero measurements
       target += sum(log1m_exp(log_hurdle_exponential(
-        concentrations_unit[i_nonzero_small],
-        LOD_hurdle_scale[1][i_nonzero_small], // LOD scale (c * m * n)
+        concentrations_unit[i_nonzero_LOD],
+        LOD_hurdle_scale[1][i_nonzero_LOD], // LOD scale (c * m * n)
         cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
         cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
       )));
