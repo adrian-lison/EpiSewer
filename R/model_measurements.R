@@ -66,6 +66,11 @@ model_measurements <- function(
 #' @param n_averaged_col Name of the column in the `measurements` data.frame
 #'   containing the number of replicates over which the measurements have been
 #'   averaged. This is an alternative to specifying `n_averaged`.
+#' @param ddPCR_total_droplets_col Name of the column in the `measurements`
+#'   data.frame containing the total number of droplets in the ddPCR reaction of
+#'   each measurement. Only applies to concentration measurements obtain via
+#'   ddPCR. Can be used by the [noise_estimate_ddPCR()] and
+#'   [LOD_estimate_ddPCR()] modeling components.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -80,6 +85,7 @@ concentrations_observe <-
            replicate_col = NULL,
            n_averaged = 1,
            n_averaged_col = NULL,
+           ddPCR_total_droplets_col = NULL,
            modeldata = modeldata_init()) {
     if (!(composite_window %% 1 == 0 && composite_window > 0)) {
       cli::cli_abort(
@@ -99,7 +105,10 @@ concentrations_observe <-
 
     modeldata <- tbp("concentrations_observe",
       {
-        required_data_cols <- c(date_col, concentration_col, replicate_col)
+        required_data_cols <- c(
+          date_col, concentration_col, replicate_col,
+          n_averaged_col, ddPCR_total_droplets_col
+          )
         if (!all(required_data_cols %in% names(measurements))) {
           cli::cli_abort(
             c(paste(
@@ -163,6 +172,12 @@ concentrations_observe <-
           measurements[[date_col]][measured]
         )
 
+        if (!is.null(replicate_col)) {
+          modeldata$replicate_ids <- as.integer(
+            measurements[[replicate_col]][measured]
+          )
+        }
+
         if (!is.null(n_averaged_col)){
           if (!n_averaged_col %in% names(measurements)) {
             cli::cli_abort(paste0(
@@ -188,10 +203,12 @@ concentrations_observe <-
             ))
         }
 
-        if (!is.null(replicate_col)) {
-          modeldata$replicate_ids <- as.integer(
-            measurements[[replicate_col]][measured]
+        if (!is.null(ddPCR_total_droplets_col)) {
+          modeldata$ddPCR_total_droplets <- as.integer(
+            measurements[[ddPCR_total_droplets_col]][measured]
           )
+        } else {
+          modeldata$ddPCR_total_droplets <- rep(0, modeldata$n_measured)
         }
 
         return(modeldata)
@@ -272,13 +289,17 @@ droplets_observe <-
 #'   of variation but the variance of measurements is modeled as constant. This
 #'   is usually a misspecification and is only supported for comparison
 #'   purposes.
-#' @param ddPCR_prior_droplets_mu Prior (mean) on the number of droplets in the
-#'   ddPCR reaction.
-#' @param ddPCR_prior_droplets_sigma Prior (standard deviation) on the number of
-#'   droplets in the ddPCR reaction.
-#' @param ddPCR_droplets_fixed If TRUE (default), the number of droplets is
-#'   fixed to the prior mean and not estimated. This is recommended if no
+#' @param ddPCR_prior_droplets_mu Prior (mean) on the total number of droplets
+#'   in the ddPCR reaction.
+#' @param ddPCR_prior_droplets_sigma Prior (standard deviation) on the total
+#'   number of droplets in the ddPCR reaction.
+#' @param ddPCR_droplets_fixed If TRUE (default), the number of total droplets
+#'   is fixed to the prior mean and not estimated. This is recommended if no
 #'   replicates are available.
+#' @param ddPCR_droplets_observe If TRUE, the number of total droplets is taken
+#'   from the supplied measurements `data.frame`. This requires that the
+#'   argument `ddPCR_total_droplets_col` is specified in
+#'   [concentrations_observe()].
 #' @param ddPCR_prior_scaling_mu Prior (mean) on the concentration scaling
 #'   factor for the ddPCR reaction. The concentration scaling factor is the
 #'   droplet volume, scaled by the dilution of the wastewater in the ddPCR
@@ -314,6 +335,7 @@ noise_estimate_ <-
            ddPCR_prior_droplets_mu = NULL,
            ddPCR_prior_droplets_sigma = NULL,
            ddPCR_droplets_fixed = NULL,
+           ddPCR_droplets_observe = NULL,
            ddPCR_prior_scaling_mu = NULL,
            ddPCR_prior_scaling_sigma = NULL,
            ddPCR_scaling_fixed = NULL,
@@ -331,6 +353,7 @@ noise_estimate_ <-
     modeldata$.init$nu_upsilon_a <- 0.1 # 10% coefficient of variation
 
     if (cv_type == "constant") {
+      modeldata$ddPCR_droplets_observe <- FALSE
       modeldata$cv_type <- 0
       modeldata$nu_upsilon_b_prior <- numeric(0)
       modeldata$nu_upsilon_b_fixed <- -1 # dummy value
@@ -342,11 +365,30 @@ noise_estimate_ <-
       modeldata$cv_pre_approx_taylor <- numeric(0)
     } else if (cv_type == "ddPCR") {
       modeldata$cv_type <- 1
-      if (ddPCR_droplets_fixed) {
+
+      if (ddPCR_droplets_observe) {
+        modeldata$ddPCR_droplets_observe <- TRUE
+        modeldata$nu_upsilon_b_fixed <- 0
+        modeldata$nu_upsilon_b_prior <- numeric(0)
+        modeldata$.init$nu_upsilon_b <- numeric(0)
+        modeldata$.checks$check_total_droplets_col <- function(d) {
+          if (!"ddPCR_total_droplets" %in% names(d)) {
+            cli::cli_abort(paste0(
+              "You specified `ddPCR_droplets_observe = TRUE`, which requires ",
+              "a column with the number of total droplets in the PCR for each ",
+              "sample in your data. Please specify such a column via the",
+              "`ddPCR_total_droplets_col` argument in ",
+              cli_help("concentrations_observe"), "."
+            ))
+          }
+        }
+      } else if (ddPCR_droplets_fixed) {
+        modeldata$ddPCR_droplets_observe <- FALSE
         modeldata$nu_upsilon_b_fixed <- ddPCR_prior_droplets_mu * 1e-4
         modeldata$nu_upsilon_b_prior <- numeric(0)
         modeldata$.init$nu_upsilon_b <- numeric(0)
       } else {
+        modeldata$ddPCR_droplets_observe <- FALSE
         modeldata$nu_upsilon_b_fixed <- -1 # dummy value
         modeldata$nu_upsilon_b_prior <- set_prior(
           "nu_upsilon_b", "truncated normal",
@@ -383,6 +425,7 @@ noise_estimate_ <-
       modeldata$cv_pre_approx_taylor <- use_taylor_approx
 
     } else if (cv_type == "constant_var") {
+      modeldata$ddPCR_droplets_observe <- FALSE
       modeldata$cv_type <- 2
       modeldata$nu_upsilon_b_prior <- numeric(0)
       modeldata$nu_upsilon_b_fixed <- -1 # dummy value
@@ -562,6 +605,7 @@ noise_estimate_ddPCR <-
            ddPCR_prior_droplets_mu = 20000,
            ddPCR_prior_droplets_sigma = 5000,
            ddPCR_droplets_fixed = TRUE,
+           ddPCR_droplets_observe = FALSE,
            ddPCR_prior_scaling_mu = 1.5e-5,
            ddPCR_prior_scaling_sigma = 0.5e-5,
            ddPCR_scaling_fixed = FALSE,
@@ -578,6 +622,7 @@ noise_estimate_ddPCR <-
       ddPCR_prior_droplets_mu = ddPCR_prior_droplets_mu,
       ddPCR_prior_droplets_sigma = ddPCR_prior_droplets_sigma,
       ddPCR_droplets_fixed = ddPCR_droplets_fixed,
+      ddPCR_droplets_observe = ddPCR_droplets_observe,
       ddPCR_prior_scaling_mu = ddPCR_prior_scaling_mu,
       ddPCR_prior_scaling_sigma = ddPCR_prior_scaling_sigma,
       ddPCR_scaling_fixed = ddPCR_scaling_fixed,

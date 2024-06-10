@@ -13,6 +13,7 @@ concentrations_observe(
   replicate_col = NULL,
   n_averaged = 1,
   n_averaged_col = NULL,
+  ddPCR_total_droplets_col = NULL,
   modeldata = modeldata_init()
 )
 }
@@ -52,6 +53,12 @@ value for each observation).}
 \item{n_averaged_col}{Name of the column in the \code{measurements} data.frame
 containing the number of replicates over which the measurements have been
 averaged. This is an alternative to specifying \code{n_averaged}.}
+
+\item{ddPCR_total_droplets_col}{Name of the column in the \code{measurements}
+data.frame containing the total number of droplets in the ddPCR reaction of
+each measurement. Only applies to concentration measurements obtain via
+ddPCR. Can be used by the \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}} and
+\code{\link[=LOD_estimate_ddPCR]{LOD_estimate_ddPCR()}} modeling components.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

@@ -15,9 +15,9 @@
   *
   * @return A vector with the corresponding coefficients of variation
   */
-vector cv_ddPCR(vector lambda, real m, real c, vector n) {
+vector cv_ddPCR(vector lambda, vector m, real c, vector n) {
   int N = num_elements(lambda);
-  vector[N] total_var = (exp(lambda * c) - 1) ./ (n * m * c^2);
+  vector[N] total_var = (exp(lambda * c) - 1) ./ (n .* m * c^2);
   vector[N] cv = sqrt(total_var) ./ lambda;
   return cv;
 }
@@ -44,7 +44,7 @@ vector cv_ddPCR(vector lambda, real m, real c, vector n) {
   *
   * @return A vector with the corresponding coefficients of variation
   */
-vector cv_ddPCR_pre(vector lambda, real nu_pre, real m, real c, vector n, int pre_type, int approx_taylor) {
+vector cv_ddPCR_pre(vector lambda, real nu_pre, vector m, real c, vector n, int pre_type, int approx_taylor) {
   if (nu_pre == 0) {
     return cv_ddPCR(lambda, m, c, n);
   }
@@ -60,7 +60,7 @@ vector cv_ddPCR_pre(vector lambda, real nu_pre, real m, real c, vector n, int pr
   } else {
     reject("Unknown pre-PCR noise type");
   }
-  vector[N] exp_var = (E_exp - 1) ./ (n * m * c^2);
+  vector[N] exp_var = (E_exp - 1) ./ (n .* m * c^2);
   vector[N] total_var = var_exp + exp_var;
   vector[N] cv = sqrt(total_var) ./ lambda;
   return cv;

@@ -11,6 +11,7 @@ noise_estimate_ddPCR(
   ddPCR_prior_droplets_mu = 20000,
   ddPCR_prior_droplets_sigma = 5000,
   ddPCR_droplets_fixed = TRUE,
+  ddPCR_droplets_observe = FALSE,
   ddPCR_prior_scaling_mu = 1.5e-05,
   ddPCR_prior_scaling_sigma = 5e-06,
   ddPCR_scaling_fixed = FALSE,
@@ -36,15 +37,20 @@ details for more explanation).}
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
 
-\item{ddPCR_prior_droplets_mu}{Prior (mean) on the number of droplets in the
-ddPCR reaction.}
+\item{ddPCR_prior_droplets_mu}{Prior (mean) on the total number of droplets
+in the ddPCR reaction.}
 
-\item{ddPCR_prior_droplets_sigma}{Prior (standard deviation) on the number of
-droplets in the ddPCR reaction.}
+\item{ddPCR_prior_droplets_sigma}{Prior (standard deviation) on the total
+number of droplets in the ddPCR reaction.}
 
-\item{ddPCR_droplets_fixed}{If TRUE (default), the number of droplets is
-fixed to the prior mean and not estimated. This is recommended if no
+\item{ddPCR_droplets_fixed}{If TRUE (default), the number of total droplets
+is fixed to the prior mean and not estimated. This is recommended if no
 replicates are available.}
+
+\item{ddPCR_droplets_observe}{If TRUE, the number of total droplets is taken
+from the supplied measurements \code{data.frame}. This requires that the
+argument \code{ddPCR_total_droplets_col} is specified in
+\code{\link[=concentrations_observe]{concentrations_observe()}}.}
 
 \item{ddPCR_prior_scaling_mu}{Prior (mean) on the concentration scaling
 factor for the ddPCR reaction. The concentration scaling factor is the

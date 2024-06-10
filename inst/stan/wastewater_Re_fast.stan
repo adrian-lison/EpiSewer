@@ -18,6 +18,7 @@ data {
   array[n_measured] int<lower=1, upper=n_samples> measure_to_sample; // index mapping measurements to samples
   vector<lower=0>[n_measured] measured_concentrations; // measured concentrations
   vector<lower=0>[n_measured] n_averaged; // number of averaged technical replicates per measurement (is vector for vectorization)
+  vector<lower=0>[n_measured] ddPCR_total_droplets; // total number of droplets in ddPCR
   int<lower=1> w; // composite window: how many past days the samples cover,
   // e.g. 1 for individual day samples, 7 for weekly composite samples, ...
 
@@ -40,6 +41,7 @@ data {
   int<lower=0, upper=2> cv_type; // 0 for constant, 1 for ddPCR, 2 for constant_var
   array[2] real nu_upsilon_a_prior; // prior for pre-PCR CV
   real nu_upsilon_b_fixed;
+  int<lower=0, upper=1> ddPCR_droplets_observe; // 0 for not observed, 1 for observed
   array[cv_type == 1 && nu_upsilon_b_fixed < 0 ? 2 : 0] real nu_upsilon_b_prior; // prior for parameter 2 of CV formula (number of droplets). Scaled by 1e-4 for numerical efficiency.
   real nu_upsilon_c_fixed;
   array[cv_type == 1 && nu_upsilon_c_fixed < 0 ? 2 : 0] real nu_upsilon_c_prior; // prior for parameter 3 of CV formula (droplet size*(scaling factor, i.e. exp_conc_assay/exp_conc_ww)). Scaled by 1e+5 for numerical efficiency.
@@ -122,6 +124,15 @@ transformed data {
     n_averaged_all[sample_to_date[measure_to_sample[i]]] = n_averaged[i];
   }
 
+  // number of total droplets per measurement per date
+  real total_droplets_median = quantile(ddPCR_total_droplets, 0.5);
+  vector[T] total_droplets_all = rep_vector(total_droplets_median, T);
+  for (i in 1:n_measured) {
+    // note that if several measurements per sample exist,
+    // the total droplets of the last one will be used for that date
+    total_droplets_all[sample_to_date[measure_to_sample[i]]] = ddPCR_total_droplets[i];
+  }
+
   // Number of steps between spline coefficients
   int bs_n = to_int(sum(bs_dists));
   array[bs_n_basis] int bs_select = to_int(to_array_1d(
@@ -138,8 +149,8 @@ transformed data {
       LOD_expected_scale = LOD_scale[1];
     } else if (LOD_model == 2) {
       LOD_expected_scale = (
-      (nu_upsilon_b_fixed < 0 ? nu_upsilon_b_prior[1] : nu_upsilon_b_fixed) * 1e4 *
-      (nu_upsilon_c_fixed < 0 ? nu_upsilon_c_prior[1] : nu_upsilon_c_fixed) * 1e-5 *
+      (ddPCR_droplets_observe ? total_droplets_median : (nu_upsilon_b_fixed < 0 ? nu_upsilon_b_prior[1] * 1e4 : nu_upsilon_b_fixed * 1e4)) *
+      (nu_upsilon_c_fixed < 0 ? nu_upsilon_c_prior[1] * 1e-5 : nu_upsilon_c_fixed * 1e-5) *
       n_averaged_median
       );
     }
@@ -313,9 +324,9 @@ transformed parameters {
     LOD_hurdle_scale[1] = rep_vector(LOD_scale[1], n_measured);
   } else if (LOD_model == 2) {
     LOD_hurdle_scale[1] = (
-    (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4 *
-    (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5 *
-    n_averaged
+    n_averaged .*
+    (ddPCR_droplets_observe ? ddPCR_total_droplets : rep_vector(nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] * 1e4 : nu_upsilon_b_fixed * 1e4, n_measured)) *
+    (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] * 1e-5 : nu_upsilon_c_fixed * 1e-5)
     );
   }
 }
@@ -409,8 +420,8 @@ model {
       cv = cv_ddPCR_pre(
         concentrations_unit[i_nonzero], // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
-        (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4, // m (number of partitions)
-        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5, // c (conversion factor)
+        (ddPCR_droplets_observe ? ddPCR_total_droplets : rep_vector(nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] * 1e4 : nu_upsilon_b_fixed * 1e4, n_measured)), // m (number of partitions)
+        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] * 1e-5 : nu_upsilon_c_fixed * 1e-5), // c (conversion factor)
         n_averaged[i_nonzero], // n (number of averaged replicates)
         cv_pre_type[1], // Type of pre-PCR CV
         cv_pre_approx_taylor[1] // Should taylor approximation be used?
@@ -487,9 +498,9 @@ generated quantities {
         LOD_hurdle_scale_all = rep_vector(LOD_scale[1], T);
       } else if (LOD_model == 2) {
         LOD_hurdle_scale_all = (
-        (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4 *
-        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5 *
-        n_averaged_all
+        n_averaged_all .*
+        (ddPCR_droplets_observe ? total_droplets_all : rep_vector(nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] * 1e4 : nu_upsilon_b_fixed * 1e4, T)) *
+        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] * 1e-5 : nu_upsilon_c_fixed * 1e-5)
         );
       }
       above_LOD = to_vector(bernoulli_rng(
@@ -510,8 +521,8 @@ generated quantities {
       cv = cv_ddPCR_pre(
         exp_pre_repl, // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
-        (nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] : nu_upsilon_b_fixed) * 1e4, // m (number of partitions)
-        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] : nu_upsilon_c_fixed) * 1e-5, // c (conversion factor)
+        (ddPCR_droplets_observe ? total_droplets_all : rep_vector(nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] * 1e4 : nu_upsilon_b_fixed * 1e4, T)), // m (number of partitions)
+        (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] * 1e-5 : nu_upsilon_c_fixed * 1e-5), // c (conversion factor)
         n_averaged_all, // n (number of averaged replicates) for all dates
         cv_pre_type[1], // Type of pre-PCR CV
         cv_pre_approx_taylor[1] // Should taylor approximation be used?
