@@ -837,13 +837,7 @@ add_seeding_intercept_prior <- function(
     calling_f_name,
     modeldata = modeldata_init()) {
 
-  help_seeding_f <- paste0(
-    "{.help [",
-    calling_f_name,
-    "()](EpiSewer::",
-    calling_f_name,
-    "())}"
-  )
+  help_seeding_f <- cli_help(calling_f_name)
 
   if (!is.null(intercept_prior_q5) && intercept_prior_q5 < 1) {
     cli::cli_warn(paste0(
@@ -891,8 +885,8 @@ add_seeding_intercept_prior <- function(
             "The median is now assumed to be 2 times your 5% quantile. ",
             "Please consider specifying a smaller 5% quantile or adjust other ",
             "assumptions (e.g. ",
-            "{.help [load_per_case](EpiSewer::load_per_case_assume())}) ",
-            "if the crude median estimate seems wrong."
+            cli_help("load_per_case_assume", "load_per_case"),
+            " if the crude median estimate seems wrong."
           ))
           cases_crude <- intercept_prior_q5 * 2
         }
@@ -908,8 +902,8 @@ add_seeding_intercept_prior <- function(
             "The median is now assumed to be half of your 95% quantile. ",
             "Please consider specifying a higher 95% quantile or adjust other ",
             "assumptions (e.g. ",
-            "{.help [load_per_case](EpiSewer::load_per_case_assume())}) ",
-            "if the crude median estimate seems wrong."
+            cli_help("load_per_case_assume", "load_per_case"),
+            " if the crude median estimate seems wrong."
           ))
           cases_crude <- intercept_prior_q95 / 2
         }

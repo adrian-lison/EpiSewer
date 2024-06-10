@@ -629,16 +629,12 @@ noise_estimate_constant_var <-
     if (warn) {
       cli::cli_warn(paste(
       "You have specified",
-      paste0(
-        "{.help [noise_estimate_constant_var()]",
-        "(EpiSewer::noise_estimate_constant_var())}"
-        ),
+      cli_help("noise_estimate_constant_var"),
       "as the model component for measurement noise.",
       "Note that modeling a constant variance",
       "is likely a model misspecification and should only be used for ",
       "comparison purposes with better models like",
-      "{.help [noise_estimate()](EpiSewer::noise_estimate())} or",
-      "{.help [noise_estimate_ddPCR()](EpiSewer::noise_estimate_ddPCR())}.",
+      cli_help("noise_estimate"), "or", cli_help("noise_estimate_ddPCR"), ".",
       "You can specify",
       "{.code noise_estimate_constant_var(warn=TRUE)} to disable this warning."
       ))
@@ -801,10 +797,10 @@ LOD_estimate_ddPCR <- function(drop_prob = 1e-10, modeldata = modeldata_init()) 
       ),
     required_values = c(1),
     advice = paste0(
-      'To use {.help [LOD_estimate_ddPCR()](EpiSewer::LOD_estimate_ddPCR()}, ',
-      'you must specify noise = ',
-      '{.help [noise_estimate_ddPCR()](EpiSewer::noise_estimate_ddPCR()} in ',
-      '{.help [model_measurements()](EpiSewer::model_measurements()}.'
+      'To use ',
+      cli_help("LOD_estimate_ddPCR"), ', you must specify noise = ',
+      cli_help("noise_estimate_ddPCR"), ' in ', cli_help("model_measurements"),
+      "."
       ),
     modeldata = modeldata
     )
