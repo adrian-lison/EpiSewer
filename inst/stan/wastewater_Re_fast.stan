@@ -420,7 +420,7 @@ model {
       cv = cv_ddPCR_pre(
         concentrations_unit[i_nonzero], // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
-        (ddPCR_droplets_observe ? ddPCR_total_droplets : rep_vector(nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] * 1e4 : nu_upsilon_b_fixed * 1e4, n_measured)), // m (number of partitions)
+        (ddPCR_droplets_observe ? ddPCR_total_droplets[i_nonzero] : rep_vector(nu_upsilon_b_fixed < 0 ? nu_upsilon_b[1] * 1e4 : nu_upsilon_b_fixed * 1e4, n_measured - n_zero)), // m (number of partitions)
         (nu_upsilon_c_fixed < 0 ? nu_upsilon_c[1] * 1e-5 : nu_upsilon_c_fixed * 1e-5), // c (conversion factor)
         n_averaged[i_nonzero], // n (number of averaged replicates)
         cv_pre_type[1], // Type of pre-PCR CV
