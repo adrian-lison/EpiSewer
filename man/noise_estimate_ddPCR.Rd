@@ -49,7 +49,7 @@ replicates are available.}
 
 \item{ddPCR_droplets_observe}{If TRUE, the number of total droplets is taken
 from the supplied measurements \code{data.frame}. This requires that the
-argument \code{ddPCR_total_droplets_col} is specified in
+argument \code{total_droplets_col} is specified in
 \code{\link[=concentrations_observe]{concentrations_observe()}}.}
 
 \item{ddPCR_prior_scaling_mu}{Prior (mean) on the concentration scaling

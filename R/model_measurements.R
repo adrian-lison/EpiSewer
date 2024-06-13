@@ -47,8 +47,8 @@ model_measurements <- function(
 #'   this case, the supplied dates represent the last day included in each
 #'   sample.
 #' @param distribution Parametric distribution for concentration measurements.
-#'   Currently supported are normal (default and recommended), and lognormal.
-#'   Distributions are truncated below zero if necessary.
+#'   Currently supported are "normal" (default and recommended), and
+#'   "lognormal". Distributions are truncated below zero if necessary.
 #' @param date_col Name of the column containing the dates.
 #' @param concentration_col Name of the column containing the measured
 #'   concentrations.
@@ -66,11 +66,12 @@ model_measurements <- function(
 #' @param n_averaged_col Name of the column in the `measurements` data.frame
 #'   containing the number of replicates over which the measurements have been
 #'   averaged. This is an alternative to specifying `n_averaged`.
-#' @param ddPCR_total_droplets_col Name of the column in the `measurements`
-#'   data.frame containing the total number of droplets in the ddPCR reaction of
-#'   each measurement. Only applies to concentration measurements obtain via
+#' @param total_droplets_col Name of the column in the `measurements`
+#'   data.frame containing the total number of droplets in the ddPCR reaction
+#'   of each measurement. Only applies to concentration measurements obtain via
 #'   ddPCR. Can be used by the [noise_estimate_ddPCR()] and
-#'   [LOD_estimate_ddPCR()] modeling components.
+#'   [LOD_estimate_ddPCR()] modeling components. Note that this is really the
+#'   *total* number of droplets, not just the number of positive droplets.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -85,7 +86,7 @@ concentrations_observe <-
            replicate_col = NULL,
            n_averaged = 1,
            n_averaged_col = NULL,
-           ddPCR_total_droplets_col = NULL,
+           total_droplets_col = NULL,
            modeldata = modeldata_init()) {
     if (!(composite_window %% 1 == 0 && composite_window > 0)) {
       cli::cli_abort(
@@ -107,7 +108,7 @@ concentrations_observe <-
       {
         required_data_cols <- c(
           date_col, concentration_col, replicate_col,
-          n_averaged_col, ddPCR_total_droplets_col
+          n_averaged_col, total_droplets_col
           )
         if (!all(required_data_cols %in% names(measurements))) {
           cli::cli_abort(
@@ -203,9 +204,9 @@ concentrations_observe <-
             ))
         }
 
-        if (!is.null(ddPCR_total_droplets_col)) {
+        if (!is.null(total_droplets_col)) {
           modeldata$ddPCR_total_droplets <- as.integer(
-            measurements[[ddPCR_total_droplets_col]][measured]
+            measurements[[total_droplets_col]][measured]
           )
         } else {
           modeldata$ddPCR_total_droplets <- rep(0, modeldata$n_measured)
@@ -298,7 +299,7 @@ droplets_observe <-
 #'   replicates are available.
 #' @param ddPCR_droplets_observe If TRUE, the number of total droplets is taken
 #'   from the supplied measurements `data.frame`. This requires that the
-#'   argument `ddPCR_total_droplets_col` is specified in
+#'   argument `total_droplets_col` is specified in
 #'   [concentrations_observe()].
 #' @param ddPCR_prior_scaling_mu Prior (mean) on the concentration scaling
 #'   factor for the ddPCR reaction. The concentration scaling factor is the
@@ -377,7 +378,7 @@ noise_estimate_ <-
               "You specified `ddPCR_droplets_observe = TRUE`, which requires ",
               "a column with the number of total droplets in the PCR for each ",
               "sample in your data. Please specify such a column via the",
-              "`ddPCR_total_droplets_col` argument in ",
+              "`total_droplets_col` argument in ",
               cli_help("concentrations_observe"), "."
             ))
           }
