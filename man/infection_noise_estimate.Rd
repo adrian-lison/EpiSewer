@@ -19,7 +19,8 @@ Binomial distributed.}
 
 \item{overdispersion_prior_mu}{Prior (mean) on the overdispersion parameter
 of the Negative Binomial. The default of 0.1 corresponds to 10\%
-overdispersion.}
+overdispersion. It is also the limit of the coefficient of variation (CV)
+of infections as the infection incidence becomes large.}
 
 \item{overdispersion_prior_sigma}{Prior (standard deviation) on the
 overdispersion parameter of the Negative Binomial.}
