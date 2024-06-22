@@ -225,6 +225,76 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
   return(model_stan)
 }
 
+#' Compile EpiSewer models
+#'
+#' @description The stan models used by EpiSewer need to be compiled for your
+#'   device. This is only necessary once, after installing or updating the
+#'   package. This function compiles all models from the package.
+#'
+#' @param force_recompile If TRUE, then models will be recompiled even if they
+#'   have already been successfully compiled.
+#' @param verbose If TRUE, warnings and detailed errors from the compilation are
+#'   printed. This can help to diagnose compilation issues.
+#'
+#' @details If one or several models are not successfully compiled, please
+#'   ensure that `cmdstan` is properly set up and try updating it to a newer
+#'   version using [cmdstanr::install_cmdstan()]. If the problem persists,
+#'   please run [EpiSewer::sewer_compile(verbose = TRUE)] and post the output in
+#'   a new issue on GitHub, along with your [cmdstanr::cmdstan_version()].
+#'
+#' @export
+sewer_compile <- function(force_recompile = FALSE, verbose = FALSE) {
+  all_models <- c(
+    "wastewater_Re.stan",
+    "wastewater_Re_splines.stan",
+    "wastewater_Re_fast.stan"
+    )
+  comp_success <- NULL
+
+  for (i in 1:length(all_models)) {
+    model_name <- all_models[i]
+    cat("\r                                                      \r", sep = "");
+    cat(sprintf("\r| Compiling model %d/%d ", i, length(all_models)), sep = "")
+    #flush.console()
+    success <- tryCatch(
+      {
+        if (verbose == FALSE) {
+          suppressMessages(get_stan_model(
+            model_filename = model_name,
+            force_recompile = force_recompile
+          ))
+        } else {
+          get_stan_model(
+            model_filename = model_name,
+            force_recompile = force_recompile
+          )
+        }
+        TRUE
+      },
+      error = function(e) { FALSE }
+    )
+    cat(paste(sprintf(
+      "\r| Compiling model %d/%d",
+      i, length(all_models)), ifelse(success, "(success) ", "(failed) ")
+      ), sep = "")
+    Sys.sleep(0.5)
+    comp_success <- c(comp_success, success)
+  }
+  cat("\r                                                        \r", sep = "");
+  if(!all(comp_success)) {
+    cli::cli_warn(
+      paste(
+        "The following models could not be compiled:",
+        paste(all_models[!comp_success], collapse = ", ")
+      )
+    )
+  } else {
+
+    cli::cli_alert("All models compiled successfully.")
+  }
+  return(invisible(NULL))
+}
+
 #' Computes a checksum of a stanmodel, i.e. of the code from its main
 #' stan file and all included stan files
 get_checksum_model <- function(stanmodel, only_functions = FALSE) {

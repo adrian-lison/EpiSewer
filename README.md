@@ -63,6 +63,20 @@ cmdstanr::check_cmdstan_toolchain()
 cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up
 ```
 
+The stan models used by EpiSewer need to be compiled for your device.
+This is only necessary once - after installing or updating the package -
+and can be done using the `sewer_compile()` function.
+
+``` r
+EpiSewer::sewer_compile()
+```
+
+If the models are not successfully compiled, please ensure that
+`cmdstan` is properly set up and try updating it to a newer version
+using `cmdstanr::install_cmdstan()`. If the problem persists, please run
+`EpiSewer::sewer_compile(verbose = TRUE)` and post the output in a new
+issue on GitHub, along with your `cmdstanr::cmdstan_version()`.
+
 ## Introduction
 
 This is a quick introduction to using the `EpiSewer` package. To learn
