@@ -812,27 +812,33 @@ plot_prior_posterior <- function(result, param_name) {
     param_name <- all_params[param_i, "short_name"]
     raw_name <- all_params[param_i, "raw_name"]
     param_name_long <- all_params[param_i, "long_name"]
+    param_scaling <- all_params[param_i, "scaling"]
+    param_transf <- all_params[param_i, "transf"]
   } else if (param_name %in% all_parameters()$raw_name) {
     param_i <- which(all_params$raw_name == param_name)
     param_name <- all_params[param_i, "short_name"]
     raw_name <- all_params[param_i, "raw_name"]
     param_name_long <- all_params[param_i, "long_name"]
+    param_scaling <- all_params[param_i, "scaling"]
+    param_transf <- all_params[param_i, "transf"]
   } else {
     raw_name <- param_name
+    param_scaling <- 1
+    param_transf <- identity
   }
 
+  prior_params <- result$job$data[[paste0(raw_name, "_prior")]]
+  prior_dist_type <- stringr::str_extract(
+    result$job$priors_text[[paste0(raw_name, "_prior_text")]], "(?<=dist = ).+?(?=,)"
+  )
+
   tryCatch(
-    param_draws <- as.vector(result$fitted$draws(raw_name)),
+    posterior_draws <- as.vector(result$fitted$draws(raw_name)),
     error = function(e) {
       cli::cli_abort(paste0(
         "Parameter `", raw_name, "` not found in model fit."
       ), call = NULL)
     }
-  )
-
-  prior_params <- result$job$data[[paste0(raw_name, "_prior")]]
-  prior_dist_type <- stringr::str_extract(
-    result$job$priors_text[[paste0(raw_name, "_prior_text")]], "(?<=dist = ).+?(?=,)"
   )
 
   if (prior_dist_type == "normal") {
@@ -851,12 +857,16 @@ plot_prior_posterior <- function(result, param_name) {
     ))
   }
 
-  x_lower = min(quantile(prior_draws, 0.01), quantile(param_draws, 0.01))
-  x_upper = max(quantile(prior_draws, 0.99), quantile(param_draws, 0.99))
+  # apply transformation and scaling
+  prior_draws <- param_transf[[1]](prior_draws) * param_scaling[[1]]
+  posterior_draws <- param_transf[[1]](posterior_draws) * param_scaling[[1]]
+
+  x_lower = min(quantile(prior_draws, 0.01), quantile(posterior_draws, 0.01))
+  x_upper = max(quantile(prior_draws, 0.99), quantile(posterior_draws, 0.99))
 
   prior_posterior_plot <- ggplot() +
     geom_density((aes(x=prior_draws)), fill = "#a6a6a6", colour = "#808080", alpha = 0.7) +
-    geom_density((aes(x=param_draws)), fill = "#273f76", colour = "#19294d",alpha = 0.7) +
+    geom_density((aes(x=posterior_draws)), fill = "#273f76", colour = "#19294d",alpha = 0.7) +
     xlab(param_name_long) +
     ylab("Density") +
     theme_bw() +

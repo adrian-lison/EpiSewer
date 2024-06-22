@@ -130,14 +130,15 @@ all_components <- function() {
 
 all_parameters <- function(print = FALSE) {
   params <- as.data.frame(matrix(c(
-    'measurement_noise_cv','nu_upsilon_a','Coefficient of variation (measurement noise)',
-    'ddPCR_droplets','nu_upsilon_b','Number of droplets in ddPCR',
-    'ddPCR_scaling','nu_upsilon_c','Concentration conversion factor in ddPCR',
-    'pre_replicate_cv','nu_psi','Coefficient of variation (pre-PCR noise)',
-    'load_variation_cv','nu_zeta','Individual-level coefficient of load variation',
-    'infection_overdispersion','I_xi','Overdispersion of infections',
-    'seeding_intercept','iota_log_seed_intercept','Initial number of infections'
-  ), byrow = T, ncol = 3, dimnames = list(c(),c('short_name','raw_name','long_name'))))
+    'measurement_noise_cv','nu_upsilon_a','Coefficient of variation (measurement noise)',1,identity,
+    'ddPCR_total_droplets','nu_upsilon_b_mu','Average total number of droplets in ddPCR',1e4,identity,
+    'ddPCR_droplet_variation','nu_upsilon_b_cv','Droplet number variation in ddPCR',1,identity,
+    'ddPCR_scaling','nu_upsilon_c','Concentration conversion factor in ddPCR',1e-5,identity,
+    'pre_replicate_cv','nu_psi','Coefficient of variation (pre-PCR noise)',1,identity,
+    'load_variation_cv','nu_zeta','Individual-level coefficient of load variation',1,identity,
+    'infection_overdispersion','I_xi','Overdispersion of infections',1,identity,
+    'seeding_intercept','iota_log_seed_intercept','Initial number of infections',1,exp
+  ), byrow = T, ncol = 5, dimnames = list(c(),c('short_name','raw_name','long_name',"scaling","transf"))))
   if (print) {
     return(c(paste(apply(params, 1, function(x) paste0("- `",x["short_name"],"` (",x["raw_name"],"): ",x["long_name"])), collapse = "\n")))
   } else {
