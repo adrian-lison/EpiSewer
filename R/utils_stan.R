@@ -208,7 +208,7 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
   }
 
   stanmodel_list <- lapply(1:n_models, function(i) {
-    try(cmdstanr::cmdstan_model(model_path_list[[i]],
+    (cmdstanr::cmdstan_model(model_path_list[[i]],
       include_paths = include_paths_list[[i]],
       dir = dirname(model_path_list[[i]]),
       cpp_options = cpp_options,
