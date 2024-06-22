@@ -33,16 +33,16 @@ get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
     by = "1 day"
   )
   var_summary <- map_dates_1d_df(fit$summary(var,
-    mean = mean,
-    median = median,
+    mean = function(x) mean(x, na.rm = TRUE),
+    median = function(x) median(x, na.rm = TRUE),
     function(x) {
       setNames(
-        quantile(x, (1 - rev(intervals)) / 2, na.rm = T), paste0("lower_", rev(intervals))
+        quantile(x, (1 - rev(intervals)) / 2, na.rm = TRUE), paste0("lower_", rev(intervals))
       )
     },
     function(x) {
       setNames(
-        quantile(x, (1 + intervals) / 2, na.rm = T), paste0("upper_", intervals)
+        quantile(x, (1 + intervals) / 2, na.rm = TRUE), paste0("upper_", intervals)
       )
     }
   ), date_mapping)
@@ -58,8 +58,8 @@ get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo,
     by = "1 day"
   )
   var_summary <- map_dates_1d_df(fit$summary(var,
-    mean = function(x) mean(exp(x)),
-    median = function(x) median(exp(x)),
+    mean = function(x) mean(exp(x), na.rm = TRUE),
+    median = function(x) median(exp(x), na.rm = TRUE),
     function(x) {
       setNames(
         quantile(exp(x), (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
@@ -93,8 +93,8 @@ get_draws_1d_date <- function(fit, variable, ndraws = NULL) {
 get_summary_vector <- function(fit, var, varnames = NULL,
                                intervals = c(0.5, 0.95)) {
   fsummary <- fit$summary(var,
-    mean = mean,
-    median = median,
+    mean = function(x) mean(x, na.rm = TRUE),
+    median = function(x) median(x, na.rm = TRUE),
     function(x) {
       setNames(
         quantile(x, (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
@@ -119,8 +119,8 @@ get_summary_vector <- function(fit, var, varnames = NULL,
 get_summary_vector_log <- function(fit, var, varnames = NULL,
                                    intervals = c(0.5, 0.95)) {
   fsummary <- fit$summary(var,
-    mean = function(x) mean(exp(x)),
-    median = function(x) median(exp(x)),
+    mean = function(x) mean(exp(x), na.rm = TRUE),
+    median = function(x) median(exp(x), na.rm = TRUE),
     function(x) {
       setNames(
         quantile(exp(x), (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
