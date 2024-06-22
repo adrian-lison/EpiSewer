@@ -55,11 +55,11 @@ containing the number of replicates over which the measurements have been
 averaged. This is an alternative to specifying \code{n_averaged}.}
 
 \item{total_droplets_col}{Name of the column in the \code{measurements}
-data.frame containing the \emph{total} number of droplets in the ddPCR reaction
+data.frame containing the total number of droplets in the ddPCR reaction
 of each measurement. Only applies to concentration measurements obtain via
 ddPCR. Can be used by the \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}} and
 \code{\link[=LOD_estimate_ddPCR]{LOD_estimate_ddPCR()}} modeling components. Note that this is really the
-total number of droplets, not only the number of positive droplets.}
+\emph{total} number of droplets, not just the number of positive droplets.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

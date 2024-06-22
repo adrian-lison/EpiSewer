@@ -31,7 +31,8 @@ Visually compare prior and posterior of a model parameter
 The following parameters can be visualized (if in the model):
 \itemize{
 \item \code{measurement_noise_cv} (nu_upsilon_a): Coefficient of variation (measurement noise)
-\item \code{ddPCR_droplets} (nu_upsilon_b): Number of droplets in ddPCR
+\item \code{ddPCR_total_droplets} (nu_upsilon_b_mu): Average total number of droplets in ddPCR
+\item \code{ddPCR_droplet_variation} (nu_upsilon_b_cv): Droplet number variation in ddPCR
 \item \code{ddPCR_scaling} (nu_upsilon_c): Concentration conversion factor in ddPCR
 \item \code{pre_replicate_cv} (nu_psi): Coefficient of variation (pre-PCR noise)
 \item \code{load_variation_cv} (nu_zeta): Individual-level coefficient of load variation

@@ -299,8 +299,15 @@ droplets_observe <-
 #'   replicates are available.
 #' @param ddPCR_droplets_observe If TRUE, the number of total droplets is taken
 #'   from the supplied measurements `data.frame`. This requires that the
-#'   argument `total_droplets_col` is specified in
-#'   [concentrations_observe()].
+#'   argument `total_droplets_col` is specified in [concentrations_observe()].
+#' @param ddPCR_droplet_variation_prior_mu Prior (mean) on the coefficient of
+#'   variation of the total number of droplets in the ddPCR reaction. Usually,
+#'   the maximum number of partitions possible for a given dPCR chip is not
+#'   reached, i.e. a certain number of partitions is lost. This loss varies
+#'   between PCR runs, and is modeled as log-normal distributed in EpiSewer.
+#' @param ddPCR_droplet_variation_prior_sigma Prior (standard deviation) on the
+#'   coefficient of variation of the total number of droplets in the ddPCR
+#'   reaction.
 #' @param ddPCR_prior_scaling_mu Prior (mean) on the concentration scaling
 #'   factor for the ddPCR reaction. The concentration scaling factor is the
 #'   droplet volume, scaled by the dilution of the wastewater in the ddPCR
@@ -337,6 +344,8 @@ noise_estimate_ <-
            ddPCR_prior_droplets_sigma = NULL,
            ddPCR_droplets_fixed = NULL,
            ddPCR_droplets_observe = NULL,
+           ddPCR_droplet_variation_prior_mu = NULL,
+           ddPCR_droplet_variation_prior_sigma = NULL,
            ddPCR_prior_scaling_mu = NULL,
            ddPCR_prior_scaling_sigma = NULL,
            ddPCR_scaling_fixed = NULL,
@@ -356,9 +365,12 @@ noise_estimate_ <-
     if (cv_type == "constant") {
       modeldata$ddPCR_droplets_observe <- FALSE
       modeldata$cv_type <- 0
-      modeldata$nu_upsilon_b_prior <- numeric(0)
+      modeldata$nu_upsilon_b_mu_prior <- numeric(0)
+      modeldata$nu_upsilon_b_cv_prior <- numeric(0)
       modeldata$nu_upsilon_b_fixed <- -1 # dummy value
-      modeldata$.init$nu_upsilon_b <- numeric(0)
+      modeldata$.init$nu_upsilon_b_mu <- numeric(0)
+      modeldata$.init$nu_upsilon_b_cv <- numeric(0)
+      modeldata$.init$nu_upsilon_b_noise_raw <- numeric(0)
       modeldata$nu_upsilon_c_prior <- numeric(0)
       modeldata$nu_upsilon_c_fixed <- -1 # dummy value
       modeldata$.init$nu_upsilon_c <- numeric(0)
@@ -370,8 +382,11 @@ noise_estimate_ <-
       if (ddPCR_droplets_observe) {
         modeldata$ddPCR_droplets_observe <- TRUE
         modeldata$nu_upsilon_b_fixed <- 0
-        modeldata$nu_upsilon_b_prior <- numeric(0)
-        modeldata$.init$nu_upsilon_b <- numeric(0)
+        modeldata$nu_upsilon_b_mu_prior <- numeric(0)
+        modeldata$nu_upsilon_b_cv_prior <- numeric(0)
+        modeldata$.init$nu_upsilon_b_mu <- numeric(0)
+        modeldata$.init$nu_upsilon_b_cv <- numeric(0)
+        modeldata$.init$nu_upsilon_b_noise_raw <- numeric(0)
         modeldata$.checks$check_total_droplets_col <- function(d) {
           if (!"ddPCR_total_droplets" %in% names(d)) {
             cli::cli_abort(paste0(
@@ -383,20 +398,31 @@ noise_estimate_ <-
             ))
           }
         }
-      } else if (ddPCR_droplets_fixed) {
-        modeldata$ddPCR_droplets_observe <- FALSE
-        modeldata$nu_upsilon_b_fixed <- ddPCR_prior_droplets_mu * 1e-4
-        modeldata$nu_upsilon_b_prior <- numeric(0)
-        modeldata$.init$nu_upsilon_b <- numeric(0)
       } else {
-        modeldata$ddPCR_droplets_observe <- FALSE
-        modeldata$nu_upsilon_b_fixed <- -1 # dummy value
-        modeldata$nu_upsilon_b_prior <- set_prior(
-          "nu_upsilon_b", "truncated normal",
-          mu = ddPCR_prior_droplets_mu * 1e-4, # scaling by 1e-4 for numerical reasons
-          sigma = ddPCR_prior_droplets_sigma * 1e-4
+        if (ddPCR_droplets_fixed) {
+          modeldata$ddPCR_droplets_observe <- FALSE
+          modeldata$nu_upsilon_b_fixed <- ddPCR_prior_droplets_mu * 1e-4
+          modeldata$nu_upsilon_b_mu_prior <- numeric(0)
+          modeldata$.init$nu_upsilon_b_mu <- numeric(0)
+        } else {
+          modeldata$ddPCR_droplets_observe <- FALSE
+          modeldata$nu_upsilon_b_fixed <- -1 # dummy value
+          modeldata$nu_upsilon_b_mu_prior <- set_prior(
+            "nu_upsilon_b_mu", "truncated normal",
+            mu = ddPCR_prior_droplets_mu * 1e-4, # scaling by 1e-4 for numerical reasons
+            sigma = ddPCR_prior_droplets_sigma * 1e-4
+          )
+          modeldata$.init$nu_upsilon_b_mu <- as.array(1)
+        }
+        modeldata$nu_upsilon_b_cv_prior <- set_prior(
+          "nu_upsilon_b_cv", "truncated normal",
+          mu = ddPCR_droplet_variation_prior_mu,
+          sigma = ddPCR_droplet_variation_prior_sigma
         )
-        modeldata$.init$nu_upsilon_b <- as.array(1)
+        modeldata$.init$nu_upsilon_b_cv <- as.array(0.01)
+        modeldata$.init$nu_upsilon_b_noise_raw <- tbe(
+          rep(0, modeldata$n_measured), "n_measured"
+        )
       }
 
       if (ddPCR_scaling_fixed) {
@@ -428,9 +454,12 @@ noise_estimate_ <-
     } else if (cv_type == "constant_var") {
       modeldata$ddPCR_droplets_observe <- FALSE
       modeldata$cv_type <- 2
-      modeldata$nu_upsilon_b_prior <- numeric(0)
+      modeldata$nu_upsilon_b_mu_prior <- numeric(0)
+      modeldata$nu_upsilon_b_cv_prior <- numeric(0)
       modeldata$nu_upsilon_b_fixed <- -1 # dummy value
-      modeldata$.init$nu_upsilon_b <- numeric(0)
+      modeldata$.init$nu_upsilon_b_mu <- numeric(0)
+      modeldata$.init$nu_upsilon_b_cv <- numeric(0)
+      modeldata$.init$nu_upsilon_b_noise_raw <- numeric(0)
       modeldata$nu_upsilon_c_prior <- numeric(0)
       modeldata$nu_upsilon_c_fixed <- -1 # dummy value
       modeldata$.init$nu_upsilon_c <- numeric(0)
@@ -587,8 +616,9 @@ noise_estimate <-
 #'
 #' @details The priors of this component have the following functional form:
 #' - coefficient of variation of concentration measurements (`cv`): `Truncated normal`
-#' - prior for number of droplets in ddPCR: `Truncated normal`
-#' - prior for concentration scaling factor of ddPCR: `Truncated normal`
+#' - mean number of droplets in ddPCR: `Truncated normal`
+#' - coefficient of variation of number of droplets in ddPCR: `Truncated normal`
+#' - concentration scaling factor of ddPCR: `Truncated normal`
 #' - coefficient of variation of concentration before the replication stage (`pre_replicate_cv`):
 #'   `Truncated normal`
 #'
@@ -607,6 +637,8 @@ noise_estimate_ddPCR <-
            ddPCR_prior_droplets_sigma = 5000,
            ddPCR_droplets_fixed = TRUE,
            ddPCR_droplets_observe = FALSE,
+           ddPCR_droplet_variation_prior_mu = 0,
+           ddPCR_droplet_variation_prior_sigma = 0.05,
            ddPCR_prior_scaling_mu = 1.5e-5,
            ddPCR_prior_scaling_sigma = 0.5e-5,
            ddPCR_scaling_fixed = FALSE,
@@ -624,6 +656,8 @@ noise_estimate_ddPCR <-
       ddPCR_prior_droplets_sigma = ddPCR_prior_droplets_sigma,
       ddPCR_droplets_fixed = ddPCR_droplets_fixed,
       ddPCR_droplets_observe = ddPCR_droplets_observe,
+      ddPCR_droplet_variation_prior_mu = ddPCR_droplet_variation_prior_mu,
+      ddPCR_droplet_variation_prior_sigma = ddPCR_droplet_variation_prior_sigma,
       ddPCR_prior_scaling_mu = ddPCR_prior_scaling_mu,
       ddPCR_prior_scaling_sigma = ddPCR_prior_scaling_sigma,
       ddPCR_scaling_fixed = ddPCR_scaling_fixed,

@@ -13,6 +13,8 @@ noise_estimate_(
   ddPCR_prior_droplets_sigma = NULL,
   ddPCR_droplets_fixed = NULL,
   ddPCR_droplets_observe = NULL,
+  ddPCR_droplet_variation_prior_mu = NULL,
+  ddPCR_droplet_variation_prior_sigma = NULL,
   ddPCR_prior_scaling_mu = NULL,
   ddPCR_prior_scaling_sigma = NULL,
   ddPCR_scaling_fixed = NULL,
@@ -57,8 +59,17 @@ replicates are available.}
 
 \item{ddPCR_droplets_observe}{If TRUE, the number of total droplets is taken
 from the supplied measurements \code{data.frame}. This requires that the
-argument \code{total_droplets_col} is specified in
-\code{\link[=concentrations_observe]{concentrations_observe()}}.}
+argument \code{total_droplets_col} is specified in \code{\link[=concentrations_observe]{concentrations_observe()}}.}
+
+\item{ddPCR_droplet_variation_prior_mu}{Prior (mean) on the coefficient of
+variation of the total number of droplets in the ddPCR reaction. Usually,
+the maximum number of partitions possible for a given dPCR chip is not
+reached, i.e. a certain number of partitions is lost. This loss varies
+between PCR runs, and is modeled as log-normal distributed in EpiSewer.}
+
+\item{ddPCR_droplet_variation_prior_sigma}{Prior (standard deviation) on the
+coefficient of variation of the total number of droplets in the ddPCR
+reaction.}
 
 \item{ddPCR_prior_scaling_mu}{Prior (mean) on the concentration scaling
 factor for the ddPCR reaction. The concentration scaling factor is the

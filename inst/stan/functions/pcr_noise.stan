@@ -176,3 +176,15 @@ vector log_E_exp_lnorm(vector lambda, real nu_pre, real t) {
   return(log_E_exp_lnorm(lambda, nu_pre, rep_vector(t, num_elements(lambda))));
 }
 
+vector total_partitions_noncentered(real m_mu, real m_cv, vector noise_raw) {
+  int N = num_elements(noise_raw);
+  real max_partitions = m_mu + 3 * m_mu * m_cv;
+  real lnorm_unit_mean = max_partitions - m_mu;
+  real lnorm_unit_sd = m_mu * m_cv;
+  real sigma2 = log((lnorm_unit_sd / lnorm_unit_mean)^2 + 1);
+  real meanlog = log(lnorm_unit_mean) - sigma2 / 2;
+  real sdlog = sqrt(sigma2);
+  vector[N] lost_partitions = exp(meanlog + sdlog * noise_raw); // log-normal
+  vector[N] total_partitions = max_partitions - lost_partitions;
+  return(total_partitions);
+}
