@@ -11,6 +11,7 @@ functions {
   #include functions/pcr_noise.stan
 }
 data {
+  // Measurements ----
   int<lower=0> T; // number of total days in measured time span
   int<lower=0> n_samples; // number of samples from different dates
   int<lower=0> n_measured; // number of different measurements (including replicates)
@@ -19,25 +20,22 @@ data {
   vector<lower=0>[n_measured] measured_concentrations; // measured concentrations
   vector<lower=0>[n_measured] n_averaged; // number of averaged technical replicates per measurement (is vector for vectorization)
   vector<lower=0>[n_measured] ddPCR_total_droplets; // total number of droplets in ddPCR
-  int<lower=1> w; // composite window: how many past days the samples cover,
-  // e.g. 1 for individual day samples, 7 for weekly composite samples, ...
+  int<lower=1> w; // composite window: how many past days the samples cover, e.g. 1 for individual day samples, 7 for weekly composite samples, ...
+  int<lower=1, upper=2> obs_dist; // Parametric distribution for observation likelihood: 1 (default) for truncated normal, 2 for lognormal
 
-  real<lower=0> load_mean; // mean load shed per person
-  int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads
-  array[load_vari ? 2 : 0] real nu_zeta_prior; // Prior on individual-level load coefficient of variation
-
+  // Flow ----
   vector<lower=0>[T] flow; // flow rate for normalization of measurements
 
-  // Sample date effects model
+  // Sample date effects model ----
   int<lower=0> K; // number of sample date predictors
   matrix[T, K] X; // sample date predictor design matrix
   array[K > 0 ? 2 : 0] real eta_prior; // prior for sample date effects
 
-  // Pre-replicate noise
+  // Pre-replicate noise ----
   int<lower=0, upper=1> pr_noise; // Pre-replicate noise: Model variation before replication stage?
-  array[pr_noise ? 2 : 0] real nu_psi_prior; // Prior on coefficient of variation fpr pre-replicate noise
+  array[pr_noise ? 2 : 0] real nu_psi_prior; // Prior on coefficient of variation for pre-replicate noise
 
-  // Coefficient of variation (CV) of lognormal likelihood of measurements
+  // Coefficient of variation (CV) of measurements ----
   int<lower=0, upper=2> cv_type; // 0 for constant, 1 for ddPCR, 2 for constant_var
   array[2] real nu_upsilon_a_prior; // prior for pre-PCR CV
   real nu_upsilon_b_fixed;
@@ -49,7 +47,7 @@ data {
   array[cv_type == 1 ? 1 : 0] int <lower=0, upper=1> cv_pre_type; // 0 for gamma, 1 for log-normal
   array[cv_type == 1 ? 1 : 0] int <lower=0, upper=1> cv_pre_approx_taylor; // 0 for no Taylor expansion approximation, 1 for Taylor expansion approximation
 
-  // Limit of detection
+  // Limit of detection ----
   // LOD_model = 0: no LOD
   // LOD_model = 1: assumed LOD, LOD_scale provided
   // LOD_model = 2: estimated LOD based on ddPCR model, needs ddPCR parameters
@@ -57,37 +55,41 @@ data {
   array[(LOD_model == 1) ? 1 : 0] real<lower=0> LOD_scale;
   real<lower=0, upper=1> LOD_drop_prob; // probability threshold for non-detection below which log likelihood contributions of observed concentrations are dropped from LOD model
 
-  // Residence time distribution
-  int<lower=0> D; // last day of shedding
+  // Residence time ----
+  int<lower=0> D; // maximum residence time
   vector[D + 1] residence_dist; // residence time distribution
   // --> probability for residence of zero days (same day arrival at sampling site) comes first
 
-  // Shedding load distribution
-  int<lower=0> S; // last day of shedding
+  // Shedding ----
+  real<lower=0> load_mean; // mean load shed per person
+  int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads?
+  array[load_vari ? 2 : 0] real nu_zeta_prior; // prior on coefficient of variation of individual-level load
+  int<lower=0> S; // maximum number of days with shedding
   vector[S + 1] shedding_dist; // shedding load distribution
   // --> probability for shedding today comes first
 
-  // Incubation period distribution
-  int<lower=0> L; // maximum delay
+  // Incubation period ----
+  int<lower=0> L; // maximum incubation period
   vector[L + 1] incubation_dist; // incubation period distribution
   // --> probability for a delay of zero comes first
 
-  // Generation interval distribution
+  // Generation interval ----
   int<lower=1> G; // maximum generation interval
   vector<lower=0>[G] generation_dist; // generation interval distribution
   // --> probability for a delay of one comes first (zero excluded)
 
-  // Hyperpriors for seeding infections
-  int<lower=0, upper=1> seeding_model; // 0 for fixed, 1 for random walk
+  // Seeding of infections ----
+  int<lower=0, upper=1> seeding_model; // 0 for fixed, 1 for random walk seeding
   array[2] real iota_log_seed_intercept_prior;
   array[seeding_model == 1 ? 2 : 0] real iota_log_seed_sd_prior;
 
-  // Stochastic (=1) or deterministic (=0) renewal process?
-  int<lower=0, upper=1> I_sample;
+  // Infection noise ----
+  int<lower=0, upper=1> I_sample; // Stochastic (=1) or deterministic (=0) renewal process?
   int<lower=0, upper=I_sample> I_overdispersion; // whether to model overdispersion via a negative binomial
   real I_xi_fixed; // fixed overdispersion parameter
   array[I_overdispersion && I_xi_fixed < 0 ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
 
+  // Reproduction number ----
   // Hyperpriors for smoothing
   array[2] real R_level_start_prior;
   array[2] real R_trend_start_prior;
@@ -107,11 +109,6 @@ data {
   // first element: 0 = inv_softplus, 1 = scaled_logit
   // other elements: hyperparameters for the respective link function
   array[4] real R_link;
-
-  // Parametric distribution for observation likelihood
-  // 1 (default) = truncated normal
-  // 2 = lognormal
-  int<lower=1, upper=2> obs_dist;
 }
 transformed data {
   vector[G] gi_rev = reverse(generation_dist);
