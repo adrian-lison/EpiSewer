@@ -4,9 +4,9 @@ functions {
   #include functions/time_series.stan
   #include functions/approx_count_dist.stan
   #include functions/renewal.stan
-  #include functions/normal2.stan
-  #include functions/lognormal2.stan
-  #include functions/gamma2.stan
+  #include functions/dist_normal.stan
+  #include functions/dist_lognormal.stan
+  #include functions/dist_gamma.stan
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
 }

@@ -38,13 +38,12 @@ vector normal_lb_rng(vector mean, real sd, real lb) {
 real normal2_lpdf(vector y, vector mean, vector cv, real lb) {
   int n = num_elements(y);
   vector[n] sigma = mean .* cv;
-  real tar = normal_lpdf(y | mean, sigma);
+  real tar = normal_lpdf(y | mean, sigma) - n * normal_lccdf(lb | mean, sigma);
   for (i in 1:n) {
     if (y[i] < lb) {
       tar += negative_infinity();
       }
   }
-  tar += -normal_lccdf(lb | mean, sigma);
   return tar;
 }
 
