@@ -8,7 +8,7 @@ init_from_normal_prior(prior)
 }
 \arguments{
 \item{prior}{Prior for parameter as provided by \code{\link[=set_prior]{set_prior()}}. Should be a
-normal prior.}
+normal prior (first element mean, second element sd).}
 }
 \value{
 Mean of the normal prior plus 1/4 of the standard deviation.
@@ -19,4 +19,8 @@ with zero (and if the parameter is strictly positive, zero is not possible
 at all). This function provides as init value the mean of the normal prior
 plus 1/4 of the standard deviation. This ensure a positive init even if the
 mean is zero (useful for truncated normal priors.)
+}
+\details{
+If the provided prior has zero variance, it is assumed that the
+parameter will not be sampled and an empty init is returned.
 }

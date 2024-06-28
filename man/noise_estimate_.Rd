@@ -17,7 +17,6 @@ noise_estimate_(
   ddPCR_droplet_variation_prior_sigma = NULL,
   ddPCR_prior_scaling_mu = NULL,
   ddPCR_prior_scaling_sigma = NULL,
-  ddPCR_scaling_fixed = NULL,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   prePCR_noise_type = "log-normal",
@@ -77,10 +76,9 @@ droplet volume, scaled by the dilution of the wastewater in the ddPCR
 reaction. See details for further explanation.}
 
 \item{ddPCR_prior_scaling_sigma}{Prior (standard deviation) on the
-concentration scaling factor for the ddPCR reaction.}
-
-\item{ddPCR_scaling_fixed}{If TRUE, the concentration scaling factor is fixed
-to the prior mean and not estimated.}
+concentration scaling factor for the ddPCR reaction. If this is set to
+zero, the concentration scaling factor will be fixed to the prior mean and
+not estimated.}
 
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
 of concentrations \emph{before} the replication stage.}

@@ -16,7 +16,6 @@ noise_estimate_ddPCR(
   ddPCR_droplet_variation_prior_sigma = 0.05,
   ddPCR_prior_scaling_mu = 1.5e-05,
   ddPCR_prior_scaling_sigma = 5e-06,
-  ddPCR_scaling_fixed = FALSE,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   prePCR_noise_type = "log-normal",
@@ -69,10 +68,9 @@ droplet volume, scaled by the dilution of the wastewater in the ddPCR
 reaction. See details for further explanation.}
 
 \item{ddPCR_prior_scaling_sigma}{Prior (standard deviation) on the
-concentration scaling factor for the ddPCR reaction.}
-
-\item{ddPCR_scaling_fixed}{If TRUE, the concentration scaling factor is fixed
-to the prior mean and not estimated.}
+concentration scaling factor for the ddPCR reaction. If this is set to
+zero, the concentration scaling factor will be fixed to the prior mean and
+not estimated.}
 
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
 of concentrations \emph{before} the replication stage.}
@@ -123,7 +121,7 @@ stage.
 }
 \details{
 The concentration scaling factor (see \code{ddPCR_prior_scaling_mu},
-\code{ddPCR_prior_scaling_sigma}, \code{ddPCR_scaling_fixed}) is the droplet volume,
+\code{ddPCR_prior_scaling_sigma}) is the droplet volume,
 scaled by the dilution of the wastewater in the ddPCR reaction. The
 dilution accounts for all extraction and preparation steps. For example, if
 the droplet volume is 4.5e-7 mL and the dilution of the wastewater is 100:3

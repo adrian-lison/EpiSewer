@@ -258,7 +258,10 @@ set_prior_normal_log <- function(param,
 #'   mean is zero (useful for truncated normal priors.)
 #'
 #' @param prior Prior for parameter as provided by [set_prior()]. Should be a
-#'   normal prior.
+#'   normal prior (first element mean, second element sd).
+#'
+#' @details If the provided prior has zero variance, it is assumed that the
+#'   parameter will not be sampled and an empty init is returned.
 #'
 #' @return Mean of the normal prior plus 1/4 of the standard deviation.
 init_from_normal_prior <- function(prior) {
@@ -270,7 +273,11 @@ init_from_normal_prior <- function(prior) {
       ), .internal = TRUE)
   }
   prior_data <- prior[prior_data_select][[1]]
-  return(prior_data[1] + prior_data[2]/4)
+  if (prior_data[2] > 0) {
+    return(prior_data[1] + prior_data[2]/4)
+  } else {
+    return(numeric(0))
+  }
 }
 
 #' Check modeldata object for required variables

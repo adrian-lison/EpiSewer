@@ -143,3 +143,24 @@ Helper functions for primitive operations
     }
     return sum;
   }
+
+  /**
+  * Return a parameter - or a fixed value if its prior has zero variance
+  *
+  * @param param The parameter. This assumes that the parameter is stored inside
+  * an array of length 1 if the parameter is not fixed and length 0 otherwise
+  *
+  * @param prior The prior for the parameter. This assumes that the prior is
+  * stored in an array of length 2, where the first element contains the mean
+  * and the second element the standard deviation of the prior.
+  *
+  * @return If the prior has nonzero variance, the parameter is returned, if
+  * instead the prior has zero variance, then the mean of the prior is returned.
+  */
+  real param_or_fixed(array[] real param, array[] real prior) {
+    if (prior[2] > 0) {
+      return(param[1]);
+    } else {
+      return(prior[1]);
+    }
+  }
