@@ -130,7 +130,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
   }
-  plot
+  return(plot)
 }
 
 #' Plot the effective reproduction number
@@ -246,7 +246,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
   }
-  plot
+  return(plot)
 }
 
 #' Plot predicted concentration
@@ -595,7 +595,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
   }
-  plot
+  return(plot)
 }
 
 #' Plot the estimated load
@@ -680,7 +680,7 @@ plot_load <- function(results, median = FALSE,
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
   }
-  plot
+  return(plot)
 }
 
 #' Plot estimated sample effects
@@ -760,7 +760,7 @@ plot_LOD <- function(modeldata) {
     x = seq(0, -log(0.01)/modeldata$LOD_scale, length.out = 100)
   )
   example_data$y <- LOD_f(example_data$x)
-  ggplot(example_data, aes(x = x, y = y)) +
+  plot <- ggplot(example_data, aes(x = x, y = y)) +
     geom_vline(xintercept = -log(0.05)/modeldata$LOD_scale, linetype = "dashed") +
     geom_line() +
     xlab("True concentration") +
@@ -769,6 +769,7 @@ plot_LOD <- function(modeldata) {
     scale_y_continuous(expand = expansion(add=c(0.01, 0.01))) +
     scale_x_continuous(expand = expansion(add=c(0, 0))) +
     theme_bw()
+  return(plot)
 }
 
 #' Visually compare prior and posterior of a model parameter
@@ -864,7 +865,7 @@ plot_prior_posterior <- function(result, param_name) {
   x_lower = min(quantile(prior_draws, 0.01), quantile(posterior_draws, 0.01))
   x_upper = max(quantile(prior_draws, 0.99), quantile(posterior_draws, 0.99))
 
-  prior_posterior_plot <- ggplot() +
+  plot <- ggplot() +
     geom_density((aes(x=prior_draws)), fill = "#a6a6a6", colour = "#808080", alpha = 0.7) +
     geom_density((aes(x=posterior_draws)), fill = "#273f76", colour = "#19294d",alpha = 0.7) +
     xlab(param_name_long) +
@@ -874,5 +875,5 @@ plot_prior_posterior <- function(result, param_name) {
     scale_x_continuous(expand = expansion(add = c(0,0))) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.05)))
 
-  return(prior_posterior_plot)
+  return(plot)
 }
