@@ -84,8 +84,7 @@ data {
   // Infection noise ----
   int<lower=0, upper=1> I_sample; // Stochastic (=1) or deterministic (=0) renewal process?
   int<lower=0, upper=I_sample> I_overdispersion; // whether to model overdispersion via a negative binomial
-  real I_xi_fixed; // fixed overdispersion parameter
-  array[I_overdispersion && I_xi_fixed < 0 ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
+  array[I_overdispersion ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
 
   // Reproduction number ----
   int<lower=0, upper=1> R_model; // 0 for ets, 1 for spline smoothing
@@ -211,7 +210,7 @@ parameters {
   vector<multiplier=(seeding_model == 1 ? iota_log_seed_sd[1] : 1)>[seeding_model == 1 ? G - 1 : 0] iota_log_ar_noise;
 
   // realized infections
-  array[I_overdispersion && I_xi_fixed < 0 ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
+  array[I_overdispersion && (I_xi_prior[2] > 0) ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
 
   // individual-level shedding load variation
@@ -375,12 +374,8 @@ model {
   // Sampling of infections
   if (I_sample) {
     if (I_overdispersion) {
-      if (I_xi_fixed < 0) {
-        I_xi[1] ~ normal(I_xi_prior[1], I_xi_prior[2]) T[0, ]; // truncated normal
-        I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota .* (1 + iota * (I_xi[1] ^ 2)))); // approximates negative binomial
-      } else {
-        I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota .* (1 + iota * (I_xi_fixed ^ 2)))); // approximates negative binomial
-      }
+      target += normal_prior_lpdf(I_xi | I_xi_prior, 0); // truncated normal
+      I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota .* (1 + iota * (param_or_fixed(I_xi, I_xi_prior) ^ 2)))); // approximates negative binomial
     } else {
       I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota)); // approximates Poisson
     }

@@ -964,7 +964,6 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
   modeldata$I_overdispersion <- FALSE
   modeldata$I_xi_prior <- numeric(0)
   modeldata$.init$I_xi <- numeric(0)
-  modeldata$I_xi_fixed <- -1
   modeldata$.init$I <- numeric(0)
   modeldata$.init$I_log <- numeric(0)
 
@@ -990,10 +989,9 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #'   overdispersion. It is also the limit of the coefficient of variation (CV)
 #'   of infections as the infection incidence becomes large.
 #' @param overdispersion_prior_sigma Prior (standard deviation) on the
-#'   overdispersion parameter of the Negative Binomial.
-#' @param overdispersion_fixed Should the overdispersion parameter be fixed or
-#'   estimated? If `TRUE` (default), the overdispersion parameter is fixed to
-#'   `overdispersion_prior_mu`.
+#'   overdispersion parameter of the Negative Binomial. If this is set to zero
+#'   (default), the overdispersion will be fixed to the prior mean and not
+#'   estimated.
 #'
 #' @details The level of overdispersion is often unidentifiable from a single
 #'   time series of measurements. This is why the overdispersion is fixed by
@@ -1009,27 +1007,21 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 infection_noise_estimate <-
   function(overdispersion = FALSE,
            overdispersion_prior_mu = 0.1,
-           overdispersion_prior_sigma = 0.25,
-           overdispersion_fixed = TRUE,
+           overdispersion_prior_sigma = 0,
            modeldata = modeldata_init()) {
-    modeldata$I_overdispersion <- overdispersion
 
-    if (overdispersion_prior_sigma == 0) {
-      overdispersion_fixed <- TRUE
-    }
-
-    if (overdispersion_fixed) {
-      modeldata$I_xi_fixed <- overdispersion_prior_mu
+    if (overdispersion_prior_mu == 0 && overdispersion_prior_sigma == 0) {
+      modeldata$I_overdispersion <- FALSE
     } else {
-      modeldata$I_xi_fixed <- -1
+      modeldata$I_overdispersion <- overdispersion
     }
 
-    if (modeldata$I_overdispersion && !overdispersion_fixed) {
+    if (modeldata$I_overdispersion) {
       modeldata$I_xi_prior <- set_prior(
         "I_xi", "normal",
         mu = overdispersion_prior_mu, sigma = overdispersion_prior_sigma
       )
-      modeldata$.init$I_xi <- as.array(0.05)
+      modeldata$.init$I_xi <- init_from_location_scale_prior(modeldata$I_xi_prior)
     } else {
       modeldata$I_xi_prior <- numeric(0)
       modeldata$.init$I_xi <- numeric(0)
