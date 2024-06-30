@@ -288,6 +288,29 @@ get_discrete_lognormal <- function(
   return(probs)
 }
 
+# Beta ----
+get_beta_alpha_alternative <- function(beta_mean, beta_sd) {
+  alpha <- beta_mean * (beta_mean * (1 - beta_mean) / beta_sd^2 - 1)
+  return(alpha)
+}
+
+get_beta_beta_alternative <- function(beta_mean, beta_sd) {
+  beta <- (1 - beta_mean) * (beta_mean * (1 - beta_mean) / beta_sd^2 - 1)
+  return(beta)
+}
+
+check_beta_alternative <- function(beta_mean, beta_sd) {
+  alpha <- get_beta_alpha_alternative(beta_mean, beta_sd)
+  beta <- get_beta_beta_alternative(beta_mean, beta_sd)
+  if (alpha <= 0 || beta <= 0 || beta_sd < 0) {
+    cli::cli_abort(paste(
+      "Invalid beta distribution parameters supplied.",
+      "The mean must be between 0 and 1, and the standard deviation",
+      "must be positive but not too large."
+    ))
+  }
+}
+
 # Distribution validation ----
 
 check_dist <- function(dist, name = "probability distribution") {

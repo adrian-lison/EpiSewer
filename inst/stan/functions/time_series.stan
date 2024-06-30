@@ -96,19 +96,14 @@ Time series process functions
     }
   }
 
-  void ets_coefficient_priors_lp(
-    array[] real ets_alpha, real ets_alpha_fixed, array[] real ets_alpha_prior,
-    array[] real ets_beta, real ets_beta_fixed, array[] real ets_beta_prior,
-    array[] real ets_phi, real ets_phi_fixed, array[] real ets_phi_prior
+  real ets_coefficient_priors_lp(
+    array[] real ets_alpha, array[] real ets_alpha_prior,
+    array[] real ets_beta, array[] real ets_beta_prior,
+    array[] real ets_phi, array[] real ets_phi_prior
   ) {
-    if(ets_alpha_fixed < 0) {
-      ets_alpha[1] ~ beta(ets_alpha_prior[1], ets_alpha_prior[2]);
-    }
-    if(ets_beta_fixed < 0) {
-      ets_beta[1] ~ beta(ets_beta_prior[1], ets_beta_prior[2]);
-    }
-    if(ets_phi_fixed < 0) {
-       // dampening needs a tight prior, roughly between 0.8 and 0.98
-      ets_phi[1] ~ beta(ets_phi_prior[1], ets_phi_prior[2]);
-    }
+    real tar = 0;
+    tar += beta2_prior_lpdf(ets_alpha | ets_alpha_prior);
+    tar += beta2_prior_lpdf(ets_beta | ets_beta_prior);
+    tar += beta2_prior_lpdf(ets_phi | ets_phi_prior); // dampening needs a tight prior, roughly between 0.8 and 0.98
+    return(tar);
   }

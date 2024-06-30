@@ -90,76 +90,79 @@ generation_dist_assume <-
 
 #' Smooth Rt estimates via exponential smoothing
 #'
-#' @description This option estimates the effective reproduction number over
-#'   time using exponential smoothing. It implements Holt's linear trend method
-#'   with dampening through an innovations state space model with a level,
-#'   trend, and dampening component.
+#'@description This option estimates the effective reproduction number over time
+#'  using exponential smoothing. It implements Holt's linear trend method with
+#'  dampening through an innovations state space model with a level, trend, and
+#'  dampening component.
 #'
-#' @param level_prior_mu Prior (mean) on the initial level of Rt.
-#' @param level_prior_sigma Prior (standard deviation) on the initial level of
-#'   Rt.
-#' @param trend_prior_mu Prior (mean) on the initial trend of Rt.
-#' @param trend_prior_sigma Prior (standard deviation) on the initial trend of
-#'   Rt.
-#' @param sd_prior_mu Prior (mean) on the standard deviation of the innovations.
-#' @param sd_prior_sigma Prior (standard deviation) on the standard deviation of
-#'   the innovations.
-#' @param smooth_fixed Fixed value for the smoothing parameter
-#'   (alpha). If NULL (default), the smoothing parameter is estimated, otherwise
-#'   it will be fixed to the given value.
-#' @param smooth_prior_shapes Prior (Beta shape 1 and 2) on the smoothing
-#'   parameter.
-#' @param trend_smooth_fixed Fixed value for the trend smoothing parameter
-#'   (beta). If NULL (default), the trend smoothing parameter is estimated,
-#'   otherwise it will be fixed to the given value.
-#' @param trend_smooth_prior_shapes Prior (Beta shape 1 and 2) on the trend
-#'   smoothing parameter.
-#' @param dampen_fixed Fixed value for the dampening parameter (phi). If NULL
-#'   (default), the dampening parameter is estimated, otherwise it will be fixed
-#'   to the given value.
-#' @param dampen_prior_shapes Prior (Beta shape 1 and 2) on the dampening
-#'   parameter.
-#' @param differenced If `FALSE` (default), exponential smoothing is applied to
-#'   the absolute Rt time series. If `TRUE`, it is instead applied to the
-#'   differenced time series. This makes the level become the trend, and the
-#'   trend become the curvature.
-#' @param noncentered If `TRUE` (default), a non-centered parameterization is
-#'   used to model the innovations in the state space process (for better
-#'   sampling efficiency).
+#'@param level_prior_mu Prior (mean) on the initial level of Rt.
+#'@param level_prior_sigma Prior (standard deviation) on the initial level of
+#'  Rt.
+#'@param trend_prior_mu Prior (mean) on the initial trend of Rt.
+#'@param trend_prior_sigma Prior (standard deviation) on the initial trend of
+#'  Rt.
+#'@param sd_prior_mu Prior (mean) on the standard deviation of the innovations.
+#'@param sd_prior_sigma Prior (standard deviation) on the standard deviation of
+#'  the innovations.
+#'@param smooth_prior_mu Prior (mean) on the smoothing parameter. Must be
+#'  between 0 and 1.
+#'@param smooth_prior_sigma Prior (standard deviation) on the smoothing
+#'  parameter. If this is set to zero, the smoothing parameter will be fixed to
+#'  `smooth_prior_mu` and not estimated. If positive, a beta prior with the
+#'  corresponding mean and standard deviation is used.
+#'@param trend_smooth_prior_mu Prior (mean) on the trend smoothing parameter.
+#'  Must be between 0 and 1.
+#'@param trend_smooth_prior_sigma Prior (standard deviation) on the trend
+#'  smoothing parameter. If this is set to zero, the trend smoothing parameter
+#'  will be fixed to `trend_smooth_prior_mu` and not estimated. If positive, a
+#'  beta prior with the corresponding mean and standard deviation is used.
+#'@param dampen_prior_mu Prior (mean) on the dampening parameter. Must be
+#'  between 0 and 1.
+#'@param dampen_prior_sigma Prior (standard deviation) on the dampening
+#'  parameter. If this is set to zero, the dampening parameter will be fixed to
+#'  `dampen_prior_mu` and not estimated. If positive, a beta prior with the
+#'  corresponding mean and standard deviation is used.
+#'@param differenced If `FALSE` (default), exponential smoothing is applied to
+#'  the absolute Rt time series. If `TRUE`, it is instead applied to the
+#'  differenced time series. This makes the level become the trend, and the
+#'  trend become the curvature.
+#'@param noncentered If `TRUE` (default), a non-centered parameterization is
+#'  used to model the innovations in the state space process (for better
+#'  sampling efficiency).
 #'
-#' @inheritParams R_estimate_splines
+#'@inheritParams R_estimate_splines
 #'
-#' @details The innovations state space model consists of three components: a
-#'   level, a trend, and a dampening component.
+#'@details The innovations state space model consists of three components: a
+#'  level, a trend, and a dampening component.
 #' - The level is smoothed based on the levels from earlier time steps,
-#'   with exponentially decaying weights, as controlled by a smoothing parameter
-#'   (often called alpha). Note that *smaller* values of `alpha` indicate
+#'  with exponentially decaying weights, as controlled by a smoothing parameter
+#'  (often called alpha). Note that *smaller* values of `alpha` indicate
 #'   *stronger* smoothing. In particular, `alpha = 1` means that only the last
-#'   level is used.
+#'  level is used.
 #' - The trend is smoothed based on the trends from earlier time steps,
-#'   with exponentially decaying weights, as controlled by a trend smoothing
-#'   parameter (often called beta). Note that *smaller* values of `beta`
-#'   indicate *stronger* smoothing. In particular, `beta = 1` means that only
-#'   the last trend is used.
+#'  with exponentially decaying weights, as controlled by a trend smoothing
+#'  parameter (often called beta). Note that *smaller* values of `beta` indicate
+#'  *stronger* smoothing. In particular, `beta = 1` means that only the last
+#'  trend is used.
 #' - The dampening determines how long a previous trend continues into the
-#'   future before it levels of to a stationary time series. The strength of
-#'   dampening is controlled by a dampening parameter (often called phi).
-#'   Note that *smaller* values of `phi` indicate *stronger* dampening.
-#'   In particular, `phi = 1` means no dampening. Values below `phi = 0.8`
-#'   are seldom in practice as the dampening becomes very strong.
+#'  future before it levels of to a stationary time series. The strength of
+#'  dampening is controlled by a dampening parameter (often called phi). Note
+#'  that *smaller* values of `phi` indicate *stronger* dampening. In particular,
+#'  `phi = 1` means no dampening. Values below `phi = 0.8` are seldom in
+#'  practice as the dampening becomes very strong.
 #'
-#' @details Often, `alpha`, `beta`, and `phi` are jointly unidentifiable. It may
-#'   therefore be necessary to fix at least one of the parameters (typically
-#'   `phi`) or supply strong priors.
+#'@details Often, `alpha`, `beta`, and `phi` are jointly unidentifiable. It may
+#'  therefore be necessary to fix at least one of the parameters (typically
+#'  `phi`) or supply strong priors.
 #'
-#' @details Note that the smoothness of retrospective Rt estimates is often more
-#'   influenced by the prior on the standard deviation of innovations than the
-#'   smoothing and trend smoothing parameters. The smoothing parameters mostly
-#'   have an influence on estimates close to the present / date of estimation,
-#'   when limited data signal is available. Here, the standard deviation of the
-#'   innovations influences how uncertain Rt estimates are close to the present.
+#'@details Note that the smoothness of retrospective Rt estimates is often more
+#'  influenced by the prior on the standard deviation of innovations than the
+#'  smoothing and trend smoothing parameters. The smoothing parameters mostly
+#'  have an influence on estimates close to the present / date of estimation,
+#'  when limited data signal is available. Here, the standard deviation of the
+#'  innovations influences how uncertain Rt estimates are close to the present.
 #'
-#' @details The priors of this component have the following functional form:
+#'@details The priors of this component have the following functional form:
 #' - initial level of Rt: `Normal`
 #' - initial trend of Rt: `Normal`
 #' - standard deviation of innovations: `Truncated normal`
@@ -167,10 +170,10 @@ generation_dist_assume <-
 #' - trend smoothing parameter: `Beta`
 #' - dampening parameter: `Beta`
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
-#' @export
-#' @family {Rt models}
+#'@inheritParams template_model_helpers
+#'@inherit modeldata_init return
+#'@export
+#'@family {Rt models}
 R_estimate_ets <- function(
     level_prior_mu = 1,
     level_prior_sigma = 0.8,
@@ -180,12 +183,12 @@ R_estimate_ets <- function(
     sd_prior_sigma = 0.1,
     link = "inv_softplus",
     R_max = 6,
-    smooth_fixed = NULL,
-    smooth_prior_shapes = c(50, 50),
-    trend_smooth_fixed = NULL,
-    trend_smooth_prior_shapes = c(50, 50),
-    dampen_fixed = 0.9,
-    dampen_prior_shapes = c(50, 5),
+    smooth_prior_mu = 0.5,
+    smooth_prior_sigma = 0.05,
+    trend_smooth_prior_mu = 0.5,
+    trend_smooth_prior_sigma = 0.05,
+    dampen_prior_mu = 0.9,
+    dampen_prior_sigma = 0,
     differenced = FALSE,
     noncentered = TRUE,
     modeldata = modeldata_init()) {
@@ -216,47 +219,29 @@ R_estimate_ets <- function(
     ".metainfo$length_R"
   )
 
-  if (is.null(smooth_fixed)) {
-    smooth_fixed <- -1
-  }
-  modeldata$ets_alpha_fixed <- smooth_fixed
-  if (smooth_fixed >= 0) {
-    modeldata$ets_alpha_prior <- numeric(0)
-    modeldata$.init$ets_alpha <- numeric(0)
-  } else {
-    modeldata$ets_alpha_prior <- set_prior("ets_alpha", "beta",
-      alpha = smooth_prior_shapes[1], beta = smooth_prior_shapes[2]
-    )
-    modeldata$.init$ets_alpha <- as.array(0.5)
-  }
+  check_beta_alternative(smooth_prior_mu, smooth_prior_sigma)
+  modeldata$ets_alpha_prior <- set_prior("ets_alpha", "beta",
+    mu = smooth_prior_mu, sigma = smooth_prior_sigma
+  )
+  modeldata$.init$ets_alpha <- init_from_location_scale_prior(
+    modeldata$ets_alpha_prior
+  )
 
-  if (is.null(trend_smooth_fixed)) {
-    trend_smooth_fixed <- -1
-  }
-  modeldata$ets_beta_fixed <- trend_smooth_fixed
-  if (trend_smooth_fixed >= 0) {
-    modeldata$ets_beta_prior <- numeric(0)
-    modeldata$.init$ets_beta <- numeric(0)
-  } else {
-    modeldata$ets_beta_prior <- set_prior("ets_beta", "beta",
-      alpha = trend_smooth_prior_shapes[1], beta = trend_smooth_prior_shapes[2]
-    )
-    modeldata$.init$ets_beta <- as.array(0.5)
-  }
+  check_beta_alternative(trend_smooth_prior_mu, trend_smooth_prior_sigma)
+  modeldata$ets_beta_prior <- set_prior("ets_beta", "beta",
+    mu = trend_smooth_prior_mu, sigma = trend_smooth_prior_sigma
+  )
+  modeldata$.init$ets_beta <- init_from_location_scale_prior(
+    modeldata$ets_beta_prior
+  )
 
-  if (is.null(dampen_fixed)) {
-    dampen_fixed <- -1
-  }
-  modeldata$ets_phi_fixed <- dampen_fixed
-  if (dampen_fixed >= 0) {
-    modeldata$ets_phi_prior <- numeric(0)
-    modeldata$.init$ets_phi <- numeric(0)
-  } else {
-    modeldata$ets_phi_prior <- set_prior("ets_phi", "beta",
-      alpha = dampen_prior_shapes[1], beta = dampen_prior_shapes[2]
-    )
-    modeldata$.init$ets_phi <- as.array(0.9)
-  }
+  check_beta_alternative(dampen_prior_mu, dampen_prior_sigma)
+  modeldata$ets_phi_prior <- set_prior("ets_phi", "beta",
+    mu = dampen_prior_mu, beta = dampen_prior_sigma
+  )
+  modeldata$.init$ets_phi <- init_from_location_scale_prior(
+    modeldata$ets_phi_prior
+  )
 
   modeldata <- add_link_function(link, R_max, modeldata)
 
@@ -331,9 +316,12 @@ R_estimate_rw <- function(
     sd_prior_sigma = sd_prior_sigma,
     link = link,
     R_max = R_max,
-    smooth_fixed = 1,
-    trend_smooth_fixed = 0,
-    dampen_fixed = 0,
+    smooth_prior_mu = 1,
+    smooth_prior_sigma = 0,
+    trend_smooth_prior_mu = 0,
+    trend_smooth_prior_sigma = 0,
+    dampen_prior_mu = 0,
+    dampen_prior_sigma = 0,
     differenced = differenced,
     noncentered = noncentered,
     modeldata = modeldata
@@ -490,9 +478,9 @@ R_estimate_splines <- function(
   modeldata <- add_dummy_data(modeldata, c(
     "R_level_start_prior", "R_trend_start_prior", "R_sd_prior",
     "ets_diff", "ets_noncentered",
-    "ets_alpha_fixed", "ets_alpha_prior",
-    "ets_beta_fixed", "ets_beta_prior",
-    "ets_phi_fixed", "ets_phi_prior"
+    "ets_alpha_prior",
+    "ets_beta_prior",
+    "ets_phi_prior"
     ))
 
   modeldata <- add_dummy_inits(modeldata, c(

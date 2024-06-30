@@ -24,9 +24,9 @@ of interest estimated by \code{EpiSewer}. \code{R} is smoothed using a time seri
 smoothing prior. Currently supported are: random walk (rw), exponential
 smoothing (ets), and smoothing splines. Modeling options:
 \itemize{
-\item \code{\link[=R_estimate_ets]{R_estimate_ets()}}
-\item \code{\link[=R_estimate_splines]{R_estimate_splines()}}
 \item \code{\link[=R_estimate_rw]{R_estimate_rw()}}
+\item \code{\link[=R_estimate_splines]{R_estimate_splines()}}
+\item \code{\link[=R_estimate_ets]{R_estimate_ets()}}
 \item \code{\link[=R_estimate_fast]{R_estimate_fast()}}
 }}
 

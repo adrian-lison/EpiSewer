@@ -7,6 +7,7 @@ functions {
   #include functions/dist_normal.stan
   #include functions/dist_lognormal.stan
   #include functions/dist_gamma.stan
+  #include functions/dist_beta.stan
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
 }
@@ -97,12 +98,9 @@ data {
   // Exponential smoothing priors / configuration
   array[R_model == 0 ? 1 : 0] int<lower=0> ets_diff; // order of differencing
   array[R_model == 0 ? 1 : 0] int<lower=0, upper=1> ets_noncentered; // use non-centered parameterization?
-  array[R_model == 0 ? 1 : 0] real ets_alpha_fixed; // fixed value used if non-negative
-  array[R_model == 0 && ets_alpha_fixed[1] < 0 ? 2 : 0] real<lower=0> ets_alpha_prior;
-  array[R_model == 0 ? 1 : 0] real ets_beta_fixed; // fixed value used if non-negative
-  array[R_model == 0 && ets_beta_fixed[1] < 0 ? 2 : 0] real<lower=0> ets_beta_prior;
-  array[R_model == 0 ? 1 : 0] real ets_phi_fixed; // fixed value used if non-negative
-  array[R_model == 0 && ets_phi_fixed[1] < 0 ? 2 : 0] real<lower=0> ets_phi_prior;
+  array[R_model == 0 ? 2 : 0] real<lower=0> ets_alpha_prior;
+  array[R_model == 0 ? 2 : 0] real<lower=0> ets_beta_prior;
+  array[R_model == 0 ? 2 : 0] real<lower=0> ets_phi_prior;
 
   // Basis spline (bs) configuration for spline smoothing of R
   // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-G)
@@ -195,9 +193,9 @@ parameters {
   array[R_model == 0 ? 1 : 0] real R_trend_start; // starting value of the trend
   array[R_model == 0 ? 1 : 0] real<lower=0> R_sd; // standard deviation of additive errors
   vector<multiplier=(R_model == 0 ? (ets_noncentered[1] ? R_sd[1] : 1) : 1)>[R_model == 0 ? L + S + D + T - G - 1 : 0] R_noise; // additive errors
-  array[R_model == 0 && ets_alpha_fixed[1] < 0 ? 1 : 0] real<lower=0, upper=1> ets_alpha; // smoothing parameter for the level
-  array[R_model == 0 && ets_beta_fixed[1] < 0 ? 1 : 0] real<lower=0, upper=1> ets_beta; // smoothing parameter for the trend
-  array[R_model == 0 && ets_phi_fixed[1] < 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
+  array[R_model == 0 && ets_alpha_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_alpha; // smoothing parameter for the level
+  array[R_model == 0 && ets_beta_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_beta; // smoothing parameter for the trend
+  array[R_model == 0 && ets_phi_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
 
   // Basis spline (bs) time series prior for Rt
   array[R_model == 1 ? 1 : 0] real bs_coeff_ar_start; // intercept for random walk on log bs coeffs
@@ -244,16 +242,16 @@ transformed parameters {
     // Innovations state space process implementing exponential smoothing
     R = apply_link(holt_damped_process(
       [R_level_start[1], R_trend_start[1]]',
-      ets_alpha_fixed[1] < 0 ? ets_alpha[1] : ets_alpha_fixed[1],
-      ets_beta_fixed[1] < 0 ? ets_beta[1] : ets_beta_fixed[1],
-      ets_phi_fixed[1] < 0 ? ets_phi[1] : ets_phi_fixed[1],
+      param_or_fixed(ets_alpha, ets_alpha_prior),
+      param_or_fixed(ets_beta, ets_beta_prior),
+      param_or_fixed(ets_phi, ets_phi_prior),
       R_noise,
       ets_diff[1]
     ), R_link);
   } else if (R_model == 1) {
+    // Basis spline smoothing
     vector[bs_n_basis[1] - 1] bs_coeff_noise = bs_coeff_noise_raw .* (bs_coeff_ar_sd[1] * sqrt(bs_dists)); // additive errors
     vector[bs_n_basis[1]] bs_coeff = random_walk([bs_coeff_ar_start[1]]', bs_coeff_noise, 0); // Basis spline coefficients
-
     R = apply_link(csr_matrix_times_vector(
       L + S + D + T - G, bs_n_basis[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
@@ -345,13 +343,12 @@ transformed parameters {
 model {
   // Priors
 
-
   if (R_model == 0) {
     // Innovations state space model
-    ets_coefficient_priors_lp(
-      ets_alpha, ets_alpha_fixed[1], ets_alpha_prior,
-      ets_beta, ets_beta_fixed[1], ets_beta_prior,
-      ets_phi, ets_phi_fixed[1], ets_phi_prior
+    target += ets_coefficient_priors_lp(
+      ets_alpha, ets_alpha_prior,
+      ets_beta, ets_beta_prior,
+      ets_phi, ets_phi_prior
       );
     R_level_start ~ normal(R_level_start_prior[1], R_level_start_prior[2]); // starting prior for level
     R_trend_start ~ normal(R_trend_start_prior[1], R_trend_start_prior[2]); // starting prior for trend

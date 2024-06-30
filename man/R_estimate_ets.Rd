@@ -13,12 +13,12 @@ R_estimate_ets(
   sd_prior_sigma = 0.1,
   link = "inv_softplus",
   R_max = 6,
-  smooth_fixed = NULL,
-  smooth_prior_shapes = c(50, 50),
-  trend_smooth_fixed = NULL,
-  trend_smooth_prior_shapes = c(50, 50),
-  dampen_fixed = 0.9,
-  dampen_prior_shapes = c(50, 5),
+  smooth_prior_mu = 0.5,
+  smooth_prior_sigma = 0.05,
+  trend_smooth_prior_mu = 0.5,
+  trend_smooth_prior_sigma = 0.05,
+  dampen_prior_mu = 0.9,
+  dampen_prior_sigma = 0,
   differenced = FALSE,
   noncentered = TRUE,
   modeldata = modeldata_init()
@@ -50,26 +50,29 @@ above) R=1.}
 must be assumed. This should be higher than any realistic R value for the
 modeled pathogen. Default is 6.}
 
-\item{smooth_fixed}{Fixed value for the smoothing parameter
-(alpha). If NULL (default), the smoothing parameter is estimated, otherwise
-it will be fixed to the given value.}
+\item{smooth_prior_mu}{Prior (mean) on the smoothing parameter. Must be
+between 0 and 1.}
 
-\item{smooth_prior_shapes}{Prior (Beta shape 1 and 2) on the smoothing
-parameter.}
+\item{smooth_prior_sigma}{Prior (standard deviation) on the smoothing
+parameter. If this is set to zero, the smoothing parameter will be fixed to
+\code{smooth_prior_mu} and not estimated. If positive, a beta prior with the
+corresponding mean and standard deviation is used.}
 
-\item{trend_smooth_fixed}{Fixed value for the trend smoothing parameter
-(beta). If NULL (default), the trend smoothing parameter is estimated,
-otherwise it will be fixed to the given value.}
+\item{trend_smooth_prior_mu}{Prior (mean) on the trend smoothing parameter.
+Must be between 0 and 1.}
 
-\item{trend_smooth_prior_shapes}{Prior (Beta shape 1 and 2) on the trend
-smoothing parameter.}
+\item{trend_smooth_prior_sigma}{Prior (standard deviation) on the trend
+smoothing parameter. If this is set to zero, the trend smoothing parameter
+will be fixed to \code{trend_smooth_prior_mu} and not estimated. If positive, a
+beta prior with the corresponding mean and standard deviation is used.}
 
-\item{dampen_fixed}{Fixed value for the dampening parameter (phi). If NULL
-(default), the dampening parameter is estimated, otherwise it will be fixed
-to the given value.}
+\item{dampen_prior_mu}{Prior (mean) on the dampening parameter. Must be
+between 0 and 1.}
 
-\item{dampen_prior_shapes}{Prior (Beta shape 1 and 2) on the dampening
-parameter.}
+\item{dampen_prior_sigma}{Prior (standard deviation) on the dampening
+parameter. If this is set to zero, the dampening parameter will be fixed to
+\code{dampen_prior_mu} and not estimated. If positive, a beta prior with the
+corresponding mean and standard deviation is used.}
 
 \item{differenced}{If \code{FALSE} (default), exponential smoothing is applied to
 the absolute Rt time series. If \code{TRUE}, it is instead applied to the
@@ -95,10 +98,10 @@ initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
-This option estimates the effective reproduction number over
-time using exponential smoothing. It implements Holt's linear trend method
-with dampening through an innovations state space model with a level,
-trend, and dampening component.
+This option estimates the effective reproduction number over time
+using exponential smoothing. It implements Holt's linear trend method with
+dampening through an innovations state space model with a level, trend, and
+dampening component.
 }
 \details{
 The innovations state space model consists of three components: a
@@ -111,15 +114,15 @@ with exponentially decaying weights, as controlled by a smoothing parameter
 level is used.
 \item The trend is smoothed based on the trends from earlier time steps,
 with exponentially decaying weights, as controlled by a trend smoothing
-parameter (often called beta). Note that \emph{smaller} values of \code{beta}
-indicate \emph{stronger} smoothing. In particular, \code{beta = 1} means that only
-the last trend is used.
+parameter (often called beta). Note that \emph{smaller} values of \code{beta} indicate
+\emph{stronger} smoothing. In particular, \code{beta = 1} means that only the last
+trend is used.
 \item The dampening determines how long a previous trend continues into the
 future before it levels of to a stationary time series. The strength of
-dampening is controlled by a dampening parameter (often called phi).
-Note that \emph{smaller} values of \code{phi} indicate \emph{stronger} dampening.
-In particular, \code{phi = 1} means no dampening. Values below \code{phi = 0.8}
-are seldom in practice as the dampening becomes very strong.
+dampening is controlled by a dampening parameter (often called phi). Note
+that \emph{smaller} values of \code{phi} indicate \emph{stronger} dampening. In particular,
+\code{phi = 1} means no dampening. Values below \code{phi = 0.8} are seldom in
+practice as the dampening becomes very strong.
 }
 
 Often, \code{alpha}, \code{beta}, and \code{phi} are jointly unidentifiable. It may
