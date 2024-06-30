@@ -678,7 +678,7 @@ R_estimate_fast <- function(
     mu = inf_sd_prior_mu,
     sigma = inf_sd_prior_sigma
   )
-  modeldata$.init$inf_ar_sd <- init_from_normal_prior(
+  modeldata$.init$inf_ar_sd <- init_from_location_scale_prior(
     modeldata$inf_ar_sd_prior
   )
 
@@ -889,7 +889,7 @@ add_seeding_intercept_prior <- function(
       unit_q5 = intercept_prior_q5,
       unit_q95 = intercept_prior_q95
     )
-    modeldata$.init$iota_log_seed_intercept <- init_from_normal_prior(
+    modeldata$.init$iota_log_seed_intercept <- init_from_location_scale_prior(
       modeldata$iota_log_seed_intercept_prior
     )
   } else {
@@ -939,7 +939,7 @@ add_seeding_intercept_prior <- function(
           unit_factor = 10,
           paste_dist = ", (mu based on crude empirical estimate of cases)"
         )
-        modeldata$.init$iota_log_seed_intercept <- init_from_normal_prior(
+        modeldata$.init$iota_log_seed_intercept <- init_from_location_scale_prior(
           modeldata$iota_log_seed_intercept_prior
         )
       },

@@ -367,7 +367,6 @@ noise_estimate_ <-
       modeldata$.init$nu_upsilon_b_cv <- numeric(0)
       modeldata$.init$nu_upsilon_b_noise_raw <- numeric(0)
       modeldata$nu_upsilon_c_prior <- numeric(0)
-      modeldata$nu_upsilon_c_fixed <- -1 # dummy value
       modeldata$.init$nu_upsilon_c <- numeric(0)
       modeldata$cv_pre_type <- numeric(0)
       modeldata$cv_pre_approx_taylor <- numeric(0)
@@ -402,7 +401,7 @@ noise_estimate_ <-
           mu = ddPCR_prior_droplets_mu * 1e-4, # scaling by 1e-4 for numerical reasons
           sigma = ddPCR_prior_droplets_sigma * 1e-4
         )
-        modeldata$.init$nu_upsilon_b_mu <- init_from_normal_prior(
+        modeldata$.init$nu_upsilon_b_mu <- init_from_location_scale_prior(
           modeldata$nu_upsilon_b_mu_prior
           )
 
@@ -422,7 +421,7 @@ noise_estimate_ <-
         mu = ddPCR_prior_scaling_mu * 1e+5, # scaling by 1e+5 for numerical reasons
         sigma = ddPCR_prior_scaling_sigma * 1e+5
       )
-      modeldata$.init$nu_upsilon_c <- init_from_normal_prior(
+      modeldata$.init$nu_upsilon_c <- init_from_location_scale_prior(
         modeldata$nu_upsilon_c_prior
         )
 
@@ -447,7 +446,6 @@ noise_estimate_ <-
       modeldata$.init$nu_upsilon_b_cv <- numeric(0)
       modeldata$.init$nu_upsilon_b_noise_raw <- numeric(0)
       modeldata$nu_upsilon_c_prior <- numeric(0)
-      modeldata$nu_upsilon_c_fixed <- -1 # dummy value
       modeldata$.init$nu_upsilon_c <- numeric(0)
       modeldata$cv_pre_type <- numeric(0)
       modeldata$cv_pre_approx_taylor <- numeric(0)

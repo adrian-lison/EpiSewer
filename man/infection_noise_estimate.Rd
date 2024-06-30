@@ -7,8 +7,7 @@
 infection_noise_estimate(
   overdispersion = FALSE,
   overdispersion_prior_mu = 0.1,
-  overdispersion_prior_sigma = 0.25,
-  overdispersion_fixed = TRUE,
+  overdispersion_prior_sigma = 0,
   modeldata = modeldata_init()
 )
 }
@@ -23,11 +22,9 @@ overdispersion. It is also the limit of the coefficient of variation (CV)
 of infections as the infection incidence becomes large.}
 
 \item{overdispersion_prior_sigma}{Prior (standard deviation) on the
-overdispersion parameter of the Negative Binomial.}
-
-\item{overdispersion_fixed}{Should the overdispersion parameter be fixed or
-estimated? If \code{TRUE} (default), the overdispersion parameter is fixed to
-\code{overdispersion_prior_mu}.}
+overdispersion parameter of the Negative Binomial. If this is set to zero
+(default), the overdispersion will be fixed to the prior mean and not
+estimated.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

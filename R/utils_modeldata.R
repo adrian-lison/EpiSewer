@@ -249,26 +249,26 @@ set_prior_normal_log <- function(param,
   return(prior)
 }
 
-#' Provide initialization value for a parameter based on the supplied prior
+#' Provide initialization value for a parameter based on the supplied prior with location and scale
 #'
 #' @description Initialization using the prior is often better than initializing
 #'   with zero (and if the parameter is strictly positive, zero is not possible
-#'   at all). This function provides as init value the mean of the normal prior
-#'   plus 1/4 of the standard deviation. This ensure a positive init even if the
-#'   mean is zero (useful for truncated normal priors.)
+#'   at all). This function provides as init value the location of the prior
+#'   plus 1/4 of the scale. This ensure a positive init even if the
+#'   mean is zero (useful for truncated normal priors for example.)
 #'
 #' @param prior Prior for parameter as provided by [set_prior()]. Should be a
-#'   normal prior (first element mean, second element sd).
+#'   location and scale prior (first element location, second element scale).
 #'
 #' @details If the provided prior has zero variance, it is assumed that the
 #'   parameter will not be sampled and an empty init is returned.
 #'
-#' @return Mean of the normal prior plus 1/4 of the standard deviation.
-init_from_normal_prior <- function(prior) {
+#' @return Location of the prior plus 1/4 of the scale.
+init_from_location_scale_prior <- function(prior) {
   prior_data_select <- !stringr::str_detect(names(prior), pattern = "_text$")
   if (sum(prior_data_select) != 1) {
     cli::cli_warn(paste(
-      "Could not init from normal prior:",
+      "Could not init from location scale prior:",
       "Non-ambiguous prior format. Using 1e-2 as fallback."
       ), .internal = TRUE)
   }
