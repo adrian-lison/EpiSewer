@@ -11,7 +11,6 @@ noise_estimate_(
   cv_type = "constant",
   ddPCR_prior_droplets_mu = NULL,
   ddPCR_prior_droplets_sigma = NULL,
-  ddPCR_droplets_fixed = NULL,
   ddPCR_droplets_observe = NULL,
   ddPCR_droplet_variation_prior_mu = NULL,
   ddPCR_droplet_variation_prior_sigma = NULL,
@@ -50,11 +49,8 @@ purposes.}
 in the ddPCR reaction.}
 
 \item{ddPCR_prior_droplets_sigma}{Prior (standard deviation) on the total
-number of droplets in the ddPCR reaction.}
-
-\item{ddPCR_droplets_fixed}{If TRUE (default), the number of total droplets
-is fixed to the prior mean and not estimated. This is recommended if no
-replicates are available.}
+number of droplets in the ddPCR reaction. If this is set to zero, the total
+number of droplets will be fixed to the prior mean and not estimated.}
 
 \item{ddPCR_droplets_observe}{If TRUE, the number of total droplets is taken
 from the supplied measurements \code{data.frame}. This requires that the
