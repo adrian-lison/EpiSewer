@@ -495,11 +495,11 @@ R_estimate_splines <- function(
   return(modeldata)
 }
 
-#' Estimate Rt in fast mode
+#' Estimate Rt using an approximation of the generative renewal model
 #'
 #' @description This option estimates the effective reproduction number Rt using
-#'   an approximation of the generative renewal model. It is considerably faster
-#'   than the fully generative options, but slightly less exact. It is
+#'   an approximation of the generative renewal model. It can be considerably
+#'   faster than the fully generative options, but is often less exact. It is
 #'   recommended to check the results of this method against a fully generative
 #'   version like [R_estimate_splines()] before using it for real-time R
 #'   estimation. See the details for an explanation of the method and its
@@ -548,7 +548,7 @@ R_estimate_splines <- function(
 #'   default. Placing knots further apart increases the smoothness of the
 #'   infection time series and can speed up model fitting. Placing knots closer
 #'   to each other increases the volatility of the infections. Note however that
-#'   the uncertainty of R estimates produced by [R_estimate_fast()] is also
+#'   the uncertainty of R estimates produced by [R_estimate_approx()] is also
 #'   sensitive to the smoothness of the infection time series, i.e. changing the
 #'   knot distance can make the R estimates appear more or less uncertain. This
 #'   effect is however rather small since the regularization of the spline
@@ -578,7 +578,7 @@ R_estimate_splines <- function(
 #'   with a trend component. The trend component is important as it reflects the
 #'   default assumption of constant transmission dynamics that leads to
 #'   exponential growth in infections. This ensures consistent results of
-#'   `R_estimate_fast()` also towards the present.
+#'   `R_estimate_approx()` also towards the present.
 #'
 #' @details The method can also model infection noise as specified by
 #'   [infection_noise_estimate()]. To account for the autocorrelation of
@@ -586,14 +586,14 @@ R_estimate_splines <- function(
 #'   to the noise component is used. This correction is most accurate when R is
 #'   close to 1 and less accurate when it is far from 1.
 #'
-#' @details The main limitation of `R_estimate_fast()` is that its priors and
+#' @details The main limitation of `R_estimate_approx()` is that its priors and
 #'   hyperparameters are less interpretable and thus difficult to specify. In
 #'   particular the assumed generation time distribution is only used for R
 #'   estimation but does not inform the smoothness of the expected infection
 #'   time series. Instead, the smoothness is determined by the spline settings
 #'   and exponential smoothing parameters, which are difficult to translate into
 #'   a generation time assumption. The best approach is therefore to compare
-#'   estimates from `R_estimate_fast()` with those from another method like
+#'   estimates from `R_estimate_approx()` with those from another method like
 #'   [R_estimate_splines()] for a pathogen of interest and to carefully adjust
 #'   the smoothing hyperparameters if needed.
 #'
@@ -601,7 +601,7 @@ R_estimate_splines <- function(
 #' @inherit modeldata_init return
 #' @export
 #' @family {Rt models}
-R_estimate_fast <- function(
+R_estimate_approx <- function(
     inf_sd_prior_mu = 0.05,
     inf_sd_prior_sigma = 0.025,
     inf_smooth = 0.75,
@@ -611,7 +611,7 @@ R_estimate_fast <- function(
     spline_degree = 3,
     R_window = 1,
     modeldata = modeldata_init()) {
-  modeldata$.metainfo$R_estimate_approach <- "fast"
+  modeldata$.metainfo$R_estimate_approach <- "approx"
 
   modeldata <- tbc(
     "spline_definition",
@@ -677,7 +677,7 @@ R_estimate_fast <- function(
   modeldata$R_w <- R_window
 
   modeldata$.str$infections[["R"]] <- list(
-    R_estimate_fast = c()
+    R_estimate_approx = c()
   )
 
   return(modeldata)

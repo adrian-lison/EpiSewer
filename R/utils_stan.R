@@ -46,9 +46,9 @@ get_stan_model <- function(
       )
     }
     if (model_metainfo$R_estimate_approach %in% c("splines", "ets", "rw")) {
-      model_filename <- "wastewater_Re.stan"
-    } else if (model_metainfo$R_estimate_approach == "fast") {
-      model_filename <- "wastewater_Re_fast.stan"
+      model_filename <- "EpiSewer_main.stan"
+    } else if (model_metainfo$R_estimate_approach == "approx") {
+      model_filename <- "EpiSewer_approx.stan"
     } else {
       cli::cli_abort(
         paste(
@@ -241,8 +241,8 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 #' @export
 sewer_compile <- function(force_recompile = FALSE, verbose = FALSE) {
   all_models <- c(
-    "wastewater_Re.stan",
-    "wastewater_Re_fast.stan"
+    "EpiSewer_main.stan",
+    "EpiSewer_approx.stan"
     )
   comp_success <- NULL
 

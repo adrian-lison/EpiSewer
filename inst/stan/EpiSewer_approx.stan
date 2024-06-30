@@ -7,6 +7,7 @@ functions {
   #include functions/dist_normal.stan
   #include functions/dist_lognormal.stan
   #include functions/dist_gamma.stan
+  #include functions/dist_beta.stan
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
 }
