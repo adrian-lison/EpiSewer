@@ -45,11 +45,7 @@ get_stan_model <- function(
         )
       )
     }
-    if (model_metainfo$R_estimate_approach == "splines") {
-      model_filename <- "wastewater_Re_splines.stan"
-    } else if (model_metainfo$R_estimate_approach == "ets") {
-      model_filename <- "wastewater_Re.stan"
-    } else if (model_metainfo$R_estimate_approach == "rw") {
+    if (model_metainfo$R_estimate_approach %in% c("splines", "ets", "rw")) {
       model_filename <- "wastewater_Re.stan"
     } else if (model_metainfo$R_estimate_approach == "fast") {
       model_filename <- "wastewater_Re_fast.stan"
@@ -246,7 +242,6 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 sewer_compile <- function(force_recompile = FALSE, verbose = FALSE) {
   all_models <- c(
     "wastewater_Re.stan",
-    "wastewater_Re_splines.stan",
     "wastewater_Re_fast.stan"
     )
   comp_success <- NULL

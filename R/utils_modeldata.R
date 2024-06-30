@@ -634,7 +634,19 @@ modeldata_update <- function(modeldata,
   return(modeldata)
 }
 
+add_dummy_data <- function(modeldata, dummies) {
+  for (dat in dummies) {
+    modeldata[[dat]] <- numeric(0)
+  }
+  return(modeldata)
+}
 
+add_dummy_inits <- function(modeldata, dummies) {
+  for (param in dummies) {
+    modeldata$.init[[param]] <- numeric(0)
+  }
+  return(modeldata)
+}
 
 #' Print a `modeldata` object
 #'

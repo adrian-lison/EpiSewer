@@ -88,20 +88,33 @@ data {
   array[I_overdispersion && I_xi_fixed < 0 ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
 
   // Reproduction number ----
-  // Hyperpriors for smoothing
-  array[2] real R_level_start_prior;
-  array[2] real R_trend_start_prior;
-  array[2] real R_sd_prior;
+  int<lower=0, upper=1> R_model; // 0 for ets, 1 for spline smoothing
+
+  // Hyperpriors for exponential smoothing
+  array[R_model == 0 ? 2 : 0] real R_level_start_prior;
+  array[R_model == 0 ? 2 : 0] real R_trend_start_prior;
+  array[R_model == 0 ? 2 : 0] real R_sd_prior;
 
   // Exponential smoothing priors / configuration
-  int<lower=0> ets_diff; // order of differencing
-  int<lower=0, upper=1> ets_noncentered; // use non-centered parameterization?
-  real ets_alpha_fixed; // fixed value used if non-negative
-  array[ets_alpha_fixed < 0 ? 2 : 0] real<lower=0> ets_alpha_prior;
-  real ets_beta_fixed; // fixed value used if non-negative
-  array[ets_beta_fixed < 0 ? 2 : 0] real<lower=0> ets_beta_prior;
-  real ets_phi_fixed; // fixed value used if non-negative
-  array[ets_phi_fixed < 0 ? 2 : 0] real<lower=0> ets_phi_prior;
+  array[R_model == 0 ? 1 : 0] int<lower=0> ets_diff; // order of differencing
+  array[R_model == 0 ? 1 : 0] int<lower=0, upper=1> ets_noncentered; // use non-centered parameterization?
+  array[R_model == 0 ? 1 : 0] real ets_alpha_fixed; // fixed value used if non-negative
+  array[R_model == 0 && ets_alpha_fixed[1] < 0 ? 2 : 0] real<lower=0> ets_alpha_prior;
+  array[R_model == 0 ? 1 : 0] real ets_beta_fixed; // fixed value used if non-negative
+  array[R_model == 0 && ets_beta_fixed[1] < 0 ? 2 : 0] real<lower=0> ets_beta_prior;
+  array[R_model == 0 ? 1 : 0] real ets_phi_fixed; // fixed value used if non-negative
+  array[R_model == 0 && ets_phi_fixed[1] < 0 ? 2 : 0] real<lower=0> ets_phi_prior;
+
+  // Basis spline (bs) configuration for spline smoothing of R
+  // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-G)
+  array[R_model == 1 ? 1 : 0] int<lower=1> bs_n_basis; // number of B-splines
+  vector[R_model == 1 ? bs_n_basis[1] - 1 : 0] bs_dists; // distances between knots
+  array[R_model == 1 ? 1 : 0] int<lower=0> bs_n_w; // number of nonzero entries in bs matrix
+  vector[R_model == 1 ? bs_n_w[1] : 0] bs_w; // nonzero entries in bs matrix
+  array[R_model == 1 ? bs_n_w[1] : 0] int bs_v; // column indices of bs_w
+  array[R_model == 1 ? L + S + D + T - G + 1 : 0] int bs_u; // row starting indices for bs_w plus padding
+  array[R_model == 1 ? 2 : 0] real bs_coeff_ar_start_prior; // start hyperprior for random walk on log bs coeffs
+  array[R_model == 1 ? 2 : 0] real bs_coeff_ar_sd_prior; // sd hyperprior for random walk on log bs coeffs
 
   // Link function and corresponding hyperparameters
   // first element: 0 = inv_softplus, 1 = scaled_logit
@@ -178,16 +191,19 @@ transformed data {
   }
 }
 parameters {
-  // log(R) time series prior
-  real R_level_start; // starting value of the level
-  real R_trend_start; // starting value of the trend
-  real<lower=0> R_sd; // standard deviation of additive errors
-  vector<multiplier=(ets_noncentered ? R_sd : 1)>[L + S + D + T - G - 1] R_noise; // additive errors
+  // Exponential smoothing (ets) time series prior for Rt
+  array[R_model == 0 ? 1 : 0] real R_level_start; // starting value of the level
+  array[R_model == 0 ? 1 : 0] real R_trend_start; // starting value of the trend
+  array[R_model == 0 ? 1 : 0] real<lower=0> R_sd; // standard deviation of additive errors
+  vector<multiplier=(R_model == 0 ? (ets_noncentered[1] ? R_sd[1] : 1) : 1)>[R_model == 0 ? L + S + D + T - G - 1 : 0] R_noise; // additive errors
+  array[R_model == 0 && ets_alpha_fixed[1] < 0 ? 1 : 0] real<lower=0, upper=1> ets_alpha; // smoothing parameter for the level
+  array[R_model == 0 && ets_beta_fixed[1] < 0 ? 1 : 0] real<lower=0, upper=1> ets_beta; // smoothing parameter for the trend
+  array[R_model == 0 && ets_phi_fixed[1] < 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
 
-  // exponential smoothing / innovations state space process for log(R)
-  array[ets_alpha_fixed < 0 ? 1 : 0] real<lower=0, upper=1> ets_alpha; // smoothing parameter for the level
-  array[ets_beta_fixed < 0 ? 1 : 0] real<lower=0, upper=1> ets_beta; // smoothing parameter for the trend
-  array[ets_phi_fixed < 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
+  // Basis spline (bs) time series prior for Rt
+  array[R_model == 1 ? 1 : 0] real bs_coeff_ar_start; // intercept for random walk on log bs coeffs
+  array[R_model == 1 ? 1 : 0] real<lower=0> bs_coeff_ar_sd; // sd for random walk on log bs coeffs
+  vector[R_model == 1 ? (bs_n_basis[1] - 1) : 0] bs_coeff_noise_raw; // additive errors (non-centered)
 
   // seeding
   real iota_log_seed_intercept;
@@ -225,15 +241,24 @@ transformed parameters {
   vector<lower=0>[(cv_type == 1) && ddPCR_droplets_observe!=1 ? n_measured : 0] nu_upsilon_b; // total droplets per measurement
   array[LOD_model > 0 ? 1 : 0] vector<lower=0>[n_measured] LOD_hurdle_scale;
 
-  // Innovations state space process implementing exponential smoothing
-  R = apply_link(holt_damped_process(
-    [R_level_start, R_trend_start]',
-    ets_alpha_fixed < 0 ? ets_alpha[1] : ets_alpha_fixed,
-    ets_beta_fixed < 0 ? ets_beta[1] : ets_beta_fixed,
-    ets_phi_fixed < 0 ? ets_phi[1] : ets_phi_fixed,
-    R_noise,
-    ets_diff
-  ), R_link);
+  if (R_model == 0) {
+    // Innovations state space process implementing exponential smoothing
+    R = apply_link(holt_damped_process(
+      [R_level_start[1], R_trend_start[1]]',
+      ets_alpha_fixed[1] < 0 ? ets_alpha[1] : ets_alpha_fixed[1],
+      ets_beta_fixed[1] < 0 ? ets_beta[1] : ets_beta_fixed[1],
+      ets_phi_fixed[1] < 0 ? ets_phi[1] : ets_phi_fixed[1],
+      R_noise,
+      ets_diff[1]
+    ), R_link);
+  } else if (R_model == 1) {
+    vector[bs_n_basis[1] - 1] bs_coeff_noise = bs_coeff_noise_raw .* (bs_coeff_ar_sd[1] * sqrt(bs_dists)); // additive errors
+    vector[bs_n_basis[1]] bs_coeff = random_walk([bs_coeff_ar_start[1]]', bs_coeff_noise, 0); // Basis spline coefficients
+
+    R = apply_link(csr_matrix_times_vector(
+      L + S + D + T - G, bs_n_basis[1], bs_w, bs_v, bs_u, bs_coeff
+      ), R_link);
+  }
 
   // seeding
   if (seeding_model == 0) {
@@ -321,14 +346,24 @@ transformed parameters {
 model {
   // Priors
 
-  // Innovations state space model
-  ets_coefficient_priors_lp(ets_alpha, ets_alpha_fixed, ets_alpha_prior,
-                            ets_beta, ets_beta_fixed, ets_beta_prior,
-                            ets_phi, ets_phi_fixed, ets_phi_prior);
-  R_level_start ~ normal(R_level_start_prior[1], R_level_start_prior[2]); // starting prior for level
-  R_trend_start ~ normal(R_trend_start_prior[1], R_trend_start_prior[2]); // starting prior for trend
-  R_sd ~ normal(R_sd_prior[1], R_sd_prior[2]) T[0, ]; // truncated normal
-  R_noise ~ normal(0, R_sd); // Gaussian noise
+
+  if (R_model == 0) {
+    // Innovations state space model
+    ets_coefficient_priors_lp(
+      ets_alpha, ets_alpha_fixed[1], ets_alpha_prior,
+      ets_beta, ets_beta_fixed[1], ets_beta_prior,
+      ets_phi, ets_phi_fixed[1], ets_phi_prior
+      );
+    R_level_start ~ normal(R_level_start_prior[1], R_level_start_prior[2]); // starting prior for level
+    R_trend_start ~ normal(R_trend_start_prior[1], R_trend_start_prior[2]); // starting prior for trend
+    R_sd ~ normal(R_sd_prior[1], R_sd_prior[2]) T[0, ]; // truncated normal
+    R_noise ~ normal(0, R_sd[1]); // Gaussian noise
+  } else if (R_model == 1) {
+    // R spline smoothing
+    bs_coeff_ar_start ~ normal(bs_coeff_ar_start_prior[1], bs_coeff_ar_start_prior[2]); // starting prior
+    bs_coeff_ar_sd ~ normal(bs_coeff_ar_sd_prior[1], bs_coeff_ar_sd_prior[2]) T[0, ]; // truncated normal
+    bs_coeff_noise_raw ~ std_normal(); // Gaussian noise
+  }
 
   // Seeding
   iota_log_seed_intercept ~ normal(iota_log_seed_intercept_prior[1], iota_log_seed_intercept_prior[2]);

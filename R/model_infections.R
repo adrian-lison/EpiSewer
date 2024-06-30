@@ -190,6 +190,7 @@ R_estimate_ets <- function(
     noncentered = TRUE,
     modeldata = modeldata_init()) {
   modeldata$.metainfo$R_estimate_approach <- "ets"
+  modeldata$R_model <- 0
 
   modeldata$R_level_start_prior <- set_prior(
     "R_level_start", "normal",
@@ -261,6 +262,15 @@ R_estimate_ets <- function(
 
   modeldata$ets_diff <- differenced
   modeldata$ets_noncentered <- noncentered
+
+  modeldata <- add_dummy_data(modeldata, c(
+    "bs_n_basis", "bs_dists", "bs_n_w", "bs_w", "bs_v", "bs_u",
+    "bs_coeff_ar_start_prior", "bs_coeff_ar_sd_prior"
+  ))
+
+  modeldata <- add_dummy_inits(modeldata, c(
+    "bs_coeff_ar_start", "bs_coeff_ar_sd", "bs_coeff_noise_raw"
+  ))
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_ets = c()
@@ -417,6 +427,7 @@ R_estimate_splines <- function(
     R_max = 6,
     modeldata = modeldata_init()) {
   modeldata$.metainfo$R_estimate_approach <- "splines"
+  modeldata$R_model <- 1
 
   modeldata <- tbc(
     "spline_definition",
@@ -475,6 +486,19 @@ R_estimate_splines <- function(
   )
 
   modeldata <- add_link_function(link, R_max, modeldata)
+
+  modeldata <- add_dummy_data(modeldata, c(
+    "R_level_start_prior", "R_trend_start_prior", "R_sd_prior",
+    "ets_diff", "ets_noncentered",
+    "ets_alpha_fixed", "ets_alpha_prior",
+    "ets_beta_fixed", "ets_beta_prior",
+    "ets_phi_fixed", "ets_phi_prior"
+    ))
+
+  modeldata <- add_dummy_inits(modeldata, c(
+    "R_level_start", "R_trend_start", "R_sd", "R_noise",
+    "ets_alpha", "ets_beta", "ets_phi"
+    ))
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_splines = c()
