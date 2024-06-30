@@ -18,6 +18,7 @@
 #'   expanded? Can also be negative to cut off some of the earliest dates.
 #' @param date_margin_right By how many days into the future should the plot be
 #'   expanded? Can also be negative to cut off some of the latest dates.
+#' @param facet_models Should the plot be faceted by model? Default is `FALSE`.
 #' @param base_model Name of the base model (in the named list provided to
 #'   `results`) which should be compared to the other models. This model will be
 #'   plotted in black and will not be part of the legend.
@@ -34,6 +35,7 @@
 plot_infections <- function(results, draws = FALSE, ndraws = NULL,
                             seeding = FALSE, median = FALSE,
                             date_margin_left = 0, date_margin_right = 0,
+                            facet_models = FALSE,
                             base_model = "", model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
@@ -130,6 +132,14 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
   }
+  if (facet_models) {
+    plot <- plot +
+      facet_wrap(~model, nrow = 1) +
+      theme(
+        strip.background = element_rect(fill = "white"),
+        legend.position = "none"
+        )
+  }
   return(plot)
 }
 
@@ -149,6 +159,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
 plot_R <- function(results, draws = FALSE, ndraws = NULL,
                    seeding = FALSE, median = FALSE,
                    date_margin_left = 0, date_margin_right = 0,
+                   facet_models = FALSE,
                    base_model = "", model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
@@ -246,6 +257,14 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
   }
+  if (facet_models) {
+    plot <- plot +
+      facet_wrap(~model, nrow = 1) +
+      theme(
+        strip.background = element_rect(fill = "white"),
+        legend.position = "none"
+      )
+  }
   return(plot)
 }
 
@@ -289,6 +308,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
                                include_noise = TRUE, median = FALSE,
                                mark_outliers = FALSE,
                                date_margin_left = 0, date_margin_right = 0,
+                               facet_models = FALSE,
                                base_model = "", model_levels = NULL,
                                concentration_col = "concentration",
                                date_col = "date",
@@ -595,6 +615,14 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
   }
+  if (facet_models) {
+    plot <- plot +
+      facet_wrap(~model, nrow = 1) +
+      theme(
+        strip.background = element_rect(fill = "white"),
+        legend.position = "none"
+      )
+  }
   return(plot)
 }
 
@@ -612,6 +640,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
 #' @export
 plot_load <- function(results, median = FALSE,
                       date_margin_left = 0, date_margin_right = 0,
+                      facet_models = FALSE,
                       base_model = "", model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
@@ -680,6 +709,14 @@ plot_load <- function(results, median = FALSE,
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
   }
+  if (facet_models) {
+    plot <- plot +
+      facet_wrap(~model, nrow = 1) +
+      theme(
+        strip.background = element_rect(fill = "white"),
+        legend.position = "none"
+      )
+  }
   return(plot)
 }
 
@@ -695,7 +732,7 @@ plot_load <- function(results, median = FALSE,
 #'   manipulated using [ggplot2] functions to adjust themes and scales, and to
 #'   add further geoms.
 #' @export
-plot_sample_effects <- function(results, model_levels = NULL) {
+plot_sample_effects <- function(results, facet_models = FALSE, model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -722,6 +759,14 @@ plot_sample_effects <- function(results, model_levels = NULL) {
       theme(legend.position = "none") +
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
+  }
+  if (facet_models) {
+    plot <- plot +
+      facet_wrap(~model, nrow = 1) +
+      theme(
+        strip.background = element_rect(fill = "white"),
+        legend.position = "none"
+      )
   }
   return(plot)
 }

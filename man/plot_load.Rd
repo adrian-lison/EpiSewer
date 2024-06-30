@@ -9,6 +9,7 @@ plot_load(
   median = FALSE,
   date_margin_left = 0,
   date_margin_right = 0,
+  facet_models = FALSE,
   base_model = "",
   model_levels = NULL
 )
@@ -26,6 +27,8 @@ expanded? Can also be negative to cut off some of the earliest dates.}
 
 \item{date_margin_right}{By how many days into the future should the plot be
 expanded? Can also be negative to cut off some of the latest dates.}
+
+\item{facet_models}{Should the plot be faceted by model? Default is \code{FALSE}.}
 
 \item{base_model}{Name of the base model (in the named list provided to
 \code{results}) which should be compared to the other models. This model will be

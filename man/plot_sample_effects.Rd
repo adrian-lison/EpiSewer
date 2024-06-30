@@ -4,12 +4,14 @@
 \alias{plot_sample_effects}
 \title{Plot estimated sample effects}
 \usage{
-plot_sample_effects(results, model_levels = NULL)
+plot_sample_effects(results, facet_models = FALSE, model_levels = NULL)
 }
 \arguments{
 \item{results}{Results object returned by \code{\link[=EpiSewer]{EpiSewer()}} after model fitting.
 Can also be a named \code{list} with results from different model runs, in which
 case all results are plotted together and distinguished by colors.}
+
+\item{facet_models}{Should the plot be faceted by model? Default is \code{FALSE}.}
 
 \item{model_levels}{A \code{character} vector with the names of the models to be
 included. The colors and legend will be ordered according to the order in
