@@ -422,8 +422,8 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     if (!is.null(measurements_modeled)) {
       concentration_pred <- merge(
         concentration_pred, measurements_modeled[
-          , .SD, .SDcols=c("date", "obs_conc_ord")] ,
-        by = "date", all.x = TRUE)
+          , .SD, .SDcols=c("model","date", "obs_conc_ord")] ,
+        by = c("model","date"), all.x = TRUE)
     }
   }
 
