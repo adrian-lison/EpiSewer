@@ -30,7 +30,7 @@ sample.}
 
 \item{distribution}{Parametric distribution for concentration measurements.
 Currently supported are "normal" (default and recommended), and
-"lognormal". Distributions are truncated below zero if necessary.}
+"log-normal". Distributions are truncated below zero if necessary.}
 
 \item{date_col}{Name of the column containing the dates.}
 
@@ -80,7 +80,7 @@ performed before model fitting (\code{.checks}).
 This option fits the \code{EpiSewer} model to pathogen concentrations
 measured in wastewater samples. It is suitable for different quantification
 methods such as qPCR or dPCR. The measured concentrations are modeled via a
-lognormal likelihood.
+Log-Normal likelihood.
 }
 \seealso{
 Other {observation types}: 

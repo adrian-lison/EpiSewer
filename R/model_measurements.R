@@ -36,7 +36,7 @@ model_measurements <- function(
 #' @description This option fits the `EpiSewer` model to pathogen concentrations
 #'   measured in wastewater samples. It is suitable for different quantification
 #'   methods such as qPCR or dPCR. The measured concentrations are modeled via a
-#'   lognormal likelihood.
+#'   Log-Normal likelihood.
 #'
 #' @param measurements A `data.frame` with each row representing one
 #'   measurement. Must have at least a column with dates and a column with
@@ -48,7 +48,7 @@ model_measurements <- function(
 #'   sample.
 #' @param distribution Parametric distribution for concentration measurements.
 #'   Currently supported are "normal" (default and recommended), and
-#'   "lognormal". Distributions are truncated below zero if necessary.
+#'   "log-normal". Distributions are truncated below zero if necessary.
 #' @param date_col Name of the column containing the dates.
 #' @param concentration_col Name of the column containing the measured
 #'   concentrations.
@@ -95,12 +95,12 @@ concentrations_observe <-
       )
     }
 
-    if (!distribution %in% c("normal", "lognormal")) {
+    if (!distribution %in% c("normal", "lognormal", "log-normal")) {
       cli::cli_abort(
         c(
           "Only the following distributions are supported:",
           "normal",
-          "lognormal"
+          "log-normal"
         )
       )
     }
@@ -232,6 +232,7 @@ concentrations_observe <-
       distribution,
       "normal" = 1,
       "lognormal" = 2,
+      "log-normal" = 2,
       -1
       )
 
@@ -429,7 +430,7 @@ noise_estimate_ <-
 
       if (prePCR_noise_type == "gamma") {
         modeldata$cv_pre_type <- 0
-      } else if (prePCR_noise_type == "log-normal") {
+      } else if (prePCR_noise_type %in% c("log-normal", "lognormal")) {
         modeldata$cv_pre_type <- 1
       } else {
         cli::cli_abort(paste0(
