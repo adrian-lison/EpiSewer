@@ -24,7 +24,7 @@ easily configurable modeling components.
 ⭐ Non-daily / missing measurements  
 ⭐ Multiple measurements (replicates) per sample  
 ⭐ Multi-day composite samples  
-⭐ Accurate ddPCR noise model  
+⭐ Accurate dPCR noise model  
 ⭐ Limit of detection (LOD) model
 
 **Sampling**  

@@ -52,7 +52,7 @@ misspecification and is only supported for comparison purposes.
 
 For a constant coefficient of variation model, see
 \code{\link[=noise_estimate]{noise_estimate()}}, and for a non-constant coefficient of variation model,
-see \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}.
+see \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}.
 
 If multiple measurements (replicates) per sample are provided,
 \code{EpiSewer} can also explicitly model variation before the replication
@@ -73,7 +73,7 @@ The priors of this component have the following functional form:
 }
 \seealso{
 Other \link{noise models}: 
-\code{\link{noise_estimate_ddPCR}()},
+\code{\link{noise_estimate_dPCR}()},
 \code{\link{noise_estimate}()}
 }
 \concept{\link{noise models}}

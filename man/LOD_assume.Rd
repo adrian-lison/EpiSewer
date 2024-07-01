@@ -25,7 +25,7 @@ probability.}
 \item{LOD_type}{The type of LOD model used. Currently, only "exponential" is
 supported. This models an exponentially decreasing probability of zero
 measurements / non-detection as a function of concentration. The
-exponential model can be derived from the statistical properties of ddPCR,
+exponential model can be derived from the statistical properties of dPCR,
 but should also work well for other quantification methods such as qPCR.}
 
 \item{drop_prob}{Probability for non-detection below which likelihood
@@ -66,7 +66,7 @@ and protocol. It is usually established from a dedicated lab experiment
 not cover a large fraction of the preprocessing noise to find an optimal
 configuration for the exponential model.
 
-If used together with \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}, EpiSewer will also
+If used together with \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}, EpiSewer will also
 model the effect of pre-PCR noise on the LOD. This means that the modeled
 LOD could be slightly higher than specified under \code{limit}, depending on the
 estimated pre-PCR noise.
@@ -76,7 +76,7 @@ estimated pre-PCR noise.
 \code{\link[=plot_LOD]{plot_LOD()}}
 
 Other {LOD models}: 
-\code{\link{LOD_estimate_ddPCR}()},
+\code{\link{LOD_estimate_dPCR}()},
 \code{\link{LOD_none}()}
 }
 \concept{{LOD models}}

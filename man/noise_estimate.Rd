@@ -53,7 +53,7 @@ If multiple measurements (replicates) per sample are provided,
 stage.
 
 For a non-constant coefficient of variation model, see
-\code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}.
+\code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}.
 }
 \details{
 When \code{replicates=TRUE}, two coefficients of variation are estimated:
@@ -82,6 +82,6 @@ The priors of this component have the following functional form:
 \seealso{
 Other \link{noise models}: 
 \code{\link{noise_estimate_constant_var}()},
-\code{\link{noise_estimate_ddPCR}()}
+\code{\link{noise_estimate_dPCR}()}
 }
 \concept{\link{noise models}}

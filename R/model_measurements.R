@@ -66,12 +66,13 @@ model_measurements <- function(
 #' @param n_averaged_col Name of the column in the `measurements` data.frame
 #'   containing the number of replicates over which the measurements have been
 #'   averaged. This is an alternative to specifying `n_averaged`.
-#' @param total_droplets_col Name of the column in the `measurements`
-#'   data.frame containing the total number of droplets in the ddPCR reaction
-#'   of each measurement. Only applies to concentration measurements obtain via
-#'   ddPCR. Can be used by the [noise_estimate_ddPCR()] and
-#'   [LOD_estimate_ddPCR()] modeling components. Note that this is really the
-#'   *total* number of droplets, not just the number of positive droplets.
+#' @param total_partitions_col Name of the column in the `measurements`
+#'   data.frame containing the total number of partitions (e.g. droplets for
+#'   ddPCR) in the dPCR reaction of each measurement. Only applies to
+#'   concentration measurements obtain via dPCR. Can be used by the
+#'   [noise_estimate_dPCR()] and [LOD_estimate_dPCR()] modeling components. Note
+#'   that this is really the
+#'   *total* number of partitions, not just the number of positive partitions.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -86,7 +87,7 @@ concentrations_observe <-
            replicate_col = NULL,
            n_averaged = 1,
            n_averaged_col = NULL,
-           total_droplets_col = NULL,
+           total_partitions_col = NULL,
            modeldata = modeldata_init()) {
     if (!(composite_window %% 1 == 0 && composite_window > 0)) {
       cli::cli_abort(
@@ -108,7 +109,7 @@ concentrations_observe <-
       {
         required_data_cols <- c(
           date_col, concentration_col, replicate_col,
-          n_averaged_col, total_droplets_col
+          n_averaged_col, total_partitions_col
           )
         if (!all(required_data_cols %in% names(measurements))) {
           cli::cli_abort(
@@ -204,12 +205,12 @@ concentrations_observe <-
             ))
         }
 
-        if (!is.null(total_droplets_col)) {
-          modeldata$ddPCR_total_droplets <- as.integer(
-            measurements[[total_droplets_col]][measured]
+        if (!is.null(total_partitions_col)) {
+          modeldata$dPCR_total_partitions <- as.integer(
+            measurements[[total_partitions_col]][measured]
           )
         } else {
-          modeldata$ddPCR_total_droplets <- rep(0, modeldata$n_measured)
+          modeldata$dPCR_total_partitions <- rep(0, modeldata$n_measured)
         }
 
         return(modeldata)
@@ -237,25 +238,27 @@ concentrations_observe <-
     return(modeldata)
   }
 
-#' Observe positive ddPCR droplet counts
+#' Observe positive dPCR partition counts
 #'
-#' @description This option fits the `EpiSewer` model to positive droplet counts
-#'   in digital droplet PCR (ddPCR) for the pathogen target of interest. This
-#'   allows the use of a ddPCR-specific likelihood using a Poisson distribution.
-#'   For a more generic likelihood, see [concentrations_observe()].
+#' @description This option fits the `EpiSewer` model to positive partition
+#'   counts in digital PCR (dPCR), e.g. positive droplets in ddPCR, for the
+#'   pathogen target of interest. This allows the use of a dPCR-specific
+#'   likelihood using a Poisson distribution. For a more generic likelihood, see
+#'   [concentrations_observe()].
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @family {observation types}
-droplets_observe <-
+partitions_observe <-
   function(data,
            composite_window = 1,
            date_col = "date",
-           droplets_col = "droplets",
+           positive_partitions_col = "positive_partitions",
+           total_partitions_col = "total_partitions",
            replicate_col = NULL,
            modeldata = modeldata_init()) {
     cli::cli_abort(paste(
-      "Specification of measurements via ddPCR droplet count",
+      "Specification of measurements via dPCR partition count",
       "is not implemented yet."
     ))
   }
@@ -268,10 +271,10 @@ droplets_observe <-
 #'   replication stage.
 #'
 #' @description This helper function is called from [noise_estimate()] and
-#'   [noise_estimate_ddPCR()]. [noise_estimate()] is a constant coefficient of
-#'   variation model, [noise_estimate_ddPCR()] is a noise model specialized for
-#'   digital droplet PCR (`cv_type = "ddPCR"`), which may however also work with
-#'   other quantification methods such as qPCR.
+#'   [noise_estimate_dPCR()]. [noise_estimate()] is a constant coefficient of
+#'   variation model, [noise_estimate_dPCR()] is a noise model specialized for
+#'   digital PCR (`cv_type = "dPCR"`), which may however also work with other
+#'   quantification methods such as qPCR.
 #'
 #' @param replicates Should replicates be used to explicitly model variation
 #'   before the replication stage?
@@ -280,40 +283,39 @@ droplets_observe <-
 #'   the CV after the replication stage (see details for more explanation).
 #' @param cv_prior_sigma Prior (standard deviation) on the coefficient of
 #'   variation of concentration measurements.
-#' @param cv_type One out of "constant" (default), "constant_var", or "ddPCR".
-#'   If "constant", the coefficient of variation is estimated as a
-#'   constant/single parameter for all observations. If "ddPCR", the coefficient
-#'   of variation is modeled as a function of the expected concentration
-#'   according to the statistical properties of ddPCR. In particular, this model
-#'   predicts a higher coefficient of variation at smaller concentrations, which
-#'   often leads to a better model fit. If "constant_var", not the coefficient
-#'   of variation but the variance of measurements is modeled as constant. This
-#'   is usually a misspecification and is only supported for comparison
-#'   purposes.
-#' @param ddPCR_prior_droplets_mu Prior (mean) on the total number of droplets
-#'   in the ddPCR reaction.
-#' @param ddPCR_prior_droplets_sigma Prior (standard deviation) on the total
-#'   number of droplets in the ddPCR reaction. If this is set to zero, the total
-#'   number of droplets will be fixed to the prior mean and not estimated.
-#' @param ddPCR_droplets_observe If TRUE, the number of total droplets is taken
-#'   from the supplied measurements `data.frame`. This requires that the
-#'   argument `total_droplets_col` is specified in [concentrations_observe()].
-#' @param ddPCR_droplet_variation_prior_mu Prior (mean) on the coefficient of
-#'   variation of the total number of droplets in the ddPCR reaction. Usually,
+#' @param cv_type One out of "constant" (default), "constant_var", or "dPCR". If
+#'   "constant", the coefficient of variation is estimated as a constant/single
+#'   parameter for all observations. If "dPCR", the coefficient of variation is
+#'   modeled as a function of the expected concentration according to the
+#'   statistical properties of dPCR. In particular, this model predicts a higher
+#'   coefficient of variation at smaller concentrations, which often leads to a
+#'   better model fit. If "constant_var", not the coefficient of variation but
+#'   the variance of measurements is modeled as constant. This is usually a
+#'   misspecification and is only supported for comparison purposes.
+#' @param total_partitions_prior_mu Prior (mean) on the total number of
+#'   partitions in the dPCR reaction.
+#' @param total_partitions_prior_sigma Prior (standard deviation) on the total
+#'   number of partitions in the dPCR reaction. If this is set to zero, the
+#'   total number of partitions will be fixed to the prior mean and not
+#'   estimated.
+#' @param total_partitions_observe If TRUE, the total number of partitions is
+#'   taken from the supplied measurements `data.frame`. This requires that the
+#'   argument `total_partitions_col` is specified in [concentrations_observe()].
+#' @param partition_variation_prior_mu Prior (mean) on the coefficient of
+#'   variation of the total number of partitions in the dPCR reaction. Usually,
 #'   the maximum number of partitions possible for a given dPCR chip is not
 #'   reached, i.e. a certain number of partitions is lost. This loss varies
 #'   between PCR runs, and is modeled as log-normal distributed in EpiSewer.
-#' @param ddPCR_droplet_variation_prior_sigma Prior (standard deviation) on the
-#'   coefficient of variation of the total number of droplets in the ddPCR
+#' @param partition_variation_prior_sigma Prior (standard deviation) on the
+#'   coefficient of variation of the total number of partitions in the dPCR
 #'   reaction.
-#' @param ddPCR_prior_scaling_mu Prior (mean) on the concentration scaling
-#'   factor for the ddPCR reaction. The concentration scaling factor is the
-#'   droplet volume, scaled by the dilution of the wastewater in the ddPCR
-#'   reaction. See details for further explanation.
-#' @param ddPCR_prior_scaling_sigma Prior (standard deviation) on the
-#'   concentration scaling factor for the ddPCR reaction. If this is set to
-#'   zero, the concentration scaling factor will be fixed to the prior mean and
-#'   not estimated.
+#' @param volume_scaled_prior_mu Prior (mean) on the conversion factor
+#'   (partition volume scaled by the dilution of wastewater in the assay) for
+#'   the dPCR reaction. See details for further explanation.
+#' @param volume_scaled_prior_sigma Prior (standard deviation) on the conversion
+#'   factor (partition volume scaled by the dilution of wastewater in the assay)
+#'   for the dPCR reaction. If this is set to zero, the conversion factor will
+#'   be fixed to the prior mean and not estimated.
 #' @param pre_replicate_cv_prior_mu Prior (mean) on the coefficient of variation
 #'   of concentrations *before* the replication stage.
 #' @param pre_replicate_cv_prior_sigma Prior (standard deviation) on the
@@ -323,12 +325,12 @@ droplets_observe <-
 #'   before the PCR assay. Currently supported are "log-normal" and "gamma". The
 #'   choice of the parametric distribution typically makes no relevant
 #'   difference for the noise model, but can make a relevant difference for the
-#'   LOD model if [LOD_estimate_ddPCR()] is used.
+#'   LOD model if [LOD_estimate_dPCR()] is used.
 #'
 #' @param use_taylor_approx If TRUE (default), a Taylor expansion approximation
 #'   is used to estimate the CV of measurements under pre-PCR noise. The
 #'   approximation is very accurate, unless concentrations are extremely high
-#'   (so high that the quality of the measurements from ddPCR would anyway be
+#'   (so high that the quality of the measurements from dPCR would anyway be
 #'   questionable).
 #'
 #' @inheritParams template_model_helpers
@@ -338,13 +340,13 @@ noise_estimate_ <-
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
            cv_type = "constant",
-           ddPCR_prior_droplets_mu = NULL,
-           ddPCR_prior_droplets_sigma = NULL,
-           ddPCR_droplets_observe = NULL,
-           ddPCR_droplet_variation_prior_mu = NULL,
-           ddPCR_droplet_variation_prior_sigma = NULL,
-           ddPCR_prior_scaling_mu = NULL,
-           ddPCR_prior_scaling_sigma = NULL,
+           total_partitions_prior_mu = NULL,
+           total_partitions_prior_sigma = NULL,
+           total_partitions_observe = NULL,
+           partition_variation_prior_mu = NULL,
+           partition_variation_prior_sigma = NULL,
+           volume_scaled_prior_mu = NULL,
+           volume_scaled_prior_sigma = NULL,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            prePCR_noise_type = "log-normal",
@@ -359,7 +361,7 @@ noise_estimate_ <-
     modeldata$.init$nu_upsilon_a <- 0.1 # 10% coefficient of variation
 
     if (cv_type == "constant") {
-      modeldata$ddPCR_droplets_observe <- FALSE
+      modeldata$total_partitions_observe <- FALSE
       modeldata$cv_type <- 0
       modeldata$nu_upsilon_b_mu_prior <- numeric(0)
       modeldata$nu_upsilon_b_cv_prior <- numeric(0)
@@ -370,11 +372,11 @@ noise_estimate_ <-
       modeldata$.init$nu_upsilon_c <- numeric(0)
       modeldata$cv_pre_type <- numeric(0)
       modeldata$cv_pre_approx_taylor <- numeric(0)
-    } else if (cv_type == "ddPCR") {
+    } else if (cv_type == "dPCR") {
       modeldata$cv_type <- 1
 
-      if (ddPCR_droplets_observe) {
-        modeldata$ddPCR_droplets_observe <- TRUE
+      if (total_partitions_observe) {
+        modeldata$total_partitions_observe <- TRUE
         modeldata$nu_upsilon_b_mu_prior <- set_prior(
           "nu_upsilon_b_mu", "dummy prior", mu = 0, sigma = 0
         )
@@ -382,24 +384,24 @@ noise_estimate_ <-
         modeldata$.init$nu_upsilon_b_mu <- numeric(0)
         modeldata$.init$nu_upsilon_b_cv <- numeric(0)
         modeldata$.init$nu_upsilon_b_noise_raw <- numeric(0)
-        modeldata$.checks$check_total_droplets_col <- function(d) {
-          if (!"ddPCR_total_droplets" %in% names(d)) {
+        modeldata$.checks$check_total_partitions_col <- function(d) {
+          if (!"dPCR_total_partitions" %in% names(d)) {
             cli::cli_abort(paste0(
-              "You specified `ddPCR_droplets_observe = TRUE`, which requires ",
-              "a column with the number of total droplets in the PCR for each ",
-              "sample in your data. Please specify such a column via the",
-              "`total_droplets_col` argument in ",
+              "You specified `total_partitions_observe = TRUE`, which requires ",
+              "a column with the number of total partitions in the PCR for ",
+              "each sample in your data. Please specify such a column via the",
+              "`total_partitions_col` argument in ",
               cli_help("concentrations_observe"), "."
             ))
           }
         }
       } else {
-        modeldata$ddPCR_droplets_observe <- FALSE
+        modeldata$total_partitions_observe <- FALSE
 
         modeldata$nu_upsilon_b_mu_prior <- set_prior(
           "nu_upsilon_b_mu", "truncated normal",
-          mu = ddPCR_prior_droplets_mu * 1e-4, # scaling by 1e-4 for numerical reasons
-          sigma = ddPCR_prior_droplets_sigma * 1e-4
+          mu = total_partitions_prior_mu * 1e-4, # scaling by 1e-4 for numerical reasons
+          sigma = total_partitions_prior_sigma * 1e-4
         )
         modeldata$.init$nu_upsilon_b_mu <- init_from_location_scale_prior(
           modeldata$nu_upsilon_b_mu_prior
@@ -407,8 +409,8 @@ noise_estimate_ <-
 
         modeldata$nu_upsilon_b_cv_prior <- set_prior(
           "nu_upsilon_b_cv", "truncated normal",
-          mu = ddPCR_droplet_variation_prior_mu,
-          sigma = ddPCR_droplet_variation_prior_sigma
+          mu = partition_variation_prior_mu,
+          sigma = partition_variation_prior_sigma
         )
         modeldata$.init$nu_upsilon_b_cv <- as.array(0.01)
         modeldata$.init$nu_upsilon_b_noise_raw <- tbe(
@@ -418,8 +420,8 @@ noise_estimate_ <-
 
       modeldata$nu_upsilon_c_prior <- set_prior(
         "nu_upsilon_c", "truncated normal",
-        mu = ddPCR_prior_scaling_mu * 1e+5, # scaling by 1e+5 for numerical reasons
-        sigma = ddPCR_prior_scaling_sigma * 1e+5
+        mu = volume_scaled_prior_mu * 1e+5, # scaling by 1e+5 for numerical reasons
+        sigma = volume_scaled_prior_sigma * 1e+5
       )
       modeldata$.init$nu_upsilon_c <- init_from_location_scale_prior(
         modeldata$nu_upsilon_c_prior
@@ -438,7 +440,7 @@ noise_estimate_ <-
       modeldata$cv_pre_approx_taylor <- use_taylor_approx
 
     } else if (cv_type == "constant_var") {
-      modeldata$ddPCR_droplets_observe <- FALSE
+      modeldata$total_partitions_observe <- FALSE
       modeldata$cv_type <- 2
       modeldata$nu_upsilon_b_mu_prior <- numeric(0)
       modeldata$nu_upsilon_b_cv_prior <- numeric(0)
@@ -453,7 +455,7 @@ noise_estimate_ <-
       cli::cli_abort(
         paste0(
           "Noise type `", cv_type, "` not supported. Available options: ",
-          "'constant', `ddPCR`, `constant_var`."
+          "'constant', `dPCR`, `constant_var`."
         ),
       )
     }
@@ -507,7 +509,7 @@ noise_estimate_ <-
 #'   stage.
 #'
 #' @description For a non-constant coefficient of variation model, see
-#'   [noise_estimate_ddPCR()].
+#'   [noise_estimate_dPCR()].
 #'
 #' @details When `replicates=TRUE`, two coefficients of variation are estimated:
 #' - the CV before the replication stage (see `pre_replicate_cv_prior_mu`)
@@ -551,13 +553,13 @@ noise_estimate <-
       ))
   }
 
-#' Estimate measurement noise for digital droplet PCR data
+#' Estimate measurement noise for digital PCR data
 #'
 #' @description This option estimates the unexplained variation in wastewater
-#'   measurements using a coefficient of variation model specialised for digital
-#'   droplet PCR. Specifically, the coefficient of variation is modeled as a
-#'   function of the expected concentration according to the statistical
-#'   properties of ddPCR.
+#'   measurements using a coefficient of variation model specialized for digital
+#'   PCR (e.g. digital droplet PCR). Specifically, the coefficient of variation
+#'   is modeled as a function of the expected concentration according to the
+#'   statistical properties of dPCR.
 #'
 #' @description This model predicts a higher coefficient of variation at smaller
 #'   concentrations, which often leads to a better model fit, even for
@@ -575,34 +577,33 @@ noise_estimate <-
 #'   `replicates=TRUE`, this is only the CV after the replication stage (see
 #'   details for more explanation).
 #'
-#' @details The concentration scaling factor (see `ddPCR_prior_scaling_mu`,
-#'   `ddPCR_prior_scaling_sigma`) is the droplet volume,
-#'   scaled by the dilution of the wastewater in the ddPCR reaction. The
-#'   dilution accounts for all extraction and preparation steps. For example, if
-#'   the droplet volume is 4.5e-7 mL and the dilution of the wastewater is 100:3
-#'   (i.e. 100 gc/mL in the original wastewater sample correspond to 3 gc/mL in
-#'   the PCR reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 =
-#'   1.5e-5.
+#' @details The conversion factor (see `volume_scaled_prior_mu`,
+#'   `volume_scaled_prior_sigma`) is the partition volume scaled by the dilution
+#'   of the wastewater in the assay. The dilution accounts for all
+#'   extraction and preparation steps. For example, if the partition volume is
+#'   4.5e-7 mL and the dilution of the wastewater is 100:3 (i.e. 100 gc/mL in
+#'   the original wastewater sample correspond to 3 gc/mL in the PCR reaction),
+#'   then the overall conversion factor is 4.5e-7 * 100 / 3 = 1.5e-5.
 #'
 #' @details When `replicates=TRUE`, two coefficients of variation are estimated:
 #' - the CV before the replication stage (see `pre_replicate_cv_prior_mu`)
 #' - the CV after the replication stage (see `cv_prior_mu`)
 #'
-#' The meaning of these CV estimates depends on the type of replicates. If the
-#' replicates are biological replicates (i.e. independently processed), then
-#' `cv` estimates the noise in the preprocessing before the PCR, and
-#' `pre_replicate_cv` estimates the noise from anything before preprocessing
-#' (e.g. sampling noise and all other unexplained variation). In contrast, if
-#' the replicates are technical replicates (i.e. several PCR runs of the same
-#' preprocessed sample), then `cv` estimates only unexplained PCR noise
-#' (should be close to zero), and `pre_replicate_cv` estimates all other noise
-#' (including preprocessing noise.)
+#'   The meaning of these CV estimates depends on the type of replicates. If the
+#'   replicates are biological replicates (i.e. independently processed), then
+#'   `cv` estimates the noise in the preprocessing before the PCR, and
+#'   `pre_replicate_cv` estimates the noise from anything before preprocessing
+#'   (e.g. sampling noise and all other unexplained variation). In contrast, if
+#'   the replicates are technical replicates (i.e. several PCR runs of the same
+#'   preprocessed sample), then `cv` estimates only unexplained PCR noise
+#'   (should be close to zero), and `pre_replicate_cv` estimates all other noise
+#'   (including preprocessing noise.)
 #'
 #' @details The priors of this component have the following functional form:
 #' - coefficient of variation of concentration measurements (`cv`): `Truncated normal`
-#' - mean number of droplets in ddPCR: `Truncated normal`
-#' - coefficient of variation of number of droplets in ddPCR: `Truncated normal`
-#' - concentration scaling factor of ddPCR: `Truncated normal`
+#' - mean number of partitions in dPCR: `Truncated normal`
+#' - coefficient of variation of number of partitions in dPCR: `Truncated normal`
+#' - conversion factor for dPCR: `Truncated normal`
 #' - coefficient of variation of concentration before the replication stage (`pre_replicate_cv`):
 #'   `Truncated normal`
 #'
@@ -611,19 +612,19 @@ noise_estimate <-
 #' @inherit modeldata_init return
 #' @export
 #' @family [noise models]
-#' @seealso [LOD_estimate_ddPCR] for a limit of detection model specialised for
-#'   ddPCR.
-noise_estimate_ddPCR <-
+#' @seealso [LOD_estimate_dPCR] for a limit of detection model specialised for
+#'   dPCR.
+noise_estimate_dPCR <-
   function(replicates = FALSE,
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
-           ddPCR_prior_droplets_mu = 20000,
-           ddPCR_prior_droplets_sigma = 5000,
-           ddPCR_droplets_observe = FALSE,
-           ddPCR_droplet_variation_prior_mu = 0,
-           ddPCR_droplet_variation_prior_sigma = 0.05,
-           ddPCR_prior_scaling_mu = 1.5e-5,
-           ddPCR_prior_scaling_sigma = 0.5e-5,
+           total_partitions_prior_mu = 20000,
+           total_partitions_prior_sigma = 5000,
+           total_partitions_observe = FALSE,
+           partition_variation_prior_mu = 0,
+           partition_variation_prior_sigma = 0.05,
+           volume_scaled_prior_mu = 1.5e-5,
+           volume_scaled_prior_sigma = 0.5e-5,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            prePCR_noise_type = "log-normal",
@@ -633,14 +634,14 @@ noise_estimate_ddPCR <-
       replicates = replicates,
       cv_prior_mu = cv_prior_mu,
       cv_prior_sigma = cv_prior_sigma,
-      cv_type = "ddPCR",
-      ddPCR_prior_droplets_mu = ddPCR_prior_droplets_mu,
-      ddPCR_prior_droplets_sigma = ddPCR_prior_droplets_sigma,
-      ddPCR_droplets_observe = ddPCR_droplets_observe,
-      ddPCR_droplet_variation_prior_mu = ddPCR_droplet_variation_prior_mu,
-      ddPCR_droplet_variation_prior_sigma = ddPCR_droplet_variation_prior_sigma,
-      ddPCR_prior_scaling_mu = ddPCR_prior_scaling_mu,
-      ddPCR_prior_scaling_sigma = ddPCR_prior_scaling_sigma,
+      cv_type = "dPCR",
+      total_partitions_prior_mu = total_partitions_prior_mu,
+      total_partitions_prior_sigma = total_partitions_prior_sigma,
+      total_partitions_observe = total_partitions_observe,
+      partition_variation_prior_mu = partition_variation_prior_mu,
+      partition_variation_prior_sigma = partition_variation_prior_sigma,
+      volume_scaled_prior_mu = volume_scaled_prior_mu,
+      volume_scaled_prior_sigma = volume_scaled_prior_sigma,
       pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
       pre_replicate_cv_prior_sigma = pre_replicate_cv_prior_sigma,
       prePCR_noise_type = prePCR_noise_type,
@@ -657,7 +658,7 @@ noise_estimate_ddPCR <-
 #'
 #' @description For a constant coefficient of variation model, see
 #'   [noise_estimate()], and for a non-constant coefficient of variation model,
-#'   see [noise_estimate_ddPCR()].
+#'   see [noise_estimate_dPCR()].
 #'
 #' @description If multiple measurements (replicates) per sample are provided,
 #'   `EpiSewer` can also explicitly model variation before the replication
@@ -694,7 +695,7 @@ noise_estimate_constant_var <-
       "Note that modeling a constant variance",
       "is likely a model misspecification and should only be used for ",
       "comparison purposes with better models like",
-      cli_help("noise_estimate"), "or", cli_help("noise_estimate_ddPCR"), ".",
+      cli_help("noise_estimate"), "or", cli_help("noise_estimate_dPCR"), ".",
       "You can specify",
       "{.code noise_estimate_constant_var(warn=TRUE)} to disable this warning."
       ))
@@ -757,7 +758,7 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #' @param LOD_type The type of LOD model used. Currently, only "exponential" is
 #'   supported. This models an exponentially decreasing probability of zero
 #'   measurements / non-detection as a function of concentration. The
-#'   exponential model can be derived from the statistical properties of ddPCR,
+#'   exponential model can be derived from the statistical properties of dPCR,
 #'   but should also work well for other quantification methods such as qPCR.
 #' @param drop_prob Probability for non-detection below which likelihood
 #'   contributions of observed concentrations are dropped from LOD model. This
@@ -772,7 +773,7 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #'   not cover a large fraction of the preprocessing noise to find an optimal
 #'   configuration for the exponential model.
 #'
-#' @details If used together with [noise_estimate_ddPCR()], EpiSewer will also
+#' @details If used together with [noise_estimate_dPCR()], EpiSewer will also
 #'   model the effect of pre-PCR noise on the LOD. This means that the modeled
 #'   LOD could be slightly higher than specified under `limit`, depending on the
 #'   estimated pre-PCR noise.
@@ -789,7 +790,7 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
                        drop_prob = 1e-10,
                        modeldata = modeldata_init()) {
 
-  if (!LOD_type %in% c("exponential", "ddPCR")) { # "ddPCR" is synonym
+  if (!LOD_type %in% c("exponential", "dPCR")) { # "dPCR" is synonym
     cli::cli_abort(
       'Currently, only LOD_type = "exponential" is supported.'
     )
@@ -815,12 +816,12 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
   return(modeldata)
 }
 
-#' Estimate a limit of detection model for digital droplet PCR data
+#' Estimate a limit of detection model for digital PCR data
 #'
 #' @description Pathogen concentrations below a certain threshold may not be
 #'   detectable and thus erroneously measured as 0. This option adjusts for a
-#'   limit of detection based on the statistical properties of digital droplet
-#'   PCR (ddPCR) and includes zero measurements in the likelihood.
+#'   limit of detection based on the statistical properties of digital PCR
+#'   (dPCR) and includes zero measurements in the likelihood.
 #'
 #' @description In effect, zero measurements provide a signal that the
 #'   concentration in the respective sample was likely below the limit of
@@ -834,9 +835,9 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
 #'   samples anyway, parameter estimates are practically not affected.
 #'
 #' @details The limit of detection is modeled using a hurdle model. The model
-#'   uses the number of droplets in the ddPCR reaction and the concentration
-#'   scaling factor as defined and estimated by [noise_estimate_ddPCR()]. It can
-#'   therefore only be used together with `noise = noise_estimate_ddPCR()` in
+#'   uses the number of partitions in the dPCR reaction and the conversion
+#'   factor as defined and estimated by [noise_estimate_dPCR()]. It can
+#'   therefore only be used together with `noise = noise_estimate_dPCR()` in
 #'   [model_measurements()].
 #'
 #' @inheritParams template_model_helpers
@@ -844,9 +845,9 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
 #' @export
 #'
 #' @family {LOD models}
-LOD_estimate_ddPCR <- function(drop_prob = 1e-10, modeldata = modeldata_init()) {
+LOD_estimate_dPCR <- function(drop_prob = 1e-10, modeldata = modeldata_init()) {
 
-  modeldata <- tbc("LOD_estimate_ddPCR",
+  modeldata <- tbc("LOD_estimate_dPCR",
     {
       modeldata$LOD_model <- 2
       modeldata$LOD_scale <- numeric(0)
@@ -858,8 +859,8 @@ LOD_estimate_ddPCR <- function(drop_prob = 1e-10, modeldata = modeldata_init()) 
     required_values = c(1),
     advice = paste0(
       'To use ',
-      cli_help("LOD_estimate_ddPCR"), ', you must specify noise = ',
-      cli_help("noise_estimate_ddPCR"), ' in ', cli_help("model_measurements"),
+      cli_help("LOD_estimate_dPCR"), ', you must specify noise = ',
+      cli_help("noise_estimate_dPCR"), ' in ', cli_help("model_measurements"),
       "."
       ),
     modeldata = modeldata
@@ -868,7 +869,7 @@ LOD_estimate_ddPCR <- function(drop_prob = 1e-10, modeldata = modeldata_init()) 
   modeldata$LOD_drop_prob <- drop_prob
 
   modeldata$.str$measurements[["LOD"]] <- list(
-    LOD_estimate_ddPCR = c()
+    LOD_estimate_dPCR = c()
   )
 
   return(modeldata)

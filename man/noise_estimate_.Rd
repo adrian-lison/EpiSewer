@@ -9,13 +9,13 @@ noise_estimate_(
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
   cv_type = "constant",
-  ddPCR_prior_droplets_mu = NULL,
-  ddPCR_prior_droplets_sigma = NULL,
-  ddPCR_droplets_observe = NULL,
-  ddPCR_droplet_variation_prior_mu = NULL,
-  ddPCR_droplet_variation_prior_sigma = NULL,
-  ddPCR_prior_scaling_mu = NULL,
-  ddPCR_prior_scaling_sigma = NULL,
+  total_partitions_prior_mu = NULL,
+  total_partitions_prior_sigma = NULL,
+  total_partitions_observe = NULL,
+  partition_variation_prior_mu = NULL,
+  partition_variation_prior_sigma = NULL,
+  volume_scaled_prior_mu = NULL,
+  volume_scaled_prior_sigma = NULL,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   prePCR_noise_type = "log-normal",
@@ -34,47 +34,46 @@ the CV after the replication stage (see details for more explanation).}
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
 variation of concentration measurements.}
 
-\item{cv_type}{One out of "constant" (default), "constant_var", or "ddPCR".
-If "constant", the coefficient of variation is estimated as a
-constant/single parameter for all observations. If "ddPCR", the coefficient
-of variation is modeled as a function of the expected concentration
-according to the statistical properties of ddPCR. In particular, this model
-predicts a higher coefficient of variation at smaller concentrations, which
-often leads to a better model fit. If "constant_var", not the coefficient
-of variation but the variance of measurements is modeled as constant. This
-is usually a misspecification and is only supported for comparison
-purposes.}
+\item{cv_type}{One out of "constant" (default), "constant_var", or "dPCR". If
+"constant", the coefficient of variation is estimated as a constant/single
+parameter for all observations. If "dPCR", the coefficient of variation is
+modeled as a function of the expected concentration according to the
+statistical properties of dPCR. In particular, this model predicts a higher
+coefficient of variation at smaller concentrations, which often leads to a
+better model fit. If "constant_var", not the coefficient of variation but
+the variance of measurements is modeled as constant. This is usually a
+misspecification and is only supported for comparison purposes.}
 
-\item{ddPCR_prior_droplets_mu}{Prior (mean) on the total number of droplets
-in the ddPCR reaction.}
+\item{total_partitions_prior_mu}{Prior (mean) on the total number of
+partitions in the dPCR reaction.}
 
-\item{ddPCR_prior_droplets_sigma}{Prior (standard deviation) on the total
-number of droplets in the ddPCR reaction. If this is set to zero, the total
-number of droplets will be fixed to the prior mean and not estimated.}
+\item{total_partitions_prior_sigma}{Prior (standard deviation) on the total
+number of partitions in the dPCR reaction. If this is set to zero, the
+total number of partitions will be fixed to the prior mean and not
+estimated.}
 
-\item{ddPCR_droplets_observe}{If TRUE, the number of total droplets is taken
-from the supplied measurements \code{data.frame}. This requires that the
-argument \code{total_droplets_col} is specified in \code{\link[=concentrations_observe]{concentrations_observe()}}.}
+\item{total_partitions_observe}{If TRUE, the total number of partitions is
+taken from the supplied measurements \code{data.frame}. This requires that the
+argument \code{total_partitions_col} is specified in \code{\link[=concentrations_observe]{concentrations_observe()}}.}
 
-\item{ddPCR_droplet_variation_prior_mu}{Prior (mean) on the coefficient of
-variation of the total number of droplets in the ddPCR reaction. Usually,
+\item{partition_variation_prior_mu}{Prior (mean) on the coefficient of
+variation of the total number of partitions in the dPCR reaction. Usually,
 the maximum number of partitions possible for a given dPCR chip is not
 reached, i.e. a certain number of partitions is lost. This loss varies
 between PCR runs, and is modeled as log-normal distributed in EpiSewer.}
 
-\item{ddPCR_droplet_variation_prior_sigma}{Prior (standard deviation) on the
-coefficient of variation of the total number of droplets in the ddPCR
+\item{partition_variation_prior_sigma}{Prior (standard deviation) on the
+coefficient of variation of the total number of partitions in the dPCR
 reaction.}
 
-\item{ddPCR_prior_scaling_mu}{Prior (mean) on the concentration scaling
-factor for the ddPCR reaction. The concentration scaling factor is the
-droplet volume, scaled by the dilution of the wastewater in the ddPCR
-reaction. See details for further explanation.}
+\item{volume_scaled_prior_mu}{Prior (mean) on the conversion factor
+(partition volume scaled by the dilution of wastewater in the assay) for
+the dPCR reaction. See details for further explanation.}
 
-\item{ddPCR_prior_scaling_sigma}{Prior (standard deviation) on the
-concentration scaling factor for the ddPCR reaction. If this is set to
-zero, the concentration scaling factor will be fixed to the prior mean and
-not estimated.}
+\item{volume_scaled_prior_sigma}{Prior (standard deviation) on the conversion
+factor (partition volume scaled by the dilution of wastewater in the assay)
+for the dPCR reaction. If this is set to zero, the conversion factor will
+be fixed to the prior mean and not estimated.}
 
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
 of concentrations \emph{before} the replication stage.}
@@ -86,12 +85,12 @@ coefficient of variation of concentrations \emph{before} the replication stage.}
 before the PCR assay. Currently supported are "log-normal" and "gamma". The
 choice of the parametric distribution typically makes no relevant
 difference for the noise model, but can make a relevant difference for the
-LOD model if \code{\link[=LOD_estimate_ddPCR]{LOD_estimate_ddPCR()}} is used.}
+LOD model if \code{\link[=LOD_estimate_dPCR]{LOD_estimate_dPCR()}} is used.}
 
 \item{use_taylor_approx}{If TRUE (default), a Taylor expansion approximation
 is used to estimate the CV of measurements under pre-PCR noise. The
 approximation is very accurate, unless concentrations are extremely high
-(so high that the quality of the measurements from ddPCR would anyway be
+(so high that the quality of the measurements from dPCR would anyway be
 questionable).}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
@@ -115,8 +114,8 @@ provided, \code{EpiSewer} can also explicitly model variation before the
 replication stage.
 
 This helper function is called from \code{\link[=noise_estimate]{noise_estimate()}} and
-\code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}. \code{\link[=noise_estimate]{noise_estimate()}} is a constant coefficient of
-variation model, \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}} is a noise model specialized for
-digital droplet PCR (\code{cv_type = "ddPCR"}), which may however also work with
-other quantification methods such as qPCR.
+\code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}. \code{\link[=noise_estimate]{noise_estimate()}} is a constant coefficient of
+variation model, \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}} is a noise model specialized for
+digital PCR (\code{cv_type = "dPCR"}), which may however also work with other
+quantification methods such as qPCR.
 }

@@ -21,7 +21,7 @@ Modeling options:
 and lab analysis. Modeling options:
 \itemize{
 \item \code{\link[=noise_estimate]{noise_estimate()}}
-\item \code{\link[=noise_estimate_ddPCR]{noise_estimate_ddPCR()}}
+\item \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}
 \item \code{\link[=noise_estimate_constant_var]{noise_estimate_constant_var()}}
 }}
 
@@ -31,7 +31,7 @@ for the limit of detection using a hurdle model. Modeling options:
 \itemize{
 \item \code{\link[=LOD_none]{LOD_none()}}
 \item \code{\link[=LOD_assume]{LOD_assume()}}
-\item \code{\link[=LOD_estimate_ddPCR]{LOD_estimate_ddPCR()}}
+\item \code{\link[=LOD_estimate_dPCR]{LOD_estimate_dPCR()}}
 }}
 }
 \value{

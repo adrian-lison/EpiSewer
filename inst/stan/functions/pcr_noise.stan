@@ -1,5 +1,5 @@
 /**
-  * Compute coefficient of variation (CV) in ddPCR quantification as a function
+  * Compute coefficient of variation (CV) in dPCR quantification as a function
   * of the concentration (no pre-PCR noise)
   *
   * @param lambda vector with concentrations (typically gc/mlWW)
@@ -15,7 +15,7 @@
   *
   * @return A vector with the corresponding coefficients of variation
   */
-vector cv_ddPCR(vector lambda, vector m, real c, vector n) {
+vector cv_dPCR(vector lambda, vector m, real c, vector n) {
   int N = num_elements(lambda);
   vector[N] total_var = (exp(lambda * c) - 1) ./ (n .* m * c^2);
   vector[N] cv = sqrt(total_var) ./ lambda;
@@ -24,7 +24,7 @@ vector cv_ddPCR(vector lambda, vector m, real c, vector n) {
 
 
 /**
-  * Compute coefficient of variation (CV) in ddPCR quantification as a function
+  * Compute coefficient of variation (CV) in dPCR quantification as a function
   * of the concentration, under pre-PCR noise
   *
   * @param lambda vector with concentrations (typically gc/mlWW)
@@ -44,9 +44,9 @@ vector cv_ddPCR(vector lambda, vector m, real c, vector n) {
   *
   * @return A vector with the corresponding coefficients of variation
   */
-vector cv_ddPCR_pre(vector lambda, real nu_pre, vector m, real c, vector n, int pre_type, int approx_taylor) {
+vector cv_dPCR_pre(vector lambda, real nu_pre, vector m, real c, vector n, int pre_type, int approx_taylor) {
   if (nu_pre == 0) {
-    return cv_ddPCR(lambda, m, c, n);
+    return cv_dPCR(lambda, m, c, n);
   }
   int N = num_elements(lambda);
   vector[N] var_exp = nu_pre^2 * lambda^2;

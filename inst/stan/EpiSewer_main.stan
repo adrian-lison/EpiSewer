@@ -20,7 +20,7 @@ data {
   array[n_measured] int<lower=1, upper=n_samples> measure_to_sample; // index mapping measurements to samples
   vector<lower=0>[n_measured] measured_concentrations; // measured concentrations
   vector<lower=0>[n_measured] n_averaged; // number of averaged technical replicates per measurement (is vector for vectorization)
-  vector<lower=0>[n_measured] ddPCR_total_droplets; // total number of droplets in ddPCR
+  vector<lower=0>[n_measured] dPCR_total_partitions; // total number of partitions in dPCR
   int<lower=1> w; // composite window: how many past days the samples cover, e.g. 1 for individual day samples, 7 for weekly composite samples, ...
   int<lower=1, upper=2> obs_dist; // Parametric distribution for observation likelihood: 1 (default) for truncated normal, 2 for lognormal
 
@@ -37,19 +37,19 @@ data {
   array[pr_noise ? 2 : 0] real nu_psi_prior; // Prior on coefficient of variation for pre-replicate noise
 
   // Coefficient of variation (CV) of measurements ----
-  int<lower=0, upper=2> cv_type; // 0 for constant, 1 for ddPCR, 2 for constant_var
+  int<lower=0, upper=2> cv_type; // 0 for constant, 1 for dPCR, 2 for constant_var
   array[2] real nu_upsilon_a_prior; // prior for pre-PCR CV
-  int<lower=0, upper=1> ddPCR_droplets_observe; // 0 for not observed, 1 for observed
-  array[cv_type == 1 ? 2 : 0] real nu_upsilon_b_mu_prior; // prior for parameter 2 of CV formula (number of droplets). Scaled by 1e-4 for numerical efficiency.
-  array[cv_type == 1 && ddPCR_droplets_observe!=1 ? 2 : 0] real nu_upsilon_b_cv_prior; // prior on droplet number variation (coefficient of variation)
-  array[cv_type == 1 ? 2 : 0] real nu_upsilon_c_prior; // prior for parameter 3 of CV formula (droplet size*(scaling factor, i.e. exp_conc_assay/exp_conc_ww)). Scaled by 1e+5 for numerical efficiency.
+  int<lower=0, upper=1> total_partitions_observe; // 0 for not observed, 1 for observed
+  array[cv_type == 1 ? 2 : 0] real nu_upsilon_b_mu_prior; // prior for parameter 2 of CV formula (number of partitions). Scaled by 1e-4 for numerical efficiency.
+  array[cv_type == 1 && total_partitions_observe!=1 ? 2 : 0] real nu_upsilon_b_cv_prior; // prior on partition number variation (coefficient of variation)
+  array[cv_type == 1 ? 2 : 0] real nu_upsilon_c_prior; // prior for parameter 3 of CV formula (partition size*(scaling factor, i.e. exp_conc_assay/exp_conc_ww)). Scaled by 1e+5 for numerical efficiency.
   array[cv_type == 1 ? 1 : 0] int <lower=0, upper=1> cv_pre_type; // 0 for gamma, 1 for log-normal
   array[cv_type == 1 ? 1 : 0] int <lower=0, upper=1> cv_pre_approx_taylor; // 0 for no Taylor expansion approximation, 1 for Taylor expansion approximation
 
   // Limit of detection ----
   // LOD_model = 0: no LOD
   // LOD_model = 1: assumed LOD, LOD_scale provided
-  // LOD_model = 2: estimated LOD based on ddPCR model, needs ddPCR parameters
+  // LOD_model = 2: estimated LOD based on dPCR model, needs dPCR parameters
   int<lower=0, upper=2> LOD_model;
   array[(LOD_model == 1) ? 1 : 0] real<lower=0> LOD_scale;
   real<lower=0, upper=1> LOD_drop_prob; // probability threshold for non-detection below which log likelihood contributions of observed concentrations are dropped from LOD model
@@ -134,13 +134,13 @@ transformed data {
     n_averaged_all[sample_to_date[measure_to_sample[i]]] = n_averaged[i];
   }
 
-  // number of total droplets per measurement per date
-  real total_droplets_median = quantile(ddPCR_total_droplets, 0.5);
-  vector[T] total_droplets_all = rep_vector(total_droplets_median, T);
+  // number of total partitions per measurement per date
+  real total_partitions_median = quantile(dPCR_total_partitions, 0.5);
+  vector[T] total_partitions_all = rep_vector(total_partitions_median, T);
   for (i in 1:n_measured) {
     // note that if several measurements per sample exist,
-    // the total droplets of the last one will be used for that date
-    total_droplets_all[sample_to_date[measure_to_sample[i]]] = ddPCR_total_droplets[i];
+    // the total partitions of the last one will be used for that date
+    total_partitions_all[sample_to_date[measure_to_sample[i]]] = dPCR_total_partitions[i];
   }
 
   // Upper relevant bound for LOD model
@@ -153,7 +153,7 @@ transformed data {
       LOD_expected_scale = LOD_scale[1];
     } else if (LOD_model == 2) {
       LOD_expected_scale = (
-      (ddPCR_droplets_observe ? total_droplets_median : (nu_upsilon_b_mu_prior[1] * 1e4)) *
+      (total_partitions_observe ? total_partitions_median : (nu_upsilon_b_mu_prior[1] * 1e4)) *
       nu_upsilon_c_prior[1] * 1e-5 *
       n_averaged_median
       );
@@ -223,8 +223,8 @@ parameters {
   vector<multiplier = (pr_noise ? nu_psi[1] : 1)>[pr_noise ? n_samples : 0] psi; // realized concentration before replication stage
   real<lower=0> nu_upsilon_a;
   array[(cv_type == 1) && (nu_upsilon_b_mu_prior[2] > 0) ? 1 : 0] real<lower=0> nu_upsilon_b_mu;
-  array[(cv_type == 1) && ddPCR_droplets_observe!=1 ? 1 : 0] real<lower=0> nu_upsilon_b_cv;
-  vector[(cv_type == 1) && ddPCR_droplets_observe!=1 ? n_measured : 0] nu_upsilon_b_noise_raw;
+  array[(cv_type == 1) && total_partitions_observe!=1 ? 1 : 0] real<lower=0> nu_upsilon_b_cv;
+  vector[(cv_type == 1) && total_partitions_observe!=1 ? n_measured : 0] nu_upsilon_b_noise_raw;
   array[(cv_type == 1) && nu_upsilon_c_prior[2] > 0 ? 1 : 0] real<lower=0> nu_upsilon_c;
 }
 transformed parameters {
@@ -235,7 +235,7 @@ transformed parameters {
   vector[T] pi_log; // log expected daily loads
   vector[T] kappa_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
-  vector<lower=0>[(cv_type == 1) && ddPCR_droplets_observe!=1 ? n_measured : 0] nu_upsilon_b; // total droplets per measurement
+  vector<lower=0>[(cv_type == 1) && total_partitions_observe!=1 ? n_measured : 0] nu_upsilon_b; // total partitions per measurement
   array[LOD_model > 0 ? 1 : 0] vector<lower=0>[n_measured] LOD_hurdle_scale;
 
   if (R_model == 0) {
@@ -321,7 +321,7 @@ transformed parameters {
      }
   }
 
-  if ((cv_type == 1) && ddPCR_droplets_observe!=1) {
+  if ((cv_type == 1) && total_partitions_observe!=1) {
     nu_upsilon_b = total_partitions_noncentered(
       param_or_fixed(nu_upsilon_b_mu, nu_upsilon_b_mu_prior),
       nu_upsilon_b_cv[1],
@@ -335,7 +335,7 @@ transformed parameters {
   } else if (LOD_model == 2) {
     LOD_hurdle_scale[1] = (
     n_averaged .*
-    (ddPCR_droplets_observe ? ddPCR_total_droplets : nu_upsilon_b * 1e4) *
+    (total_partitions_observe ? dPCR_total_partitions : nu_upsilon_b * 1e4) *
      param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5
     );
   }
@@ -394,7 +394,7 @@ model {
   if (cv_type == 1) {
     target += normal_prior_lpdf(nu_upsilon_b_mu | nu_upsilon_b_mu_prior, 0); // truncated normal
     target += normal_prior_lpdf(nu_upsilon_c | nu_upsilon_c_prior, 0); // truncated normal
-    if (ddPCR_droplets_observe != 1) {
+    if (total_partitions_observe != 1) {
       nu_upsilon_b_cv[1] ~ normal(nu_upsilon_b_cv_prior[1], nu_upsilon_b_cv_prior[2]) T[0, ]; // truncated normal
       nu_upsilon_b_noise_raw ~ std_normal();
     }
@@ -440,11 +440,11 @@ model {
     vector[n_measured - n_zero] cv;
     if (cv_type == 0) { // constant cv
       cv = rep_vector(nu_upsilon_a, n_measured - n_zero);
-    } else if (cv_type == 1) { // ddPCR
-      cv = cv_ddPCR_pre(
+    } else if (cv_type == 1) { // dPCR
+      cv = cv_dPCR_pre(
         concentrations_unit[i_nonzero], // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
-        (ddPCR_droplets_observe ? ddPCR_total_droplets[i_nonzero] : nu_upsilon_b[i_nonzero] * 1e4), // m (number of partitions)
+        (total_partitions_observe ? dPCR_total_partitions[i_nonzero] : nu_upsilon_b[i_nonzero] * 1e4), // m (number of partitions)
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5, // c (conversion factor)
         n_averaged[i_nonzero], // n (number of averaged replicates)
         cv_pre_type[1], // Type of pre-PCR CV
@@ -497,7 +497,7 @@ generated quantities {
 
     vector[T] nu_upsilon_b_all;
     vector[T] nu_upsilon_b_all_noise_raw = std_normal_n_rng(T);
-    if (cv_type == 1 && ddPCR_droplets_observe != 1) {
+    if (cv_type == 1 && total_partitions_observe != 1) {
       nu_upsilon_b_all = total_partitions_noncentered(
         param_or_fixed(nu_upsilon_b_mu, nu_upsilon_b_mu_prior),
         nu_upsilon_b_cv[1],
@@ -516,7 +516,7 @@ generated quantities {
       } else if (LOD_model == 2) {
         LOD_hurdle_scale_all = (
         n_averaged_all .*
-        (ddPCR_droplets_observe ? total_droplets_all : nu_upsilon_b_all * 1e4) *
+        (total_partitions_observe ? total_partitions_all : nu_upsilon_b_all * 1e4) *
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5
         );
       }
@@ -535,10 +535,10 @@ generated quantities {
     if (cv_type == 0) {
       cv = rep_vector(nu_upsilon_a, T);
     } else if (cv_type == 1) {
-      cv = cv_ddPCR_pre(
+      cv = cv_dPCR_pre(
         exp_pre_repl, // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
-        (ddPCR_droplets_observe ? total_droplets_all : nu_upsilon_b_all * 1e4), // m (number of partitions)
+        (total_partitions_observe ? total_partitions_all : nu_upsilon_b_all * 1e4), // m (number of partitions)
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5, // c (conversion factor)
         n_averaged_all, // n (number of averaged replicates) for all dates
         cv_pre_type[1], // Type of pre-PCR CV

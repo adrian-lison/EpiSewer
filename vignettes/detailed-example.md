@@ -132,7 +132,7 @@ function for each option. To see all available options, you can use
 
 ``` r
 component_functions("LOD")
-#> [1] "LOD_none()"           "LOD_assume()"         "LOD_estimate_ddPCR()"
+#> [1] "LOD_none()"           "LOD_assume()"         "LOD_estimate_dPCR()"
 ```
 
 For example, we could assume a limit of detection of `2.56 gc/mL` (based

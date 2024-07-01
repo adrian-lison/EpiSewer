@@ -209,7 +209,7 @@ We implement a hurdle model for the limit of detection, where the probability fo
 P(\Upsilon_{t,i} = 0 | \Psi_t = \psi_t) = e^{-\psi_t\, c\, b}
 ```
 
-where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$, and $b$ and $c$ are parameters of the PCR. The PCR parameters are either estimated by the coefficient of variation model (see below, this may require informative priors and/or replicate measurements), or the product $`c\, b`$ can be back-calculated if the user provides an LOD value established from a lab experiment. The functional form of the LOD model is based on the statistical properties of digital droplet PCR and corresponds to a binomial likelihood for zero successes. For non-zero measurements, we conversely have
+where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$, and $b$ and $c$ are parameters of the PCR. The PCR parameters are either estimated by the coefficient of variation model (see below, this may require informative priors and/or replicate measurements), or the product $`c\, b`$ can be back-calculated if the user provides an LOD value established from a lab experiment. The functional form of the LOD model is based on the statistical properties of digital PCR and corresponds to a binomial likelihood for zero successes. For non-zero measurements, we conversely have
 
 ```math
 P(\Upsilon_{t,i} > 0 | \Psi_t = \psi_t) = 1 - P(\Upsilon_t = 0 | \Psi_t = \psi_t)
@@ -221,17 +221,17 @@ Non-zero concentration measurements are modeled as truncated normal distributed,
 ```math
 \Upsilon_{t,i} \,|\, \Upsilon_{t,i} > 0 \, \sim \text{Normal}^+\left(\mu_{\Upsilon_{t}},\, \sigma_{\Upsilon_{t}}^2\right)
 ```
-where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$. Here, $`\mu_{\Upsilon_{t}} = \psi_t`$ is the mean and $`\sigma_{\Upsilon_{t}}^2 = \mu_{\Upsilon_{t}}\, \nu_\Upsilon(\mu_{\Upsilon_{t}})`$ the standard deviation of the truncated Normal distribution. Note that `EpiSewer` also offers a Log-Normal likelihood as an alternative, however based on the properties of ddPCR assays, the truncated Normal should be the better approximation for the true distribution of measurements.
+where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$. Here, $`\mu_{\Upsilon_{t}} = \psi_t`$ is the mean and $`\sigma_{\Upsilon_{t}}^2 = \mu_{\Upsilon_{t}}\, \nu_\Upsilon(\mu_{\Upsilon_{t}})`$ the standard deviation of the truncated Normal distribution. Note that `EpiSewer` also offers a Log-Normal likelihood as an alternative, however based on the properties of dPCR assays, the truncated Normal should be the better approximation for the true distribution of measurements.
 
 Specifically, $\nu_\Upsilon(\mu)$ is the coefficient of variation for the replication stage and modeled as a function of the expected concentration $\mu$:
 ```math
 \nu_\Upsilon(\mu) = \frac{1}{\sqrt{b}}\, \frac{\sqrt{exp(\mu\, c) – 1}}{\mu\, c}\, \sqrt{1 + a^2\, b\, \mu\, c}
 ```
-with $a$, $b$ and $c$ as parameters to be estimated. The functional form is derived from the statistical properties of the binomial-distributed positive droplet counts in the ddPCR reaction, where
+with $a$, $b$ and $c$ as parameters to be estimated. The functional form is derived from the statistical properties of the binomial-distributed positive partition counts in the dPCR reaction, where
 
-- $a=\nu_{\text{pre}}$ represents the coefficient of variation for noise in the concentration before the ddPCR reaction,
-- $b$ represents the average number of droplets in the PCR reaction, and
-- $c$ represents the concentration scaling factor, which is the droplet volume scaled by the dilution of the wastewater in the PCR reaction. Note that here the dilution includes all extraction and preparation steps. For example, if the droplet volume is 4.5e-7 mL and the dilution of the wastewater is 100:3 (i.e. 100 gc/mL in the original wastewater sample correspond to 3 gc/mL in the PCR reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 = 1.5e-5.
+- $a=\nu_{\text{pre}}$ represents the coefficient of variation for noise in the concentration before the dPCR reaction,
+- $b$ represents the average number of partitions in the PCR reaction, and
+- $c$ represents the dPCR conversion factor, which is the partition volume scaled by the dilution of the wastewater in the PCR reaction. This factor converts the wastewater concentration into the expected number of gene copies per partition. Note that here the dilution includes all extraction and preparation steps. For example, if the partition volume is 4.5e-7 mL and the dilution of the wastewater is 100:3 (i.e. 100 gc/mL in the original wastewater sample correspond to 3 gc/mL in the PCR reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 = 1.5e-5.
 
 We place zero-truncated normal priors on $a$, $b$, and $c$, respectively.
 
