@@ -280,6 +280,14 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #' @param include_noise If `TRUE` (default), concentrations including
 #'   measurement noise are shown. If `FALSE`, only the expected concentrations
 #'   are shown.
+#' @param forecast Should forecasted concentrations be shown? Default is true.
+#'   This requires that the model was fitted with a forecast horizon, see
+#'   [model_forecast()]. Because concentrations depend on the flow volume,
+#'   accurate concentration forecasts are only possible if flow values beyond
+#'   the estimation date are provided. This is typically only possible when
+#'   estimating retrospectively. If flow values beyond the estimation date are
+#'   not available, the forecasted concentrations will be based on the median
+#'   flow volume.
 #' @param mark_outliers If `TRUE`, outliers in the `measurements` are
 #'   highlighted in red. See also argument `outlier_col` below.
 #' @param concentration_col Name of the column in the measurements `data.frame`
@@ -288,6 +296,9 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #' @param outlier_col Name of a logical column in the measurements `data.frame`
 #'   which identifies outlier measurements (for example added by
 #'   [mark_outlier_spikes_median()]).
+#' @param date_margin_right By how many days into the future should the plot be
+#'   expanded? Can also be negative to cut off some of the latest dates. By
+#'   default, this is 1 to improve the visibility of the latest date.
 #' @param type If "time" (default), the concentration time series is plotted. If
 #'   "pp_check", the observations are ordered by concentration and plotted
 #'   against the predicted concentration (useful for posterior predictive
@@ -305,9 +316,10 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   and scales, and to add further geoms.
 #' @export
 plot_concentration <- function(results = NULL, measurements = NULL,
-                               include_noise = TRUE, median = FALSE,
+                               include_noise = TRUE, forecast = TRUE,
+                               median = FALSE,
                                mark_outliers = FALSE,
-                               date_margin_left = 0, date_margin_right = 0,
+                               date_margin_left = 0, date_margin_right = 1,
                                facet_models = FALSE,
                                base_model = "", model_levels = NULL,
                                concentration_col = "concentration",
@@ -381,17 +393,16 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     }
   }
 
-  if (is.null(measurements)) {
+  if (!forecast) {
+    concentration_pred <- concentration_pred[type == "estimate",]
+  }
+
+  if (!is.null(concentration_pred)) {
     first_date <- as.Date(min(concentration_pred$date))
     last_date <- as.Date(max(concentration_pred$date))
   } else {
-    if (!is.null(concentration_pred)) {
-    first_date <- as.Date(max(min(measurements$date), min(concentration_pred$date)))
-    last_date <-  as.Date(min(max(measurements$date), max(concentration_pred$date)))
-    } else {
-      first_date <-  as.Date(min(measurements$date))
-      last_date <-  as.Date(max(measurements$date))
-    }
+    first_date <-  as.Date(min(measurements$date))
+    last_date <-  as.Date(max(measurements$date))
   }
   first_date <- first_date - date_margin_left
   last_date <- last_date + date_margin_right
@@ -448,6 +459,8 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     ,setdiff(names(concentration_pred_base_model), "model"), with = FALSE
     ]
 
+  has_forecast <- "forecast" %in% concentration_pred$type
+
   if (type == "time") {
     plot <- ggplot(data.frame(), aes(x = date)) +
       {
@@ -462,7 +475,28 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       {
         if (!is.null(concentration_pred) && base_model!="") {
           geom_ribbon(
-            data = concentration_pred_base_model,
+            data = concentration_pred_base_model[type == "estimate",],
+            aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, fill = "black"
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && base_model!="" && has_forecast) {
+          ggpattern::geom_ribbon_pattern(
+            data = rbind(
+              tail(concentration_pred_base_model[type == "estimate",],1),
+              head(concentration_pred_base_model[type == "forecast",],1)
+              ),
+            aes(ymin = lower_0.95, ymax = upper_0.95), pattern_fill = "black",
+            pattern_alpha = 0.3, pattern = 'crosshatch',
+            pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && base_model!="" && has_forecast) {
+          geom_ribbon(
+            data = concentration_pred_base_model[type == "forecast",],
             aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, fill = "black"
           )
         }
@@ -470,7 +504,28 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       {
         if (!is.null(concentration_pred)) {
           geom_ribbon(
-            data = concentration_pred[concentration_pred$model!=base_model, ],
+            data = concentration_pred[model!=base_model & type == "estimate", ],
+            aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && has_forecast) {
+          ggpattern::geom_ribbon_pattern(
+            data = rbind(
+              tail(concentration_pred[model!=base_model & type == "estimate",],1),
+              head(concentration_pred[model!=base_model & type == "forecast",],1)
+            ),
+            aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model),
+            pattern_alpha = 0.3, pattern = 'crosshatch',
+            pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && has_forecast) {
+          geom_ribbon(
+            data = concentration_pred[model!=base_model & type == "forecast", ],
             aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
           )
         }
@@ -478,7 +533,15 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       {
         if (!is.null(concentration_pred) && base_model!="") {
           geom_ribbon(
-            data = concentration_pred_base_model,
+            data = concentration_pred_base_model[type == "estimate",],
+            aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.2, fill = "black"
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && base_model!="" && has_forecast) {
+          geom_ribbon(
+            data = concentration_pred_base_model[type == "forecast",],
             aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.2, fill = "black"
           )
         }
@@ -486,7 +549,15 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       {
         if (!is.null(concentration_pred)) {
           geom_ribbon(
-            data = concentration_pred[concentration_pred$model!=base_model, ],
+            data = concentration_pred[model!=base_model & type == "estimate", ],
+            aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
+          )
+        }
+      } +
+      {
+        if (!is.null(concentration_pred) && has_forecast) {
+          geom_ribbon(
+            data = concentration_pred[model!=base_model & type == "forecast", ],
             aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
           )
         }
@@ -520,7 +591,15 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       {
         if (median && !is.null(concentration_pred) && base_model!="") {
           geom_line(
-            data = concentration_pred_base_model,
+            data = concentration_pred_base_model[type == "estimate"],
+            aes(y = median), color = "black"
+          )
+        }
+      } +
+      {
+        if (median && !is.null(concentration_pred) && base_model!="" && has_forecast) {
+          geom_line(
+            data = concentration_pred_base_model[type == "forecast",],
             aes(y = median), color = "black"
           )
         }
@@ -528,7 +607,15 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       {
         if (median && !is.null(concentration_pred)) {
           geom_line(
-            data = concentration_pred[concentration_pred$model!=base_model, ],
+            data = concentration_pred[model!=base_model & type == "estimate", ],
+            aes(y = median, color = model)
+          )
+        }
+      } +
+      {
+        if (median && !is.null(concentration_pred) && has_forecast) {
+          geom_line(
+            data = concentration_pred[model!=base_model & type == "forecast", ],
             aes(y = median, color = model)
           )
         }
@@ -540,7 +627,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       ) +
       xlab("Date") +
       ylab("Concentration [gene copies / mL]") +
-      coord_cartesian(xlim = as.Date(c(first_date, last_date+1)))
+      coord_cartesian(xlim = as.Date(c(first_date, last_date)))
   }
 
   if (type == "pp_check") {

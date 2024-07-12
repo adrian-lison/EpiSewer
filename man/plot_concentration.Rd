@@ -8,10 +8,11 @@ plot_concentration(
   results = NULL,
   measurements = NULL,
   include_noise = TRUE,
+  forecast = TRUE,
   median = FALSE,
   mark_outliers = FALSE,
   date_margin_left = 0,
-  date_margin_right = 0,
+  date_margin_right = 1,
   facet_models = FALSE,
   base_model = "",
   model_levels = NULL,
@@ -35,6 +36,15 @@ measurements are plotted.}
 measurement noise are shown. If \code{FALSE}, only the expected concentrations
 are shown.}
 
+\item{forecast}{Should forecasted concentrations be shown? Default is true.
+This requires that the model was fitted with a forecast horizon, see
+\code{\link[=model_forecast]{model_forecast()}}. Because concentrations depend on the flow volume,
+accurate concentration forecasts are only possible if flow values beyond
+the estimation date are provided. This is typically only possible when
+estimating retrospectively. If flow values beyond the estimation date are
+not available, the forecasted concentrations will be based on the median
+flow volume.}
+
 \item{median}{Should the estimated median be shown, or only the credible
 intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
 
@@ -45,7 +55,8 @@ highlighted in red. See also argument \code{outlier_col} below.}
 expanded? Can also be negative to cut off some of the earliest dates.}
 
 \item{date_margin_right}{By how many days into the future should the plot be
-expanded? Can also be negative to cut off some of the latest dates.}
+expanded? Can also be negative to cut off some of the latest dates. By
+default, this is 1 to improve the visibility of the latest date.}
 
 \item{facet_models}{Should the plot be faceted by model? Default is \code{FALSE}.}
 
