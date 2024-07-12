@@ -14,6 +14,7 @@ functions {
 data {
   // Measurements ----
   int<lower=0> T; // number of total days in measured time span
+  int<lower=0> h; // number of days to forecast
   int<lower=0> n_samples; // number of samples from different dates
   int<lower=0> n_measured; // number of different measurements (including replicates)
   array[n_samples] int<lower=1, upper=T> sample_to_date; // index mapping samples to dates
@@ -29,7 +30,7 @@ data {
 
   // Sample date effects model ----
   int<lower=0> K; // number of sample date predictors
-  matrix[T, K] X; // sample date predictor design matrix
+  matrix[T+h, K] X; // sample date predictor design matrix
   array[K > 0 ? 2 : 0] real eta_prior; // prior for sample date effects
 
   // Pre-replicate noise ----
@@ -124,10 +125,11 @@ transformed data {
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T] flow_log = log(flow);
+  real flow_median_log = log(quantile(flow, 0.5));
 
   // number of averaged technical replicates per date
   real n_averaged_median = quantile(n_averaged, 0.5);
-  vector[T] n_averaged_all = rep_vector(n_averaged_median, T);
+  vector[T+h] n_averaged_all = rep_vector(n_averaged_median, T+h);
   for (i in 1:n_measured) {
     // note that if several measurements per sample exist,
     // the number of replicates of the last one will be used for that date
@@ -136,7 +138,7 @@ transformed data {
 
   // number of total partitions per measurement per date
   real total_partitions_median = quantile(dPCR_total_partitions, 0.5);
-  vector[T] total_partitions_all = rep_vector(total_partitions_median, T);
+  vector[T+h] total_partitions_all = rep_vector(total_partitions_median, T+h);
   for (i in 1:n_measured) {
     // note that if several measurements per sample exist,
     // the total partitions of the last one will be used for that date
@@ -232,6 +234,7 @@ transformed parameters {
   vector[L + S + D + T] iota; // expected number of infections
   vector[S + D + T] lambda; // expected number of shedding onsets
   vector<lower = 0>[load_vari ? S + D + T : 0] zeta; // realized shedding load
+  vector[D + T] omega_log;
   vector[T] pi_log; // log expected daily loads
   vector[T] kappa_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
@@ -276,7 +279,6 @@ transformed parameters {
   lambda = convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + D + T)];
 
   // calculation of total loads shed each day (expected)
-  vector[D + T] omega_log;
   if (load_vari) {
     zeta = softplus(gamma_sum_approx(nu_zeta[1], lambda, zeta_raw), 10); // softplus as soft >0 constraint
     omega_log = log_convolve(
@@ -303,7 +305,7 @@ transformed parameters {
   // calculation of concentrations at measurement site by day (expected)
   // --> adjusted for flow and for date of sample effects
   if (K > 0) {
-    kappa_log = pi_log - flow_log + X * eta;
+    kappa_log = pi_log - flow_log + X[1:T] * eta;
   } else {
     kappa_log = pi_log - flow_log;
   }
@@ -482,41 +484,137 @@ generated quantities {
   // note that we here assume the same measurement variance as from composite samples,
   // which may be smaller than that of hypothetical daily measurements
   vector[T] predicted_concentration;
+  vector[h] predicted_concentration_forecast;
+  vector[h] R_forecast;
+  vector[h] iota_forecast;
+  vector[h] I_forecast;
+  vector[h] lambda_forecast;
+  vector[h] omega_log_forecast;
+  vector[h] pi_log_forecast;
+  vector[h] kappa_log_forecast;
   {
-    vector[T] pre_repl;
-    vector[T] exp_pre_repl;
-    vector[T] cv;
-    vector[T] above_LOD; // will be a vector of 0s and 1s
+    vector[T+h] pre_repl;
+    vector[T+h] exp_pre_repl;
+    vector[T+h] cv;
+    vector[T+h] above_LOD; // will be a vector of 0s and 1s
+
+    // Forecasting
+    if (h>0) {
+      // Forecasting of R
+      if (R_model == 0) {
+        // Innovations state space process implementing exponential smoothing
+        R_forecast = apply_link(holt_damped_process(
+          [R_level_start[1], R_trend_start[1]]',
+          param_or_fixed(ets_alpha, ets_alpha_prior),
+          param_or_fixed(ets_beta, ets_beta_prior),
+          param_or_fixed(ets_phi, ets_phi_prior),
+          append_row(R_noise, to_vector(normal_rng(rep_vector(0, h), R_sd[1]))),
+          ets_diff[1]
+        ), R_link)[((L + S + D + T - G) + 1):((L + S + D + T - G) + h)];
+      } else if (R_model == 1) {
+        // Current solution for smoothing splines is to use a simple random walk for forecasting
+         R_forecast = apply_link(random_walk(
+          [R[L + S + D + T - G]]',
+          to_vector(std_normal_n_rng(h)) * bs_coeff_ar_sd[1],
+          0
+        ), R_link)[2:(h+1)];
+      }
+
+      // Forecasting of infections
+      if (I_sample) {
+        array[2] vector[G+h] forecast_tmp;
+        forecast_tmp = renewal_process_stochastic_noncentered(
+          h, R_forecast, G, gi_rev,
+          append_row(iota[((L + S + D + T)+1-G):(L + S + D + T)], rep_vector(0, h)),
+          to_vector(std_normal_n_rng(G+h)),
+          I_overdispersion ? param_or_fixed(I_xi, I_xi_prior) : 0
+          );
+        iota_forecast = forecast_tmp[1][(G+1):(G+h)];
+        I_forecast = forecast_tmp[2][(G+1):(G+h)];
+      } else {
+        iota_forecast = renewal_process_deterministic(
+          h, R_forecast, G, gi_rev, append_row(iota[((L + S + D + T)+1-G):(L + S + D + T)], rep_vector(0, h))
+          );
+        I_forecast = iota_forecast;
+      }
+
+      // Forecasting of symptom onsets
+      lambda_forecast = convolve(
+        inc_rev, append_row((I_sample ? I : iota)[((L + S + D + T)+1-L):(L + S + D + T)], I_forecast)
+        )[(L+1):(L+h)];
+
+      // Forecasting of total loads
+      if (load_vari) {
+        vector[h] zeta_forecast = softplus(gamma_sum_approx(
+          nu_zeta[1],
+          lambda_forecast,
+          to_vector(std_normal_n_rng(h))
+          ), 10); // softplus as soft >0 constraint
+        omega_log_forecast = log_convolve(
+            shed_rev_log, // shedding load distribution
+            log(load_mean) + log(append_row(zeta[((S + D + T)+1-S):(S + D + T)], zeta_forecast)) // total load shed
+            )[(S+1):(S+h)];
+      } else {
+        omega_log_forecast = log_convolve(
+            shed_rev_log, // shedding load distribution
+            log(load_mean) + log(append_row(lambda[((S + D + T)+1-S):(S + D + T)], lambda_forecast)) // total load shed
+            )[(S+1):(S+h)];
+      }
+
+      // Forecasting of total loads at sampling site (expected)
+      if (D>0) {
+        pi_log_forecast = log_convolve(
+          residence_rev_log, // residence time distribution
+          append_row(omega_log[((D + T)+1-D):(D + T)], omega_log_forecast)
+          )[(D+1):(D+h)];
+      } else {
+        pi_log_forecast = omega_log_forecast;
+      }
+
+      // Forecasting of concentrations at measurement site by day (expected)
+      // --> adjusted for flow and for date of sample effects
+      if (K > 0) {
+        kappa_log_forecast = pi_log_forecast - flow_median_log + X[(T+1):(T+h)] * eta;
+      } else {
+        kappa_log_forecast = pi_log_forecast - flow_median_log;
+      }
+    }
+
     if (pr_noise) {
-      pre_repl = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
+      pre_repl[1:T] = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
+      pre_repl[(T+1):(T+h)] = to_vector(lognormal_log_rng(kappa_log_forecast, nu_psi[1]));
     } else {
-      pre_repl = kappa_log;
+      pre_repl[1:T] = kappa_log;
+      pre_repl[(T+1):(T+h)] = kappa_log_forecast;
     }
 
     exp_pre_repl = exp(pre_repl);
 
-    vector[T] nu_upsilon_b_all;
-    vector[T] nu_upsilon_b_all_noise_raw = std_normal_n_rng(T);
-    if (cv_type == 1 && total_partitions_observe != 1) {
-      nu_upsilon_b_all = total_partitions_noncentered(
-        param_or_fixed(nu_upsilon_b_mu, nu_upsilon_b_mu_prior),
-        nu_upsilon_b_cv[1],
-        nu_upsilon_b_all_noise_raw
-        );
-      for (i in 1:n_measured) {
-        nu_upsilon_b_all[sample_to_date[measure_to_sample[i]]] = nu_upsilon_b[i];
+    vector[T+h] nu_upsilon_b_all;
+    if (cv_type == 1) {
+      if (total_partitions_observe == 1) {
+        nu_upsilon_b_all = total_partitions_all / 1e4;
+      } else {
+        nu_upsilon_b_all = total_partitions_noncentered(
+          param_or_fixed(nu_upsilon_b_mu, nu_upsilon_b_mu_prior),
+          nu_upsilon_b_cv[1],
+          std_normal_n_rng(T+h)
+          );
+        for (i in 1:n_measured) {
+          nu_upsilon_b_all[sample_to_date[measure_to_sample[i]]] = nu_upsilon_b[i];
+        }
       }
     }
 
     if (LOD_model > 0) {
-      vector[T] LOD_hurdle_scale_all;
+      vector[T+h] LOD_hurdle_scale_all;
       // scale for LOD hurdle model
       if (LOD_model == 1) {
-        LOD_hurdle_scale_all = rep_vector(LOD_scale[1], T);
+        LOD_hurdle_scale_all = rep_vector(LOD_scale[1], T+h);
       } else if (LOD_model == 2) {
         LOD_hurdle_scale_all = (
         n_averaged_all .*
-        (total_partitions_observe ? total_partitions_all : nu_upsilon_b_all * 1e4) *
+        nu_upsilon_b_all * 1e4 *
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5
         );
       }
@@ -529,16 +627,16 @@ generated quantities {
           ))
           ));
     } else {
-      above_LOD = rep_vector(1, T);
+      above_LOD = rep_vector(1, T+h);
     }
 
     if (cv_type == 0) {
-      cv = rep_vector(nu_upsilon_a, T);
+      cv = rep_vector(nu_upsilon_a, T+h);
     } else if (cv_type == 1) {
       cv = cv_dPCR_pre(
         exp_pre_repl, // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
-        (total_partitions_observe ? total_partitions_all : nu_upsilon_b_all * 1e4), // m (number of partitions)
+        nu_upsilon_b_all * 1e4, // m (number of partitions)
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5, // c (conversion factor)
         n_averaged_all, // n (number of averaged replicates) for all dates
         cv_pre_type[1], // Type of pre-PCR CV
@@ -551,7 +649,7 @@ generated quantities {
         );
     }
 
-    vector[T] meas_conc;
+    vector[T+h] meas_conc;
     if (obs_dist == 1) {
       meas_conc = normal2_lb_rng(exp_pre_repl, cv, 0);
     }
@@ -560,6 +658,7 @@ generated quantities {
     } else {
       reject("Distribution not supported.");
     }
-    predicted_concentration = above_LOD .* meas_conc;
+    predicted_concentration = above_LOD[1:T] .* meas_conc[1:T];
+    predicted_concentration_forecast = above_LOD[(T+1):(T+h)] .* meas_conc[(T+1):(T+h)];
   }
 }
