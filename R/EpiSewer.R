@@ -48,10 +48,11 @@ EpiSewer <- function(
     sewage = model_sewage(),
     shedding = model_shedding(),
     infections = model_infections(),
+    forecast = model_forecast(),
     fit_opts = set_fit_opts(),
     run_fit = TRUE) {
   modeldata <- modeldata_combine(
-    measurements, sampling, sewage, shedding, infections
+    measurements, sampling, sewage, shedding, infections, forecast
   )
 
   modeldata <- modeldata_validate(
