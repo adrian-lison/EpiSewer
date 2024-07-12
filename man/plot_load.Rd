@@ -7,6 +7,7 @@
 plot_load(
   results,
   median = FALSE,
+  forecast = TRUE,
   date_margin_left = 0,
   date_margin_right = 0,
   facet_models = FALSE,
@@ -21,6 +22,10 @@ case all results are plotted together and distinguished by colors.}
 
 \item{median}{Should the estimated median be shown, or only the credible
 intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
+
+\item{forecast}{Should forecasted loads be shown? Default is true. This
+requires that the model was fitted with a forecast horizon, see
+\code{\link[=model_forecast]{model_forecast()}}.}
 
 \item{date_margin_left}{By how many days into the past should the plot be
 expanded? Can also be negative to cut off some of the earliest dates.}

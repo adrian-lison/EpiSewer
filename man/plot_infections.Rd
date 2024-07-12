@@ -8,9 +8,9 @@ plot_infections(
   results,
   draws = FALSE,
   ndraws = NULL,
-  seeding = FALSE,
-  forecast = TRUE,
   median = FALSE,
+  forecast = TRUE,
+  seeding = FALSE,
   date_margin_left = 0,
   date_margin_right = 0,
   facet_models = FALSE,
@@ -29,15 +29,15 @@ plot" style.}
 
 \item{ndraws}{Number of different samples to show if \code{draws=TRUE}.}
 
-\item{seeding}{Should infections from the seeding phase be shown as well?
-Default is \code{FALSE}.}
+\item{median}{Should the estimated median be shown, or only the credible
+intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
 
 \item{forecast}{Should forecasted infections be shown? Default is true. This
 requires that the model was fitted with a forecast horizon, see
 \code{\link[=model_forecast]{model_forecast()}}.}
 
-\item{median}{Should the estimated median be shown, or only the credible
-intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
+\item{seeding}{Should infections from the seeding phase be shown as well?
+Default is \code{FALSE}.}
 
 \item{date_margin_left}{By how many days into the past should the plot be
 expanded? Can also be negative to cut off some of the earliest dates.}
