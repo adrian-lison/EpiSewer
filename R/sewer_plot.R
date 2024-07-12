@@ -12,6 +12,9 @@
 #' @param ndraws Number of different samples to show if `draws=TRUE`.
 #' @param seeding Should infections from the seeding phase be shown as well?
 #'   Default is `FALSE`.
+#' @param forecast Should forecasted infections be shown? Default is true. This
+#'   requires that the model was fitted with a forecast horizon, see
+#'   [model_forecast()].
 #' @param median Should the estimated median be shown, or only the credible
 #'   intervals? Default is `FALSE` to avoid over-interpretation of the median.
 #' @param date_margin_left By how many days into the past should the plot be
@@ -33,7 +36,7 @@
 #' @export
 #' @import ggplot2
 plot_infections <- function(results, draws = FALSE, ndraws = NULL,
-                            seeding = FALSE, median = FALSE,
+                            seeding = FALSE, forecast = TRUE, median = FALSE,
                             date_margin_left = 0, date_margin_right = 0,
                             facet_models = FALSE,
                             base_model = "", model_levels = NULL) {
@@ -58,11 +61,17 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
   }
 
+  if (!forecast) {
+    data_to_plot <- data_to_plot[type == "estimate",]
+  }
+
   ymin <- quantile(data_to_plot$lower_0.95, probs = 0.01, na.rm = T)
   ymax <- quantile(data_to_plot$upper_0.95, probs = 0.99, na.rm = T)
 
   xmin <- as.Date(min(data_to_plot$date, na.rm = T)) - date_margin_left
   xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
+
+  has_forecast <- "forecast" %in% data_to_plot$type
 
   plot <- ggplot(data_to_plot[data_to_plot$model!=base_model,],
                  aes(x = date)) +
@@ -96,35 +105,102 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
       geom_line(aes(y = I, group = paste0(.draw, model), color = model), size = 0.1, alpha = 0.9)
   } else {
     plot <- plot +
-    { if (base_model!="") {
+    {
+      if (base_model!="") {
       geom_ribbon(
-        data = data_base_model,
+        data = data_base_model[type == "estimate",],
         aes(ymin = lower_0.95, ymax = upper_0.95),
         alpha = 0.2, color = NA, fill = "black"
       )
-    }
+      }
     } +
-      geom_ribbon(
-        aes(ymin = lower_0.95, ymax = upper_0.95, fill = model),
-        alpha = 0.2, color = NA
-      ) +
-      { if (base_model!="") {
+    {
+      if (base_model!="" && has_forecast) {
+        ggpattern::geom_ribbon_pattern(
+          data = rbind(
+            tail(data_base_model[type == "estimate",],1),
+            head(data_base_model[type == "forecast",],1)
+          ),
+          aes(ymin = lower_0.95, ymax = upper_0.95), pattern_fill = "black",
+          pattern_alpha = 0.3, pattern = 'crosshatch',
+          pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
+        )
+      }
+    } +
+    {
+      if (base_model!="" && has_forecast) {
         geom_ribbon(
-          data = data_base_model,
+          data = data_base_model[type == "forecast",],
+          aes(ymin = lower_0.95, ymax = upper_0.95),
+          alpha = 0.2, color = NA, fill = "black"
+        )
+      }
+    } +
+    geom_ribbon(
+      data = data_to_plot[type == "estimate",],
+      aes(ymin = lower_0.95, ymax = upper_0.95, fill = model),
+      alpha = 0.2, color = NA
+    ) +
+    {
+      if (has_forecast) {
+        ggpattern::geom_ribbon_pattern(
+          data = rbind(
+            tail(data_to_plot[type == "estimate",],1),
+            head(data_to_plot[type == "forecast",],1)
+          ),
+          aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model),
+          pattern_alpha = 0.3, pattern = 'crosshatch',
+          pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
+        )
+      }
+    } +
+    {
+      if (has_forecast) {
+        geom_ribbon(
+          data = data_to_plot[type == "forecast",],
+          aes(ymin = lower_0.95, ymax = upper_0.95, fill = model),
+          alpha = 0.2, color = NA
+        )
+      }
+    } +
+    {
+      if (base_model!="") {
+        geom_ribbon(
+          data = data_base_model[type == "estimate",],
           aes(ymin = lower_0.5, ymax = upper_0.5),
           alpha = 0.4, color = NA, fill = "black"
         )
       }
-      } +
-      geom_ribbon(
-        aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
-        alpha = 0.4, color = NA
-      ) + {
-        if (median && (base_model!="")) geom_line(data = data_base_model, aes(y = median), color = "black")
-      } +
-      {
-        if (median) geom_line(aes(y = median, color = model))
+    } +
+    {
+      if (base_model!="" && has_forecast) {
+        geom_ribbon(
+          data = data_base_model[type == "forecast",],
+          aes(ymin = lower_0.5, ymax = upper_0.5),
+          alpha = 0.4, color = NA, fill = "black"
+        )
       }
+    } +
+    geom_ribbon(
+      data = data_to_plot[type == "estimate",],
+      aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
+      alpha = 0.4, color = NA
+    ) +
+    {
+      if (has_forecast) {
+        geom_ribbon(
+          data = data_to_plot[type == "forecast",],
+          aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
+          alpha = 0.4, color = NA
+        )
+      }
+    } +
+    {
+      if (median && (base_model!="")) geom_line(data = data_base_model, aes(y = median), color = "black")
+    } +
+    {
+      if (median) geom_line(aes(y = median, color = model))
+    }
   }
   if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
