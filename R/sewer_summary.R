@@ -72,6 +72,8 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
   summary[["R"]] <- get_summary_1d_date(
     fit, "R",
     T_shift = T_shift_R, .metainfo = .metainfo,
+    var_forecast = "R_forecast",
+    h_forecast = .metainfo$forecast_horizon,
     intervals = c(0.5, 0.95)
   )
   summary[["R"]]$seeding <- FALSE
@@ -87,6 +89,8 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
   summary[["expected_infections"]] <- get_summary_1d_date(
     fit, "iota",
     T_shift = T_shift_latent, .metainfo = .metainfo,
+    var_forecast = "iota_forecast",
+    h_forecast = .metainfo$forecast_horizon,
     intervals = c(0.5, 0.95)
   )
   summary[["expected_infections"]]$seeding <- FALSE
@@ -105,6 +109,8 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
     summary[["infections"]] <- get_summary_1d_date(
       fit, "I",
       T_shift = T_shift_latent, .metainfo = .metainfo,
+      var_forecast = "I_forecast",
+      h_forecast = .metainfo$forecast_horizon,
       intervals = c(0.5, 0.95)
     )
     summary[["infections"]]$seeding <- FALSE
@@ -129,18 +135,24 @@ summarize_fit <- function(fit, data, .metainfo, ndraws = 50) {
   summary[["expected_load"]] <- get_summary_1d_date_log(
     fit, "pi_log",
     T_shift = T_shift_load, .metainfo = .metainfo,
+    var_forecast = "pi_log_forecast",
+    h_forecast = .metainfo$forecast_horizon,
     intervals = c(0.5, 0.95)
   )
 
   summary[["expected_concentration"]] <- get_summary_1d_date_log(
     fit, "kappa_log",
     T_shift = T_shift_load, .metainfo = .metainfo,
+    var_forecast = "kappa_log_forecast",
+    h_forecast = .metainfo$forecast_horizon,
     intervals = c(0.5, 0.95)
   )
 
   summary[["concentration"]] <- get_summary_1d_date(
     fit, "predicted_concentration",
     T_shift = T_shift_load, .metainfo = .metainfo,
+    var_forecast = "predicted_concentration_forecast",
+    h_forecast = .metainfo$forecast_horizon,
     intervals = c(0.5, 0.95)
   )
 

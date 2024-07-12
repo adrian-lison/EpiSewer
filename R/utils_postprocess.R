@@ -25,52 +25,92 @@ map_dates_1d_df <- function(fit_summary, date_mapping) {
   return(fit_summary)
 }
 
+# T_shift: how much does the variable lead or lag the time from 1:T?
 get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
+                                var_forecast = NULL, h_forecast = 0,
                                 intervals = c(0.5, 0.95)) {
-  # T_shift: how much does the variable lead or lag the time from 1:T?
   date_mapping <- seq.Date(
     .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
     by = "1 day"
   )
-  var_summary <- map_dates_1d_df(fit$summary(var,
-    mean = function(x) mean(x, na.rm = TRUE),
-    median = function(x) median(x, na.rm = TRUE),
-    function(x) {
-      setNames(
-        quantile(x, (1 - rev(intervals)) / 2, na.rm = TRUE), paste0("lower_", rev(intervals))
-      )
-    },
-    function(x) {
-      setNames(
-        quantile(x, (1 + intervals) / 2, na.rm = TRUE), paste0("upper_", intervals)
-      )
-    }
-  ), date_mapping)
+  date_mapping_forecast <- seq.Date(
+    .metainfo$T_end_date + min(1,h_forecast), .metainfo$T_end_date + h_forecast,
+    by = "1 day"
+  )
+
+  var_summary <- rbindlist(mapply(function(variable, dates, type) {
+    if (is.null(variable)) {return(NULL)}
+    var_summary <- fit$summary(
+      variable,
+      mean = function(x) mean(x, na.rm = TRUE),
+      median = function(x) median(x, na.rm = TRUE),
+      function(x) {
+        setNames(
+          quantile(x, (1 - rev(intervals)) / 2, na.rm = TRUE), paste0("lower_", rev(intervals))
+        )
+      },
+      function(x) {
+        setNames(
+          quantile(x, (1 + intervals) / 2, na.rm = TRUE), paste0("upper_", intervals)
+        )
+      }
+    )
+    var_summary <- map_dates_1d_df(var_summary, dates)
+    var_summary[, type := type]
+  },
+  variable = list(var, var_forecast),
+  dates = list(date_mapping, date_mapping_forecast),
+  type = list(
+    factor("estimate", levels = c("estimate", "forecast")),
+    factor("forecast", levels = c("estimate", "forecast"))
+  ),
+  SIMPLIFY = FALSE
+  ))
   setDT(var_summary)
   return(var_summary)
 }
 
+# T_shift: how much does the variable lead or lag the time from 1:T?
 get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo,
+                                    var_forecast = NULL, h_forecast = 0,
                                     intervals = c(0.5, 0.95)) {
-  # T_shift: how much does the variable lead or lag the time from 1:T?
   date_mapping <- seq.Date(
     .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
     by = "1 day"
   )
-  var_summary <- map_dates_1d_df(fit$summary(var,
-    mean = function(x) mean(exp(x), na.rm = TRUE),
-    median = function(x) median(exp(x), na.rm = TRUE),
-    function(x) {
-      setNames(
-        quantile(exp(x), (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
-      )
-    },
-    function(x) {
-      setNames(
-        quantile(exp(x), (1 + intervals) / 2), paste0("upper_", intervals)
-      )
-    }
-  ), date_mapping)
+  date_mapping_forecast <- seq.Date(
+    .metainfo$T_end_date + min(1,h_forecast), .metainfo$T_end_date + h_forecast,
+    by = "1 day"
+  )
+
+  var_summary <- rbindlist(mapply(function(variable, dates, type) {
+    if (is.null(variable)) {return(NULL)}
+    var_summary <- fit$summary(
+      variable,
+      mean = function(x) mean(exp(x), na.rm = TRUE),
+      median = function(x) median(exp(x), na.rm = TRUE),
+      function(x) {
+        setNames(
+          quantile(exp(x), (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
+        )
+      },
+      function(x) {
+        setNames(
+          quantile(exp(x), (1 + intervals) / 2), paste0("upper_", intervals)
+        )
+      }
+    )
+    var_summary <- map_dates_1d_df(var_summary, dates)
+    var_summary[, type := type]
+  },
+  variable = list(var, var_forecast),
+  dates = list(date_mapping, date_mapping_forecast),
+  type = list(
+    factor("estimate", levels = c("estimate", "forecast")),
+    factor("forecast", levels = c("estimate", "forecast"))
+  ),
+  SIMPLIFY = FALSE
+  ))
   setDT(var_summary)
   return(var_summary)
 }
