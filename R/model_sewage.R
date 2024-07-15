@@ -60,12 +60,16 @@ flows_assume <- function(
       all_dates <-
         seq.Date(
           modeldata$.metainfo$T_start_date,
-          modeldata$.metainfo$T_end_date,
+          modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
           by = "1 day"
         )
       modeldata$flow <- rep(flow_constant, length(all_dates))
     },
-    required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
+    required = c(
+      ".metainfo$T_start_date",
+      ".metainfo$T_end_date",
+      ".metainfo$forecast_horizon"
+      ),
     modeldata = modeldata
   )
 
@@ -116,9 +120,12 @@ flows_observe <-
           )
         }
 
-        flows[[date_col]] <- as.Date(flows[[date_col]])
+        flows <- as.data.table(flows)
+        flows <- setnames(flows, old = c(date_col, flow_col), new = c("date", "flow"))
 
-        if (any(duplicated(flows[[date_col]]))) {
+        flows[, date := lubridate::as_date(date)]
+
+        if (any(duplicated(flows$date))) {
           cli::cli_abort("Flow data is ambigious, duplicate dates found.")
         }
 
@@ -128,30 +135,73 @@ flows_observe <-
             all_dates <-
               seq.Date(
                 modeldata$.metainfo$T_start_date,
-                modeldata$.metainfo$T_end_date,
+                modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
                 by = "1 day"
               )
             missing_flow_dates <-
-              as.Date(
-                setdiff(all_dates, flows[[date_col]][!is.na(flows[[flow_col]])]),
-                origin = lubridate::origin
+              lubridate::as_date(
+                setdiff(all_dates, flows[!is.na(flow), date])
               )
             if (length(missing_flow_dates) > 0) {
+              if (any(missing_flow_dates %in% modeldata$.metainfo$measured_dates)) {
               cli::cli_abort(paste(
-                "Missing flow values for the following dates:",
-                paste(missing_flow_dates, collapse = ", ")
+                "Missing flow values for the following sampled dates:",
+                paste(lubridate::as_date(intersect(
+                  missing_flow_dates,
+                  modeldata$.metainfo$measured_dates
+                  )), collapse = ", ")
               ))
+              } else {
+                n_estimate = sum(missing_flow_dates <= modeldata$.metainfo$T_end_date)
+                n_forecast = sum(missing_flow_dates > modeldata$.metainfo$T_end_date)
+                if (n_forecast == 0) {
+                  text_dates <- paste(n_estimate, "unsampled dates")
+                  text_dates2 <- "unobserved dates"
+                } else if (n_estimate == 0) {
+                  text_dates <- paste(n_forecast, "forecasting dates")
+                  text_dates2 <- "future dates"
+                } else {
+                  text_dates <- paste(
+                    n_estimate, "unsampled and", n_forecast, "forecasting dates"
+                    )
+                  text_dates2 <- "unobserved and future dates"
+                }
+                cli::cli_inform(c(
+                  "!" = paste("EpiSewer will impute missing flow data for", text_dates,
+                    "using the median flow value.",
+                    "This has no impact on model fitting, but means that",
+                    "absolute concentrations on these", text_dates2,
+                    "cannot be accurately predicted.",
+                    "To disable this warning, please impute the flow data",
+                    "manually before fitting the EpiSewer model."
+                  )
+                ))
+
+                flows <- flows[
+                  CJ(date = all_dates, unique=TRUE),
+                  on=.(date)
+                ]
+                median_flow <- median(flows$flow, na.rm = TRUE)
+                setnafill(flows, fill = median_flow, cols = "flow")
+              }
             }
-            if (any(flows[[flow_col]]==0)) {
+            if (any(flows$flow==0)) {
               cli::cli_abort("Flow data must not contain zero flows.")
             }
             flows <-
-              flows[flows[[date_col]] >= modeldata$.metainfo$T_start_date &
-                flows[[date_col]] <= modeldata$.metainfo$T_end_date, ]
-            flows <- flows[order(flows[[date_col]]), ]
-            modeldata$flow <- flows[[flow_col]]
+              flows[
+                date >= modeldata$.metainfo$T_start_date &
+                date <= modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
+                ]
+            flows <- setorderv(flows, cols = "date")
+            modeldata$flow <- flows$flow
           },
-          required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
+          required = c(
+            ".metainfo$T_start_date",
+            ".metainfo$T_end_date",
+            ".metainfo$measured_dates",
+            ".metainfo$forecast_horizon"
+            ),
           modeldata = modeldata
         )
 

@@ -26,7 +26,7 @@ data {
   int<lower=1, upper=2> obs_dist; // Parametric distribution for observation likelihood: 1 (default) for truncated normal, 2 for lognormal
 
   // Flow ----
-  vector<lower=0>[T] flow; // flow rate for normalization of measurements
+  vector<lower=0>[T+h] flow; // flow rate for normalization of measurements
 
   // Sample date effects model ----
   int<lower=0> K; // number of sample date predictors
@@ -124,8 +124,7 @@ transformed data {
   vector[L + 1] inc_rev = reverse(incubation_dist);
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
-  vector[T] flow_log = log(flow);
-  real flow_median_log = log(quantile(flow, 0.5));
+  vector[T+h] flow_log = log(flow);
 
   // number of averaged technical replicates per date
   real n_averaged_median = quantile(n_averaged, 0.5);
@@ -305,9 +304,9 @@ transformed parameters {
   // calculation of concentrations at measurement site by day (expected)
   // --> adjusted for flow and for date of sample effects
   if (K > 0) {
-    kappa_log = pi_log - flow_log + X[1:T] * eta;
+    kappa_log = pi_log - flow_log[1:T] + X[1:T] * eta;
   } else {
-    kappa_log = pi_log - flow_log;
+    kappa_log = pi_log - flow_log[1:T];
   }
 
   // concentrations in (composite) samples
@@ -574,9 +573,9 @@ generated quantities {
       // Forecasting of concentrations at measurement site by day (expected)
       // --> adjusted for flow and for date of sample effects
       if (K > 0) {
-        kappa_log_forecast = pi_log_forecast - flow_median_log + X[(T+1):(T+h)] * eta;
+        kappa_log_forecast = pi_log_forecast - flow_log[(T+1):(T+h)] + X[(T+1):(T+h)] * eta;
       } else {
-        kappa_log_forecast = pi_log_forecast - flow_median_log;
+        kappa_log_forecast = pi_log_forecast - flow_log[(T+1):(T+h)];
       }
     }
 
