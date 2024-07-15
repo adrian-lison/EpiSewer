@@ -91,12 +91,12 @@ get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo,
       median = function(x) median(exp(x), na.rm = TRUE),
       function(x) {
         setNames(
-          quantile(exp(x), (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
+          quantile(exp(x), (1 - rev(intervals)) / 2, na.rm = TRUE), paste0("lower_", rev(intervals))
         )
       },
       function(x) {
         setNames(
-          quantile(exp(x), (1 + intervals) / 2), paste0("upper_", intervals)
+          quantile(exp(x), (1 + intervals) / 2, na.rm = TRUE), paste0("upper_", intervals)
         )
       }
     )
@@ -137,12 +137,12 @@ get_summary_vector <- function(fit, var, varnames = NULL,
     median = function(x) median(x, na.rm = TRUE),
     function(x) {
       setNames(
-        quantile(x, (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
+        quantile(x, (1 - rev(intervals)) / 2, na.rm = TRUE), paste0("lower_", rev(intervals))
       )
     },
     function(x) {
       setNames(
-        quantile(x, (1 + intervals) / 2), paste0("upper_", intervals)
+        quantile(x, (1 + intervals) / 2, na.rm = TRUE), paste0("upper_", intervals)
       )
     }
   )
@@ -163,12 +163,12 @@ get_summary_vector_log <- function(fit, var, varnames = NULL,
     median = function(x) median(exp(x), na.rm = TRUE),
     function(x) {
       setNames(
-        quantile(exp(x), (1 - rev(intervals)) / 2), paste0("lower_", rev(intervals))
+        quantile(exp(x), (1 - rev(intervals)) / 2, na.rm = TRUE), paste0("lower_", rev(intervals))
       )
     },
     function(x) {
       setNames(
-        quantile(exp(x), (1 + intervals) / 2), paste0("upper_", intervals)
+        quantile(exp(x), (1 + intervals) / 2, na.rm = TRUE), paste0("upper_", intervals)
       )
     }
   )
