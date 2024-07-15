@@ -9,8 +9,9 @@ plot_infections(
   draws = FALSE,
   ndraws = NULL,
   median = FALSE,
-  forecast = TRUE,
   seeding = FALSE,
+  forecast = TRUE,
+  forecast_horizon = NULL,
   date_margin_left = 0,
   date_margin_right = 0,
   facet_models = FALSE,
@@ -32,12 +33,16 @@ plot" style.}
 \item{median}{Should the estimated median be shown, or only the credible
 intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
 
+\item{seeding}{Should infections from the seeding phase be shown as well?
+Default is \code{FALSE}.}
+
 \item{forecast}{Should forecasted infections be shown? Default is true. This
 requires that the model was fitted with a forecast horizon, see
 \code{\link[=model_forecast]{model_forecast()}}.}
 
-\item{seeding}{Should infections from the seeding phase be shown as well?
-Default is \code{FALSE}.}
+\item{forecast_horizon}{How many days into the future should forecasts be
+plotted? Note that this is restricted by the forecast horizon specified
+during model fitting, see \code{\link[=horizon_assume]{horizon_assume()}}.}
 
 \item{date_margin_left}{By how many days into the past should the plot be
 expanded? Can also be negative to cut off some of the earliest dates.}

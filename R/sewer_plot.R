@@ -12,11 +12,14 @@
 #' @param ndraws Number of different samples to show if `draws=TRUE`.
 #' @param seeding Should infections from the seeding phase be shown as well?
 #'   Default is `FALSE`.
+#' @param median Should the estimated median be shown, or only the credible
+#'   intervals? Default is `FALSE` to avoid over-interpretation of the median.
 #' @param forecast Should forecasted infections be shown? Default is true. This
 #'   requires that the model was fitted with a forecast horizon, see
 #'   [model_forecast()].
-#' @param median Should the estimated median be shown, or only the credible
-#'   intervals? Default is `FALSE` to avoid over-interpretation of the median.
+#' @param forecast_horizon How many days into the future should forecasts be
+#'   plotted? Note that this is restricted by the forecast horizon specified
+#'   during model fitting, see [horizon_assume()].
 #' @param date_margin_left By how many days into the past should the plot be
 #'   expanded? Can also be negative to cut off some of the earliest dates.
 #' @param date_margin_right By how many days into the future should the plot be
@@ -36,7 +39,8 @@
 #' @export
 #' @import ggplot2
 plot_infections <- function(results, draws = FALSE, ndraws = NULL,
-                            median = FALSE, forecast = TRUE, seeding = FALSE,
+                            median = FALSE, seeding = FALSE,
+                            forecast = TRUE, forecast_horizon = NULL,
                             date_margin_left = 0, date_margin_right = 0,
                             facet_models = FALSE,
                             base_model = "", model_levels = NULL) {
@@ -65,6 +69,13 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
 
   if (!forecast) {
     data_to_plot <- data_to_plot[type == "estimate",]
+  } else if (!is.null(forecast_horizon)) {
+    forecast_dates <- data_to_plot[
+      type == "estimate",
+      .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
+      by = model]
+    data_to_plot <- merge(data_to_plot, forecast_dates, by = "model")
+    data_to_plot <- data_to_plot[date <= last_forecast, ]
   }
 
   ymin <- quantile(data_to_plot$lower_0.95, probs = 0.01, na.rm = T)
@@ -127,10 +138,11 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
       if (base_model!="" && has_forecast) {
         ggpattern::geom_ribbon_pattern(
           data = rbind(
-            tail(data_base_model[type == "estimate",],1),
-            head(data_base_model[type == "forecast",],1)
+            data_base_model[data_base_model[type == "estimate", .I[which.max(date)], by=model]$V1],
+            data_base_model[data_base_model[type == "forecast", .I[which.min(date)], by=model]$V1]
           ),
-          aes(ymin = lower_0.95, ymax = upper_0.95), pattern_fill = "black",
+          aes(ymin = lower_0.95, ymax = upper_0.95),
+          pattern_fill = "black", pattern_color = "black",
           pattern_alpha = 0.3, pattern = 'crosshatch',
           pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
         )
@@ -154,10 +166,10 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
       if (has_forecast) {
         ggpattern::geom_ribbon_pattern(
           data = rbind(
-            tail(data_to_plot[type == "estimate",],1),
-            head(data_to_plot[type == "forecast",],1)
+            data_to_plot[data_to_plot[type == "estimate", .I[which.max(date)], by=model]$V1],
+            data_to_plot[data_to_plot[type == "forecast", .I[which.min(date)], by=model]$V1]
           ),
-          aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model),
+          aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model, pattern_color = model),
           pattern_alpha = 0.3, pattern = 'crosshatch',
           pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
         )
@@ -240,8 +252,16 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
   if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
+      ggpattern::scale_pattern_fill_manual(values = "black") +
+      ggpattern::scale_pattern_color_manual(values = "black") +
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
+  } else {
+    plot <- plot +
+      ggpattern::scale_pattern_fill_discrete() +
+      ggpattern::scale_pattern_color_discrete() +
+      scale_color_discrete() +
+      scale_fill_discrete()
   }
   if (facet_models) {
     plot <- plot +
@@ -271,7 +291,8 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
 #'   [ggplot2] functions to adjust themes and scales, and to add further geoms.
 #' @export
 plot_R <- function(results, draws = FALSE, ndraws = NULL,
-                   median = FALSE, forecast = TRUE, seeding = FALSE,
+                   median = FALSE, seeding = FALSE,
+                   forecast = TRUE, forecast_horizon = NULL,
                    date_margin_left = 0, date_margin_right = 0,
                    facet_models = FALSE,
                    base_model = "", model_levels = NULL) {
@@ -300,6 +321,13 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 
   if (!forecast) {
     data_to_plot <- data_to_plot[type == "estimate",]
+  } else if (!is.null(forecast_horizon)) {
+    forecast_dates <- data_to_plot[
+      type == "estimate",
+      .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
+      by = model]
+    data_to_plot <- merge(data_to_plot, forecast_dates, by = "model")
+    data_to_plot <- data_to_plot[date <= last_forecast, ]
   }
 
   ymin <- min(0.6, quantile(data_to_plot$lower_0.95, probs = 0.01, na.rm = T))
@@ -363,10 +391,11 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
         if (base_model!="" && has_forecast) {
           ggpattern::geom_ribbon_pattern(
             data = rbind(
-              tail(data_base_model[type == "estimate",],1),
-              head(data_base_model[type == "forecast",],1)
+              data_base_model[data_base_model[type == "estimate", .I[which.max(date)], by=model]$V1],
+              data_base_model[data_base_model[type == "forecast", .I[which.min(date)], by=model]$V1]
             ),
-            aes(ymin = lower_0.95, ymax = upper_0.95), pattern_fill = "black",
+            aes(ymin = lower_0.95, ymax = upper_0.95),
+            pattern_fill = "black", pattern_color = "black",
             pattern_alpha = 0.3, pattern = 'crosshatch',
             pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
           )
@@ -390,10 +419,10 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
         if (has_forecast) {
           ggpattern::geom_ribbon_pattern(
             data = rbind(
-              tail(data_to_plot[type == "estimate",],1),
-              head(data_to_plot[type == "forecast",],1)
+              data_to_plot[data_to_plot[type == "estimate", .I[which.max(date)], by=model]$V1],
+              data_to_plot[data_to_plot[type == "forecast", .I[which.min(date)], by=model]$V1]
             ),
-            aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model),
+            aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model, pattern_color = model),
             pattern_alpha = 0.3, pattern = 'crosshatch',
             pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
           )
@@ -476,8 +505,16 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
   if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
+      ggpattern::scale_pattern_fill_manual(values = "black") +
+      ggpattern::scale_pattern_color_manual(values = "black") +
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
+  } else {
+    plot <- plot +
+      ggpattern::scale_pattern_fill_discrete() +
+      ggpattern::scale_pattern_color_discrete() +
+      scale_color_discrete() +
+      scale_fill_discrete()
   }
   if (facet_models) {
     plot <- plot +
@@ -540,8 +577,9 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 plot_concentration <- function(results = NULL, measurements = NULL,
                                include_noise = TRUE,
                                median = FALSE,
-                               forecast = TRUE,
                                mark_outliers = FALSE,
+                               forecast = TRUE,
+                               forecast_horizon = NULL,
                                date_margin_left = 0, date_margin_right = 1,
                                facet_models = FALSE,
                                base_model = "", model_levels = NULL,
@@ -620,6 +658,13 @@ plot_concentration <- function(results = NULL, measurements = NULL,
 
   if (!forecast) {
     concentration_pred <- concentration_pred[type == "estimate",]
+  } else if (!is.null(forecast_horizon)) {
+    forecast_dates <- concentration_pred[
+      type == "estimate",
+      .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
+      by = model]
+    concentration_pred <- merge(concentration_pred, forecast_dates, by = "model")
+    concentration_pred <- concentration_pred[date <= last_forecast, ]
   }
 
   if (!is.null(concentration_pred)) {
@@ -738,10 +783,10 @@ plot_concentration <- function(results = NULL, measurements = NULL,
         if (!is.null(concentration_pred) && has_forecast) {
           ggpattern::geom_ribbon_pattern(
             data = rbind(
-              tail(concentration_pred[model!=base_model & type == "estimate",],1),
-              head(concentration_pred[model!=base_model & type == "forecast",],1)
+              concentration_pred[concentration_pred[model!=base_model & type == "estimate", .I[which.max(date)], by=model]$V1],
+              concentration_pred[concentration_pred[model!=base_model & type == "forecast", .I[which.min(date)], by=model]$V1]
             ),
-            aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model),
+            aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model, pattern_colour = model),
             pattern_alpha = 0.3, pattern = 'crosshatch',
             pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
           )
@@ -924,9 +969,18 @@ plot_concentration <- function(results = NULL, measurements = NULL,
   if (is.null(concentration_pred) || length(unique(concentration_pred$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
+      ggpattern::scale_pattern_fill_manual(values = "black") +
+      ggpattern::scale_pattern_color_manual(values = "black") +
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
+  } else {
+    plot <- plot +
+      ggpattern::scale_pattern_fill_discrete() +
+      ggpattern::scale_pattern_color_discrete() +
+      scale_fill_discrete() +
+      scale_color_discrete()
   }
+
   if (facet_models) {
     plot <- plot +
       facet_wrap(~model, nrow = 1) +
@@ -935,6 +989,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
         legend.position = "none"
       )
   }
+
   return(plot)
 }
 
@@ -954,7 +1009,8 @@ plot_concentration <- function(results = NULL, measurements = NULL,
 #'   add further geoms.
 #'
 #' @export
-plot_load <- function(results, median = FALSE, forecast = TRUE,
+plot_load <- function(results, median = FALSE,
+                      forecast = TRUE, forecast_horizon = NULL,
                       date_margin_left = 0, date_margin_right = 0,
                       facet_models = FALSE,
                       base_model = "", model_levels = NULL) {
@@ -965,6 +1021,13 @@ plot_load <- function(results, median = FALSE, forecast = TRUE,
 
   if (!forecast) {
     load_pred <- load_pred[type == "estimate",]
+  } else if (!is.null(forecast_horizon)) {
+    forecast_dates <- load_pred[
+      type == "estimate",
+      .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
+      by = model]
+    load_pred <- merge(load_pred, forecast_dates, by = "model")
+    load_pred <- load_pred[date <= last_forecast, ]
   }
 
   xmin <- min(load_pred$date, na.rm = T) - date_margin_left
@@ -1004,10 +1067,11 @@ plot_load <- function(results, median = FALSE, forecast = TRUE,
       if (base_model!="" && has_forecast) {
         ggpattern::geom_ribbon_pattern(
           data = rbind(
-            tail(data_base_model[type == "estimate",],1),
-            head(data_base_model[type == "forecast",],1)
+            data_base_model[data_base_model[type == "estimate", .I[which.max(date)], by=model]$V1],
+            data_base_model[data_base_model[type == "forecast", .I[which.min(date)], by=model]$V1]
           ),
-          aes(ymin = lower_0.95, ymax = upper_0.95), pattern_fill = "black",
+          aes(ymin = lower_0.95, ymax = upper_0.95),
+          pattern_fill = "black", pattern_color = "black",
           pattern_alpha = 0.3, pattern = 'crosshatch',
           pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
         )
@@ -1031,10 +1095,10 @@ plot_load <- function(results, median = FALSE, forecast = TRUE,
       if (has_forecast) {
         ggpattern::geom_ribbon_pattern(
           data = rbind(
-            tail(load_pred[load_pred$model!=base_model & type == "estimate",],1),
-            head(load_pred[load_pred$model!=base_model & type == "forecast",],1)
+            load_pred[load_pred[type == "estimate", .I[which.max(date)], by=model]$V1],
+            load_pred[load_pred[type == "forecast", .I[which.min(date)], by=model]$V1]
           ),
-          aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model),
+          aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model, pattern_color = model),
           pattern_alpha = 0.3, pattern = 'crosshatch',
           pattern_spacing = 0.02, pattern_density = 0.2, fill = NA
         )
@@ -1126,8 +1190,16 @@ plot_load <- function(results, median = FALSE, forecast = TRUE,
   if (length(unique(load_pred$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
+      ggpattern::scale_pattern_fill_manual(values = "black") +
+      ggpattern::scale_pattern_color_manual(values = "black") +
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
+  } else {
+    plot <- plot +
+      ggpattern::scale_pattern_fill_discrete() +
+      ggpattern::scale_pattern_color_discrete() +
+      scale_color_discrete() +
+      scale_fill_discrete()
   }
   if (facet_models) {
     plot <- plot +
