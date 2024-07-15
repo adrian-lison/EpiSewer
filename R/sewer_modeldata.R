@@ -123,7 +123,8 @@ all_components <- function() {
     "seeding",
     "infection_noise",
     "sample_effects",
-    "noise"
+    "noise",
+    "horizon"
   )
   return(components)
 }

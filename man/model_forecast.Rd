@@ -2,18 +2,28 @@
 % Please edit documentation in R/model_forecast.R
 \name{model_forecast}
 \alias{model_forecast}
-\title{Specify forecasting functionality}
+\title{Forecasting module}
 \usage{
-model_forecast(horizon = 0)
+model_forecast(horizon = horizon_none())
 }
 \arguments{
-\item{horizon}{The forecasting horizon in days. If 0 (default), no forecasts
-are produced.}
+\item{horizon}{The forecast horizon. How many days into the future should
+EpiSewer forecast?
+Available options:
+\itemize{
+\item \code{\link[=horizon_none]{horizon_none()}}
+\item \code{\link[=horizon_assume]{horizon_assume()}}
+}}
 }
 \value{
 A \code{modeldata} object containing the data and specifications of the
 \code{forecast} module.
 }
 \description{
-Specify forecasting functionality
+This module function is used to specify the components of the
+\code{forecast} module in \code{EpiSewer}.
+
+Each component can be specified using one or several helper
+functions (see available options below). See the documentation of the
+individual helper functions to adjust various settings.
 }
