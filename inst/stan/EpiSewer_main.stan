@@ -22,7 +22,7 @@ data {
   vector<lower=0>[n_measured] n_averaged; // number of averaged technical replicates per measurement (is vector for vectorization)
   vector<lower=0>[n_measured] dPCR_total_partitions; // total number of partitions in dPCR
   int<lower=1> w; // composite window: how many past days the samples cover, e.g. 1 for individual day samples, 7 for weekly composite samples, ...
-  int<lower=1, upper=2> obs_dist; // Parametric distribution for observation likelihood: 1 (default) for truncated normal, 2 for lognormal
+  int<lower=0, upper=3> obs_dist; // Parametric distribution for observation likelihood: 0 (default) for gamma, 1 for log-normal, 2 for truncated normal, 3 for normal
 
   // Flow ----
   vector<lower=0>[T] flow; // flow rate for normalization of measurements
@@ -163,13 +163,17 @@ transformed data {
 
   int n_zero = num_zeros(measured_concentrations);
   int n_dropLOD = num_zeros(fmax(0, conc_drop_prob - measured_concentrations));
+  array[n_measured] int<lower=0> i_all;
   array[n_zero] int<lower=0> i_zero;
   array[n_measured - n_zero] int<lower=0> i_nonzero;
+  array[n_measured - n_dropLOD] int<lower=0> i_LOD;
   array[n_measured - n_zero - n_dropLOD] int<lower=0> i_nonzero_LOD;
   int i_z = 0;
   int i_nz = 0;
+  int i_lod = 0;
   int i_nzs = 0;
   for (n in 1:n_measured) {
+    i_all[n] = n;
     if (measured_concentrations[n] == 0) {
       i_z += 1;
       i_zero[i_z] = n;
@@ -181,6 +185,17 @@ transformed data {
         i_nonzero_LOD[i_nzs] = n;
       }
     }
+    if (measured_concentrations[n] < conc_drop_prob) {
+        i_lod += 1;
+        i_LOD[i_lod] = n;
+    }
+  }
+  int n_dropzero = (obs_dist == 3 ? 0 : n_zero); // only include zeros for non-truncated normal
+  array[n_measured - n_dropzero] int<lower=0> i_include;
+  if (n_dropzero > 0) {
+    i_include = i_nonzero;
+  } else {
+    i_include = i_all;
   }
 
   if (R_link[1] < 0 || R_link[1] > 1) {
@@ -218,12 +233,12 @@ parameters {
   // sample date effects
   vector[K] eta;
 
-  // Coefficient of variation of lognormal likelihood for measurements
+  // Coefficient of variation of likelihood for measurements
   array[pr_noise ? 1 : 0] real<lower=0> nu_psi; // pre-replicaton coefficient of variation
   vector<multiplier = (pr_noise ? nu_psi[1] : 1)>[pr_noise ? n_samples : 0] psi; // realized concentration before replication stage
   real<lower=0> nu_upsilon_a;
   array[(cv_type == 1) && (nu_upsilon_b_mu_prior[2] > 0) ? 1 : 0] real<lower=0> nu_upsilon_b_mu;
-  array[(cv_type == 1) && total_partitions_observe!=1 ? 1 : 0] real<lower=0> nu_upsilon_b_cv;
+  array[(cv_type == 1) && total_partitions_observe!=1 && (nu_upsilon_b_cv_prior[2] > 0) ? 1 : 0] real<lower=0> nu_upsilon_b_cv;
   vector[(cv_type == 1) && total_partitions_observe!=1 ? n_measured : 0] nu_upsilon_b_noise_raw;
   array[(cv_type == 1) && nu_upsilon_c_prior[2] > 0 ? 1 : 0] real<lower=0> nu_upsilon_c;
 }
@@ -324,7 +339,7 @@ transformed parameters {
   if ((cv_type == 1) && total_partitions_observe!=1) {
     nu_upsilon_b = total_partitions_noncentered(
       param_or_fixed(nu_upsilon_b_mu, nu_upsilon_b_mu_prior),
-      nu_upsilon_b_cv[1],
+      param_or_fixed(nu_upsilon_b_cv, nu_upsilon_b_cv_prior),
       nu_upsilon_b_noise_raw
     );
   }
@@ -389,13 +404,13 @@ model {
     eta ~ normal(eta_prior[1], eta_prior[2]);
   }
 
-  // Prior on cv of lognormal likelihood for measurements
+  // Prior on cv of likelihood for measurements
   nu_upsilon_a ~ normal(nu_upsilon_a_prior[1], nu_upsilon_a_prior[2]) T[0, ]; // truncated normal
   if (cv_type == 1) {
     target += normal_prior_lpdf(nu_upsilon_b_mu | nu_upsilon_b_mu_prior, 0); // truncated normal
     target += normal_prior_lpdf(nu_upsilon_c | nu_upsilon_c_prior, 0); // truncated normal
     if (total_partitions_observe != 1) {
-      nu_upsilon_b_cv[1] ~ normal(nu_upsilon_b_cv_prior[1], nu_upsilon_b_cv_prior[2]) T[0, ]; // truncated normal
+      target += normal_prior_lpdf(nu_upsilon_b_cv | nu_upsilon_b_cv_prior, 0); // truncated normal
       nu_upsilon_b_noise_raw ~ std_normal();
     }
   }
@@ -403,74 +418,87 @@ model {
   // Likelihood
   {
     // accounting for pre-replicate noise
-    vector[n_measured] concentrations;
+    vector[n_measured] concentration_log;
     if (pr_noise) {
       // Prior on cv of pre-replication concentrations
       nu_psi[1] ~ normal(nu_psi_prior[1], nu_psi_prior[2]) T[0, ]; // truncated normal
       // lognormal distribution modeled as normal on the log scale
       // with mean = rho (mean_log = rho_log) and cv = nu_psi
       target += lognormal_log_lpdf(psi | rho_log, nu_psi[1]);
-      concentrations = psi[measure_to_sample];
+      concentration_log = psi[measure_to_sample];
     } else {
-      concentrations = rho_log[measure_to_sample];
+      concentration_log = rho_log[measure_to_sample];
     }
 
     // concentration on unit scale
-    vector[n_measured] concentrations_unit = exp(concentrations);
+    vector[n_measured] concentration = exp(concentration_log);
+    vector[n_measured] p_zero_log = rep_vector(negative_infinity(), n_measured);
+    vector[n_measured] p_zero = rep_vector(0, n_measured);
 
     // limit of detection
     if (LOD_model > 0) {
-      // below-LOD probabilities for zero measurements
-      target += sum(log_hurdle_exponential(
-        concentrations_unit[i_zero],
-        LOD_hurdle_scale[1][i_zero], // LOD scale (c * m * n)
+      p_zero_log[i_LOD] = log_hurdle_exponential(
+        concentration[i_LOD],
+        LOD_hurdle_scale[1][i_LOD], // LOD scale (c * m * n)
         cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
         cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
-        ));
-      // above-LOD probabilities for non-zero measurements
-      target += sum(log1m_exp(log_hurdle_exponential(
-        concentrations_unit[i_nonzero_LOD],
-        LOD_hurdle_scale[1][i_nonzero_LOD], // LOD scale (c * m * n)
-        cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
-        cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
-      )));
+        );
+      target += sum(p_zero_log[i_zero]); // below-LOD probabilities
+      target += sum(log1m_exp(p_zero_log[i_nonzero_LOD])); // above-LOD probabilities
+      p_zero = exp(p_zero_log);
     }
 
     // CV of each observation as a function of concentration
-    vector[n_measured - n_zero] cv;
+    vector[n_measured] cv;
     if (cv_type == 0) { // constant cv
-      cv = rep_vector(nu_upsilon_a, n_measured - n_zero);
+      cv[i_include] = rep_vector(nu_upsilon_a, n_measured - n_zero);
     } else if (cv_type == 1) { // dPCR
-      cv = cv_dPCR_pre(
-        concentrations_unit[i_nonzero], // lambda (concentration)
+      cv[i_include] = cv_dPCR_pre(
+        concentration[i_include], // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
-        (total_partitions_observe ? dPCR_total_partitions[i_nonzero] : nu_upsilon_b[i_nonzero] * 1e4), // m (number of partitions)
+        (total_partitions_observe ? dPCR_total_partitions[i_include] : nu_upsilon_b[i_include] * 1e4), // m (number of partitions)
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5, // c (conversion factor)
-        n_averaged[i_nonzero], // n (number of averaged replicates)
+        n_averaged[i_include], // n (number of averaged replicates)
         cv_pre_type[1], // Type of pre-PCR CV
         cv_pre_approx_taylor[1] // Should taylor approximation be used?
         );
     } else if (cv_type == 2) { // constant variance
-      cv = (
-        nu_upsilon_a * mean(measured_concentrations[i_nonzero]) /
-        concentrations_unit[i_nonzero]
+      cv[i_include] = (
+        nu_upsilon_a * mean(measured_concentrations[i_include]) /
+        concentration[i_include]
         );
     }
 
+    vector[n_measured] mean_conditional;
+    vector[n_measured] cv_conditional;
+    mean_conditional[i_include] = concentration[i_include] ./ (1-p_zero[i_include]);
+    cv_conditional[i_include] = sqrt(cv[i_include]^2 .* (1-p_zero[i_include]) - p_zero[i_include]);
+
     // measurements
-    if (obs_dist == 1) {
+    if (obs_dist == 0) {
+      target += gamma3_lpdf(
+        measured_concentrations[i_include] |
+        mean_conditional[i_include], // expectation
+        cv_conditional[i_include] // coefficient of variation
+      );
+    } else if (obs_dist == 1) {
+      target += lognormal5_lpdf(
+        measured_concentrations[i_include] |
+        mean_conditional[i_include], // log expectation
+        cv_conditional[i_include] // coefficient of variation
+      );
+    } else if (obs_dist == 2) {
       target += normal2_lpdf(
-        measured_concentrations[i_nonzero] |
-        concentrations_unit[i_nonzero], // expectation
-        cv, // coefficient of variation
+        measured_concentrations[i_include] |
+        mean_conditional[i_include], // expectation
+        cv_conditional[i_include], // coefficient of variation,
         0 // truncate at zero
       );
-    }
-    else if (obs_dist == 2) {
-      target += lognormal4_lpdf(
-        measured_concentrations[i_nonzero] |
-        concentrations[i_nonzero], // log expectation
-        cv // coefficient of variation
+    } else if (obs_dist == 3) {
+      target += normal2_lpdf(
+        measured_concentrations[i_include] |
+        mean_conditional[i_include], // expectation
+        cv_conditional[i_include] // coefficient of variation
       );
     } else {
       reject("Distribution not supported.");
@@ -483,31 +511,119 @@ generated quantities {
   // which may be smaller than that of hypothetical daily measurements
   vector[T] predicted_concentration;
   {
-    vector[T] pre_repl;
-    vector[T] exp_pre_repl;
-    vector[T] cv;
-    vector[T] above_LOD; // will be a vector of 0s and 1s
-    if (pr_noise) {
-      pre_repl = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
-    } else {
-      pre_repl = kappa_log;
-    }
+    vector[T+h] pre_repl_log;
+    vector[T+h] pre_repl;
+    vector[T+h] cv_all;
+    vector[T+h] above_LOD; // will be a vector of 0s and 1s
 
-    exp_pre_repl = exp(pre_repl);
+    // Forecasting
+    if (h>0) {
+      // Forecasting of R
+      if (R_model == 0) {
+        // Innovations state space process implementing exponential smoothing
+        R_forecast = apply_link(holt_damped_process(
+          [R_level_start[1], R_trend_start[1]]',
+          param_or_fixed(ets_alpha, ets_alpha_prior),
+          param_or_fixed(ets_beta, ets_beta_prior),
+          param_or_fixed(ets_phi, ets_phi_prior),
+          append_row(R_noise, to_vector(normal_rng(rep_vector(0, h), R_sd[1]))),
+          ets_diff[1]
+        ), R_link)[((L + S + D + T - G) + 1):((L + S + D + T - G) + h)];
+      } else if (R_model == 1) {
+        // Current solution for smoothing splines is to use a simple random walk for forecasting
+         R_forecast = apply_link(random_walk(
+          [R[L + S + D + T - G]]',
+          to_vector(std_normal_n_rng(h)) * bs_coeff_ar_sd[1],
+          0
+        ), R_link)[2:(h+1)];
+      }
 
-    vector[T] nu_upsilon_b_all;
-    vector[T] nu_upsilon_b_all_noise_raw = std_normal_n_rng(T);
-    if (cv_type == 1 && total_partitions_observe != 1) {
-      nu_upsilon_b_all = total_partitions_noncentered(
-        param_or_fixed(nu_upsilon_b_mu, nu_upsilon_b_mu_prior),
-        nu_upsilon_b_cv[1],
-        nu_upsilon_b_all_noise_raw
-        );
-      for (i in 1:n_measured) {
-        nu_upsilon_b_all[sample_to_date[measure_to_sample[i]]] = nu_upsilon_b[i];
+      // Forecasting of infections
+      if (I_sample) {
+        array[2] vector[G+h] forecast_tmp;
+        forecast_tmp = renewal_process_stochastic_sim_rng(
+          h, R_forecast, G, gi_rev,
+          append_row(iota[((L + S + D + T)+1-G):(L + S + D + T)], rep_vector(0, h)),
+          I_overdispersion ? param_or_fixed(I_xi, I_xi_prior) : 0
+          );
+        iota_forecast = forecast_tmp[1][(G+1):(G+h)];
+        I_forecast = forecast_tmp[2][(G+1):(G+h)];
+      } else {
+        iota_forecast = renewal_process_deterministic(
+          h, R_forecast, G, gi_rev, append_row(iota[((L + S + D + T)+1-G):(L + S + D + T)], rep_vector(0, h))
+          );
+        I_forecast = iota_forecast;
+      }
+
+      // Forecasting of symptom onsets
+      lambda_forecast = convolve(
+        inc_rev, append_row((I_sample ? I : iota)[((L + S + D + T)+1-L):(L + S + D + T)], I_forecast)
+        )[(L+1):(L+h)];
+
+      // Forecasting of total loads
+      if (load_vari) {
+        vector[h] zeta_forecast = softplus(gamma_sum_approx(
+          nu_zeta[1],
+          lambda_forecast,
+          to_vector(std_normal_n_rng(h))
+          ), 10); // softplus as soft >0 constraint
+        omega_log_forecast = log_convolve(
+            shed_rev_log, // shedding load distribution
+            log(load_mean) + log(append_row(zeta[((S + D + T)+1-S):(S + D + T)], zeta_forecast)) // total load shed
+            )[(S+1):(S+h)];
+      } else {
+        omega_log_forecast = log_convolve(
+            shed_rev_log, // shedding load distribution
+            log(load_mean) + log(append_row(lambda[((S + D + T)+1-S):(S + D + T)], lambda_forecast)) // total load shed
+            )[(S+1):(S+h)];
+      }
+
+      // Forecasting of total loads at sampling site (expected)
+      if (D>0) {
+        pi_log_forecast = log_convolve(
+          residence_rev_log, // residence time distribution
+          append_row(omega_log[((D + T)+1-D):(D + T)], omega_log_forecast)
+          )[(D+1):(D+h)];
+      } else {
+        pi_log_forecast = omega_log_forecast;
+      }
+
+      // Forecasting of concentrations at measurement site by day (expected)
+      // --> adjusted for flow and for date of sample effects
+      if (K > 0) {
+        kappa_log_forecast = pi_log_forecast - flow_log[(T+1):(T+h)] + X[(T+1):(T+h)] * eta;
+      } else {
+        kappa_log_forecast = pi_log_forecast - flow_log[(T+1):(T+h)];
       }
     }
 
+    // Forecasting of pre-replication concentrations
+    if (pr_noise) {
+      pre_repl_log[1:T] = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
+      pre_repl_log[(T+1):(T+h)] = to_vector(lognormal_log_rng(kappa_log_forecast, nu_psi[1]));
+    } else {
+      pre_repl_log[1:T] = kappa_log;
+      pre_repl_log[(T+1):(T+h)] = kappa_log_forecast;
+    }
+    pre_repl = exp(pre_repl_log);
+
+    vector[T+h] nu_upsilon_b_all;
+    if (cv_type == 1) {
+      if (total_partitions_observe == 1) {
+        nu_upsilon_b_all = total_partitions_all / 1e4;
+      } else {
+        nu_upsilon_b_all = total_partitions_noncentered(
+          param_or_fixed(nu_upsilon_b_mu, nu_upsilon_b_mu_prior),
+          param_or_fixed(nu_upsilon_b_cv, nu_upsilon_b_cv_prior),
+          std_normal_n_rng(T+h)
+          );
+        for (i in 1:n_measured) {
+          nu_upsilon_b_all[sample_to_date[measure_to_sample[i]]] = nu_upsilon_b[i];
+        }
+      }
+    }
+
+    vector[T+h] p_zero_all;
     if (LOD_model > 0) {
       vector[T] LOD_hurdle_scale_all;
       // scale for LOD hurdle model
@@ -520,23 +636,23 @@ generated quantities {
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5
         );
       }
-      above_LOD = to_vector(bernoulli_rng(
-        1-exp(log_hurdle_exponential(
-          exp_pre_repl, // lambda (concentration)
+      p_zero_all = exp(log_hurdle_exponential(
+          pre_repl, // lambda (concentration)
           LOD_hurdle_scale_all,
           cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
           cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
-          ))
           ));
+      above_LOD = to_vector(bernoulli_rng(1-p_zero_all));
     } else {
-      above_LOD = rep_vector(1, T);
+      p_zero_all = rep_vector(0, T+h);
+      above_LOD = rep_vector(1, T+h);
     }
 
     if (cv_type == 0) {
-      cv = rep_vector(nu_upsilon_a, T);
+      cv_all = rep_vector(nu_upsilon_a, T+h);
     } else if (cv_type == 1) {
-      cv = cv_dPCR_pre(
-        exp_pre_repl, // lambda (concentration)
+      cv_all = cv_dPCR_pre(
+        pre_repl, // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
         (total_partitions_observe ? total_partitions_all : nu_upsilon_b_all * 1e4), // m (number of partitions)
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5, // c (conversion factor)
@@ -545,21 +661,30 @@ generated quantities {
         cv_pre_approx_taylor[1] // Should taylor approximation be used?
         );
     } else if (cv_type == 2) {
-      cv = (
+      cv_all = (
         nu_upsilon_a * mean(measured_concentrations[i_nonzero]) /
-        exp_pre_repl
+        pre_repl
         );
     }
 
-    vector[T] meas_conc;
-    if (obs_dist == 1) {
-      meas_conc = normal2_lb_rng(exp_pre_repl, cv, 0);
-    }
-    else if (obs_dist == 2) {
-      meas_conc = lognormal4_rng(pre_repl, cv);
+    vector[T+h] mean_conditional_all = pre_repl ./ (1-p_zero_all);
+    vector[T+h] cv_conditional_all = sqrt(cv_all^2 .* (1-p_zero_all) - p_zero_all);
+
+    vector[T+h] meas_conc;
+    if (obs_dist == 0) {
+      meas_conc = gamma3_rng(mean_conditional_all, cv_conditional_all);
+    } else if (obs_dist == 1) {
+      meas_conc = lognormal5_rng(mean_conditional_all, cv_conditional_all);
+    } else if (obs_dist == 2) {
+      meas_conc = normal2_rng(mean_conditional_all, cv_conditional_all, 0); // truncated at zero
+    } else if (obs_dist == 3) {
+      meas_conc = normal2_rng(mean_conditional_all, cv_conditional_all);
     } else {
       reject("Distribution not supported.");
     }
-    predicted_concentration = above_LOD .* meas_conc;
+    predicted_concentration = above_LOD[1:T] .* meas_conc[1:T];
+    if (h>0) {
+      predicted_concentration_forecast = above_LOD[(T+1):(T+h)] .* meas_conc[(T+1):(T+h)];
+    }
   }
 }

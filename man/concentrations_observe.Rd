@@ -7,7 +7,7 @@
 concentrations_observe(
   measurements = NULL,
   composite_window = 1,
-  distribution = "normal",
+  distribution = "gamma",
   date_col = "date",
   concentration_col = "concentration",
   replicate_col = NULL,
