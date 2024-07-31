@@ -1,15 +1,32 @@
 /**
-  * Generate truncated normal variate given mean and coefficient of variation
+  * Generate truncated normal variate given mean and sd
+  * and lower truncation
+  *
+  * @param mean mean
+  *
+  * @param sd standard deviation
+  *
+  * @param lb lower bound
+  *
+  * @return Truncated normal variate
+  */
+real normal_lb_rng(real mean, real sd, real lb) {
+  real p = normal_cdf(lb | mean, sd);
+  real u = uniform_rng(p, 1);
+  return mean + sd * inv_Phi(u);
+}
+
+/**
+  * Generate truncated normal variate given mean and sd
   * and lower truncation
   *
   * @param mean vector of means
   *
-  * @param cv vector of coefficients of variation
+  * @param sd standard deviation
   *
   * @param lb lower bound
   *
-  * @return Vector of normal variates with mean exp(mean_log)
-  * and standard deviation exp(sd_log)
+  * @return Vector of truncated normal variates
   */
 vector normal_lb_rng(vector mean, real sd, real lb) {
   int n = num_elements(mean);
@@ -19,6 +36,47 @@ vector normal_lb_rng(vector mean, real sd, real lb) {
   }
   vector[n] u = to_vector(uniform_rng(p, 1));
   return mean + sd * inv_Phi(u);
+}
+
+/**
+  * Generate truncated normal variate given mean and sd
+  * and lower truncation
+  *
+  * @param mean vector of means
+  *
+  * @param sd vector of standard deviations
+  *
+  * @param lb lower bound
+  *
+  * @return Vector of truncated normal variates
+  */
+vector normal_lb_rng(vector mean, vector sd, real lb) {
+  int n = num_elements(mean);
+  vector[n] p;
+  for (i in 1:n) {
+    p[i] = normal_cdf(lb | mean[i], sd[i]);
+  }
+  vector[n] u = to_vector(uniform_rng(p, 1));
+  return mean + sd .* inv_Phi(u);
+}
+
+
+/**
+  * The log of a normal density given mean and coefficient of variation (cv)
+  *
+  * @param y vector with observed data
+  *
+  * @param mean vector of means
+  *
+  * @param cv vector of coefficients of variation
+
+  * @return The log of the normal density of y
+  */
+real normal2_lpdf(vector y, vector mean, vector cv) {
+  int n = num_elements(y);
+  vector[n] sigma = mean .* cv;
+  real tar = normal_lpdf(y | mean, sigma);
+  return tar;
 }
 
 /**
@@ -48,6 +106,22 @@ real normal2_lpdf(vector y, vector mean, vector cv, real lb) {
 }
 
 /**
+  * Generate normal variate given mean and coefficient of variation
+  *
+  * @param mean vector of means
+  *
+  * @param cv vector of coefficients of variation
+  *
+  * @return Vector of normal variates with mean exp(mean_log)
+  * and standard deviation exp(sd_log)
+  */
+vector normal2_rng(vector mean, vector cv) {
+  int n = num_elements(mean);
+  vector[n] sigma = mean .* cv;
+  return to_vector(normal_rng(mean, sigma));
+}
+
+/**
   * Generate truncated normal variate given mean and coefficient of variation
   * and lower truncation
   *
@@ -60,7 +134,7 @@ real normal2_lpdf(vector y, vector mean, vector cv, real lb) {
   * @return Vector of normal variates with mean exp(mean_log)
   * and standard deviation exp(sd_log)
   */
-vector normal2_lb_rng(vector mean, vector cv, real lb) {
+vector normal2_rng(vector mean, vector cv, real lb) {
   int n = num_elements(mean);
   vector[n] sigma = mean .* cv;
   vector[n] p;

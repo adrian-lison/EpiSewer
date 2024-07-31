@@ -178,6 +178,9 @@ vector log_E_exp_lnorm(vector lambda, real nu_pre, real t) {
 
 vector total_partitions_noncentered(real m_mu, real m_cv, vector noise_raw) {
   int N = num_elements(noise_raw);
+  if (m_cv == 0) {
+    return rep_vector(m_mu, N);
+  }
   real max_partitions = m_mu + 3 * m_mu * m_cv;
   real lnorm_unit_mean = max_partitions - m_mu;
   real lnorm_unit_sd = m_mu * m_cv;

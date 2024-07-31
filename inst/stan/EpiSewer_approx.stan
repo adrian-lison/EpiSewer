@@ -552,7 +552,7 @@ generated quantities {
 
     vector[T] meas_conc;
     if (obs_dist == 1) {
-      meas_conc = normal2_lb_rng(exp_pre_repl, cv, 0);
+      meas_conc = normal2_rng(exp_pre_repl, cv, 0);
     }
     else if (obs_dist == 2) {
       meas_conc = lognormal4_rng(pre_repl, cv);

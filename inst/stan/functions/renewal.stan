@@ -83,6 +83,19 @@ vector log_renewal_process_deterministic(int T, vector R_log, int G, vector gi_r
   return(iota_log_tmp[(G+1):(G+T)]);
 }
 
+// simulation of a renewal process
+array[] vector renewal_process_stochastic_sim_rng(int T, vector R, int G, vector gi_rev, vector iota, real I_xi) {
+  vector[G+T] iota_tmp = iota;
+  vector[G+T] I;
+  real I_xi_squared = square(I_xi); // (I_xi = 0) => no overdispersion
+  I[1:G] = normal_lb_rng(iota_tmp[1:G], sqrt(iota_tmp[1:G] .* (1 + iota_tmp[1:G]*I_xi_squared)), 0);
+  for (t in 1:T) {
+    iota_tmp[G+t] = R[t] * dot_product(gi_rev, I[t:(G+t-1)]);
+    I[G+t] = normal_lb_rng(iota_tmp[G+t], sqrt(iota_tmp[G+t] * (1 + iota_tmp[G+t]*I_xi_squared)), 0);
+  }
+  return {iota_tmp, I};
+}
+
 // Approximation for autocorrelated infection noise
 // added to expected infection time series
 vector renewal_noise_correction(int T, int G, vector gi_rev, vector I_noise) {

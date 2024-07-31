@@ -73,7 +73,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     forecast_dates <- data_to_plot[
       type == "estimate",
       .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
-      by = model]
+      by = "model"]
     data_to_plot <- merge(data_to_plot, forecast_dates, by = "model")
     data_to_plot <- data_to_plot[date <= last_forecast, ]
   }
@@ -138,8 +138,8 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
       if (base_model!="" && has_forecast) {
         ggpattern::geom_ribbon_pattern(
           data = rbind(
-            data_base_model[data_base_model[type == "estimate", .I[which.max(date)], by=model]$V1],
-            data_base_model[data_base_model[type == "forecast", .I[which.min(date)], by=model]$V1]
+            data_base_model[type == "estimate"][date == max(date)],
+            data_base_model[type == "forecast"][date == min(date)]
           ),
           aes(ymin = lower_0.95, ymax = upper_0.95),
           pattern_fill = "black", pattern_color = "black",
@@ -203,10 +203,10 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
       }
     } +
     geom_ribbon(
-      data = data_to_plot[type == "estimate",],
-      aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
-      alpha = 0.4, color = NA
-    ) +
+        data = data_to_plot[type == "estimate",],
+        aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
+        alpha = 0.4, color = NA
+      ) +
     {
       if (has_forecast) {
         geom_ribbon(
@@ -221,7 +221,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
         geom_line(
           data = data_base_model[type == "estimate",],
           aes(y = median), color = "black"
-          )
+        )
       }
     } +
     {
@@ -229,7 +229,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
         geom_line(
           data = data_base_model[type == "forecast",],
           aes(y = median), color = "black"
-          )
+        )
       }
     } +
     {
@@ -237,7 +237,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
         geom_line(
           data = data_to_plot[type == "estimate",],
           aes(y = median, color = model)
-          )
+        )
       }
     } +
     {
@@ -245,7 +245,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
         geom_line(
           data = data_to_plot[type == "forecast",],
           aes(y = median, color = model)
-          )
+        )
       }
     }
   }
@@ -325,7 +325,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     forecast_dates <- data_to_plot[
       type == "estimate",
       .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
-      by = model]
+      by = "model"]
     data_to_plot <- merge(data_to_plot, forecast_dates, by = "model")
     data_to_plot <- data_to_plot[date <= last_forecast, ]
   }
@@ -337,6 +337,12 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
   xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
 
   has_forecast <- "forecast" %in% data_to_plot$type
+  model_horizon <-
+    rbind(
+      data_to_plot[data_to_plot[type == "estimate", .I[which.max(date)], by="model"]$V1],
+      data_to_plot[data_to_plot[type == "forecast", .I[which.max(date)], by="model"]$V1]
+    )
+  model_horizon <- model_horizon[, .(h = as.numeric(max(date) - min(date))), by = "model"]
 
   plot <- ggplot(data_to_plot[data_to_plot$model!=base_model,],
                  aes(x = date)) +
@@ -358,7 +364,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
       '" could not be found in the provided `results` list.'
     ))
   }
-  data_base_model <- data_to_plot[data_to_plot$model==base_model,]
+  data_base_model <- data_to_plot[model==base_model,]
   data_base_model <- data_base_model[
     , setdiff(names(data_base_model), "model"), with = FALSE
     ]
@@ -391,8 +397,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
         if (base_model!="" && has_forecast) {
           ggpattern::geom_ribbon_pattern(
             data = rbind(
-              data_base_model[data_base_model[type == "estimate", .I[which.max(date)], by=model]$V1],
-              data_base_model[data_base_model[type == "forecast", .I[which.min(date)], by=model]$V1]
+              data_base_model[type == "estimate"][date == max(date)],
+              data_base_model[type == "forecast"][date == min(date)]
             ),
             aes(ymin = lower_0.95, ymax = upper_0.95),
             pattern_fill = "black", pattern_color = "black",
@@ -419,8 +425,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
         if (has_forecast) {
           ggpattern::geom_ribbon_pattern(
             data = rbind(
-              data_to_plot[data_to_plot[type == "estimate", .I[which.max(date)], by=model]$V1],
-              data_to_plot[data_to_plot[type == "forecast", .I[which.min(date)], by=model]$V1]
+              data_to_plot[data_to_plot[type == "estimate", .I[which.max(date)], by="model"]$V1],
+              data_to_plot[data_to_plot[type == "forecast", .I[which.min(date)], by="model"]$V1]
             ),
             aes(ymin = lower_0.95, ymax = upper_0.95, pattern_fill = model, pattern_color = model),
             pattern_alpha = 0.3, pattern = 'crosshatch',
@@ -478,11 +484,19 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
         }
       } +
       {
-        if (median && (base_model!="") && has_forecast) {
+        if (median && (base_model!="") && has_forecast && max(model_horizon$h==1)) {
+          geom_point(
+            data = data_base_model[type == "forecast",],
+            aes(y = median), color = "black"
+          )
+        }
+      } +
+      {
+        if (median && (base_model!="") && has_forecast && max(model_horizon$h>1)) {
           geom_line(
             data = data_base_model[type == "forecast",],
             aes(y = median), color = "black"
-            )
+          )
         }
       } +
       {
@@ -494,11 +508,19 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
         }
       } +
       {
-        if (median && has_forecast) {
+        if (median && has_forecast && max(model_horizon$h==1)) {
+          geom_point(
+            data = data_to_plot[type == "forecast",],
+            aes(y = median, color = model)
+          )
+        }
+      } +
+      {
+        if (median && has_forecast && max(model_horizon$h>1)) {
           geom_line(
             data = data_to_plot[type == "forecast",],
             aes(y = median, color = model)
-            )
+          )
         }
       }
   }
@@ -662,7 +684,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     forecast_dates <- concentration_pred[
       type == "estimate",
       .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
-      by = model]
+      by = "model"]
     concentration_pred <- merge(concentration_pred, forecast_dates, by = "model")
     concentration_pred <- concentration_pred[date <= last_forecast, ]
   }
@@ -754,8 +776,8 @@ plot_concentration <- function(results = NULL, measurements = NULL,
         if (!is.null(concentration_pred) && base_model!="" && has_forecast) {
           ggpattern::geom_ribbon_pattern(
             data = rbind(
-              tail(concentration_pred_base_model[type == "estimate",],1),
-              head(concentration_pred_base_model[type == "forecast",],1)
+              concentration_pred_base_model[type == "estimate"][date == max(date)],
+              concentration_pred_base_model[type == "forecast"][date == min(date)]
               ),
             aes(ymin = lower_0.95, ymax = upper_0.95), pattern_fill = "black",
             pattern_alpha = 0.3, pattern = 'crosshatch',
@@ -1025,7 +1047,7 @@ plot_load <- function(results, median = FALSE,
     forecast_dates <- load_pred[
       type == "estimate",
       .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
-      by = model]
+      by = "model"]
     load_pred <- merge(load_pred, forecast_dates, by = "model")
     load_pred <- load_pred[date <= last_forecast, ]
   }
@@ -1067,8 +1089,8 @@ plot_load <- function(results, median = FALSE,
       if (base_model!="" && has_forecast) {
         ggpattern::geom_ribbon_pattern(
           data = rbind(
-            data_base_model[data_base_model[type == "estimate", .I[which.max(date)], by=model]$V1],
-            data_base_model[data_base_model[type == "forecast", .I[which.min(date)], by=model]$V1]
+            data_base_model[type == "estimate"][date == max(date)],
+            data_base_model[type == "forecast"][date == min(date)]
           ),
           aes(ymin = lower_0.95, ymax = upper_0.95),
           pattern_fill = "black", pattern_color = "black",

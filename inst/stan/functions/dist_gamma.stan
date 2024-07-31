@@ -19,6 +19,31 @@ real gamma3_lpdf(vector y, vector mean, real cv) {
   return gamma_lpdf(y | alpha, beta);
 }
 
+real gamma3_lpdf(vector y, vector mean, vector cv) {
+  int n = num_elements(y);
+  vector[n] cv_squared = (cv^2);
+  vector[n] alpha = 1 / cv_squared;
+  vector[n] beta = 1 / (mean .* cv_squared);
+  return gamma_lpdf(y | alpha, beta);
+}
+
+/**
+  * Generate Gamma variate given mean and coefficient of variation
+  *
+  * @param mean vector of means
+  *
+  * @param cv vector of coefficients of variation
+  *
+  * @return Vector of Gamma variates
+  */
+vector gamma3_rng(vector mean, vector cv) {
+  int n = num_elements(mean);
+  vector[n] cv_squared = (cv^2);
+  vector[n] alpha = 1 / cv_squared;
+  vector[n] beta = 1 / (mean .* cv_squared);
+  return to_vector(gamma_rng(alpha, beta));
+}
+
 real gamma3_sum_lpdf(vector y, real mean, real cv, vector N) {
   int n = num_elements(y);
   vector[n] alpha = N / (cv^2); // sum of gammas with same shape and scale
