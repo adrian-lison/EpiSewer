@@ -4,7 +4,13 @@
 \alias{get_lognormal_sigma_alternative}
 \title{Compute sigma parameter of Log-Normal from other quantities.}
 \usage{
-get_lognormal_sigma_alternative(mu, unit_q5 = NULL, unit_q95 = NULL)
+get_lognormal_sigma_alternative(
+  mu,
+  unit_mean = NULL,
+  unit_sd = NULL,
+  unit_q5 = NULL,
+  unit_q95 = NULL
+)
 }
 \arguments{
 \item{mu}{Mu parameter of Log-Normal distribution.}
