@@ -139,7 +139,7 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     T_shift = T_shift_load, .metainfo = .metainfo,
     var_forecast = "pi_log_forecast",
     h_forecast = .metainfo$forecast_horizon,
-    intervals = intervalses
+    intervals = intervals
   )
 
   summary[["expected_concentration"]] <- get_summary_1d_date_log(
