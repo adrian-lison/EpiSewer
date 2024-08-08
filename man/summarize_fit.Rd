@@ -4,7 +4,7 @@
 \alias{summarize_fit}
 \title{Summarize parameters of interest}
 \usage{
-summarize_fit(fit, data, .metainfo, ndraws = 50)
+summarize_fit(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws = 50)
 }
 \arguments{
 \item{fit}{The fitted \code{EpiSewer} model.}
@@ -12,6 +12,9 @@ summarize_fit(fit, data, .metainfo, ndraws = 50)
 \item{data}{The model data that the \code{EpiSewer} model was fitted with.}
 
 \item{.metainfo}{Meta information about the model data.}
+
+\item{intervals}{The credible intervals (CrIs) that should be calculated. By
+default, these are the 50\% and 95\% CrIs.}
 
 \item{ndraws}{Number of exemplary posterior samples that should be extracted.
 (The summaries always use all draws.)}
