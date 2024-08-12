@@ -29,14 +29,26 @@ map_dates_1d_df <- function(fit_summary, date_mapping) {
 get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
                                 var_forecast = NULL, h_forecast = 0,
                                 intervals = c(0.5, 0.95)) {
-  date_mapping <- seq.Date(
-    .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
-    by = "1 day"
+  vars <- list(
+    var = var
   )
-  date_mapping_forecast <- seq.Date(
-    .metainfo$T_end_date + min(1,h_forecast), .metainfo$T_end_date + h_forecast,
-    by = "1 day"
+  date_mappings <- list(
+    date_mapping = seq.Date(
+      .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
+      by = "1 day"
+    ))
+  types <- list(
+    type = factor("estimate", levels = c("estimate", "forecast"))
   )
+
+  if (h_forecast > 0) {
+    vars$var_forecast <- var_forecast
+    date_mappings$date_mapping_forecast <- seq.Date(
+      .metainfo$T_end_date + min(1,h_forecast), .metainfo$T_end_date + h_forecast,
+      by = "1 day"
+    )
+    types$type_forecast <- factor("forecast", levels = c("estimate", "forecast"))
+  }
 
   var_summary <- rbindlist(mapply(function(variable, dates, type) {
     if (is.null(variable)) {return(NULL)}
@@ -58,12 +70,9 @@ get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
     var_summary <- map_dates_1d_df(var_summary, dates)
     var_summary[, type := type]
   },
-  variable = list(var, var_forecast),
-  dates = list(date_mapping, date_mapping_forecast),
-  type = list(
-    factor("estimate", levels = c("estimate", "forecast")),
-    factor("forecast", levels = c("estimate", "forecast"))
-  ),
+  variable = vars,
+  dates = date_mappings,
+  type = types,
   SIMPLIFY = FALSE
   ))
   setDT(var_summary)
@@ -74,14 +83,26 @@ get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
 get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo,
                                     var_forecast = NULL, h_forecast = 0,
                                     intervals = c(0.5, 0.95)) {
-  date_mapping <- seq.Date(
+  vars <- list(
+    var = var
+    )
+  date_mappings <- list(
+    date_mapping = seq.Date(
     .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
     by = "1 day"
-  )
-  date_mapping_forecast <- seq.Date(
-    .metainfo$T_end_date + min(1,h_forecast), .metainfo$T_end_date + h_forecast,
-    by = "1 day"
-  )
+  ))
+  types <- list(
+    type = factor("estimate", levels = c("estimate", "forecast"))
+    )
+
+  if (h_forecast > 0) {
+    vars$var_forecast <- var_forecast
+    date_mappings$date_mapping_forecast <- seq.Date(
+      .metainfo$T_end_date + min(1,h_forecast), .metainfo$T_end_date + h_forecast,
+      by = "1 day"
+    )
+    types$type_forecast <- factor("forecast", levels = c("estimate", "forecast"))
+  }
 
   var_summary <- rbindlist(mapply(function(variable, dates, type) {
     if (is.null(variable)) {return(NULL)}
@@ -103,12 +124,9 @@ get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo,
     var_summary <- map_dates_1d_df(var_summary, dates)
     var_summary[, type := type]
   },
-  variable = list(var, var_forecast),
-  dates = list(date_mapping, date_mapping_forecast),
-  type = list(
-    factor("estimate", levels = c("estimate", "forecast")),
-    factor("forecast", levels = c("estimate", "forecast"))
-  ),
+  variable = vars,
+  dates = date_mappings,
+  type = types,
   SIMPLIFY = FALSE
   ))
   setDT(var_summary)
