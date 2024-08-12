@@ -15,6 +15,7 @@ plot_concentration(
   date_margin_left = 0,
   date_margin_right = 1,
   facet_models = FALSE,
+  facet_direction = "rows",
   base_model = "",
   model_levels = NULL,
   concentration_col = "concentration",
@@ -64,6 +65,9 @@ expanded? Can also be negative to cut off some of the latest dates. By
 default, this is 1 to improve the visibility of the latest date.}
 
 \item{facet_models}{Should the plot be faceted by model? Default is \code{FALSE}.}
+
+\item{facet_direction}{How should the facetting be done? Either in different
+"rows" (default) or in different "columns".}
 
 \item{base_model}{Name of the base model (in the named list provided to
 \code{results}) which should be compared to the other models. This model will be
