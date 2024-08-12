@@ -266,16 +266,20 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
       scale_fill_discrete()
   }
   if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
     plot <- plot +
-      facet_wrap(
-        ~model,
-        nrow = ifelse(facet_direction %in% c("cols","col"), 1, NULL),
-        ncol = ifelse(facet_direction %in% c("rows","row"), 1, NULL)
-      ) +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"
-        )
+      )
   }
   return(plot)
 }
@@ -545,12 +549,16 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
       scale_fill_discrete()
   }
   if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
     plot <- plot +
-      facet_wrap(
-        ~model,
-        nrow = ifelse(facet_direction %in% c("cols","col"), 1, NULL),
-        ncol = ifelse(facet_direction %in% c("rows","row"), 1, NULL)
-        ) +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"
@@ -1014,12 +1022,16 @@ plot_concentration <- function(results = NULL, measurements = NULL,
   }
 
   if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
     plot <- plot +
-      facet_wrap(
-        ~model,
-        nrow = ifelse(facet_direction %in% c("cols","col"), 1, NULL),
-        ncol = ifelse(facet_direction %in% c("rows","row"), 1, NULL)
-      ) +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"
@@ -1238,12 +1250,16 @@ plot_load <- function(results, median = FALSE,
       scale_fill_discrete()
   }
   if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
     plot <- plot +
-      facet_wrap(
-        ~model,
-        nrow = ifelse(facet_direction %in% c("cols","col"), 1, NULL),
-        ncol = ifelse(facet_direction %in% c("rows","row"), 1, NULL)
-      ) +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"
@@ -1295,12 +1311,16 @@ plot_sample_effects <- function(results,
       scale_fill_manual(values = "black")
   }
   if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
     plot <- plot +
-      facet_wrap(
-        ~model,
-        nrow = ifelse(facet_direction %in% c("cols","col"), 1, NULL),
-        ncol = ifelse(facet_direction %in% c("rows","row"), 1, NULL)
-      ) +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"
