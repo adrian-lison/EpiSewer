@@ -164,3 +164,54 @@ Helper functions for primitive operations
       return(prior[1]);
     }
   }
+
+  /**
+  * Check if a vector contains NaN values
+  */
+  int has_nan_vector(vector x) {
+    int has_nan = 0;
+    for (i in 1:num_elements(x)) {
+      if (is_nan(x[i])) {
+        has_nan = 1;
+      }
+    }
+    return has_nan;
+  }
+
+  /*
+  Function to get the indices of NaN values in a vector
+  */
+  array[] int get_nan_positions(vector x) {
+    int nan_count = 0;
+    array[num_elements(x)] int positions;
+
+    for (i in 1:num_elements(x)) {
+      if (is_nan(x[i])) {
+        nan_count += 1;
+        positions[nan_count] = i;
+      }
+    }
+    return positions[1:nan_count];
+  }
+
+  vector trim_or_reject(vector x, real lb_trim, real lb_reject) {
+    int n = num_elements(x);
+    array[n] int rej_positions;
+    int rej_count = 0;
+    for (i in 1:n) {
+      if (x[i] < lb_reject) {
+        rej_count += 1;
+        rej_positions[rej_count] = i;
+      }
+    }
+    if (rej_count > 0) {
+      reject(
+        "The following vector elements were below ",
+        "the lower bound for rejection (", lb_reject, "). ",
+        "Indices: ", rej_positions[1:rej_count], " | ",
+        "Values: ", x[rej_positions[1:rej_count]]
+        );
+    } else {
+      return(fmax(x, rep_vector(lb_trim, n)));
+    }
+  }
