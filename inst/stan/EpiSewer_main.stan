@@ -525,7 +525,14 @@ generated quantities {
     vector[T+h] cv_all;
     vector[T+h] above_LOD; // will be a vector of 0s and 1s
 
-    // Forecasting
+    // Prediction for days until present
+    if (pr_noise) {
+      pre_repl_log[1:T] = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
+    } else {
+      pre_repl_log[1:T] = kappa_log;
+    }
+
+    // Forecasting for days beyond present
     if (h>0) {
       // Forecasting of R
       if (R_model == 0) {
@@ -607,14 +614,13 @@ generated quantities {
 
       // Forecasting of pre-replication concentrations
       if (pr_noise) {
-        pre_repl_log[1:T] = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
         pre_repl_log[(T+1):(T+h)] = to_vector(lognormal_log_rng(kappa_log_forecast, nu_psi[1]));
       } else {
-        pre_repl_log[1:T] = kappa_log;
         pre_repl_log[(T+1):(T+h)] = kappa_log_forecast;
       }
-      pre_repl = exp(pre_repl_log);
     }
+
+    pre_repl = exp(pre_repl_log);
 
     vector[T+h] nu_upsilon_b_all;
     if (cv_type == 1) {
