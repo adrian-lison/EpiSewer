@@ -482,17 +482,17 @@ generated quantities {
 
   // concentrations
   {
-    vector[T] pre_repl;
-    vector[T] exp_pre_repl;
+    vector[T] concentration_log;
+    vector[T] concentration;
     vector[T] cv;
     vector[T] above_LOD; // will be a vector of 0s and 1s
     if (pr_noise) {
-      pre_repl = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
+      concentration_log = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
     } else {
-      pre_repl = kappa_log;
+      concentration_log = kappa_log;
     }
 
-    exp_pre_repl = exp(pre_repl);
+    concentration = exp(concentration_log);
 
     vector[T] nu_upsilon_b_all;
     vector[T] nu_upsilon_b_all_noise_raw = std_normal_n_rng(T);
@@ -521,7 +521,7 @@ generated quantities {
       }
       above_LOD = to_vector(bernoulli_rng(
         1-exp(log_hurdle_exponential(
-          exp_pre_repl, // lambda (concentration)
+          concentration, // lambda (concentration)
           LOD_hurdle_scale_all,
           cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
           cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
@@ -535,7 +535,7 @@ generated quantities {
       cv = rep_vector(nu_upsilon_a, T);
     } else if (cv_type == 1) {
       cv = cv_dPCR_pre(
-        exp_pre_repl, // lambda (concentration)
+        concentration, // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
         (total_partitions_observe ? total_partitions_all : nu_upsilon_b_all * 1e4), // m (number of partitions)
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5, // c (conversion factor)
@@ -546,16 +546,16 @@ generated quantities {
     } else if (cv_type == 2) {
       cv = (
         nu_upsilon_a * mean(measured_concentrations[i_nonzero]) /
-        exp_pre_repl
+        concentration
         );
     }
 
     vector[T] meas_conc;
     if (obs_dist == 1) {
-      meas_conc = normal2_rng(exp_pre_repl, cv, 0);
+      meas_conc = normal2_rng(concentration, cv, 0);
     }
     else if (obs_dist == 2) {
-      meas_conc = lognormal4_rng(pre_repl, cv);
+      meas_conc = lognormal4_rng(concentration_log, cv);
     } else {
       reject("Distribution not supported.");
     }

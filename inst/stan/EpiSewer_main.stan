@@ -520,16 +520,16 @@ generated quantities {
   vector[h] pi_log_forecast;
   vector[h] kappa_log_forecast;
   {
-    vector[T+h] pre_repl_log;
-    vector[T+h] pre_repl;
+    vector[T+h] concentration_log;
+    vector[T+h] concentration;
     vector[T+h] cv_all;
     vector[T+h] above_LOD; // will be a vector of 0s and 1s
 
     // Prediction for days until present
     if (pr_noise) {
-      pre_repl_log[1:T] = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
+      concentration_log[1:T] = to_vector(lognormal_log_rng(kappa_log, nu_psi[1]));
     } else {
-      pre_repl_log[1:T] = kappa_log;
+      concentration_log[1:T] = kappa_log;
     }
 
     // Forecasting for days beyond present
@@ -614,13 +614,13 @@ generated quantities {
 
       // Forecasting of pre-replication concentrations
       if (pr_noise) {
-        pre_repl_log[(T+1):(T+h)] = to_vector(lognormal_log_rng(kappa_log_forecast, nu_psi[1]));
+        concentration_log[(T+1):(T+h)] = to_vector(lognormal_log_rng(kappa_log_forecast, nu_psi[1]));
       } else {
-        pre_repl_log[(T+1):(T+h)] = kappa_log_forecast;
+        concentration_log[(T+1):(T+h)] = kappa_log_forecast;
       }
     }
 
-    pre_repl = exp(pre_repl_log);
+    concentration = exp(concentration_log);
 
     vector[T+h] nu_upsilon_b_all;
     if (cv_type == 1) {
@@ -652,7 +652,7 @@ generated quantities {
         );
       }
       p_zero_all = exp(log_hurdle_exponential(
-          pre_repl, // lambda (concentration)
+          concentration, // lambda (concentration)
           LOD_hurdle_scale_all,
           cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
           cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
@@ -667,7 +667,7 @@ generated quantities {
       cv_all = rep_vector(nu_upsilon_a, T+h);
     } else if (cv_type == 1) {
       cv_all = cv_dPCR_pre(
-        pre_repl, // lambda (concentration)
+        concentration, // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
         nu_upsilon_b_all * 1e4, // m (number of partitions)
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5, // c (conversion factor)
@@ -678,11 +678,11 @@ generated quantities {
     } else if (cv_type == 2) {
       cv_all = (
         nu_upsilon_a * mean(measured_concentrations[i_nonzero]) /
-        pre_repl
+        concentration
         );
     }
 
-    vector[T+h] mean_conditional_all = pre_repl ./ (1-p_zero_all);
+    vector[T+h] mean_conditional_all = concentration ./ (1-p_zero_all);
     vector[T+h] cv_conditional_all = sqrt(cv_all^2 .* (1-p_zero_all) - p_zero_all);
 
     vector[T+h] meas_conc;
