@@ -687,6 +687,11 @@ generated quantities {
     vector[T+h] cv_conditional_all = sqrt(cv_all^2 .* (1-p_zero_all) - p_zero_all);
 
     // correct potentially slightly negative approximations
+    mean_conditional_all = trim_or_reject(
+      mean_conditional_all,
+      1e-5, // trim to almost zero
+      -0.01 // throw error when significantly below zero
+    );
     cv_conditional_all = trim_or_reject(
       cv_conditional_all,
       1e-5, // trim to almost zero
