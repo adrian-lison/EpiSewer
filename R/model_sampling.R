@@ -79,7 +79,7 @@ sample_effects_estimate_weekday <- function(
       weekdays <- lubridate::wday(
         seq.Date(
           modeldata$.metainfo$T_start_date,
-          modeldata$.metainfo$T_end_date,
+          modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
           by = "1 day"
         ),
         label = TRUE
@@ -94,7 +94,7 @@ sample_effects_estimate_weekday <- function(
           design_matrix, effect_prior_mu, effect_prior_sigma, modeldata
         )
     },
-    required = c(".metainfo$T_start_date", ".metainfo$T_end_date"),
+    required = c(".metainfo$T_start_date", ".metainfo$T_end_date", ".metainfo$forecast_horizon"),
     modeldata = modeldata
   )
 
@@ -144,12 +144,12 @@ sample_effects_estimate_matrix <- function(
   modeldata <- tbc(
     "check_design_matrix",
     {
-      if (!(modeldata$T == nrow(design_matrix))) {
+      if (!(modeldata$T + modeldata$.metainfo$forecast_horizon == nrow(design_matrix))) {
         cli::cli_abort(
           paste(
             "Mismatch: Modeled time period has",
-            modeldata$T,
-            "days (from earliest to latest date,",
+            modeldata$T + modeldata$.metainfo$forecast_horizon,
+            "days (from earliest to latest date, including forecasts and",
             "accounting for the composite window length),",
             "but design matrix for sample date effects has",
             nrow(design_matrix),
@@ -158,7 +158,7 @@ sample_effects_estimate_matrix <- function(
         )
       }
     },
-    required = "T",
+    required = c("T", ".metainfo$forecast_horizon"),
     modeldata = modeldata
   )
   modeldata$K <- ncol(design_matrix)
