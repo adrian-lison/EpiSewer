@@ -189,5 +189,6 @@ vector total_partitions_noncentered(real m_mu, real m_cv, vector noise_raw) {
   real sdlog = sqrt(sigma2);
   vector[N] lost_partitions = exp(meanlog + sdlog * noise_raw); // log-normal
   vector[N] total_partitions = max_partitions - lost_partitions;
+  total_partitions = softplus(total_partitions, 10); // softplus as soft >0 constraint
   return(total_partitions);
 }
