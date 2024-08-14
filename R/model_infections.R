@@ -861,14 +861,14 @@ add_seeding_intercept_prior <- function(
     intercept_prior_q5 <- 1
   }
 
-  if (!is.null(intercept_prior_q95) && intercept_prior_q95 < 10) {
+  if (!is.null(intercept_prior_q95) && intercept_prior_q95 < 2) {
     cli::cli_warn(paste0(
       "Warning from ",
       help_seeding_f, ": ",
       "The 95% quantile (`intercept_prior_q95`) was slightly raised to be ",
-      "at least 10 infections."
+      "at least 2 infections."
     ))
-    intercept_prior_q95 <- 10
+    intercept_prior_q95 <- 2
   }
 
   if (!is.null(intercept_prior_q5) && !is.null(intercept_prior_q95)) {

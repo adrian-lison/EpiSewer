@@ -43,6 +43,8 @@ modeldata_update_metainfo <- function(modeldata) {
     modeldata,
     required = c(
       "measured_concentrations",
+      "measure_to_sample",
+      "sample_to_date",
       "flow",
       ".metainfo$composite_window",
       ".metainfo$load_per_case"
@@ -50,11 +52,17 @@ modeldata_update_metainfo <- function(modeldata) {
     throw_error = FALSE
   )) {
     # crude descriptive estimate of cases at start of time series
+    # here we take the median of the first week of samples
     modeldata$.metainfo$initial_cases_crude <-
       with(
         modeldata,
-        0.1 + measured_concentrations[1] *
-          mean(flow[1:.metainfo$composite_window]) / .metainfo$load_per_case
+        0.0001 + # small offset to avoid zero cases
+          median(
+            measured_concentrations[measure_to_sample[which(sample_to_date<=7)]],
+            na.rm = T
+            ) *
+          median(flow[1:7], na.rm = T) /
+          .metainfo$load_per_case
       )
   }
   return(modeldata)
