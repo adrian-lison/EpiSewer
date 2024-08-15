@@ -252,8 +252,8 @@ combine_samples <- function(
     if (!is.null(ndraws)) {
       draw_ids <- unique(res$.draw)
       if (ndraws > length(draw_ids)) {
-        cli::cli_abort(paste(
-          "The maximum number of available draws is", length(draw_ids)
+        cli::cli_abort(paste0(
+          "The maximum number of available draws is ", length(draw_ids), "."
         ))
       }
       selected_ids <- sample(draw_ids, ndraws)
