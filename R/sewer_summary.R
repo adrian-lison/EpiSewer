@@ -1,36 +1,3 @@
-get_R_trajectories <- function(fit, T_shift, .metainfo, ndraws = 10) {
-  fit_draws <- get_draws_1d_date(fit, "R", ndraws)
-  date_mapping <- seq.Date(
-    .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
-    by = "1 day"
-  )
-  fit_draws[, date := date_mapping[as.integer(date)]]
-  fit_draws[, c(".chain", ".iteration", "variable") := NULL]
-  return(fit_draws[])
-}
-
-get_I_trajectories <- function(fit, T_shift, .metainfo, ndraws = 10) {
-  fit_draws <- get_draws_1d_date(fit, "I", ndraws)
-  date_mapping <- seq.Date(
-    .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
-    by = "1 day"
-  )
-  fit_draws[, date := date_mapping[as.integer(date)]]
-  fit_draws[, c(".chain", ".iteration", "variable") := NULL]
-  return(fit_draws[])
-}
-
-get_iota_trajectories <- function(fit, T_shift, .metainfo, ndraws = 10) {
-  fit_draws <- get_draws_1d_date(fit, "iota", ndraws)
-  date_mapping <- seq.Date(
-    .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
-    by = "1 day"
-  )
-  fit_draws[, date := date_mapping[as.integer(date)]]
-  fit_draws[, c(".chain", ".iteration", "variable") := NULL]
-  return(fit_draws[])
-}
-
 #' Summarize parameters of interest
 #'
 #' @description This function summarizes important parameters of interest from a
@@ -75,15 +42,15 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     fit, "R",
     T_shift = T_shift_R, .metainfo = .metainfo,
     var_forecast = "R_forecast",
-    h_forecast = .metainfo$forecast_horizon,
     intervals = intervals
   )
   summary[["R"]]$seeding <- FALSE
   summary[["R"]][1:(data$G), "seeding"] <- TRUE
 
-  summary[["R_samples"]] <- get_R_trajectories(
-    fit,
-    T_shift = T_shift_R, .metainfo = .metainfo, ndraws = ndraws
+  summary[["R_samples"]] <- get_latent_trajectories(
+    fit, var = "R", var_forecast = "R_forecast",
+    T_shift = T_shift_R,
+    .metainfo = .metainfo, draw_ids = 1:ndraws
   )
   summary[["R_samples"]]$seeding <- FALSE
   summary[["R_samples"]][1:(data$G * ndraws), "seeding"] <- TRUE
@@ -92,15 +59,14 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     fit, "iota",
     T_shift = T_shift_latent, .metainfo = .metainfo,
     var_forecast = "iota_forecast",
-    h_forecast = .metainfo$forecast_horizon,
     intervals = intervals
   )
   summary[["expected_infections"]]$seeding <- FALSE
   summary[["expected_infections"]][1:(data$G * 2), "seeding"] <- TRUE
 
-  summary[["expected_infections_samples"]] <- get_iota_trajectories(
-    fit,
-    T_shift = T_shift_latent, .metainfo = .metainfo, ndraws = ndraws
+  summary[["expected_infections_samples"]] <- get_latent_trajectories(
+    fit,  var = "iota", var_forecast = "iota_forecast",
+    T_shift = T_shift_latent, .metainfo = .metainfo, draw_ids = 1:ndraws
   )
   summary[["expected_infections_samples"]]$seeding <- FALSE
   summary[["expected_infections_samples"]][
@@ -112,15 +78,14 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
       fit, "I",
       T_shift = T_shift_latent, .metainfo = .metainfo,
       var_forecast = "I_forecast",
-      h_forecast = .metainfo$forecast_horizon,
       intervals = intervals
     )
     summary[["infections"]]$seeding <- FALSE
     summary[["infections"]][1:(data$G * 2), "seeding"] <- TRUE
 
-    summary[["infections_samples"]] <- get_I_trajectories(
-      fit,
-      T_shift = T_shift_latent, .metainfo = .metainfo, ndraws = ndraws
+    summary[["infections_samples"]] <- get_latent_trajectories(
+      fit,  var = "I", var_forecast = "I_forecast",
+      T_shift = T_shift_latent, .metainfo = .metainfo, draw_ids = 1:ndraws
     )
     summary[["infections_samples"]]$seeding <- FALSE
     summary[["infections_samples"]][
@@ -138,7 +103,6 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     fit, "pi_log",
     T_shift = T_shift_load, .metainfo = .metainfo,
     var_forecast = "pi_log_forecast",
-    h_forecast = .metainfo$forecast_horizon,
     intervals = intervals
   )
 
@@ -146,7 +110,6 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     fit, "kappa_log",
     T_shift = T_shift_load, .metainfo = .metainfo,
     var_forecast = "kappa_log_forecast",
-    h_forecast = .metainfo$forecast_horizon,
     intervals = intervals
   )
 
@@ -154,7 +117,6 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     fit, "predicted_concentration",
     T_shift = T_shift_load, .metainfo = .metainfo,
     var_forecast = "predicted_concentration_forecast",
-    h_forecast = .metainfo$forecast_horizon,
     intervals = intervals
   )
 
