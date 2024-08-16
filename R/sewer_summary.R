@@ -38,6 +38,10 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
   T_shift_onset <- with(data, S)
   T_shift_load <- with(data, 0)
 
+  # pseudo-randomize selected draws
+  set.seed(which.min(fit$draws("R")))
+  draw_ids <- sample.int(prod(dim(fit$draws("R[1]"))), ndraws)
+
   summary[["R"]] <- get_summary_1d_date(
     fit, "R",
     T_shift = T_shift_R, .metainfo = .metainfo,
@@ -50,7 +54,7 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
   summary[["R_samples"]] <- get_latent_trajectories(
     fit, var = "R", var_forecast = "R_forecast",
     T_shift = T_shift_R,
-    .metainfo = .metainfo, draw_ids = 1:ndraws
+    .metainfo = .metainfo, draw_ids = draw_ids
   )
   summary[["R_samples"]]$seeding <- FALSE
   summary[["R_samples"]][1:(data$G * ndraws), "seeding"] <- TRUE
@@ -66,7 +70,7 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
 
   summary[["expected_infections_samples"]] <- get_latent_trajectories(
     fit,  var = "iota", var_forecast = "iota_forecast",
-    T_shift = T_shift_latent, .metainfo = .metainfo, draw_ids = 1:ndraws
+    T_shift = T_shift_latent, .metainfo = .metainfo, draw_ids = draw_ids
   )
   summary[["expected_infections_samples"]]$seeding <- FALSE
   summary[["expected_infections_samples"]][
@@ -85,7 +89,7 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
 
     summary[["infections_samples"]] <- get_latent_trajectories(
       fit,  var = "I", var_forecast = "I_forecast",
-      T_shift = T_shift_latent, .metainfo = .metainfo, draw_ids = 1:ndraws
+      T_shift = T_shift_latent, .metainfo = .metainfo, draw_ids = draw_ids
     )
     summary[["infections_samples"]]$seeding <- FALSE
     summary[["infections_samples"]][
