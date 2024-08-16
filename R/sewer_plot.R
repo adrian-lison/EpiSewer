@@ -260,6 +260,12 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     )
   model_horizon <- model_horizon[, .(h = as.numeric(max(date) - min(date))), by = "model"]
 
+  if (draws) {
+    data_to_plot <- data_to_plot[!is.na(R),]
+  } else {
+    data_to_plot <- data_to_plot[!is.na(median),]
+  }
+
   plot <- ggplot(data_to_plot[model!=base_model,],
                  aes(x = date)) +
     theme_bw() +
