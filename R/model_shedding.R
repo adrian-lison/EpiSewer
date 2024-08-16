@@ -178,7 +178,7 @@ load_variation_none <- function(modeldata = modeldata_init()) {
   modeldata$load_vari <- 0
   modeldata$nu_zeta_prior <- numeric(0)
   modeldata$.init$nu_zeta <- numeric(0)
-  modeldata$.init$zeta_raw <- numeric(0)
+  modeldata$.init$zeta_log <- numeric(0)
 
   modeldata$.str$shedding[["load_variation"]] <- list(
     load_variation_none = c()
@@ -235,9 +235,9 @@ load_variation_estimate <- function(
   #   rep(0, modeldata$.metainfo$length_shedding),
   #   c(".metainfo$length_shedding")
   # )
-  modeldata$.init$zeta <- tbe(
+  modeldata$.init$zeta_log <- tbe(
     rep(
-      max(1.1, modeldata$.metainfo$initial_cases_crude),
+      log(max(1.1, modeldata$.metainfo$initial_cases_crude)),
       modeldata$.metainfo$length_shedding
     ),
     c(".metainfo$initial_cases_crude", ".metainfo$length_shedding")

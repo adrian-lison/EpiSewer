@@ -232,7 +232,7 @@ parameters {
   // individual-level shedding load variation
   array[load_vari ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
   //vector[load_vari ? S + D + T : 0] zeta_raw; // realized shedding load (non-centered)
-  vector<lower = 0>[load_vari ? S + D + T : 0] zeta; // realized shedding load
+  vector<lower = 0>[load_vari ? S + D + T : 0] zeta_log; // realized shedding load
 
   // sample date effects
   vector[K] eta;
@@ -304,7 +304,7 @@ transformed parameters {
     //zeta = softplus(gamma_sum_approx(nu_zeta[1], lambda, zeta_raw), 10); // softplus as soft >0 constraint
     omega_log = log_convolve(
         shed_rev_log, // shedding load distribution
-        log(load_mean) + log(zeta) // total load shed
+        log(load_mean) + zeta_log // total load shed
         )[(S + 1) : (S + D + T)];
   } else {
     omega_log = log_convolve(
@@ -405,7 +405,7 @@ model {
   if (load_vari) {
     nu_zeta[1] ~ normal(nu_zeta_prior[1], nu_zeta_prior[2]) T[0, ]; // truncated normal
     //zeta_raw ~ std_normal();
-    target += gamma3_sum_lpdf(zeta | 1, nu_zeta[1], lambda);
+    target += gamma3_sum_log_lpdf(zeta_log | 1, nu_zeta[1], lambda);
   }
 
   // Prior on sample date effects
@@ -582,10 +582,10 @@ generated quantities {
 
       // Forecasting of total loads
       if (load_vari) {
-        vector[h] zeta_forecast = to_vector(gamma_rng(lambda_forecast/nu_zeta[1]^2, 1/nu_zeta[1]^2));
+        vector[h] zeta_log_forecast = log(to_vector(gamma_rng(lambda_forecast/nu_zeta[1]^2, 1/nu_zeta[1]^2)));
         omega_log_forecast = log_convolve(
             shed_rev_log, // shedding load distribution
-            log(load_mean) + log(append_row(zeta[((S + D + T)+1-S):(S + D + T)], zeta_forecast)) // total load shed
+            log(load_mean) + append_row(zeta_log[((S + D + T)+1-S):(S + D + T)], zeta_log_forecast) // total load shed
             )[(S+1):(S+h)];
       } else {
         omega_log_forecast = log_convolve(
