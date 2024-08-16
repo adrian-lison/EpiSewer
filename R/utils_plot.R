@@ -20,12 +20,12 @@ add_ribbons <- function(plot, data, median, has_forecast) {
     geom_line(
       data = data_estimate,
       aes(y = upper_0.95, color = model),
-      alpha = 0.3, linetype = "solid"
+      alpha = 0.4, linetype = "solid", size = 0.2
     )  +
     geom_line(
       data = data_estimate,
       aes(y = lower_0.95, color = model),
-      alpha = 0.3, linetype = "solid"
+      alpha = 0.4, linetype = "solid", size = 0.2
     )
 
   if (median) {
@@ -51,12 +51,12 @@ add_ribbons <- function(plot, data, median, has_forecast) {
       geom_line(
         data = data_forecast,
         aes(y = upper_0.95, color = model),
-        alpha = 0.3, linetype = "dashed"
+        alpha = 0.4, linetype = "dashed", size = 0.2
       )  +
       geom_line(
         data = data_forecast,
         aes(y = lower_0.95, color = model),
-        alpha = 0.3, linetype = "dashed"
+        alpha = 0.4, linetype = "dashed", size = 0.2
       ) +
       geom_vline(
         data = date_forecast,
@@ -98,12 +98,12 @@ add_ribbons_base <- function(plot, data, median, has_forecast) {
     geom_line(
       data = data_estimate,
       aes(y = upper_0.95),
-      alpha = 0.3, color = "black", linetype = "solid"
+      alpha = 0.4, color = "black", linetype = "solid", size = 0.2
     )  +
     geom_line(
       data = data_estimate,
       aes(y = lower_0.95),
-      alpha = 0.3, color = "black", linetype = "solid"
+      alpha = 0.4, color = "black", linetype = "solid", size = 0.2
     )
 
   if (median) {
@@ -125,17 +125,17 @@ add_ribbons_base <- function(plot, data, median, has_forecast) {
       geom_ribbon(
         data = data_forecast,
         aes(ymin = lower_0.5, ymax = upper_0.5),
-        alpha = 0.3, color = NA, fill = "black"
+        alpha = 0.4, color = NA, fill = "black"
       ) +
       geom_line(
         data = data_forecast,
         aes(y = upper_0.95),
-        alpha = 0.3, color = "black", linetype = "dashed"
+        alpha = 0.3, color = "black", linetype = "dashed", size = 0.2
       )  +
       geom_line(
         data = data_forecast,
         aes(y = lower_0.95),
-        alpha = 0.3, color = "black", linetype = "dashed"
+        alpha = 0.4, color = "black", linetype = "dashed", size = 0.2
       ) +
       geom_vline(
         data = date_forecast,
