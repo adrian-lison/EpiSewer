@@ -7,7 +7,9 @@
 horizon_assume(horizon, modeldata = modeldata_init())
 }
 \arguments{
-\item{horizon}{The forecast horizon in days. If 0, no forecasts are produced.}
+\item{horizon}{The forecast horizon in days. If 0, no forecasts are produced.
+Note that this functionality is intended for short-term forecasts.
+Projections over longer horizons can be highly inaccurate.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -28,4 +30,13 @@ This option specifies a fixed forecast horizon in days. EpiSewer
 will produce concentration predictions and forecasts of all latent
 variables such as Rt, infections and load until the end of the forecast
 horizon.
+}
+\details{
+Forecasts account for the estimated variation of transmission
+dynamics over time and therefore become more uncertain at longer forecast
+horizons. However, it is important to keep in mind that in expectation the
+model will project the current transmission dynamics to continue unchanged.
+This assumption can be violated by various factors such as depletion of
+susceptible individuals, changes in behavior, or public health
+interventions.
 }

@@ -40,7 +40,13 @@ model_forecast <- function(horizon = horizon_none()) {
 #' @inherit modeldata_init return
 #' @export
 horizon_none <- function(modeldata = modeldata_init()) {
-  return(horizon_assume(horizon = 0))
+  modeldata$h <- 0
+  modeldata$.metainfo$forecast_horizon <- 0
+
+  modeldata$.str$forecast[["horizon"]] <- list(
+    horizon_none = c()
+  )
+  return(modeldata)
 }
 
 #' Specify the forecast horizon
@@ -51,6 +57,10 @@ horizon_none <- function(modeldata = modeldata_init()) {
 #'   horizon.
 #'
 #' @param horizon The forecast horizon in days. If 0, no forecasts are produced.
+#'   Note that this functionality is intended for short-term forecasts.
+#'   Projections over longer horizons can be highly inaccurate.
+#'
+#' @inherit model_forecast details
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -58,5 +68,9 @@ horizon_none <- function(modeldata = modeldata_init()) {
 horizon_assume <- function(horizon, modeldata = modeldata_init()) {
   modeldata$h <- horizon
   modeldata$.metainfo$forecast_horizon <- horizon
+
+  modeldata$.str$forecast[["horizon"]] <- list(
+    horizon_assume = c()
+  )
   return(modeldata)
 }
