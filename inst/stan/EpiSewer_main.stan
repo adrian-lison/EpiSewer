@@ -251,8 +251,8 @@ transformed parameters {
   vector[R_model == 1 ? h : 0] R_forecast_spline; // spline-based forecast of R
   vector[L + S + D + T] iota; // expected number of infections
   vector[S + D + T] lambda; // expected number of shedding onsets
-  vector[D + T] omega_log;
-  vector[T] pi_log; // log expected daily loads
+  vector[D + T] omega_log; // log expected daily loads in catchment
+  vector[T] pi_log; // log expected daily loads at sampling site
   vector[T] kappa_log; // log expected daily concentrations
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
   vector<lower=0>[(cv_type == 1) && total_partitions_observe!=1 ? n_measured : 0] nu_upsilon_b; // total partitions per measurement
@@ -515,7 +515,7 @@ model {
   }
 }
 generated quantities {
-  // predicted measurements
+  // predicted measurements and forecasts
   // note that we here assume the same measurement variance as from composite samples,
   // which may be smaller than that of hypothetical daily measurements
   vector[T] predicted_concentration;
