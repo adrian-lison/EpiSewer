@@ -16,16 +16,6 @@ add_ribbons <- function(plot, data, median, has_forecast) {
       data = data_estimate,
       aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
       alpha = 0.4, color = NA
-    ) +
-    geom_line(
-      data = data_estimate,
-      aes(y = upper_0.95, color = model),
-      alpha = 0.4, linetype = "solid", size = 0.2
-    )  +
-    geom_line(
-      data = data_estimate,
-      aes(y = lower_0.95, color = model),
-      alpha = 0.4, linetype = "solid", size = 0.2
     )
 
   if (median) {
@@ -94,16 +84,6 @@ add_ribbons_base <- function(plot, data, median, has_forecast) {
       data = data_estimate,
       aes(ymin = lower_0.5, ymax = upper_0.5),
       alpha = 0.4, color = NA, fill = "black"
-    ) +
-    geom_line(
-      data = data_estimate,
-      aes(y = upper_0.95),
-      alpha = 0.4, color = "black", linetype = "solid", size = 0.2
-    )  +
-    geom_line(
-      data = data_estimate,
-      aes(y = lower_0.95),
-      alpha = 0.4, color = "black", linetype = "solid", size = 0.2
     )
 
   if (median) {
