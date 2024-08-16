@@ -178,6 +178,8 @@ get_latent_trajectories <- function(fit, var, T_shift, .metainfo,
     fit_draws_forecast[, date := date_mapping_forecast[as.integer(date)]]
     fit_draws_forecast[, c(".chain", ".iteration", "variable") := NULL]
     fit_draws_forecast[, type := "forecast"]
+  } else {
+    fit_draws_forecast <- NULL
   }
 
   return(rbindlist(list(fit_draws, fit_draws_forecast))[])
