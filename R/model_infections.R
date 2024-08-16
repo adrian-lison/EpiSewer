@@ -421,13 +421,17 @@ R_estimate_splines <- function(
     "spline_definition",
     {
       knots <- place_knots(
-        ts_length = modeldata$.metainfo$length_R,
+        ts_length = with(
+          modeldata$.metainfo, length_R + forecast_horizon
+        ),
         knot_distance = knot_distance,
-        partial_window = modeldata$.metainfo$partial_window
+        partial_window = with(
+          modeldata$.metainfo, partial_window + forecast_horizon
+          )
       )
       B <-
         splines::bs(
-          1:modeldata$.metainfo$length_R,
+          with(modeldata$.metainfo, 1:(length_R + forecast_horizon)),
           knots = knots$interior,
           degree = spline_degree,
           intercept = FALSE,
@@ -458,7 +462,11 @@ R_estimate_splines <- function(
       modeldata$.init$bs_coeff_ar_sd <- 0.1
       modeldata$.init$bs_coeff_noise_raw <- rep(0, modeldata$bs_n_basis - 1)
     },
-    required = c(".metainfo$length_R", ".metainfo$partial_window"),
+    required = c(
+      ".metainfo$length_R",
+      ".metainfo$partial_window",
+      ".metainfo$forecast_horizon"
+      ),
     modeldata = modeldata
   )
 

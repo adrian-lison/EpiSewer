@@ -110,7 +110,7 @@ data {
   array[R_model == 1 ? 1 : 0] int<lower=0> bs_n_w; // number of nonzero entries in bs matrix
   vector[R_model == 1 ? bs_n_w[1] : 0] bs_w; // nonzero entries in bs matrix
   array[R_model == 1 ? bs_n_w[1] : 0] int bs_v; // column indices of bs_w
-  array[R_model == 1 ? L + S + D + T - G + 1 : 0] int bs_u; // row starting indices for bs_w plus padding
+  array[R_model == 1 ? L + S + D + T - G + 1 + h : 0] int bs_u; // row starting indices for bs_w plus padding
   array[R_model == 1 ? 2 : 0] real bs_coeff_ar_start_prior; // start hyperprior for random walk on log bs coeffs
   array[R_model == 1 ? 2 : 0] real bs_coeff_ar_sd_prior; // sd hyperprior for random walk on log bs coeffs
 
@@ -245,6 +245,7 @@ parameters {
 }
 transformed parameters {
   vector[L + S + D + T - G] R; // effective reproduction number
+  vector[R_model == 1 ? h : 0] R_forecast_spline; // spline-based forecast of R
   vector[L + S + D + T] iota; // expected number of infections
   vector[S + D + T] lambda; // expected number of shedding onsets
   vector<lower = 0>[load_vari ? S + D + T : 0] zeta; // realized shedding load
@@ -269,9 +270,13 @@ transformed parameters {
     // Basis spline smoothing
     vector[bs_n_basis[1] - 1] bs_coeff_noise = bs_coeff_noise_raw .* (bs_coeff_ar_sd[1] * sqrt(bs_dists)); // additive errors
     vector[bs_n_basis[1]] bs_coeff = random_walk([bs_coeff_ar_start[1]]', bs_coeff_noise, 0); // Basis spline coefficients
-    R = apply_link(csr_matrix_times_vector(
-      L + S + D + T - G, bs_n_basis[1], bs_w, bs_v, bs_u, bs_coeff
+    vector[L + S + D + T - G + h] R_all = apply_link(csr_matrix_times_vector(
+      L + S + D + T - G + h, bs_n_basis[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
+    R = R_all[1:(L + S + D + T - G)];
+    if (h>0) {
+      R_forecast_spline = R_all[(L + S + D + T - G + 1):(L + S + D + T - G + h)];
+    }
   }
 
   // seeding
@@ -547,11 +552,7 @@ generated quantities {
         ), R_link)[((L + S + D + T - G) + 1):((L + S + D + T - G) + h)];
       } else if (R_model == 1) {
         // Current solution for smoothing splines is to use a simple random walk for forecasting
-         R_forecast = apply_link(random_walk(
-          [R[L + S + D + T - G]]',
-          to_vector(std_normal_n_rng(h)) * bs_coeff_ar_sd[1],
-          0
-        ), R_link)[2:(h+1)];
+         R_forecast = R_forecast_spline;
       }
 
       // Forecasting of infections
