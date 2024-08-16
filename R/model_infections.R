@@ -626,13 +626,13 @@ R_estimate_approx <- function(
     "spline_definition",
     {
       knots <- place_knots(
-        ts_length = with(modeldata$.metainfo, length_I - length_seeding),
+        ts_length = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
         knot_distance = knot_distance,
-        partial_window = modeldata$.metainfo$partial_window
+        partial_window = with(modeldata$.metainfo, partial_window + forecast_horizon)
       )
       B <-
         splines::bs(
-          1:with(modeldata$.metainfo, length_I - length_seeding),
+          1:with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
           knots = knots$interior,
           degree = spline_degree,
           intercept = FALSE,
@@ -664,7 +664,8 @@ R_estimate_approx <- function(
     required = c(
       ".metainfo$length_I",
       ".metainfo$length_seeding",
-      ".metainfo$partial_window"
+      ".metainfo$partial_window",
+      ".metainfo$forecast_horizon"
       ),
     modeldata = modeldata
   )
