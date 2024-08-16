@@ -236,7 +236,7 @@ load_variation_estimate <- function(
   # )
   modeldata$.init$zeta <- tbe(
     rep(
-      max(1, modeldata$.metainfo$initial_cases_crude),
+      max(1.1, modeldata$.metainfo$initial_cases_crude),
       modeldata$.metainfo$length_shedding
     ),
     c(".metainfo$initial_cases_crude", ".metainfo$length_shedding")
