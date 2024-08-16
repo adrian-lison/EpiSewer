@@ -5,16 +5,16 @@
 \title{Estimate infection noise}
 \usage{
 infection_noise_estimate(
-  overdispersion = FALSE,
+  overdispersion = TRUE,
   overdispersion_prior_mu = 0.1,
   overdispersion_prior_sigma = 0,
   modeldata = modeldata_init()
 )
 }
 \arguments{
-\item{overdispersion}{If \code{FALSE} (default) new infections are modeled as
-Poisson distributed. If \code{TRUE}, new infections are modeled as Negative
-Binomial distributed.}
+\item{overdispersion}{If \code{TRUE} (default), new infections are modeled as
+Negative Binomial distributed. If \code{FALSE}, new infections are modeled as
+Poisson distributed.}
 
 \item{overdispersion_prior_mu}{Prior (mean) on the overdispersion parameter
 of the Negative Binomial. The default of 0.1 corresponds to 10\%
@@ -50,6 +50,12 @@ up model fitting.
 The level of overdispersion is often unidentifiable from a single
 time series of measurements. This is why the overdispersion is fixed by
 default.
+
+For complicated reasons, MCMC sampling of high infection numbers is
+faster with a certain degree of overdispersion. Thus, if modeling large
+waves, assuming some overdispersion can also make sense for computational
+reasons. The effects on the estimated transmission dynamics are often
+minimal.
 
 The priors of this component have the following functional form:
 \itemize{

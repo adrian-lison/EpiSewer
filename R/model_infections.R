@@ -979,9 +979,9 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #'   number of new infections generated at each time step, which can often speed
 #'   up model fitting.
 #'
-#' @param overdispersion If `FALSE` (default) new infections are modeled as
-#'   Poisson distributed. If `TRUE`, new infections are modeled as Negative
-#'   Binomial distributed.
+#' @param overdispersion If `TRUE` (default), new infections are modeled as
+#'   Negative Binomial distributed. If `FALSE`, new infections are modeled as
+#'   Poisson distributed.
 #' @param overdispersion_prior_mu Prior (mean) on the overdispersion parameter
 #'   of the Negative Binomial. The default of 0.1 corresponds to 10%
 #'   overdispersion. It is also the limit of the coefficient of variation (CV)
@@ -995,6 +995,12 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #'   time series of measurements. This is why the overdispersion is fixed by
 #'   default.
 #'
+#' @details For complicated reasons, MCMC sampling of high infection numbers is
+#'   faster with a certain degree of overdispersion. Thus, if modeling large
+#'   waves, assuming some overdispersion can also make sense for computational
+#'   reasons. The effects on the estimated transmission dynamics are often
+#'   minimal.
+#'
 #' @details The priors of this component have the following functional form:
 #' - overdispersion parameter of the Negative Binomial: `Truncated normal`
 #'
@@ -1003,7 +1009,7 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #' @export
 #' @family {infection noise models}
 infection_noise_estimate <-
-  function(overdispersion = FALSE,
+  function(overdispersion = TRUE,
            overdispersion_prior_mu = 0.1,
            overdispersion_prior_sigma = 0,
            modeldata = modeldata_init()) {
