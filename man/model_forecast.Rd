@@ -8,7 +8,8 @@ model_forecast(horizon = horizon_none())
 }
 \arguments{
 \item{horizon}{The forecast horizon. How many days into the future should
-EpiSewer forecast?
+EpiSewer forecast? Note that this functionality is intended for short-term
+forecasts. Projections over longer horizons can be highly inaccurate.
 Available options:
 \itemize{
 \item \code{\link[=horizon_none]{horizon_none()}}
@@ -26,4 +27,13 @@ This module function is used to specify the components of the
 Each component can be specified using one or several helper
 functions (see available options below). See the documentation of the
 individual helper functions to adjust various settings.
+}
+\details{
+Forecasts account for the estimated variation of transmission
+dynamics over time and therefore become more uncertain at longer forecast
+horizons. However, it is important to keep in mind that in expectation the
+model will project the current transmission dynamics to continue unchanged.
+This assumption can be violated by various factors such as depletion of
+susceptible individuals, changes in behavior, or public health
+interventions.
 }
