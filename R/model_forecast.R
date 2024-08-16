@@ -24,6 +24,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `forecast` module.
 #' @export
+#' @family {module functions}
 model_forecast <- function(horizon = horizon_none()) {
   verify_is_modeldata(horizon, "horizon")
   return(modeldata_combine(horizon))

@@ -21,6 +21,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `sewage` module.
 #' @export
+#' @family {module functions}
 model_sewage <- function(
     flows = flows_observe(),
     residence_dist = residence_dist_assume()) {

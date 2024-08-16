@@ -18,6 +18,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `sampling` module.
 #' @export
+#' @family {module functions}
 model_sampling <- function(
     sample_effects = sample_effects_none()) {
   verify_is_modeldata(sample_effects, "sample_effects")

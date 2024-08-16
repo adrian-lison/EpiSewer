@@ -31,6 +31,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `infections` module.
 #' @export
+#' @family {module functions}
 model_infections <- function(
     generation_dist = generation_dist_assume(),
     R = R_estimate_splines(),

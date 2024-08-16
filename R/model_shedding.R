@@ -32,6 +32,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `shedding` module.
 #' @export
+#' @family {module functions}
 model_shedding <- function(
     incubation_dist = incubation_dist_assume(),
     shedding_dist = shedding_dist_assume(),

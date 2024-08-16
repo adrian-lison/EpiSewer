@@ -37,3 +37,12 @@ This assumption can be violated by various factors such as depletion of
 susceptible individuals, changes in behavior, or public health
 interventions.
 }
+\seealso{
+Other {module functions}: 
+\code{\link{model_infections}()},
+\code{\link{model_measurements}()},
+\code{\link{model_sampling}()},
+\code{\link{model_sewage}()},
+\code{\link{model_shedding}()}
+}
+\concept{{module functions}}

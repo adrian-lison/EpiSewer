@@ -21,6 +21,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `measurements` module.
 #' @export
+#' @family {module functions}
 model_measurements <- function(
     concentrations = concentrations_observe(),
     noise = noise_estimate(),
