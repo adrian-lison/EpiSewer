@@ -56,7 +56,7 @@ modeldata_update_metainfo <- function(modeldata) {
     modeldata$.metainfo$initial_cases_crude <-
       with(
         modeldata,
-        1e-5 + # small offset to avoid zero cases
+        0.1 + # small offset to avoid zero cases
           mean(
             measured_concentrations[measure_to_sample[which(sample_to_date<=7)]],
             na.rm = T

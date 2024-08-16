@@ -229,7 +229,8 @@ parameters {
 
   // individual-level shedding load variation
   array[load_vari ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
-  vector[load_vari ? S + D + T : 0] zeta_raw; // realized shedding load (non-centered)
+  //vector[load_vari ? S + D + T : 0] zeta_raw; // realized shedding load (non-centered)
+  vector<lower = 0>[load_vari ? S + D + T : 0] zeta; // realized shedding load
 
   // sample date effects
   vector[K] eta;
@@ -248,7 +249,6 @@ transformed parameters {
   vector[R_model == 1 ? h : 0] R_forecast_spline; // spline-based forecast of R
   vector[L + S + D + T] iota; // expected number of infections
   vector[S + D + T] lambda; // expected number of shedding onsets
-  vector<lower = 0>[load_vari ? S + D + T : 0] zeta; // realized shedding load
   vector[D + T] omega_log;
   vector[T] pi_log; // log expected daily loads
   vector[T] kappa_log; // log expected daily concentrations
@@ -299,7 +299,7 @@ transformed parameters {
 
   // calculation of total loads shed each day (expected)
   if (load_vari) {
-    zeta = softplus(gamma_sum_approx(nu_zeta[1], lambda, zeta_raw), 10); // softplus as soft >0 constraint
+    //zeta = softplus(gamma_sum_approx(nu_zeta[1], lambda, zeta_raw), 10); // softplus as soft >0 constraint
     omega_log = log_convolve(
         shed_rev_log, // shedding load distribution
         log(load_mean) + log(zeta) // total load shed
@@ -402,7 +402,8 @@ model {
   // Prior on individual-level shedding load variation
   if (load_vari) {
     nu_zeta[1] ~ normal(nu_zeta_prior[1], nu_zeta_prior[2]) T[0, ]; // truncated normal
-    zeta_raw ~ std_normal();
+    //zeta_raw ~ std_normal();
+    target += gamma3_sum_lpdf(zeta | 1, nu_zeta[1], lambda);
   }
 
   // Prior on sample date effects
@@ -579,11 +580,7 @@ generated quantities {
 
       // Forecasting of total loads
       if (load_vari) {
-        vector[h] zeta_forecast = softplus(gamma_sum_approx(
-          nu_zeta[1],
-          lambda_forecast,
-          to_vector(std_normal_n_rng(h))
-          ), 10); // softplus as soft >0 constraint
+        vector[h] zeta_forecast = to_vector(gamma_rng(lambda_forecast/nu_zeta[1]^2, 1/nu_zeta[1]^2));
         omega_log_forecast = log_convolve(
             shed_rev_log, // shedding load distribution
             log(load_mean) + log(append_row(zeta[((S + D + T)+1-S):(S + D + T)], zeta_forecast)) // total load shed
