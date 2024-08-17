@@ -7,7 +7,9 @@
 plot_concentration(
   results = NULL,
   measurements = NULL,
+  flows = NULL,
   include_noise = TRUE,
+  normalized = FALSE,
   median = FALSE,
   mark_outliers = FALSE,
   forecast = TRUE,
@@ -19,6 +21,7 @@ plot_concentration(
   base_model = "",
   model_levels = NULL,
   concentration_col = "concentration",
+  flow_col = "flow",
   date_col = "date",
   outlier_col = "is_outlier",
   type = "time"
@@ -34,9 +37,19 @@ plotted alongside the predicted values (useful to assess model fit). Can
 also be used with \code{results = NULL}, in which case only the observed
 measurements are plotted.}
 
+\item{flows}{A \code{data.frame} with observed flows. If \code{normalized = TRUE}, this
+will be used to normalize the estimated and observed concentrations to the
+median flow.}
+
 \item{include_noise}{If \code{TRUE} (default), concentrations including
 measurement noise are shown. If \code{FALSE}, only the expected concentrations
 are shown.}
+
+\item{normalized}{If \code{TRUE}, the estimated and observed concentrations are
+normalized to the median flow. Thereby, the noise in concentrations that is
+due to variation in flow is essentially removed. This is especially useful
+for assessing forecasting performance when the future flow values were not
+known during model fitting.}
 
 \item{median}{Should the estimated median be shown, or only the credible
 intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}

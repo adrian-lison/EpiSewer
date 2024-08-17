@@ -519,7 +519,9 @@ generated quantities {
   // note that we here assume the same measurement variance as from composite samples,
   // which may be smaller than that of hypothetical daily measurements
   vector[T] predicted_concentration;
+  vector[T] predicted_concentration_norm; // flow-normalized
   vector[h] predicted_concentration_forecast;
+  vector[h] predicted_concentration_forecast_norm; // flow-normalized
   vector[h] R_forecast;
   vector[h] iota_forecast;
   vector[h] I_forecast;
@@ -705,8 +707,10 @@ generated quantities {
       reject("Distribution not supported.");
     }
     predicted_concentration = above_LOD[1:T] .* meas_conc[1:T];
+    predicted_concentration_norm = predicted_concentration .* flow[1:T];
     if (h>0) {
       predicted_concentration_forecast = above_LOD[(T+1):(T+h)] .* meas_conc[(T+1):(T+h)];
+      predicted_concentration_forecast_norm = predicted_concentration_forecast .* flow[(T+1):(T+h)];
     }
   }
 }

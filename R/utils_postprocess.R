@@ -247,6 +247,15 @@ combine_summaries <- function(result_list, summary_name) {
   return(combined)
 }
 
+combine_summary_list <- function(summary_list) {
+  combined <- vctrs::vec_rbind(!!!summary_list, .names_to = "model")
+  combined$model <- forcats::fct_inorder(
+    as.character(combined$model),
+    ordered = TRUE
+  )
+  return(combined)
+}
+
 combine_samples <- function(
     result_list, summary_name, draws = FALSE, ndraws = NULL) {
   summary_list <- lapply(result_list, function(x) {

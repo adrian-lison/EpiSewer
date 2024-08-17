@@ -124,6 +124,13 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     intervals = intervals
   )
 
+  summary[["normalized_concentration"]] <- get_summary_1d_date(
+    fit, "predicted_concentration_norm",
+    T_shift = T_shift_load, .metainfo = .metainfo,
+    var_forecast = "predicted_concentration_forecast_norm",
+    intervals = intervals
+  )
+
   if (data$K > 0) {
     # here we exponentiate to get the multiplicative effect
     summary[["sample_effects"]] <- get_summary_vector_log(

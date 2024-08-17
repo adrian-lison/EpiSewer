@@ -379,9 +379,17 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   plotted alongside the predicted values (useful to assess model fit). Can
 #'   also be used with `results = NULL`, in which case only the observed
 #'   measurements are plotted.
+#' @param flows A `data.frame` with observed flows. If `normalized = TRUE`, this
+#'   will be used to normalize the estimated and observed concentrations to the
+#'   median flow.
 #' @param include_noise If `TRUE` (default), concentrations including
 #'   measurement noise are shown. If `FALSE`, only the expected concentrations
 #'   are shown.
+#' @param normalized If `TRUE`, the estimated and observed concentrations are
+#'   normalized to the median flow. Thereby, the noise in concentrations that is
+#'   due to variation in flow is essentially removed. This is especially useful
+#'   for assessing forecasting performance when the future flow values were not
+#'   known during model fitting.
 #' @param forecast Should forecasted concentrations be shown? Default is true.
 #'   This requires that the model was fitted with a forecast horizon, see
 #'   [model_forecast()]. Because concentrations depend on the flow volume,
@@ -417,8 +425,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   time. Can be further manipulated using [ggplot2] functions to adjust themes
 #'   and scales, and to add further geoms.
 #' @export
-plot_concentration <- function(results = NULL, measurements = NULL,
-                               include_noise = TRUE,
+plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL,
+                               include_noise = TRUE, normalized = FALSE,
                                median = FALSE,
                                mark_outliers = FALSE,
                                forecast = TRUE,
@@ -427,6 +435,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
                                facet_models = FALSE, facet_direction = "rows",
                                base_model = "", model_levels = NULL,
                                concentration_col = "concentration",
+                               flow_col = "flow",
                                date_col = "date",
                                outlier_col = "is_outlier",
                                type = "time"
@@ -463,6 +472,44 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     }
     measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
     setnames(measurements, old = required_data_cols, new = data_col_names)
+
+    if (normalized) {
+      if (is.null(flows)) {
+        cli::cli_abort(
+          "To plot flow-normalized concentrations, please provide flow data via the `flow` argument."
+        )
+      } else {
+        required_data_cols <- c(date_col, flow_col)
+        if (!all(required_data_cols %in% names(flows))) {
+          cli::cli_abort(
+            c(paste(
+              "The following columns must be present",
+              "in the provided flow `data.frame`:",
+              paste(required_data_cols, collapse = ", ")
+            ),
+            paste("Please adjust the `data.frame` or specify the right column",
+                  "names via the `_col` arguments of this function."))
+          )
+        }
+
+        flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]
+        flows <- setnames(flows, old = c(date_col, flow_col), new = c("date", "flow"))
+
+        flows[, date := lubridate::as_date(date)]
+
+        if (any(duplicated(flows, by = "date"))) {
+          flows <- unique(flows, by = c("date", "flow"))
+          if (any(duplicated(flows, by = "date"))) { # if still duplicates
+            cli::cli_abort(
+              "Flow data is ambigious, duplicate dates with different values found."
+            )
+          }
+        }
+        median_flow <- median(flows$flow, na.rm = T)
+        measurements <- merge(measurements, flows, by = "date")
+        measurements[, concentration := concentration * flow / median_flow]
+      }
+    }
   }
 
   if (!is.null(results)) {
@@ -470,8 +517,31 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       results <- list(results) # only one result object passed, wrap in list
     }
     if (include_noise) {
-      concentration_pred <- combine_summaries(results, "concentration")
+      if (normalized) {
+        concentration_pred <- combine_summary_list(lapply(results, function(result){
+          conc_norm <- copy(result$summary[["normalized_concentration"]])
+          if (is.null(flows)) {
+            median_flow <- median(result$job$data$flow, na.rm = T)
+          }
+          conc_norm[, mean := mean / median_flow]
+          conc_norm[, median := median / median_flow]
+          quantile_cols <- names(conc_norm)[
+            names(conc_norm) %like% "lower_*" |
+              names(conc_norm) %like% "upper_*"
+          ]
+          conc_norm[
+            , (quantile_cols) := lapply(.SD, function(x) x / median_flow),
+            .SDcols = quantile_cols
+          ]
+          return(conc_norm)
+        }))
+      } else {
+        concentration_pred <- combine_summaries(results, "concentration")
+      }
     } else {
+      if (normalized) {
+       cli::cli_abort("Normalized concentrations are only available with measurement noise.")
+      }
       concentration_pred <- combine_summaries(results, "expected_concentration")
     }
 
@@ -660,11 +730,11 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       } +
       theme_bw() +
       scale_x_date(
-        expand = c(0, 0),
+        expand = expansion(add=c(0,0.5)),
         date_breaks = "1 month", date_labels = "%b\n%Y"
       ) +
       xlab("Date") +
-      ylab("Concentration [gene copies / mL]") +
+      ylab(ifelse(normalized,"Normalized concentration [gc / mL]","Concentration [gc / mL]")) +
       coord_cartesian(xlim = as.Date(c(first_date, last_date)))
   }
 
@@ -731,7 +801,7 @@ plot_concentration <- function(results = NULL, measurements = NULL,
         axis.text.x = element_blank()
         ) +
       xlab("Observations (ordered by concentration)") +
-      ylab("Concentration [gene copies / mL]")
+      ylab(ifelse(normalized,"Normalized concentration [gc / mL]","Concentration [gc / mL]"))
   }
 
   if (is.null(concentration_pred) || length(unique(concentration_pred$model)) == 1) {
