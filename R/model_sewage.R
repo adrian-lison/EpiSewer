@@ -121,13 +121,19 @@ flows_observe <-
           )
         }
 
-        flows <- as.data.table(flows)
+        flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]
         flows <- setnames(flows, old = c(date_col, flow_col), new = c("date", "flow"))
 
         flows[, date := lubridate::as_date(date)]
 
-        if (any(duplicated(flows$date))) {
-          cli::cli_abort("Flow data is ambigious, duplicate dates found.")
+        if (any(duplicated(flows, by = "date"))) {
+          dup_flows <- flows[date %in% date[duplicated(flows, by = "date")],]
+          dup_flows[, count := uniqueN(flow), by = date]
+          if (any(dup_flows$count > 1)) {
+            cli::cli_abort("Flow data is ambigious, duplicate dates found.")
+          } else {
+            flows <- unique(flows, by = c("date", "flow"))
+          }
         }
 
         modeldata <- tbc(
