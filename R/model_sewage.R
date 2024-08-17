@@ -127,12 +127,11 @@ flows_observe <-
         flows[, date := lubridate::as_date(date)]
 
         if (any(duplicated(flows, by = "date"))) {
-          dup_flows <- flows[date %in% date[duplicated(flows, by = "date")],]
-          dup_flows[, count := uniqueN(flow), by = date]
-          if (any(dup_flows$count > 1)) {
-            cli::cli_abort("Flow data is ambigious, duplicate dates found.")
-          } else {
-            flows <- unique(flows, by = c("date", "flow"))
+          flows <- unique(flows, by = c("date", "flow"))
+          if (any(duplicated(flows, by = "date"))) { # if still duplicates
+            cli::cli_abort(
+              "Flow data is ambigious, duplicate dates with different values found."
+              )
           }
         }
 
