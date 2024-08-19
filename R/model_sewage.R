@@ -162,25 +162,24 @@ flows_observe <-
                 n_forecast = sum(missing_flow_dates > modeldata$.metainfo$T_end_date)
                 if (n_forecast == 0) {
                   text_dates <- paste(n_estimate, "unsampled dates")
-                  text_dates2 <- "unobserved dates"
                 } else if (n_estimate == 0) {
                   text_dates <- paste(n_forecast, "forecasting dates")
-                  text_dates2 <- "future dates"
                 } else {
                   text_dates <- paste(
                     n_estimate, "unsampled and", n_forecast, "forecasting dates"
                     )
-                  text_dates2 <- "unobserved and future dates"
                 }
                 cli::cli_inform(c(
-                  "!" = paste("EpiSewer will impute missing flow data for", text_dates,
-                    "using the median flow value.",
-                    "This has no impact on model fitting, but means that",
-                    "absolute concentrations on these", text_dates2,
-                    "cannot be accurately predicted.",
-                    "To disable this warning, please impute the flow data",
-                    "manually before fitting the EpiSewer model."
-                  )
+                  "!" = paste(
+                    "EpiSewer will impute missing flow data for", text_dates,
+                    "using the median flow value."),
+                  "*" = paste(
+                     "This has no impact on model fitting and Rt estimation -",
+                    "but means that absolute concentrations on these",
+                    "unobserved dates may not be accurately predicted."),
+                  "*" = paste(
+                    "To disable this warning, please impute the missing",
+                    "flow data manually before running EpiSewer.")
                 ))
 
                 flows <- flows[
