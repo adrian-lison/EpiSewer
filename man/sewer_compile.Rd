@@ -4,9 +4,12 @@
 \alias{sewer_compile}
 \title{Compile EpiSewer models}
 \usage{
-sewer_compile(force_recompile = FALSE, verbose = FALSE)
+sewer_compile(model = NULL, force_recompile = FALSE, verbose = FALSE)
 }
 \arguments{
+\item{model}{A character vector with a specific model to compile. If NULL
+(default), all models are compiled.}
+
 \item{force_recompile}{If TRUE, then models will be recompiled even if they
 have already been successfully compiled.}
 
