@@ -347,3 +347,20 @@ check_dist <- function(dist, name = "probability distribution") {
   }
   return(dist)
 }
+
+
+#' Get the mean of a discrete distribution
+#'
+#' @param dist Discrete distribution represented as numeric vector
+#' @param include_zero If `TRUE` (default), the vector index starts at zero.
+#'   Otherwise, it starts at 1.
+#'
+#' @return Mean of the discrete distribution
+dist_mean <- function(dist, include_zero = TRUE) {
+  if (include_zero) {
+    mean <- sum((0:(length(dist) - 1)) * dist)
+  } else {
+    mean <- sum((1:(length(dist))) * dist)
+  }
+  return(mean)
+}

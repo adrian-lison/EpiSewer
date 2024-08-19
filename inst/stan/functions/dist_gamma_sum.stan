@@ -20,3 +20,10 @@ vector gamma_sum_approx(real cv, vector N, vector noise_noncentered) {
   // sqrt(N) * cv is the standard deviation of the sum of Gamma distributions
   return N + noise_noncentered .* sqrt(N) * cv;
 }
+
+// Non-centered paramaterization of a normal approximation for the
+// log of the sum of N i.i.d. Gamma distributed RVs with mean 1 and a specified cv
+vector gamma_sum_log_approx(real cv, vector N, vector noise_noncentered) {
+  // sqrt(N) * cv is the standard deviation of the sum of Gamma distributions
+  return log(softplus(N + noise_noncentered .* sqrt(N) * cv, 10));
+}

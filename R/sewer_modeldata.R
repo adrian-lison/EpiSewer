@@ -13,18 +13,21 @@ modeldata_update_metainfo <- function(modeldata) {
   )) {
     modeldata$.metainfo$length_shedding <- with(modeldata, S + D + T)
   }
+
   if (modeldata_check(modeldata,
     required = c("L", "S", "D", "T"),
     throw_error = FALSE
   )) {
     modeldata$.metainfo$length_I <- with(modeldata, L + S + D + T)
   }
+
   if (modeldata_check(modeldata,
     required = c("L", "S", "D", "T", "G"),
     throw_error = FALSE
   )) {
     modeldata$.metainfo$length_R <- with(modeldata, L + S + D + T - G)
   }
+
   if (modeldata_check(modeldata,
                       required = c("residence_dist",
                                    "shedding_dist",
@@ -33,12 +36,22 @@ modeldata_update_metainfo <- function(modeldata) {
   )) {
     inc_shed_dist <- with(
       modeldata, convolve(incubation_dist, rev(shedding_dist), type = "o")
-      )
-    total_dist <- with(
+    )
+    total_delay_dist <- with(
       modeldata, convolve(inc_shed_dist, rev(residence_dist), type = "o")
     )
-    modeldata$.metainfo$partial_window <- which(cumsum(total_dist)>0.9)[1]-1
+    modeldata$.metainfo$total_delay_dist <- total_delay_dist
   }
+
+  if (modeldata_check(modeldata,
+                      required = c(".metainfo$total_delay_dist"),
+                      throw_error = FALSE
+  )) {
+    modeldata$.metainfo$partial_window <- which(
+      cumsum(modeldata$.metainfo$total_delay_dist)>0.9
+      )[1]-1
+  }
+
   if (modeldata_check(
     modeldata,
     required = c(
@@ -65,6 +78,44 @@ modeldata_update_metainfo <- function(modeldata) {
           .metainfo$load_per_case
       )
   }
+
+  if (modeldata_check(
+    modeldata,
+    required = c(
+      "measured_concentrations",
+      "measure_to_sample",
+      "sample_to_date",
+      "flow",
+      ".metainfo$total_delay_dist",
+      ".metainfo$length_I",
+      "T",
+      ".metainfo$T_start_date"
+    ),
+    throw_error = FALSE
+  )) {
+    modeldata$.metainfo$load_curve_crude <- with(
+      modeldata, get_load_curve_crude(
+        measured_concentrations, measure_to_sample, sample_to_date, flow,
+        .metainfo$total_delay_dist, max_shift = .metainfo$length_I - T,
+        .metainfo$T_start_date,
+        impute_zero = NA, interpolate = TRUE, loess_window = 56
+    ))
+  }
+
+  if (modeldata_check(
+    modeldata,
+    required = c(
+      ".metainfo$load_curve_crude",
+      ".metainfo$load_per_case"
+    ),
+    throw_error = FALSE
+  )) {
+    modeldata$.metainfo$infection_curve_crude <- with(
+      modeldata, get_infection_curve_crude(
+        .metainfo$load_curve_crude, .metainfo$load_per_case
+    ))
+  }
+
   return(modeldata)
 }
 

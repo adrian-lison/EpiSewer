@@ -64,11 +64,15 @@ data {
 
   // Shedding ----
   real<lower=0> load_mean; // mean load shed per person
-  int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads?
-  array[load_vari ? 2 : 0] real nu_zeta_prior; // prior on coefficient of variation of individual-level load
   int<lower=0> S; // maximum number of days with shedding
   vector[S + 1] shedding_dist; // shedding load distribution
   // --> probability for shedding today comes first
+  int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads?
+  array[load_vari ? 2 : 0] real nu_zeta_prior; // prior on coefficient of variation of individual-level load
+  int<lower = 0> n_zeta_normal_approx;
+  int<lower = 0> n_zeta_exact;
+  array[load_vari ? n_zeta_normal_approx : 0] int<lower = 1, upper = S + D + T> zeta_normal_approx; // dates on which zeta can be approximated
+  array[load_vari ? n_zeta_exact : 0] int<lower = 1, upper = S + D + T> zeta_exact; // dates on which zeta should not be approximated
 
   // Incubation period ----
   int<lower=0> L; // maximum incubation period
@@ -222,8 +226,9 @@ parameters {
   vector[I_sample ? L + S + D + T : 0] I_raw; // infection noise
 
   // individual-level shedding load variation
-  array[load_vari ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
-  vector<lower = 0>[load_vari ? S + D + T : 0] zeta; // realized shedding load
+  array[load_vari && nu_zeta_prior[2] > 0 ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
+  vector[load_vari ? n_zeta_exact : 0] zeta_log_exact; // realized shedding load
+  vector[load_vari ? n_zeta_normal_approx : 0] zeta_raw_approx; // realized shedding load (non-centered)
 
   // sample date effects
   vector[K] eta;
@@ -243,6 +248,7 @@ transformed parameters {
   vector[h] iota_forecast; // spline-based forecast of expected infections
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
   vector[L + S + D + T] I_noise_correction; // correction for approximate infection noise
+  vector[load_vari ? S + D + T : 0] zeta_log; // realized shedding load
   vector[S + D + T] lambda; // expected number of shedding onsets
   vector[D + T] omega_log; // log expected daily loads in catchment
   vector[T] pi_log; // log expected daily loads at sampling site
@@ -297,11 +303,19 @@ transformed parameters {
   // convolution from infections to shedding onsets (expected)
   lambda = convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + D + T)];
 
+  // Shedding load variation
+  zeta_log[zeta_exact] = zeta_log_exact;
+  zeta_log[zeta_normal_approx] = gamma_sum_log_approx(
+    param_or_fixed(nu_zeta, nu_zeta_prior),
+    lambda[zeta_normal_approx],
+    zeta_raw_approx
+  );
+
   // calculation of total loads shed each day (expected)
   if (load_vari) {
     omega_log = log_convolve(
         shed_rev_log, // shedding load distribution
-        log(load_mean) + log(zeta) // total load shed
+        log(load_mean) + zeta_log // total load shed
         )[(S + 1) : (S + D + T)];
   } else {
     omega_log = log_convolve(
@@ -384,8 +398,9 @@ model {
 
   // Prior on individual-level shedding load variation
   if (load_vari) {
-    nu_zeta[1] ~ normal(nu_zeta_prior[1], nu_zeta_prior[2]) T[0, ]; // truncated normal
-    target += gamma3_sum_lpdf(zeta | 1, nu_zeta[1], lambda);
+    target += normal_prior_lpdf(nu_zeta | nu_zeta_prior, 0); // truncated normal
+    target += gamma3_sum_log_lpdf(zeta_log_exact | 1, param_or_fixed(nu_zeta, nu_zeta_prior), lambda[zeta_exact]); // gamma sum (exact)
+    zeta_raw_approx ~ std_normal(); // non-centered noise for gamma sum (approx)
   }
 
   // Prior on sample date effects
@@ -592,10 +607,13 @@ generated quantities {
 
       // Forecasting of total loads
       if (load_vari) {
-        vector[h] zeta_forecast = to_vector(gamma_rng(lambda_forecast/nu_zeta[1]^2, 1/nu_zeta[1]^2));
+        vector[h] zeta_log_forecast = log(to_vector(gamma_rng(
+          lambda_forecast/param_or_fixed(nu_zeta, nu_zeta_prior)^2,
+          1/param_or_fixed(nu_zeta, nu_zeta_prior)^2
+          )));
         omega_log_forecast = log_convolve(
             shed_rev_log, // shedding load distribution
-            log(load_mean) + log(append_row(zeta[((S + D + T)+1-S):(S + D + T)], zeta_forecast)) // total load shed
+            log(load_mean) + append_row(zeta_log[((S + D + T)+1-S):(S + D + T)], zeta_log_forecast) // total load shed
             )[(S+1):(S+h)];
       } else {
         omega_log_forecast = log_convolve(
