@@ -1086,7 +1086,7 @@ plot_prior_posterior <- function(result, param_name) {
     cli::cli_abort(paste(
       "Prior-posterior visualization is only possible if the fitted model is",
       "stored in the EpiSewer results object. Please use",
-      "{.code set_fit_opts(fitted = TRUE)} when running `EpiSewer`."
+      "{.code set_results_opts(fitted = TRUE)} when running `EpiSewer`."
       ))
   }
   all_params <- all_parameters()

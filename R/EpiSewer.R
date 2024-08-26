@@ -7,34 +7,36 @@
 #'   of Rt and other parameters can be plotted and further analyzed.
 #'
 #' @description The inputs to this function can be specified using various
-#' helper functions (see below). It is best to define the inputs in advance as
-#' separate variables and then pass them to `EpiSewer`.
+#'   helper functions (see below). It is best to define the inputs in advance as
+#'   separate variables and then pass them to `EpiSewer`.
 #'
-#' @param data Observations such as concentration measurements
-#' and flows, specified via [sewer_data()]. The data can also be directly
-#' supplied to the relevant model components, in which case `data` can be left
-#' empty.
-#' @param assumptions Assumptions about infections, shedding,
-#' or the sewage system, specified via [sewer_assumptions()]. The assumptions
-#' can also be directly supplied to the relevant model components, in which
-#' case `assumptions` can be left empty.
+#' @param data Observations such as concentration measurements and flows,
+#'   specified via [sewer_data()]. The data can also be directly supplied to the
+#'   relevant model components, in which case `data` can be left empty.
+#' @param assumptions Assumptions about infections, shedding, or the sewage
+#'   system, specified via [sewer_assumptions()]. The assumptions can also be
+#'   directly supplied to the relevant model components, in which case
+#'   `assumptions` can be left empty.
 #' @param measurements The `measurements` module, see [model_measurements()].
 #' @param sampling The `sampling` module, see [model_sampling()].
 #' @param sewage The `sewage` module, see [model_sewage()].
 #' @param shedding The `shedding` module, see [model_shedding()].
 #' @param infections The `infections` module, see [model_infections()].
 #' @param fit_opts Settings for model fitting, see [set_fit_opts()].
+#' @param results_opts Settings for results to be returned, see
+#'   [set_results_opts()].
 #' @param run_fit If `TRUE` (the default), the model is fitted immediately. If
-#' `FALSE`, the EpiSewerJob object is returned without fitting the model (it
-#' can be fitted later or even on a different machine).
+#'   `FALSE`, the EpiSewerJob object is returned without fitting the model (it
+#'   can be fitted later or even on a different machine).
 #'
 #' @return If the model fitting was successful, a `list` with the following
-#' elements is returned:
+#'   elements is returned:
 #' - `job`: the `EpiSewerJob` that was run
 #' - `summary`: a summary of parameter estimates of interest
-#' - `fitted`: the fitted model (for `set_fit_opts(fitted = TRUE)`)
+#' - `fitted`: the fitted model (if `results_opts(fitted = TRUE)`)
 #'
-#' If the model fitting fails, a `list` with the following elements is returned:
+#' If the model fitting fails, a `list` with the following elements is
+#'   returned:
 #' - `error`: information about the errors and warnings that were thrown
 #' - `sampler_output`: potential outputs printed by the sampler
 #'
@@ -50,6 +52,7 @@ EpiSewer <- function(
     infections = model_infections(),
     forecast = model_forecast(),
     fit_opts = set_fit_opts(),
+    results_opts = set_results_opts(),
     run_fit = TRUE) {
   modeldata <- modeldata_combine(
     measurements, sampling, sewage, shedding, infections, forecast
@@ -63,6 +66,7 @@ EpiSewer <- function(
     job_name = paste("EpiSewerJob", format(lubridate::now(), "%Y-%m-%d_%H-%M-%S")),
     modeldata = modeldata,
     fit_opts = fit_opts,
+    results_opts = results_opts,
     overwrite = TRUE,
     results_exclude = c()
   )
@@ -143,10 +147,55 @@ sewer_assumptions <- function(generation_dist = NULL,
   return(assumptions)
 }
 
+#' Configure results returned after model fitting
+#'
+#' @param fitted If `TRUE` (default), the fitted model object is also returned,
+#'   not only summaries of the model fitting. Note that this makes the results
+#'   object substantially larger.
+#' @param summary_intervals Which credible intervals (CrIs) should be used to
+#'   summarize the posterior distributions? Default is `c(0.5, 0.95)`, i.e. the
+#'   50% and 95% CrI are returned
+#' @param samples_ndraws Number of exemplary posterior samples to return. Note
+#'   that the summaries always use all available samples.
+#'
+#' @return A `list` with settings for the results.
+#' @export
+#' @examples
+#' ww_data <- ww_data_SARS_CoV_2_Zurich
+#' ww_assumptions <- ww_assumptions_SARS_CoV_2_Zurich
+#'
+#' ww_fit_opts <- set_fit_opts(
+#'   sampler = sampler_stan_mcmc(
+#'     chains = 2,
+#'     parallel_chains = 2,
+#'     iter_warmup = 400,
+#'     iter_sampling = 400,
+#'     seed = 42 # ensures reproducibility
+#'   )
+#' )
+#'
+#' ww_results_opts <- set_results_opts(
+#'   fitted = TRUE, # return full model fit
+#'   summary_intervals = c(0.5, 0.8, 0.95),
+#'   samples_ndraws = 100
+#' )
+#'
+#' ww_result <- EpiSewer(
+#'   data = ww_data,
+#'   assumptions = ww_assumptions,
+#'   fit_opts = ww_fit_opts,
+#'   results_opts = ww_results_opts
+#' )
+set_results_opts <- function(fitted = TRUE, summary_intervals = c(0.5, 0.95), samples_ndraws = 50) {
+  opts <- as.list(environment())
+  return(opts)
+}
+
 #' Constructor for EpiSewerJob objects
 EpiSewerJob <- function(job_name,
                         modeldata,
                         fit_opts,
+                        results_opts,
                         jobarray_size = 1,
                         overwrite = TRUE,
                         results_exclude = c()) {
@@ -169,6 +218,7 @@ EpiSewerJob <- function(job_name,
   job[["model"]] <- modeldata$.str
   job[["init"]] <- modeldata$.init
   job[["fit_opts"]] <- fit_opts
+  job[["results_opts"]] <- results_opts
 
   job[["priors_text"]] <- data_arguments[
     stringr::str_detect(names(data_arguments), "_prior_text")
@@ -259,8 +309,14 @@ setMethod("run", c("EpiSewerJob"), function(job) {
   )
 
   if (fitting_successful) {
-    result$summary <- try(summarize_fit(fit_res, job$data, job$metainfo))
-    if (job$fit_opts$fitted) {
+    result$summary <- try(summarize_fit(
+      fit = fit_res,
+      data = job$data,
+      .metainfo = job$metainfo,
+      intervals = job$results_opts$summary_intervals,
+      ndraws = job$results_opts$samples_ndraws
+      ))
+    if (job$results_opts$fitted) {
       fit_res$draws()
       try(fit_res$sampler_diagnostics(), silent = TRUE)
       try(fit_res$init(), silent = TRUE)
@@ -282,8 +338,8 @@ setMethod("run", c("EpiSewerJob"), function(job) {
 #' @param job An EpiSewer job object.
 #' @param stanmodel_instance A stanmodel instance.
 #'
-#' @return A `list` with checksums identifying the model, input, inits and
-#'   fit_opts.
+#' @return A `list` with checksums identifying the model, input, inits,
+#'   fit_opts and results_opts.
 #' @export
 get_checksums <- function(job, stanmodel_instance = NULL) {
   checksums <- list()
@@ -296,6 +352,9 @@ get_checksums <- function(job, stanmodel_instance = NULL) {
   checksums$fit_opts <- digest::digest(
     list_except(job$fit_opts, c("model")), algo = "md5"
     )
+  checksums$results_opts <- digest::digest(
+    job$results_opts, algo = "md5"
+  )
   checksums$init <- digest::digest(job$init, algo = "md5")
   return(checksums)
 }

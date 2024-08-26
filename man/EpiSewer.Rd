@@ -14,19 +14,19 @@ EpiSewer(
   infections = model_infections(),
   forecast = model_forecast(),
   fit_opts = set_fit_opts(),
+  results_opts = set_results_opts(),
   run_fit = TRUE
 )
 }
 \arguments{
-\item{data}{Observations such as concentration measurements
-and flows, specified via \code{\link[=sewer_data]{sewer_data()}}. The data can also be directly
-supplied to the relevant model components, in which case \code{data} can be left
-empty.}
+\item{data}{Observations such as concentration measurements and flows,
+specified via \code{\link[=sewer_data]{sewer_data()}}. The data can also be directly supplied to the
+relevant model components, in which case \code{data} can be left empty.}
 
-\item{assumptions}{Assumptions about infections, shedding,
-or the sewage system, specified via \code{\link[=sewer_assumptions]{sewer_assumptions()}}. The assumptions
-can also be directly supplied to the relevant model components, in which
-case \code{assumptions} can be left empty.}
+\item{assumptions}{Assumptions about infections, shedding, or the sewage
+system, specified via \code{\link[=sewer_assumptions]{sewer_assumptions()}}. The assumptions can also be
+directly supplied to the relevant model components, in which case
+\code{assumptions} can be left empty.}
 
 \item{measurements}{The \code{measurements} module, see \code{\link[=model_measurements]{model_measurements()}}.}
 
@@ -40,6 +40,9 @@ case \code{assumptions} can be left empty.}
 
 \item{fit_opts}{Settings for model fitting, see \code{\link[=set_fit_opts]{set_fit_opts()}}.}
 
+\item{results_opts}{Settings for results to be returned, see
+\code{\link[=set_results_opts]{set_results_opts()}}.}
+
 \item{run_fit}{If \code{TRUE} (the default), the model is fitted immediately. If
 \code{FALSE}, the EpiSewerJob object is returned without fitting the model (it
 can be fitted later or even on a different machine).}
@@ -50,10 +53,11 @@ elements is returned:
 \itemize{
 \item \code{job}: the \code{EpiSewerJob} that was run
 \item \code{summary}: a summary of parameter estimates of interest
-\item \code{fitted}: the fitted model (for \code{set_fit_opts(fitted = TRUE)})
+\item \code{fitted}: the fitted model (if \code{results_opts(fitted = TRUE)})
 }
 
-If the model fitting fails, a \code{list} with the following elements is returned:
+If the model fitting fails, a \code{list} with the following elements is
+returned:
 \itemize{
 \item \code{error}: information about the errors and warnings that were thrown
 \item \code{sampler_output}: potential outputs printed by the sampler
