@@ -6,6 +6,13 @@ real gamma2_lpdf(vector y, vector mean, real sd) {
   return gamma_lpdf(y | alpha, beta);
 }
 
+real gamma2_lpdf(vector y, vector mean, vector sd) {
+  int n = num_elements(y);
+  vector[n] alpha = (mean ./ sd)^2;
+  vector[n] beta = mean ./ (sd^2);
+  return gamma_lpdf(y | alpha, beta);
+}
+
 real gamma2_sum_lpdf(vector y, real mean, real sd, vector N) {
   int n = num_elements(y);
   vector[n] alpha = N * ((mean / sd)^2);
