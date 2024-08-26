@@ -304,16 +304,16 @@ transformed parameters {
   // convolution from infections to shedding onsets (expected)
   lambda = convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + D + T)];
 
-  // Shedding load variation
-  zeta_log[zeta_exact] = zeta_log_exact;
-  zeta_log[zeta_normal_approx] = gamma_sum_log_approx(
-    param_or_fixed(nu_zeta, nu_zeta_prior),
-    lambda[zeta_normal_approx],
-    zeta_raw_approx
-  );
-
   // calculation of total loads shed each day (expected)
   if (load_vari) {
+    // Shedding load variation
+    zeta_log[zeta_exact] = zeta_log_exact;
+    zeta_log[zeta_normal_approx] = gamma_sum_log_approx(
+      param_or_fixed(nu_zeta, nu_zeta_prior),
+      lambda[zeta_normal_approx],
+      zeta_raw_approx
+    );
+
     omega_log = log_convolve(
         shed_rev_log, // shedding load distribution
         log(load_mean) + zeta_log // total load shed
