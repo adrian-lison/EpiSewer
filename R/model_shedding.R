@@ -180,9 +180,9 @@ load_variation_none <- function(modeldata = modeldata_init()) {
   modeldata$.init$nu_zeta <- numeric(0)
 
   modeldata$zeta_normal_approx <- numeric(0)
-  modeldata$n_zeta_normal_approx <- numeric(0)
+  modeldata$n_zeta_normal_approx <- 0
   modeldata$zeta_exact <- numeric(0)
-  modeldata$n_zeta_exact <- numeric(0)
+  modeldata$n_zeta_exact <- 0
 
   modeldata$.init$zeta_log_exact <- numeric(0)
   modeldata$.init$zeta_raw_approx <- numeric(0)
