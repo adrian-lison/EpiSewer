@@ -45,7 +45,8 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
                             forecast = TRUE, forecast_horizon = NULL,
                             date_margin_left = 0, date_margin_right = 0,
                             facet_models = FALSE, facet_direction = "rows",
-                            base_model = "", model_levels = NULL) {
+                            base_model = "", model_levels = NULL,
+                            intervals = c(0.5, 0.95)) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -57,6 +58,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- combine_summaries(
       results, "infections"
     )
+    data_to_plot <- rename_intervals_plotting(data_to_plot, intervals)
   }
 
   if (!is.null(model_levels)) {
@@ -80,8 +82,8 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- data_to_plot[date <= last_forecast, ]
   }
 
-  ymin <- quantile(data_to_plot$lower_0.95, probs = 0.01, na.rm = T)
-  ymax <- quantile(data_to_plot$upper_0.95, probs = 0.99, na.rm = T)
+  ymin <- quantile(data_to_plot$lower_outer, probs = 0.01, na.rm = T)
+  ymax <- quantile(data_to_plot$upper_outer, probs = 0.99, na.rm = T)
 
   xmin <- as.Date(min(data_to_plot$date, na.rm = T)) - date_margin_left
   xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
@@ -211,7 +213,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
                    forecast = TRUE, forecast_horizon = NULL,
                    date_margin_left = 0, date_margin_right = 0,
                    facet_models = FALSE, facet_direction = "rows",
-                   base_model = "", model_levels = NULL) {
+                   base_model = "", model_levels = NULL,
+                   intervals = c(0.5, 0.95)) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -223,6 +226,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- combine_summaries(
       results, "R"
     )
+    data_to_plot <- rename_intervals_plotting(data_to_plot, intervals)
   }
 
   if (!is.null(model_levels)) {
@@ -246,8 +250,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     data_to_plot <- data_to_plot[date <= last_forecast, ]
   }
 
-  ymin <- min(0.6, quantile(data_to_plot$lower_0.95, probs = 0.01, na.rm = T))
-  ymax <- max(1.6, quantile(data_to_plot$upper_0.95, probs = 0.99, na.rm = T))
+  ymin <- min(0.6, quantile(data_to_plot$lower_outer, probs = 0.01, na.rm = T))
+  ymax <- max(1.6, quantile(data_to_plot$upper_outer, probs = 0.99, na.rm = T))
 
   xmin <- as.Date(min(data_to_plot$date, na.rm = T)) - date_margin_left
   xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
@@ -438,7 +442,8 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
                                flow_col = "flow",
                                date_col = "date",
                                outlier_col = "is_outlier",
-                               type = "time"
+                               type = "time",
+                               intervals = c(0.5, 0.95)
                                ) {
 
   if (!(type %in% c("time","pp_check"))) {
@@ -544,6 +549,8 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
       }
       concentration_pred <- combine_summaries(results, "expected_concentration")
     }
+
+    concentration_pred <- rename_intervals_plotting(concentration_pred, intervals)
 
     if (!is.null(model_levels)) {
       concentration_pred$model <- factor(
@@ -746,7 +753,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
             orientation = "vertical", fatten_point = 0.5,
             interval_size_domain = c(0.5, 1),
             data = concentration_pred_base_model,
-            aes(y=median, ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, color = "black"
+            aes(y=median, ymin = lower_outer, ymax = upper_outer), alpha = 0.2, color = "black"
           )
         }
       } +
@@ -756,7 +763,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
             orientation = "vertical",
             interval_size_domain = c(0.5, 1),
             data = concentration_pred_base_model,
-            aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, color = "black"
+            aes(ymin = lower_outer, ymax = upper_outer), alpha = 0.2, color = "black"
           )
         }
       } +
@@ -766,7 +773,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
             orientation = "vertical", fatten_point = 0.5,
             interval_size_domain = c(0.5, 1),
             data = concentration_pred[concentration_pred$model!=base_model, ],
-            aes(y=median, ymin = lower_0.95, ymax = upper_0.95, color = model), alpha = 0.2
+            aes(y=median, ymin = lower_outer, ymax = upper_outer, color = model), alpha = 0.2
           )
         }
       } +
@@ -775,7 +782,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
           ggdist::geom_interval(
             orientation = "vertical", interval_size_domain = c(1, 26),
             data = concentration_pred[concentration_pred$model!=base_model, ],
-            aes(ymin = lower_0.95, ymax = upper_0.95, color = model), alpha = 0.2
+            aes(ymin = lower_outer, ymax = upper_outer, color = model), alpha = 0.2
           )
         }
       } +
@@ -859,11 +866,13 @@ plot_load <- function(results, median = FALSE,
                       forecast = TRUE, forecast_horizon = NULL,
                       date_margin_left = 0, date_margin_right = 0,
                       facet_models = FALSE, facet_direction = "rows",
-                      base_model = "", model_levels = NULL) {
+                      base_model = "", model_levels = NULL,
+                      intervals = c(0.5, 0.95)) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
   data_to_plot <- combine_summaries(results, "expected_load")
+  data_to_plot <- rename_intervals_plotting(data_to_plot, intervals)
 
   if (!forecast) {
     data_to_plot <- data_to_plot[type == "estimate",]
@@ -975,7 +984,7 @@ plot_sample_effects <- function(results,
   plot <- ggplot(data_to_plot[!is.na(data_to_plot$model),], aes(y = variable)) +
     geom_vline(xintercept = 0, linetype = "dashed") +
     ggdist::geom_pointinterval(
-      aes(x = median - 1, xmin = lower_0.95 - 1, xmax = upper_0.95 - 1, color = model),
+      aes(x = median - 1, xmin = lower_outer - 1, xmax = upper_outer - 1, color = model),
       fatten_point = 5, position = position_dodge(width = 0.4)
     ) +
     theme_bw() +
