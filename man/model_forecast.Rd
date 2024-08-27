@@ -10,10 +10,9 @@ model_forecast(horizon = horizon_none())
 \item{horizon}{The forecast horizon. How many days into the future should
 EpiSewer forecast? Note that this functionality is intended for short-term
 forecasts. Projections over longer horizons can be highly inaccurate.
-Available options:
+Available options- \code{\link[=horizon_none]{horizon_none()}}
 \itemize{
-\item \code{\link[=horizon_none]{horizon_none()}}
-\item \code{\link[=horizon_assume]{horizon_assume()}}
+\item \code{\link[=horizon_assume]{horizon_assume()}})`
 }}
 }
 \value{
@@ -32,10 +31,11 @@ individual helper functions to adjust various settings.
 Forecasts account for the estimated variation of transmission
 dynamics over time and therefore become more uncertain at longer forecast
 horizons. However, it is important to keep in mind that in expectation the
-model will project the current transmission dynamics to continue unchanged.
-This assumption can be violated by various factors such as depletion of
-susceptible individuals, changes in behavior, or public health
-interventions.
+model will project the current transmission dynamics to continue unchanged
+(with the exception of \code{R_estimate_ets}, which can project the current
+linear trend of Rt). This assumption can be violated by various factors
+such as depletion of susceptible individuals, changes in behavior, or
+public health interventions.
 }
 \seealso{
 Other {module functions}: 
