@@ -308,7 +308,7 @@ ww_assumptions <- sewer_assumptions(
 
 ### Estimation
 
-Now that we have the data and the necessary assumptions, we can use
+Now that we have the data and necessary assumptions, we can use
 `EpiSewer` to estimate the effective reproduction number. We here use
 the default model and settings provided by `EpiSewer`. With the helper
 function `set_fit_opts()` we specify our sampling approach: we apply
