@@ -255,6 +255,8 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 #'   device. This is only necessary once, after installing or updating the
 #'   package. This function compiles all models from the package.
 #'
+#' @param model A character vector with a specific model to compile. If NULL
+#'   (default), all models are compiled.
 #' @param force_recompile If TRUE, then models will be recompiled even if they
 #'   have already been successfully compiled.
 #' @param verbose If TRUE, warnings and detailed errors from the compilation are
@@ -267,11 +269,24 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 #'   a new issue on GitHub, along with your [cmdstanr::cmdstan_version()].
 #'
 #' @export
-sewer_compile <- function(force_recompile = FALSE, verbose = FALSE) {
+sewer_compile <- function(model = NULL, force_recompile = FALSE, verbose = FALSE) {
   all_models <- c(
     "EpiSewer_main.stan",
     "EpiSewer_approx.stan"
     )
+  if (!is.null(model)) {
+    if (model %in% c("main", "EpiSewer_main")) {
+      model <- "EpiSewer_main.stan"
+    } else if (model %in% c("approx", "EpiSewer_approx")) {
+      model <- "EpiSewer_approx.stan"
+    }
+    if (!(model %in% all_models)) {
+      cli::cli_abort(paste(
+          "The model", model, "is not available."
+      ))
+    }
+    all_models <- model
+  }
   comp_success <- NULL
 
   for (i in 1:length(all_models)) {
