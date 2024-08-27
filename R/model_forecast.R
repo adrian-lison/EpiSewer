@@ -10,16 +10,16 @@
 #' @param horizon The forecast horizon. How many days into the future should
 #'   EpiSewer forecast? Note that this functionality is intended for short-term
 #'   forecasts. Projections over longer horizons can be highly inaccurate.
-#'   Available options:
-#' `r component_functions_("horizon")`
+#'   Available options: `r component_functions_("horizon")`
 #'
 #' @details Forecasts account for the estimated variation of transmission
 #'   dynamics over time and therefore become more uncertain at longer forecast
 #'   horizons. However, it is important to keep in mind that in expectation the
-#'   model will project the current transmission dynamics to continue unchanged.
-#'   This assumption can be violated by various factors such as depletion of
-#'   susceptible individuals, changes in behavior, or public health
-#'   interventions.
+#'   model will project the current transmission dynamics to continue unchanged
+#'   (with the exception of `R_estimate_ets`, which can project the current
+#'   linear trend of Rt). This assumption can be violated by various factors
+#'   such as depletion of susceptible individuals, changes in behavior, or
+#'   public health interventions.
 #'
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `forecast` module.
