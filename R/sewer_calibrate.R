@@ -124,3 +124,18 @@ get_infection_curve_crude <- function(load_curve_crude, load_per_case) {
   return(infection_curve_crude)
 }
 
+get_zero_impute <- function(LOD_model, LOD_scale, modeldata) {
+  if (LOD_model == 0) {
+    return(NA)
+  } else if (LOD_model == 1) {
+    # integrate exp(-LOD_scale)
+  } else if (LOD_model == 2) {
+ #LOD_expected_scale = (
+    # (total_partitions_observe ? total_partitions_median : (nu_upsilon_b_mu_prior[1] * 1e4)) *
+    #   nu_upsilon_c_prior[1] * 1e-5 *
+    #   n_averaged_median
+    # )
+  } else {
+    cli::cli_abort("Unknown LOD_model.")
+  }
+}
