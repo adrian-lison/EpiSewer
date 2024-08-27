@@ -371,7 +371,7 @@ the flow data as well (see below).
 plot_concentration(ww_result, measurements = data_zurich$measurements, flows = data_zurich$flows, normalized = TRUE)
 ```
 
-<img src="man/figures/README-concentration_noise-1.png" width="100%" />
+<img src="man/figures/README-concentration_normalized-1.png" width="100%" />
 As can be seen, the normalization removes the noise due to the daily
 variation of flow. The remaining uncertainty is due to the measurement
 noise and other sources of variation.
