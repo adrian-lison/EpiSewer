@@ -48,10 +48,11 @@ EpiSewer <- function(
     sewage = model_sewage(),
     shedding = model_shedding(),
     infections = model_infections(),
+    forecast = model_forecast(),
     fit_opts = set_fit_opts(),
     run_fit = TRUE) {
   modeldata <- modeldata_combine(
-    measurements, sampling, sewage, shedding, infections
+    measurements, sampling, sewage, shedding, infections, forecast
   )
 
   modeldata <- modeldata_validate(
@@ -283,11 +284,18 @@ setMethod("run", c("EpiSewerJob"), function(job) {
 #'
 #' @return A `list` with checksums identifying the model, input, inits and
 #'   fit_opts.
-get_checksums <- function(job, stanmodel_instance) {
+#' @export
+get_checksums <- function(job, stanmodel_instance = NULL) {
   checksums <- list()
-  checksums$model <- get_checksum_model(stanmodel_instance)
+  if (!is.null(stanmodel_instance)) {
+    checksums$model <- get_checksum_model(stanmodel_instance)
+  } else {
+    checksums$model <- NA
+  }
   checksums$input <- digest::digest(job$data, algo = "md5")
-  checksums$fit_opts <- digest::digest(job$fit_opts, algo = "md5")
+  checksums$fit_opts <- digest::digest(
+    list_except(job$fit_opts, c("model")), algo = "md5"
+    )
   checksums$init <- digest::digest(job$init, algo = "md5")
   return(checksums)
 }

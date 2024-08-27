@@ -7,7 +7,7 @@
 concentrations_observe(
   measurements = NULL,
   composite_window = 1,
-  distribution = "normal",
+  distribution = "gamma",
   date_col = "date",
   concentration_col = "concentration",
   replicate_col = NULL,
@@ -29,8 +29,9 @@ this case, the supplied dates represent the last day included in each
 sample.}
 
 \item{distribution}{Parametric distribution for concentration measurements.
-Currently supported are "normal" (default and recommended), and
-"log-normal". Distributions are truncated below zero if necessary.}
+Currently supported are "gamma" (default and recommended), "log-normal",
+"truncated normal", and "normal". The "truncated normal" and "normal"
+options are not recommended for use in practice.}
 
 \item{date_col}{Name of the column containing the dates.}
 

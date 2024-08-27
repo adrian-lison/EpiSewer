@@ -12,6 +12,7 @@ EpiSewer(
   sewage = model_sewage(),
   shedding = model_shedding(),
   infections = model_infections(),
+  forecast = model_forecast(),
   fit_opts = set_fit_opts(),
   run_fit = TRUE
 )

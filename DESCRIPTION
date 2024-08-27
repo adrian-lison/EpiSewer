@@ -23,6 +23,7 @@ Imports:
     forcats,
     ggdist,
     ggplot2,
+    ggpattern,
     lazyeval,
     lubridate,
     Matrix,

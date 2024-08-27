@@ -4,7 +4,12 @@
 \alias{get_lognormal_mu_alternative}
 \title{Compute mu parameter of Log-Normal from other quantities.}
 \usage{
-get_lognormal_mu_alternative(unit_q5, unit_q95)
+get_lognormal_mu_alternative(
+  unit_mean = NULL,
+  unit_sd = NULL,
+  unit_q5 = NULL,
+  unit_q95 = NULL
+)
 }
 \arguments{
 \item{unit_q5}{5\% quantile of distribution.}

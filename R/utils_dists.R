@@ -169,16 +169,25 @@ erfinv <- function (x) qnorm((1 + x)/2)/sqrt(2) # inverse error function
 #' alternatives may be added.
 #'
 #' @return Mu parameter of Log-Normal distribution.
-get_lognormal_mu_alternative <- function(unit_q5, unit_q95) {
-  erfq5 <- erfinv(2*0.05-1)
-  erfq95 <- erfinv(2*0.95-1)
-  if (unit_q5 > unit_q95) {
+get_lognormal_mu_alternative <- function(unit_mean = NULL, unit_sd = NULL, unit_q5 = NULL, unit_q95 = NULL) {
+  if (!is.null(unit_mean) && !is.null(unit_sd)) {
+    sigma2 <- log((unit_sd / unit_mean)^2 + 1)
+    mu <- log(unit_mean) - sigma2 / 2
+  } else if (!is.null(unit_q5) && !is.null(unit_q95)) {
+    erfq5 <- erfinv(2*0.05-1)
+    erfq95 <- erfinv(2*0.95-1)
+    if (unit_q5 > unit_q95) {
+      cli::cli_abort(paste(
+        "Lower quantile `unit_q5` must not be larger",
+        "than upper quantile `unit_q95`."
+      ))
+    }
+    mu = (log(unit_q5)/erfq5 - log(unit_q95)/erfq95) / (1/erfq5 - 1/erfq95)
+  } else {
     cli::cli_abort(paste(
-      "Lower quantile `unit_q5` must not be larger",
-      "than upper quantile `unit_q95`."
+      "Either `unit_mean` and `unit_sd` or `unit_q5` and `unit_q95` must be supplied."
     ))
   }
-  mu = (log(unit_q5)/erfq5 - log(unit_q95)/erfq95) / (1/erfq5 - 1/erfq95)
   return(mu)
 }
 
@@ -191,33 +200,37 @@ get_lognormal_mu_alternative <- function(unit_q5, unit_q95) {
 #'   other alternatives may be added.
 #'
 #' @return Sigma parameter of Log-Normal distribution.
-get_lognormal_sigma_alternative <- function(mu,
+get_lognormal_sigma_alternative <- function(mu, unit_mean = NULL, unit_sd = NULL,
                                             unit_q5 = NULL, unit_q95 = NULL) {
-  if (is.null(unit_q5) && is.null(unit_q95)) {
-    cli::cli_abort(
-      "Either `unit_q5` or `unit_q95` must be supplied together with mu."
-      )
-  }
-  if (!is.null(unit_q5) && !is.null(unit_q95)) {
-    cli::cli_warn(paste(
-      "Both `unit_q5` and `unit_q95` were supplied together with mu,",
-      "using only `unit_q95` to compute sigma."
-    ))
-  }
-  if (!is.null(unit_q95)) {
-    if (unit_q95 < exp(mu)) {
+  if (!is.null(unit_mean) && !is.null(unit_sd)) {
+    sigma <- sqrt(log((unit_sd / unit_mean)^2 + 1))
+  } else {
+    if (is.null(unit_q5) && is.null(unit_q95)) {
       cli::cli_abort(
-        "Upper quantile `unit_q95` must not be less than exp(mu)."
-      )
+        "Either `unit_q5` or `unit_q95` must be supplied together with mu."
+        )
     }
-    sigma = (log(unit_q95) - mu)/(sqrt(2) * erfinv(2*0.95-1))
-  } else if (!is.null(unit_q5)) {
-    if (unit_q5 > exp(mu)) {
-      cli::cli_abort(
-        "Lower quantile `unit_q5` must not be greater than exp(mu)."
-      )
+    if (!is.null(unit_q5) && !is.null(unit_q95)) {
+      cli::cli_warn(paste(
+        "Both `unit_q5` and `unit_q95` were supplied together with mu,",
+        "using only `unit_q95` to compute sigma."
+      ))
     }
-    sigma = (log(unit_q5) - mu)/(sqrt(2) * erfinv(2*0.05-1))
+    if (!is.null(unit_q95)) {
+      if (unit_q95 < exp(mu)) {
+        cli::cli_abort(
+          "Upper quantile `unit_q95` must not be less than exp(mu)."
+        )
+      }
+      sigma = (log(unit_q95) - mu)/(sqrt(2) * erfinv(2*0.95-1))
+    } else if (!is.null(unit_q5)) {
+      if (unit_q5 > exp(mu)) {
+        cli::cli_abort(
+          "Lower quantile `unit_q5` must not be greater than exp(mu)."
+        )
+      }
+      sigma = (log(unit_q5) - mu)/(sqrt(2) * erfinv(2*0.05-1))
+    }
   }
   return(sigma)
 }
@@ -333,4 +346,21 @@ check_dist <- function(dist, name = "probability distribution") {
     dist <- dist / sum(dist)
   }
   return(dist)
+}
+
+
+#' Get the mean of a discrete distribution
+#'
+#' @param dist Discrete distribution represented as numeric vector
+#' @param include_zero If `TRUE` (default), the vector index starts at zero.
+#'   Otherwise, it starts at 1.
+#'
+#' @return Mean of the discrete distribution
+dist_mean <- function(dist, include_zero = TRUE) {
+  if (include_zero) {
+    mean <- sum((0:(length(dist) - 1)) * dist)
+  } else {
+    mean <- sum((1:(length(dist))) * dist)
+  }
+  return(mean)
 }

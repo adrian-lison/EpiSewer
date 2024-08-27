@@ -64,7 +64,8 @@ between PCR runs, and is modeled as log-normal distributed in EpiSewer.}
 
 \item{partition_variation_prior_sigma}{Prior (standard deviation) on the
 coefficient of variation of the total number of partitions in the dPCR
-reaction.}
+reaction. If this is set to zero, the partition variation will
+be fixed to the prior mean and not estimated.}
 
 \item{volume_scaled_prior_mu}{Prior (mean) on the conversion factor
 (partition volume scaled by the dilution of wastewater in the assay) for

@@ -46,3 +46,12 @@ Each component can be specified using one or several helper
 functions (see available options below). See the documentation of the
 individual helper functions to adjust model priors and further settings.
 }
+\seealso{
+Other {module functions}: 
+\code{\link{model_forecast}()},
+\code{\link{model_infections}()},
+\code{\link{model_sampling}()},
+\code{\link{model_sewage}()},
+\code{\link{model_shedding}()}
+}
+\concept{{module functions}}

@@ -32,6 +32,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `shedding` module.
 #' @export
+#' @family {module functions}
 model_shedding <- function(
     incubation_dist = incubation_dist_assume(),
     shedding_dist = shedding_dist_assume(),
@@ -177,7 +178,14 @@ load_variation_none <- function(modeldata = modeldata_init()) {
   modeldata$load_vari <- 0
   modeldata$nu_zeta_prior <- numeric(0)
   modeldata$.init$nu_zeta <- numeric(0)
-  modeldata$.init$zeta_raw <- numeric(0)
+
+  modeldata$zeta_normal_approx <- numeric(0)
+  modeldata$n_zeta_normal_approx <- 0
+  modeldata$zeta_exact <- numeric(0)
+  modeldata$n_zeta_exact <- 0
+
+  modeldata$.init$zeta_log_exact <- numeric(0)
+  modeldata$.init$zeta_raw_approx <- numeric(0)
 
   modeldata$.str$shedding[["load_variation"]] <- list(
     load_variation_none = c()
@@ -230,9 +238,46 @@ load_variation_estimate <- function(
   modeldata$.init$nu_zeta <- as.array(init_from_location_scale_prior(
     modeldata$nu_zeta_prior
   ))
-  modeldata$.init$zeta_raw <- tbe(
-    rep(0, modeldata$.metainfo$length_shedding),
-    c(".metainfo$length_shedding")
+
+  modeldata <- tbc("zeta_normal_approximation",
+    {
+      icc <- modeldata$.metainfo$infection_curve_crude
+      l_I <- modeldata$.metainfo$length_I
+      l_shedding <- modeldata$.metainfo$length_shedding
+      if (nrow(icc) != l_I) {
+        cli::cli_abort(
+          "Calibration error: Incorrect length of crude infection curve."
+        )
+      } else {
+        infs <- icc[(nrow(icc) - l_shedding + 1):nrow(icc), "infections"][[1]]
+        upper_cv <- extraDistr::qtnorm(
+          p = 0.95,
+          mean = modeldata$nu_zeta_prior$nu_zeta_prior[1],
+          sd = modeldata$nu_zeta_prior$nu_zeta_prior[2] + 0.001,
+          a = 0
+          )
+        N_threshold <- 30 * upper_cv^2 # threshold at which to use normal approx
+        modeldata$zeta_normal_approx <- which(infs > N_threshold)
+        modeldata$n_zeta_normal_approx <- length(modeldata$zeta_normal_approx)
+        modeldata$zeta_exact <- which(infs <= N_threshold)
+        modeldata$n_zeta_exact <- length(modeldata$zeta_exact)
+
+        modeldata$.init$zeta_log_exact <- rep(
+            log(max(1.1, modeldata$.metainfo$initial_cases_crude)),
+            modeldata$n_zeta_exact
+          )
+        modeldata$.init$zeta_raw_approx <- rep(
+          0,
+          modeldata$n_zeta_normal_approx
+        )
+      }
+    },
+    required = c(
+      ".metainfo$initial_cases_crude",
+      ".metainfo$infection_curve_crude",
+      ".metainfo$length_I",
+      ".metainfo$length_shedding"),
+    modeldata = modeldata
   )
 
   modeldata$.str$shedding[["load_variation"]] <- list(

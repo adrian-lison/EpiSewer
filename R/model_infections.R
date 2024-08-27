@@ -31,6 +31,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `infections` module.
 #' @export
+#' @family {module functions}
 model_infections <- function(
     generation_dist = generation_dist_assume(),
     R = R_estimate_splines(),
@@ -421,13 +422,17 @@ R_estimate_splines <- function(
     "spline_definition",
     {
       knots <- place_knots(
-        ts_length = modeldata$.metainfo$length_R,
+        ts_length = with(
+          modeldata$.metainfo, length_R + forecast_horizon
+        ),
         knot_distance = knot_distance,
-        partial_window = modeldata$.metainfo$partial_window
+        partial_window = with(
+          modeldata$.metainfo, partial_window + forecast_horizon
+          )
       )
       B <-
         splines::bs(
-          1:modeldata$.metainfo$length_R,
+          with(modeldata$.metainfo, 1:(length_R + forecast_horizon)),
           knots = knots$interior,
           degree = spline_degree,
           intercept = FALSE,
@@ -458,7 +463,11 @@ R_estimate_splines <- function(
       modeldata$.init$bs_coeff_ar_sd <- 0.1
       modeldata$.init$bs_coeff_noise_raw <- rep(0, modeldata$bs_n_basis - 1)
     },
-    required = c(".metainfo$length_R", ".metainfo$partial_window"),
+    required = c(
+      ".metainfo$length_R",
+      ".metainfo$partial_window",
+      ".metainfo$forecast_horizon"
+      ),
     modeldata = modeldata
   )
 
@@ -617,13 +626,13 @@ R_estimate_approx <- function(
     "spline_definition",
     {
       knots <- place_knots(
-        ts_length = with(modeldata$.metainfo, length_I - length_seeding),
+        ts_length = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
         knot_distance = knot_distance,
-        partial_window = modeldata$.metainfo$partial_window
+        partial_window = with(modeldata$.metainfo, partial_window + forecast_horizon)
       )
       B <-
         splines::bs(
-          1:with(modeldata$.metainfo, length_I - length_seeding),
+          1:with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
           knots = knots$interior,
           degree = spline_degree,
           intercept = FALSE,
@@ -655,7 +664,8 @@ R_estimate_approx <- function(
     required = c(
       ".metainfo$length_I",
       ".metainfo$length_seeding",
-      ".metainfo$partial_window"
+      ".metainfo$partial_window",
+      ".metainfo$forecast_horizon"
       ),
     modeldata = modeldata
   )
@@ -861,14 +871,14 @@ add_seeding_intercept_prior <- function(
     intercept_prior_q5 <- 1
   }
 
-  if (!is.null(intercept_prior_q95) && intercept_prior_q95 < 10) {
+  if (!is.null(intercept_prior_q95) && intercept_prior_q95 < 2) {
     cli::cli_warn(paste0(
       "Warning from ",
       help_seeding_f, ": ",
       "The 95% quantile (`intercept_prior_q95`) was slightly raised to be ",
-      "at least 10 infections."
+      "at least 2 infections."
     ))
-    intercept_prior_q95 <- 10
+    intercept_prior_q95 <- 2
   }
 
   if (!is.null(intercept_prior_q5) && !is.null(intercept_prior_q95)) {
@@ -969,9 +979,9 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #'   number of new infections generated at each time step, which can often speed
 #'   up model fitting.
 #'
-#' @param overdispersion If `FALSE` (default) new infections are modeled as
-#'   Poisson distributed. If `TRUE`, new infections are modeled as Negative
-#'   Binomial distributed.
+#' @param overdispersion If `TRUE` (default), new infections are modeled as
+#'   Negative Binomial distributed. If `FALSE`, new infections are modeled as
+#'   Poisson distributed.
 #' @param overdispersion_prior_mu Prior (mean) on the overdispersion parameter
 #'   of the Negative Binomial. The default of 0.1 corresponds to 10%
 #'   overdispersion. It is also the limit of the coefficient of variation (CV)
@@ -985,6 +995,12 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #'   time series of measurements. This is why the overdispersion is fixed by
 #'   default.
 #'
+#' @details For complicated reasons, MCMC sampling of high infection numbers is
+#'   faster with a certain degree of overdispersion. Thus, if modeling large
+#'   waves, assuming some overdispersion can also make sense for computational
+#'   reasons. The effects on the estimated transmission dynamics are often
+#'   minimal.
+#'
 #' @details The priors of this component have the following functional form:
 #' - overdispersion parameter of the Negative Binomial: `Truncated normal`
 #'
@@ -993,7 +1009,7 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #' @export
 #' @family {infection noise models}
 infection_noise_estimate <-
-  function(overdispersion = FALSE,
+  function(overdispersion = TRUE,
            overdispersion_prior_mu = 0.1,
            overdispersion_prior_sigma = 0,
            modeldata = modeldata_init()) {

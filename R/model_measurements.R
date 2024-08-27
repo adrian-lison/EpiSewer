@@ -21,6 +21,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `measurements` module.
 #' @export
+#' @family {module functions}
 model_measurements <- function(
     concentrations = concentrations_observe(),
     noise = noise_estimate(),
@@ -47,8 +48,9 @@ model_measurements <- function(
 #'   this case, the supplied dates represent the last day included in each
 #'   sample.
 #' @param distribution Parametric distribution for concentration measurements.
-#'   Currently supported are "normal" (default and recommended), and
-#'   "log-normal". Distributions are truncated below zero if necessary.
+#'   Currently supported are "gamma" (default and recommended), "log-normal",
+#'   "truncated normal", and "normal". The "truncated normal" and "normal"
+#'   options are not recommended for use in practice.
 #' @param date_col Name of the column containing the dates.
 #' @param concentration_col Name of the column containing the measured
 #'   concentrations.
@@ -81,7 +83,7 @@ model_measurements <- function(
 concentrations_observe <-
   function(measurements = NULL,
            composite_window = 1,
-           distribution = "normal",
+           distribution = "gamma",
            date_col = "date",
            concentration_col = "concentration",
            replicate_col = NULL,
@@ -92,16 +94,6 @@ concentrations_observe <-
     if (!(composite_window %% 1 == 0 && composite_window > 0)) {
       cli::cli_abort(
         "The argument `composite_window` must be a positive integer."
-      )
-    }
-
-    if (!distribution %in% c("normal", "lognormal", "log-normal")) {
-      cli::cli_abort(
-        c(
-          "Only the following distributions are supported:",
-          "normal",
-          "log-normal"
-        )
       )
     }
 
@@ -228,12 +220,58 @@ concentrations_observe <-
       concentrations_observe = .str_details
     )
 
-    modeldata$obs_dist = switch(
-      distribution,
-      "normal" = 1,
-      "lognormal" = 2,
-      "log-normal" = 2,
-      -1
+    available_distributions <- c(
+      "gamma" = 0,
+      "log-normal" = 1,
+      "truncated normal" = 2,
+      "normal" = 3
+    )
+
+    distribution_aliases <- c(
+      "lnorm" = "log-normal",
+      "lognormal" = "log-normal",
+      "truncated_normal" = "truncated normal",
+      "truncated-normal" = "truncated normal",
+      "norm" = "normal"
+    )
+
+    distribution <- stringr::str_to_lower(distribution)
+    distribution <- do.call(
+      switch, c(distribution, as.list(c(distribution_aliases,distribution)))
+    )
+
+    if (!distribution %in% names(available_distributions)) {
+      cli::cli_abort(
+        c(
+          "Only the following distributions are supported:",
+          setNames(names(available_distributions), rep("*", length(available_distributions)))
+        )
+      )
+    }
+
+    if (distribution == "truncated normal") {
+      cli::cli_inform(c(
+        "!" = paste(
+          "The Truncated Normal distribution is supported for model",
+          "comparison purposes -",
+          "but it is not recommended in practice due to misspecification, i.e.",
+          "biased mean at low concentrations.",
+          "Consider using a Gamma or Log-Normal distribution instead."
+      )))
+    }
+    if (distribution == "normal") {
+      cli::cli_inform(c(
+        "!" = paste(
+          "The Normal distribution is supported for model",
+          "comparison purposes -",
+          "but it is not recommended in practice due to misspecification, i.e.",
+          "prediction of negative concentrations.",
+          "Consider using a Gamma or Log-Normal distribution instead."
+      )))
+    }
+
+    modeldata$obs_dist = do.call(
+      switch, c(distribution, as.list(c(available_distributions,-1)))
       )
 
     return(modeldata)
@@ -309,7 +347,8 @@ partitions_observe <-
 #'   between PCR runs, and is modeled as log-normal distributed in EpiSewer.
 #' @param partition_variation_prior_sigma Prior (standard deviation) on the
 #'   coefficient of variation of the total number of partitions in the dPCR
-#'   reaction.
+#'   reaction. If this is set to zero, the partition variation will
+#'   be fixed to the prior mean and not estimated.
 #' @param volume_scaled_prior_mu Prior (mean) on the conversion factor
 #'   (partition volume scaled by the dilution of wastewater in the assay) for
 #'   the dPCR reaction. See details for further explanation.
@@ -321,7 +360,6 @@ partitions_observe <-
 #'   of concentrations *before* the replication stage.
 #' @param pre_replicate_cv_prior_sigma Prior (standard deviation) on the
 #'   coefficient of variation of concentrations *before* the replication stage.
-#'
 #' @param prePCR_noise_type The parametric distribution to assume for noise
 #'   before the PCR assay. Currently supported are "log-normal" and "gamma". The
 #'   choice of the parametric distribution typically makes no relevant
@@ -413,7 +451,9 @@ noise_estimate_ <-
           mu = partition_variation_prior_mu,
           sigma = partition_variation_prior_sigma
         )
-        modeldata$.init$nu_upsilon_b_cv <- as.array(0.01)
+        modeldata$.init$nu_upsilon_b_cv <- init_from_location_scale_prior(
+          modeldata$nu_upsilon_b_cv_prior
+        )
         modeldata$.init$nu_upsilon_b_noise_raw <- tbe(
           rep(0, modeldata$n_measured), "n_measured"
         )
@@ -689,17 +729,17 @@ noise_estimate_constant_var <-
            warn = TRUE,
            modeldata = modeldata_init()) {
     if (warn) {
-      cli::cli_warn(paste(
-      "You have specified",
+      cli::cli_inform(c("!" = paste0(
+      "You have specified ",
       cli_help("noise_estimate_constant_var"),
-      "as the model component for measurement noise.",
-      "Note that modeling a constant variance",
-      "is likely a model misspecification and should only be used for ",
-      "comparison purposes with better models like",
-      cli_help("noise_estimate"), "or", cli_help("noise_estimate_dPCR"), ".",
-      "You can specify",
+      " as the model component for measurement noise.",
+      " Note that modeling a constant variance",
+      " is likely a model misspecification and should only be used for",
+      " comparison purposes with better models like ",
+      cli_help("noise_estimate"), " or ", cli_help("noise_estimate_dPCR"), ".",
+      " You can specify ",
       "{.code noise_estimate_constant_var(warn=TRUE)} to disable this warning."
-      ))
+      )))
     }
     return(noise_estimate_(
       replicates = replicates,

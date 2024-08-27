@@ -13,18 +13,21 @@ modeldata_update_metainfo <- function(modeldata) {
   )) {
     modeldata$.metainfo$length_shedding <- with(modeldata, S + D + T)
   }
+
   if (modeldata_check(modeldata,
     required = c("L", "S", "D", "T"),
     throw_error = FALSE
   )) {
     modeldata$.metainfo$length_I <- with(modeldata, L + S + D + T)
   }
+
   if (modeldata_check(modeldata,
     required = c("L", "S", "D", "T", "G"),
     throw_error = FALSE
   )) {
     modeldata$.metainfo$length_R <- with(modeldata, L + S + D + T - G)
   }
+
   if (modeldata_check(modeldata,
                       required = c("residence_dist",
                                    "shedding_dist",
@@ -33,16 +36,28 @@ modeldata_update_metainfo <- function(modeldata) {
   )) {
     inc_shed_dist <- with(
       modeldata, convolve(incubation_dist, rev(shedding_dist), type = "o")
-      )
-    total_dist <- with(
+    )
+    total_delay_dist <- with(
       modeldata, convolve(inc_shed_dist, rev(residence_dist), type = "o")
     )
-    modeldata$.metainfo$partial_window <- which(cumsum(total_dist)>0.9)[1]-1
+    modeldata$.metainfo$total_delay_dist <- total_delay_dist
   }
+
+  if (modeldata_check(modeldata,
+                      required = c(".metainfo$total_delay_dist"),
+                      throw_error = FALSE
+  )) {
+    modeldata$.metainfo$partial_window <- which(
+      cumsum(modeldata$.metainfo$total_delay_dist)>0.9
+      )[1]-1
+  }
+
   if (modeldata_check(
     modeldata,
     required = c(
       "measured_concentrations",
+      "measure_to_sample",
+      "sample_to_date",
       "flow",
       ".metainfo$composite_window",
       ".metainfo$load_per_case"
@@ -50,13 +65,57 @@ modeldata_update_metainfo <- function(modeldata) {
     throw_error = FALSE
   )) {
     # crude descriptive estimate of cases at start of time series
+    # here we take the mean of the first week of samples
     modeldata$.metainfo$initial_cases_crude <-
       with(
         modeldata,
-        0.1 + measured_concentrations[1] *
-          mean(flow[1:.metainfo$composite_window]) / .metainfo$load_per_case
+        0.1 + # small offset to avoid zero cases
+          mean(
+            measured_concentrations[measure_to_sample[which(sample_to_date<=7)]],
+            na.rm = T
+            ) *
+          mean(flow[1:7], na.rm = T) /
+          .metainfo$load_per_case
       )
   }
+
+  if (modeldata_check(
+    modeldata,
+    required = c(
+      "measured_concentrations",
+      "measure_to_sample",
+      "sample_to_date",
+      "flow",
+      ".metainfo$total_delay_dist",
+      ".metainfo$length_I",
+      "T",
+      ".metainfo$T_start_date"
+    ),
+    throw_error = FALSE
+  )) {
+    modeldata$.metainfo$load_curve_crude <- with(
+      modeldata, get_load_curve_crude(
+        measured_concentrations, measure_to_sample, sample_to_date, flow,
+        .metainfo$total_delay_dist, max_shift = .metainfo$length_I - T,
+        .metainfo$T_start_date,
+        impute_zero = NA, interpolate = TRUE, loess_window = 56
+    ))
+  }
+
+  if (modeldata_check(
+    modeldata,
+    required = c(
+      ".metainfo$load_curve_crude",
+      ".metainfo$load_per_case"
+    ),
+    throw_error = FALSE
+  )) {
+    modeldata$.metainfo$infection_curve_crude <- with(
+      modeldata, get_infection_curve_crude(
+        .metainfo$load_curve_crude, .metainfo$load_per_case
+    ))
+  }
+
   return(modeldata)
 }
 
@@ -123,7 +182,8 @@ all_components <- function() {
     "seeding",
     "infection_noise",
     "sample_effects",
-    "noise"
+    "noise",
+    "horizon"
   )
   return(components)
 }

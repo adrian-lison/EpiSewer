@@ -13,8 +13,8 @@ noise_estimate_dPCR(
   total_partitions_observe = FALSE,
   partition_variation_prior_mu = 0,
   partition_variation_prior_sigma = 0.05,
-  volume_scaled_prior_mu = 1.5e-05,
-  volume_scaled_prior_sigma = 5e-06,
+  volume_scaled_prior_mu = 1e-05,
+  volume_scaled_prior_sigma = 4e-05,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   prePCR_noise_type = "log-normal",
@@ -57,7 +57,8 @@ between PCR runs, and is modeled as log-normal distributed in EpiSewer.}
 
 \item{partition_variation_prior_sigma}{Prior (standard deviation) on the
 coefficient of variation of the total number of partitions in the dPCR
-reaction.}
+reaction. If this is set to zero, the partition variation will
+be fixed to the prior mean and not estimated.}
 
 \item{volume_scaled_prior_mu}{Prior (mean) on the conversion factor
 (partition volume scaled by the dilution of wastewater in the assay) for

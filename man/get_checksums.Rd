@@ -4,7 +4,7 @@
 \alias{get_checksums}
 \title{Get checksums that uniquely identify an EpiSewer job.}
 \usage{
-get_checksums(job, stanmodel_instance)
+get_checksums(job, stanmodel_instance = NULL)
 }
 \arguments{
 \item{job}{An EpiSewer job object.}

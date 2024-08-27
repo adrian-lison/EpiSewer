@@ -14,11 +14,19 @@
 #'   Default is `FALSE`.
 #' @param median Should the estimated median be shown, or only the credible
 #'   intervals? Default is `FALSE` to avoid over-interpretation of the median.
+#' @param forecast Should forecasted infections be shown? Default is true. This
+#'   requires that the model was fitted with a forecast horizon, see
+#'   [model_forecast()].
+#' @param forecast_horizon How many days into the future should forecasts be
+#'   plotted? Note that this is restricted by the forecast horizon specified
+#'   during model fitting, see [horizon_assume()].
 #' @param date_margin_left By how many days into the past should the plot be
 #'   expanded? Can also be negative to cut off some of the earliest dates.
 #' @param date_margin_right By how many days into the future should the plot be
 #'   expanded? Can also be negative to cut off some of the latest dates.
 #' @param facet_models Should the plot be faceted by model? Default is `FALSE`.
+#' @param facet_direction How should the facetting be done? Either in different
+#'   "rows" (default) or in different "columns".
 #' @param base_model Name of the base model (in the named list provided to
 #'   `results`) which should be compared to the other models. This model will be
 #'   plotted in black and will not be part of the legend.
@@ -33,9 +41,10 @@
 #' @export
 #' @import ggplot2
 plot_infections <- function(results, draws = FALSE, ndraws = NULL,
-                            seeding = FALSE, median = FALSE,
+                            median = FALSE, seeding = FALSE,
+                            forecast = TRUE, forecast_horizon = NULL,
                             date_margin_left = 0, date_margin_right = 0,
-                            facet_models = FALSE,
+                            facet_models = FALSE, facet_direction = "rows",
                             base_model = "", model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
@@ -51,11 +60,24 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
   }
 
   if (!is.null(model_levels)) {
-    data_to_plot$model <- factor(data_to_plot$model, levels = model_levels, ordered = TRUE)
+    data_to_plot$model <- factor(
+      data_to_plot$model, levels = model_levels, ordered = TRUE
+      )
   }
 
   if (!seeding) {
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
+  }
+
+  if (!forecast) {
+    data_to_plot <- data_to_plot[type == "estimate",]
+  } else if (!is.null(forecast_horizon)) {
+    forecast_dates <- data_to_plot[
+      type == "estimate",
+      .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
+      by = "model"]
+    data_to_plot <- merge(data_to_plot, forecast_dates, by = "model")
+    data_to_plot <- data_to_plot[date <= last_forecast, ]
   }
 
   ymin <- quantile(data_to_plot$lower_0.95, probs = 0.01, na.rm = T)
@@ -64,7 +86,9 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
   xmin <- as.Date(min(data_to_plot$date, na.rm = T)) - date_margin_left
   xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
 
-  plot <- ggplot(data_to_plot[data_to_plot$model!=base_model,],
+  has_forecast <- "forecast" %in% data_to_plot$type
+
+  plot <- ggplot(data_to_plot[model!=base_model,],
                  aes(x = date)) +
     theme_bw() +
     scale_x_date(
@@ -83,62 +107,85 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
       '" could not be found in the provided `results` list.'
     ))
   }
-  data_base_model <- data_to_plot[data_to_plot$model==base_model,]
-  data_base_model <- data_base_model[,setdiff(names(data_base_model), "model"), with = FALSE]
+  data_base_model <- data_to_plot[model==base_model,]
+  data_base_model <- data_base_model[
+    , setdiff(names(data_base_model), "model"), with = FALSE
+    ]
 
   if (draws) {
     plot <- plot +
       { if (base_model!="") {
-        geom_line(data = data_base_model,
-                  aes(y = I, group = .draw), size = 0.1, alpha = 0.9, color = "black")
-      }
-      } +
-      geom_line(aes(y = I, group = paste0(.draw, model), color = model), size = 0.1, alpha = 0.9)
-  } else {
-    plot <- plot +
-    { if (base_model!="") {
-      geom_ribbon(
-        data = data_base_model,
-        aes(ymin = lower_0.95, ymax = upper_0.95),
-        alpha = 0.2, color = NA, fill = "black"
-      )
-    }
-    } +
-      geom_ribbon(
-        aes(ymin = lower_0.95, ymax = upper_0.95, fill = model),
-        alpha = 0.2, color = NA
-      ) +
-      { if (base_model!="") {
-        geom_ribbon(
-          data = data_base_model,
-          aes(ymin = lower_0.5, ymax = upper_0.5),
-          alpha = 0.4, color = NA, fill = "black"
+        geom_line(
+          data = data_base_model[type == "estimate",],
+          aes(y = I, group = .draw),
+          size = 0.1, alpha = 0.9, color = "black"
         )
       }
       } +
-      geom_ribbon(
-        aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
-        alpha = 0.4, color = NA
-      ) + {
-        if (median && (base_model!="")) geom_line(data = data_base_model, aes(y = median), color = "black")
-      } +
       {
-        if (median) geom_line(aes(y = median, color = model))
+        if (base_model!="" && has_forecast) {
+          geom_line(
+            data = rbind(
+              data_base_model[type == "estimate"][date == max(date)],
+              data_base_model[type == "forecast"]
+            ),
+            aes(y = I, group = .draw),
+            size = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
+          )
+        }
+      } +
+      geom_line(
+        data = data_to_plot[model!=base_model & type == "estimate",],
+        aes(y = I, group = paste0(.draw, model), color = model),
+        size = 0.1, alpha = 0.9
+      ) +
+      {
+        if (has_forecast) {
+          geom_line(
+            data = rbind(
+              data_to_plot[model!=base_model & type == "estimate",][date == max(date)],
+              data_to_plot[model!=base_model & type == "forecast",]
+            ),
+            aes(y = I, group = paste0(.draw, model), color = model),
+            size = 0.3, alpha = 0.9, linetype = "dashed"
+          )
+        }
       }
+  } else {
+    if (base_model!="") {
+      plot <- add_ribbons_base(plot, data = data_base_model, median = median, has_forecast = has_forecast)
+    }
+    plot <- add_ribbons(plot, data = data_to_plot[model!=base_model,], median = median, has_forecast = has_forecast)
   }
   if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
+      ggpattern::scale_pattern_fill_manual(values = "black") +
+      ggpattern::scale_pattern_color_manual(values = "black") +
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
+  } else {
+    plot <- plot +
+      ggpattern::scale_pattern_fill_discrete() +
+      ggpattern::scale_pattern_color_discrete() +
+      scale_color_discrete() +
+      scale_fill_discrete()
   }
   if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
     plot <- plot +
-      facet_wrap(~model, nrow = 1) +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"
-        )
+      )
   }
   return(plot)
 }
@@ -150,6 +197,9 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
 #'
 #' @param seeding Should Rt from the seeding phase be shown as well? Default is
 #'   `FALSE`.
+#' @param forecast Should forecasted Rt values be shown? Default is true. This
+#'   requires that the model was fitted with a forecast horizon, see
+#'   [model_forecast()].
 #' @inheritParams plot_infections
 #'
 #' @return A ggplot object showing the time series of estimated Rt, either with
@@ -157,9 +207,10 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
 #'   [ggplot2] functions to adjust themes and scales, and to add further geoms.
 #' @export
 plot_R <- function(results, draws = FALSE, ndraws = NULL,
-                   seeding = FALSE, median = FALSE,
+                   median = FALSE, seeding = FALSE,
+                   forecast = TRUE, forecast_horizon = NULL,
                    date_margin_left = 0, date_margin_right = 0,
-                   facet_models = FALSE,
+                   facet_models = FALSE, facet_direction = "rows",
                    base_model = "", model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
@@ -175,11 +226,24 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
   }
 
   if (!is.null(model_levels)) {
-    data_to_plot$model <- factor(data_to_plot$model, levels = model_levels, ordered = TRUE)
+    data_to_plot$model <- factor(
+      data_to_plot$model, levels = model_levels, ordered = TRUE
+      )
   }
 
   if (!seeding) {
     data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
+  }
+
+  if (!forecast) {
+    data_to_plot <- data_to_plot[type == "estimate",]
+  } else if (!is.null(forecast_horizon)) {
+    forecast_dates <- data_to_plot[
+      type == "estimate",
+      .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
+      by = "model"]
+    data_to_plot <- merge(data_to_plot, forecast_dates, by = "model")
+    data_to_plot <- data_to_plot[date <= last_forecast, ]
   }
 
   ymin <- min(0.6, quantile(data_to_plot$lower_0.95, probs = 0.01, na.rm = T))
@@ -188,7 +252,21 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
   xmin <- as.Date(min(data_to_plot$date, na.rm = T)) - date_margin_left
   xmax <- as.Date(max(data_to_plot$date, na.rm = T)) + date_margin_right
 
-  plot <- ggplot(data_to_plot[data_to_plot$model!=base_model,],
+  has_forecast <- "forecast" %in% data_to_plot$type
+  model_horizon <-
+    rbind(
+      data_to_plot[data_to_plot[type == "estimate", .I[which.max(date)], by="model"]$V1],
+      data_to_plot[data_to_plot[type == "forecast", .I[which.max(date)], by="model"]$V1]
+    )
+  model_horizon <- model_horizon[, .(h = as.numeric(max(date) - min(date))), by = "model"]
+
+  if (draws) {
+    data_to_plot <- data_to_plot[!is.na(R),]
+  } else {
+    data_to_plot <- data_to_plot[!is.na(median),]
+  }
+
+  plot <- ggplot(data_to_plot[model!=base_model,],
                  aes(x = date)) +
     theme_bw() +
     scale_x_date(
@@ -197,7 +275,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
       date_labels = "%b\n%Y"
     ) +
     xlab("Date") +
-    ylab(expression(R[t])) +
+    ylab("Effective reproduction number") +
     theme(legend.title = element_blank()) +
     geom_hline(yintercept = 1, linetype = "dashed") +
     coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
@@ -208,58 +286,82 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
       '" could not be found in the provided `results` list.'
     ))
   }
-  data_base_model <- data_to_plot[data_to_plot$model==base_model,]
-  data_base_model <- data_base_model[,setdiff(names(data_base_model), "model"), with = FALSE]
+  data_base_model <- data_to_plot[model==base_model,]
+  data_base_model <- data_base_model[
+    , setdiff(names(data_base_model), "model"), with = FALSE
+    ]
 
   if (draws) {
     plot <- plot +
       { if (base_model!="") {
-        geom_line(data = data_base_model,
-                  aes(y = R, group = .draw), size = 0.1, alpha = 0.9, color = "black")
+        geom_line(
+          data = data_base_model[type == "estimate",],
+          aes(y = R, group = .draw),
+          size = 0.1, alpha = 0.9, color = "black"
+          )
         }
       } +
-      geom_line(aes(y = R, group = paste0(.draw, model), color = model), size = 0.1, alpha = 0.9)
-  } else {
-    plot <- plot +
-      { if (base_model!="") {
-        geom_ribbon(
-          data = data_base_model,
-          aes(ymin = lower_0.95, ymax = upper_0.95),
-          alpha = 0.2, color = NA, fill = "black"
-        )
-      }
-      } +
-      geom_ribbon(
-        aes(ymin = lower_0.95, ymax = upper_0.95, fill = model),
-        alpha = 0.2, color = NA
-      ) +
-      { if (base_model!="") {
-        geom_ribbon(
-          data = data_base_model,
-          aes(ymin = lower_0.5, ymax = upper_0.5),
-          alpha = 0.4, color = NA, fill = "black"
-        )
-      }
-      } +
-      geom_ribbon(
-        aes(ymin = lower_0.5, ymax = upper_0.5, fill = model),
-        alpha = 0.4, color = NA
-      ) + {
-        if (median && (base_model!="")) geom_line(data = data_base_model, aes(y = median), color = "black")
-      } +
       {
-        if (median) geom_line(aes(y = median, color = model))
+        if (base_model!="" && has_forecast) {
+          geom_line(
+            data = rbind(
+              data_base_model[type == "estimate"][date == max(date)],
+              data_base_model[type == "forecast"]
+            ),
+            aes(y = R, group = .draw),
+            size = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
+          )
+        }
+      } +
+      geom_line(
+        data = data_to_plot[model!=base_model & type == "estimate",],
+        aes(y = R, group = paste0(.draw, model), color = model),
+        size = 0.1, alpha = 0.9
+        ) +
+      {
+        if (has_forecast) {
+          geom_line(
+            data = rbind(
+              data_to_plot[model!=base_model & type == "estimate",][date == max(date)],
+              data_to_plot[model!=base_model & type == "forecast",]
+              ),
+            aes(y = R, group = paste0(.draw, model), color = model),
+            size = 0.3, alpha = 0.9, linetype = "dashed"
+          )
+        }
       }
+  } else {
+    if (base_model!="") {
+      plot <- add_ribbons_base(plot, data = data_base_model, median = median, has_forecast = has_forecast)
+    }
+    plot <- add_ribbons(plot, data = data_to_plot[model!=base_model,], median = median, has_forecast = has_forecast)
   }
+
   if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
+      ggpattern::scale_pattern_fill_manual(values = "black") +
+      ggpattern::scale_pattern_color_manual(values = "black") +
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
+  } else {
+    plot <- plot +
+      ggpattern::scale_pattern_fill_discrete() +
+      ggpattern::scale_pattern_color_discrete() +
+      scale_color_discrete() +
+      scale_fill_discrete()
   }
   if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
     plot <- plot +
-      facet_wrap(~model, nrow = 1) +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"
@@ -277,9 +379,25 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   plotted alongside the predicted values (useful to assess model fit). Can
 #'   also be used with `results = NULL`, in which case only the observed
 #'   measurements are plotted.
+#' @param flows A `data.frame` with observed flows. If `normalized = TRUE`, this
+#'   will be used to normalize the estimated and observed concentrations to the
+#'   median flow.
 #' @param include_noise If `TRUE` (default), concentrations including
 #'   measurement noise are shown. If `FALSE`, only the expected concentrations
 #'   are shown.
+#' @param normalized If `TRUE`, the estimated and observed concentrations are
+#'   normalized to the median flow. Thereby, the noise in concentrations that is
+#'   due to variation in flow is essentially removed. This is especially useful
+#'   for assessing forecasting performance when the future flow values were not
+#'   known during model fitting.
+#' @param forecast Should forecasted concentrations be shown? Default is true.
+#'   This requires that the model was fitted with a forecast horizon, see
+#'   [model_forecast()]. Because concentrations depend on the flow volume,
+#'   accurate concentration forecasts are only possible if flow values beyond
+#'   the estimation date are provided. This is typically only possible when
+#'   estimating retrospectively. If flow values beyond the estimation date are
+#'   not available, the forecasted concentrations will be based on the median
+#'   flow volume.
 #' @param mark_outliers If `TRUE`, outliers in the `measurements` are
 #'   highlighted in red. See also argument `outlier_col` below.
 #' @param concentration_col Name of the column in the measurements `data.frame`
@@ -288,6 +406,9 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #' @param outlier_col Name of a logical column in the measurements `data.frame`
 #'   which identifies outlier measurements (for example added by
 #'   [mark_outlier_spikes_median()]).
+#' @param date_margin_right By how many days into the future should the plot be
+#'   expanded? Can also be negative to cut off some of the latest dates. By
+#'   default, this is 1 to improve the visibility of the latest date.
 #' @param type If "time" (default), the concentration time series is plotted. If
 #'   "pp_check", the observations are ordered by concentration and plotted
 #'   against the predicted concentration (useful for posterior predictive
@@ -304,13 +425,17 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   time. Can be further manipulated using [ggplot2] functions to adjust themes
 #'   and scales, and to add further geoms.
 #' @export
-plot_concentration <- function(results = NULL, measurements = NULL,
-                               include_noise = TRUE, median = FALSE,
+plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL,
+                               include_noise = TRUE, normalized = FALSE,
+                               median = FALSE,
                                mark_outliers = FALSE,
-                               date_margin_left = 0, date_margin_right = 0,
-                               facet_models = FALSE,
+                               forecast = TRUE,
+                               forecast_horizon = NULL,
+                               date_margin_left = 0, date_margin_right = 1,
+                               facet_models = FALSE, facet_direction = "rows",
                                base_model = "", model_levels = NULL,
                                concentration_col = "concentration",
+                               flow_col = "flow",
                                date_col = "date",
                                outlier_col = "is_outlier",
                                type = "time"
@@ -347,6 +472,44 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     }
     measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
     setnames(measurements, old = required_data_cols, new = data_col_names)
+
+    if (normalized) {
+      if (is.null(flows)) {
+        cli::cli_abort(
+          "To plot flow-normalized concentrations, please provide flow data via the `flow` argument."
+        )
+      } else {
+        required_data_cols <- c(date_col, flow_col)
+        if (!all(required_data_cols %in% names(flows))) {
+          cli::cli_abort(
+            c(paste(
+              "The following columns must be present",
+              "in the provided flow `data.frame`:",
+              paste(required_data_cols, collapse = ", ")
+            ),
+            paste("Please adjust the `data.frame` or specify the right column",
+                  "names via the `_col` arguments of this function."))
+          )
+        }
+
+        flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]
+        flows <- setnames(flows, old = c(date_col, flow_col), new = c("date", "flow"))
+
+        flows[, date := lubridate::as_date(date)]
+
+        if (any(duplicated(flows, by = "date"))) {
+          flows <- unique(flows, by = c("date", "flow"))
+          if (any(duplicated(flows, by = "date"))) { # if still duplicates
+            cli::cli_abort(
+              "Flow data is ambigious, duplicate dates with different values found."
+            )
+          }
+        }
+        median_flow <- median(flows$flow, na.rm = T)
+        measurements <- merge(measurements, flows, by = "date")
+        measurements[, concentration := concentration * flow / median_flow]
+      }
+    }
   }
 
   if (!is.null(results)) {
@@ -354,22 +517,61 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       results <- list(results) # only one result object passed, wrap in list
     }
     if (include_noise) {
-      concentration_pred <- combine_summaries(results, "concentration")
+      if (normalized) {
+        concentration_pred <- combine_summary_list(lapply(results, function(result){
+          conc_norm <- copy(result$summary[["normalized_concentration"]])
+          if (is.null(flows)) {
+            median_flow <- median(result$job$data$flow, na.rm = T)
+          }
+          conc_norm[, mean := mean / median_flow]
+          conc_norm[, median := median / median_flow]
+          quantile_cols <- names(conc_norm)[
+            names(conc_norm) %like% "lower_*" |
+              names(conc_norm) %like% "upper_*"
+          ]
+          conc_norm[
+            , (quantile_cols) := lapply(.SD, function(x) x / median_flow),
+            .SDcols = quantile_cols
+          ]
+          return(conc_norm)
+        }))
+      } else {
+        concentration_pred <- combine_summaries(results, "concentration")
+      }
     } else {
+      if (normalized) {
+       cli::cli_abort("Normalized concentrations are only available with measurement noise.")
+      }
       concentration_pred <- combine_summaries(results, "expected_concentration")
     }
 
     if (!is.null(model_levels)) {
-      concentration_pred$model <- factor(concentration_pred$model, levels = model_levels, ordered = TRUE)
+      concentration_pred$model <- factor(
+        concentration_pred$model, levels = model_levels, ordered = TRUE
+        )
     }
 
     if (!is.null(measurements)) {
       measurements_modeled <- vctrs::vec_rbind(!!!lapply(
         results, function(res) {
-          return(measurements[
+          mes <- measurements[
             measurements$date %in% res$job$metainfo$measured_dates,
             .SD, .SDcols = data_col_names
-          ])
+          ]
+          mes[, type := "observed"]
+          if (res$job$metainfo$forecast_horizon > 0) {
+            mes_forecast <- measurements[
+              measurements$date %in% seq.Date(
+                from = res$job$metainfo$T_end_date + 1,
+                to = res$job$metainfo$T_end_date + res$job$metainfo$forecast_horizon,
+                by = 1
+              ),
+              .SD, .SDcols = data_col_names
+            ]
+            mes_forecast[, type := "future"]
+            mes <- rbind(mes, mes_forecast)
+          }
+          return(mes)
         }
       ), .names_to = "model")
       measurements_modeled$model <- forcats::fct_inorder(
@@ -381,17 +583,23 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     }
   }
 
-  if (is.null(measurements)) {
+  if (!forecast) {
+    concentration_pred <- concentration_pred[type == "estimate",]
+  } else if (!is.null(forecast_horizon)) {
+    forecast_dates <- concentration_pred[
+      type == "estimate",
+      .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
+      by = "model"]
+    concentration_pred <- merge(concentration_pred, forecast_dates, by = "model")
+    concentration_pred <- concentration_pred[date <= last_forecast, ]
+  }
+
+  if (!is.null(concentration_pred)) {
     first_date <- as.Date(min(concentration_pred$date))
     last_date <- as.Date(max(concentration_pred$date))
   } else {
-    if (!is.null(concentration_pred)) {
-    first_date <- as.Date(max(min(measurements$date), min(concentration_pred$date)))
-    last_date <-  as.Date(min(max(measurements$date), max(concentration_pred$date)))
-    } else {
-      first_date <-  as.Date(min(measurements$date))
-      last_date <-  as.Date(max(measurements$date))
-    }
+    first_date <-  as.Date(min(measurements$date))
+    last_date <-  as.Date(max(measurements$date))
   }
   first_date <- first_date - date_margin_left
   last_date <- last_date + date_margin_right
@@ -448,46 +656,25 @@ plot_concentration <- function(results = NULL, measurements = NULL,
     ,setdiff(names(concentration_pred_base_model), "model"), with = FALSE
     ]
 
+  has_forecast <- "forecast" %in% concentration_pred$type
+
   if (type == "time") {
-    plot <- ggplot(data.frame(), aes(x = date)) +
+    plot <- ggplot(data.frame(), aes(x = date))
+
+    if (!is.null(concentration_pred)) {
+      if (base_model!="") {
+        plot <- add_ribbons_base(plot, data = concentration_pred_base_model, median = median, has_forecast = has_forecast)
+      }
+      plot <- add_ribbons(plot, data = concentration_pred[model!=base_model,], median = median, has_forecast = has_forecast)
+    }
+
+    plot <- plot +
       {
         if (!is.null(measurements)) {
           geom_line(
             data = measurements,
             aes(y = concentration),
             color = "#a6a6a6", linetype = "dotted", linewidth = 0.3
-          )
-        }
-      } +
-      {
-        if (!is.null(concentration_pred) && base_model!="") {
-          geom_ribbon(
-            data = concentration_pred_base_model,
-            aes(ymin = lower_0.95, ymax = upper_0.95), alpha = 0.2, fill = "black"
-          )
-        }
-      } +
-      {
-        if (!is.null(concentration_pred)) {
-          geom_ribbon(
-            data = concentration_pred[concentration_pred$model!=base_model, ],
-            aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
-          )
-        }
-      } +
-      {
-        if (!is.null(concentration_pred) && base_model!="") {
-          geom_ribbon(
-            data = concentration_pred_base_model,
-            aes(ymin = lower_0.5, ymax = upper_0.5), alpha = 0.2, fill = "black"
-          )
-        }
-      } +
-      {
-        if (!is.null(concentration_pred)) {
-          geom_ribbon(
-            data = concentration_pred[concentration_pred$model!=base_model, ],
-            aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
           )
         }
       } +
@@ -512,35 +699,43 @@ plot_concentration <- function(results = NULL, measurements = NULL,
       {
         if (!is.null(measurements_modeled)) {
           geom_point(
-            data = measurements_modeled,
-            aes(y = concentration), color = "black", shape = 4
+            data = measurements_modeled[model==base_model & type == "observed",c("date","concentration")],
+            aes(y = concentration), shape = 4, color = "black"
           )
         }
       } +
       {
-        if (median && !is.null(concentration_pred) && base_model!="") {
-          geom_line(
-            data = concentration_pred_base_model,
-            aes(y = median), color = "black"
+        if (!is.null(measurements_modeled)) {
+          geom_point(
+            data = measurements_modeled[model==base_model & type == "future",c("date","concentration")],
+            aes(y = concentration), shape = 8, color = "black"
           )
         }
       } +
       {
-        if (median && !is.null(concentration_pred)) {
-          geom_line(
-            data = concentration_pred[concentration_pred$model!=base_model, ],
-            aes(y = median, color = model)
+        if (!is.null(measurements_modeled)) {
+          geom_point(
+            data = measurements_modeled[model!=base_model & type == "observed"],
+            aes(y = concentration, color = model), shape = 4
+          )
+        }
+      } +
+      {
+        if (!is.null(measurements_modeled)) {
+          geom_point(
+            data = measurements_modeled[model!=base_model & type == "future"],
+            aes(y = concentration, color = model), shape = 8
           )
         }
       } +
       theme_bw() +
       scale_x_date(
-        expand = c(0, 0),
+        expand = expansion(add=c(0,0.5)),
         date_breaks = "1 month", date_labels = "%b\n%Y"
       ) +
       xlab("Date") +
-      ylab("Concentration [gene copies / mL]") +
-      coord_cartesian(xlim = as.Date(c(first_date, last_date+1)))
+      ylab(ifelse(normalized,"Normalized concentration [gc / mL]","Concentration [gc / mL]")) +
+      coord_cartesian(xlim = as.Date(c(first_date, last_date)))
   }
 
   if (type == "pp_check") {
@@ -606,23 +801,41 @@ plot_concentration <- function(results = NULL, measurements = NULL,
         axis.text.x = element_blank()
         ) +
       xlab("Observations (ordered by concentration)") +
-      ylab("Concentration [gene copies / mL]")
+      ylab(ifelse(normalized,"Normalized concentration [gc / mL]","Concentration [gc / mL]"))
   }
 
   if (is.null(concentration_pred) || length(unique(concentration_pred$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
+      ggpattern::scale_pattern_fill_manual(values = "black") +
+      ggpattern::scale_pattern_color_manual(values = "black") +
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
-  }
-  if (facet_models) {
+  } else {
     plot <- plot +
-      facet_wrap(~model, nrow = 1) +
+      ggpattern::scale_pattern_fill_discrete() +
+      ggpattern::scale_pattern_color_discrete() +
+      scale_fill_discrete() +
+      scale_color_discrete()
+  }
+
+  if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
+    plot <- plot +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"
       )
   }
+
   return(plot)
 }
 
@@ -630,6 +843,10 @@ plot_concentration <- function(results = NULL, measurements = NULL,
 #'
 #' @description Plots the estimated load in wastewater over time from a fitted
 #'   `EpiSewer` model.
+#'
+#' @param forecast Should forecasted loads be shown? Default is true. This
+#'   requires that the model was fitted with a forecast horizon, see
+#'   [model_forecast()].
 #'
 #' @inheritParams plot_infections
 #'
@@ -639,60 +856,50 @@ plot_concentration <- function(results = NULL, measurements = NULL,
 #'
 #' @export
 plot_load <- function(results, median = FALSE,
+                      forecast = TRUE, forecast_horizon = NULL,
                       date_margin_left = 0, date_margin_right = 0,
-                      facet_models = FALSE,
+                      facet_models = FALSE, facet_direction = "rows",
                       base_model = "", model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
-  load_pred <- combine_summaries(results, "expected_load")
+  data_to_plot <- combine_summaries(results, "expected_load")
 
-  xmin <- min(load_pred$date, na.rm = T) - date_margin_left
-  xmax <- max(load_pred$date, na.rm = T) + date_margin_right
-
-  if (!is.null(model_levels)) {
-    load_pred$model <- factor(load_pred$model, levels = model_levels, ordered = TRUE)
+  if (!forecast) {
+    data_to_plot <- data_to_plot[type == "estimate",]
+  } else if (!is.null(forecast_horizon)) {
+    forecast_dates <- data_to_plot[
+      type == "estimate",
+      .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
+      by = "model"]
+    data_to_plot <- merge(data_to_plot, forecast_dates, by = "model")
+    data_to_plot <- data_to_plot[date <= last_forecast, ]
   }
 
-  if (!base_model %in% c("", as.character(load_pred$model))) {
+  xmin <- min(data_to_plot$date, na.rm = T) - date_margin_left
+  xmax <- max(data_to_plot$date, na.rm = T) + date_margin_right
+
+  if (!is.null(model_levels)) {
+    data_to_plot$model <- factor(
+      data_to_plot$model, levels = model_levels, ordered = TRUE
+      )
+  }
+
+  if (!base_model %in% c("", as.character(data_to_plot$model))) {
     cli::cli_abort(paste0(
       'Base model "', base_model,
       '" could not be found in the provided `results` list.'
     ))
   }
-  data_base_model <- load_pred[load_pred$model==base_model,]
-  data_base_model <- data_base_model[,setdiff(names(data_base_model), "model"), with = FALSE]
+  data_base_model <- data_to_plot[model==base_model,]
+  data_base_model <- data_base_model[
+    ,setdiff(names(data_base_model), "model"), with = FALSE
+    ]
 
-  plot <- ggplot(load_pred[load_pred$model!=base_model,],
+  has_forecast <- "forecast" %in% data_to_plot$type
+
+  plot <- ggplot(data_to_plot[model!=base_model,],
                  aes(x = date)) +
-    { if (base_model!="") {
-      geom_ribbon(
-        data = data_base_model,
-        aes(ymin = lower_0.95, ymax = upper_0.95),
-        alpha = 0.2, color = NA, fill = "black"
-      )
-    }
-    } +
-    geom_ribbon(
-      aes(ymin = lower_0.95, ymax = upper_0.95, fill = model), alpha = 0.2
-    ) +
-    { if (base_model!="") {
-      geom_ribbon(
-        data = data_base_model,
-        aes(ymin = lower_0.5, ymax = upper_0.5),
-        alpha = 0.4, color = NA, fill = "black"
-      )
-    }
-    } +
-    geom_ribbon(
-      aes(ymin = lower_0.5, ymax = upper_0.5, fill = model), alpha = 0.4
-    ) +
-    {
-      if (median && (base_model!="")) geom_line(data = data_base_model, aes(y = median), color = "black")
-    } +
-    {
-      if (median) geom_line(aes(y = median, color = model))
-    } +
     theme_bw() +
     theme(legend.title = element_blank()) +
     scale_x_date(
@@ -703,15 +910,36 @@ plot_load <- function(results, median = FALSE,
     ylab("Load [gene copies / day]") +
     coord_cartesian(xlim = c(xmin, xmax))
 
-  if (length(unique(load_pred$model)) == 1) {
+  if (base_model!="") {
+    plot <- add_ribbons_base(plot, data = data_base_model, median = median, has_forecast = has_forecast)
+  }
+  plot <- add_ribbons(plot, data = data_to_plot[model!=base_model,], median = median, has_forecast = has_forecast)
+
+  if (length(unique(data_to_plot$model)) == 1) {
     plot <- plot +
       theme(legend.position = "none") +
+      ggpattern::scale_pattern_fill_manual(values = "black") +
+      ggpattern::scale_pattern_color_manual(values = "black") +
       scale_color_manual(values = "black") +
       scale_fill_manual(values = "black")
+  } else {
+    plot <- plot +
+      ggpattern::scale_pattern_fill_discrete() +
+      ggpattern::scale_pattern_color_discrete() +
+      scale_color_discrete() +
+      scale_fill_discrete()
   }
   if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
     plot <- plot +
-      facet_wrap(~model, nrow = 1) +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"
@@ -732,7 +960,9 @@ plot_load <- function(results, median = FALSE,
 #'   manipulated using [ggplot2] functions to adjust themes and scales, and to
 #'   add further geoms.
 #' @export
-plot_sample_effects <- function(results, facet_models = FALSE, model_levels = NULL) {
+plot_sample_effects <- function(results,
+                                facet_models = FALSE,  facet_direction = "rows",
+                                model_levels = NULL) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -761,8 +991,16 @@ plot_sample_effects <- function(results, facet_models = FALSE, model_levels = NU
       scale_fill_manual(values = "black")
   }
   if (facet_models) {
+    if (facet_direction %in% c("cols","col")) {
+      plot <- plot + facet_wrap(~model, nrow = 1)
+    } else if (facet_direction %in% c("rows","row")) {
+      plot <- plot + facet_wrap(~model, ncol = 1)
+    } else {
+      cli::cli_abort(paste0(
+        'Argument `facet_direction` must be either "rows" or "cols".'
+      ))
+    }
     plot <- plot +
-      facet_wrap(~model, nrow = 1) +
       theme(
         strip.background = element_rect(fill = "white"),
         legend.position = "none"

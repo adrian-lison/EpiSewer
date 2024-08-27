@@ -49,3 +49,20 @@ SARS_CoV_2_Zurich <- list(
 )
 
 usethis::use_data(SARS_CoV_2_Zurich, overwrite = TRUE)
+
+data_zurich <- SARS_CoV_2_Zurich
+measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
+ww_data_SARS_CoV_2_Zurich <- sewer_data(measurements = measurements_sparse, flows = data_zurich$flows)
+usethis::use_data(ww_data_SARS_CoV_2_Zurich, overwrite = TRUE)
+
+generation_dist <- get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)
+incubation_dist <- get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)
+shedding_dist <- get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30)
+load_per_case <- 1e+11
+ww_assumptions_SARS_CoV_2_Zurich <- sewer_assumptions(
+  generation_dist = generation_dist,
+  incubation_dist = incubation_dist,
+  shedding_dist = shedding_dist,
+  load_per_case = load_per_case
+)
+usethis::use_data(ww_assumptions_SARS_CoV_2_Zurich, overwrite = TRUE)
