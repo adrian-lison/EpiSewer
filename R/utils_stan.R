@@ -78,16 +78,44 @@ get_stan_model <- function(
 #'
 #' @param sampler Which type of sampler should be used for model fitting?
 #'   Currently, only [sampler_stan_mcmc()] is supported.
-#' @param fitted If `TRUE` (default), the fitted model object is also returned,
-#'   not only summaries of the model fitting. Note that this makes the results
-#'   object substantially larger.
+#' @param results Details about the results to be returned, see
+#'   [results_opts()]. For example, what credible intervals to use for
+#'   summarizing posterior distributions or whether to return the fitted model
+#'   object.
 #' @param model Details about the model file to be used, see
 #'   [model_stan_opts()]. This also makes it possible for users to supply
 #'   customized models.
 #'
 #' @return A `list` with the model fitting options.
 #' @export
-set_fit_opts <- function(sampler = sampler_stan_mcmc(), fitted = TRUE, model = model_stan_opts()) {
+#' @examples
+#' ww_data <- ww_data_SARS_CoV_2_Zurich
+#' ww_assumptions <- ww_assumptions_SARS_CoV_2_Zurich
+#'
+#' ww_fit_opts <- set_fit_opts(
+#'   sampler = sampler_stan_mcmc(
+#'     chains = 2,
+#'     parallel_chains = 2,
+#'     iter_warmup = 400,
+#'     iter_sampling = 400,
+#'     seed = 42 # ensures reproducibility
+#'   )
+#' )
+#'
+#' ww_results_opts <- set_results_opts(
+#'   fitted = TRUE, # return full model fit
+#'   summary_intervals = c(0.5, 0.8, 0.95),
+#'   samples_ndraws = 100
+#' )
+#'
+#' ww_result <- EpiSewer(
+#'   data = ww_data,
+#'   assumptions = ww_assumptions,
+#'   fit_opts = ww_fit_opts,
+#'   results_opts = ww_results_opts
+#' )
+set_fit_opts <- function(sampler = sampler_stan_mcmc(),
+                         model = model_stan_opts()) {
   opts <- as.list(environment())
   return(opts)
 }

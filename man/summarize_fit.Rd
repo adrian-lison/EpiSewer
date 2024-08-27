@@ -17,7 +17,7 @@ summarize_fit(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws = 50)
 default, these are the 50\% and 95\% CrIs.}
 
 \item{ndraws}{Number of exemplary posterior samples that should be extracted.
-(The summaries always use all draws.)}
+Note that the summaries always use all available samples.}
 }
 \value{
 A \code{list} with the following summaries (each in a \code{data.frame}):

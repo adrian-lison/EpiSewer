@@ -9,7 +9,7 @@
 #' @param intervals The credible intervals (CrIs) that should be calculated. By
 #'   default, these are the 50% and 95% CrIs.
 #' @param ndraws Number of exemplary posterior samples that should be extracted.
-#'   (The summaries always use all draws.)
+#'   Note that the summaries always use all available samples.
 #'
 #' @details The summaries for infections and R include a column `seeding`, which
 #'   indicates whether the corresponding date was still in the seeding phase or

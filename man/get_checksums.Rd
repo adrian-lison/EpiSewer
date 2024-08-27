@@ -12,8 +12,8 @@ get_checksums(job, stanmodel_instance = NULL)
 \item{stanmodel_instance}{A stanmodel instance.}
 }
 \value{
-A \code{list} with checksums identifying the model, input, inits and
-fit_opts.
+A \code{list} with checksums identifying the model, input, inits,
+fit_opts and results_opts.
 }
 \description{
 Get checksums that uniquely identify an EpiSewer job.
