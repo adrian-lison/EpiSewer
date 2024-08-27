@@ -43,6 +43,9 @@ easily configurable modeling components.
 ⭐ Flexible $R_t$ smoothing (random walk, exponential smoothing,
 splines)
 
+**Forecast**  
+⭐ Probabilistic forecasts of $R_t$, infections, concentrations and more
+
 ## Installing the package
 
 The development version of `EpiSewer` can be installed from GitHub as
@@ -195,18 +198,18 @@ concentration (mL here in both cases).
 
 ``` r
 data_zurich$flows
-#>            date         flow
-#>   1: 2022-01-01 341163082483
-#>   2: 2022-01-02 341163082483
-#>   3: 2022-01-03 158972454250
-#>   4: 2022-01-04 160849294683
-#>   5: 2022-01-05 372301227483
-#>  ---                        
-#> 116: 2022-04-26 330658518200
-#> 117: 2022-04-27 206045734750
-#> 118: 2022-04-28 158372697017
-#> 119: 2022-04-29 152155673150
-#> 120: 2022-04-30 208684746067
+#>            date        flow
+#>   1: 2022-01-01 3.41163e+11
+#>   2: 2022-01-02 3.41163e+11
+#>   3: 2022-01-03 1.58972e+11
+#>   4: 2022-01-04 1.60849e+11
+#>   5: 2022-01-05 3.72301e+11
+#>  ---                       
+#> 116: 2022-04-26 3.30659e+11
+#> 117: 2022-04-27 2.06046e+11
+#> 118: 2022-04-28 1.58373e+11
+#> 119: 2022-04-29 1.52156e+11
+#> 120: 2022-04-30 2.08685e+11
 ```
 
 Note: In contrast to the concentration measurements, the flow data must
@@ -344,36 +347,42 @@ model. Plots are a convenient way to get a quick overview.
 
 It is good practice to first assess how well the model actually fitted
 to the data. For this, we plot the observed concentration measurements
-against the ones predicted by the model. The ribbon shows the 95%
-credible interval. The black dots show measurements that we have
-actually observed in our artificially sparse data set (only Mondays and
-Thursdays). The grey crosses show all the other measurements that were
-not available to the model. As we can see, the model still achieved a
-decent fit on these missing days.
+against the ones predicted by the model. The inner and outer ribbons
+show the 50% and 95% credible intervals. The black dots show
+measurements that we have actually observed in our artificially sparse
+data set (only Mondays and Thursdays). The grey crosses show all the
+other measurements that were not available to the model. As we can see,
+the model still achieved a decent fit on these missing days.
 
 ``` r
 plot_concentration(ww_result, measurements = data_zurich$measurements)
 ```
 
-<img src="man/figures/README-concentration-1.png" width="100%" /> By
-default, the function `plot_concentration()` includes the modeled
-measurement noise in the predicted concentrations. If you only want to
-see the predicted expected concentration without noise, set
-`include_noise = FALSE`.
+<img src="man/figures/README-concentration-1.png" width="100%" />
+
+By default, the function `plot_concentration()` shows absolute
+concentrations, which strongly depend on the daily wastewater flow.
+Alternatively, we can plot the flow-normalized concentration by setting
+`normalized = TRUE`. This will show the hypothetical concentration if
+the flow was at its median value. For this option, we need to provide
+the flow data as well (see below).
 
 ``` r
-plot_concentration(ww_result, measurements = data_zurich$measurements, include_noise = FALSE)
+plot_concentration(ww_result, measurements = data_zurich$measurements, flows = data_zurich$flows, normalized = TRUE)
 ```
 
 <img src="man/figures/README-concentration_noise-1.png" width="100%" />
+As can be seen, the normalization removes the noise due to the daily
+variation of flow. The remaining uncertainty is due to the measurement
+noise and other sources of variation.
 
 #### Time-varying effective reproduction number
 
 Since the model fit looked decent at first glance, we now inspect our
 main parameter of interest, the effective reproduction number over time.
-Again, the ribbon shows the 95% credible interval. We see that even with
-only two measurements per week, we get a fairly clear signal for R being
-above or below the critical threshold of 1.
+Again, the ribbons show the 50% and 95% credible intervals. We see that
+even with only two measurements per week, we get a fairly clear signal
+for R being above or below the critical threshold of 1.
 
 ``` r
 plot_R(ww_result)
@@ -433,27 +442,14 @@ As we can see, the prior (in grey) and posterior (in blue) differ
 substantially, indicating that this parameter is well informed by the
 data.
 
-We can also inspect the CV for the individual-level variation in
-shedding loads which is estimated by EpiSewer:
-
-``` r
-plot_prior_posterior(ww_result, "load_variation_cv")
-```
-
-<img src="man/figures/README-prior_posterior_load_cv-1.png" width="100%" />
-As we can see here, the prior and posterior are almost identical, which
-shows that this parameter cannot be really estimated from the data.
-Thus, our uncertainty about individual-level shedding load variation is
-not reduced by fitting to the data and solely informed by our broad
-prior.
-
 ### More details
 
 We can further inspect our results object. It has three attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"        "stan_model" "checksums"  "summary"    "fitted"
+#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"     
+#> [6] "diagnostics" "runtime"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -463,9 +459,9 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#> [1] "job_name"      "jobarray_size" "data"          "model"        
-#> [5] "init"          "fit_opts"      "priors_text"   "metainfo"     
-#> [9] "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "model"        
+#>  [5] "init"          "fit_opts"      "results_opts"  "priors_text"  
+#>  [9] "metainfo"      "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
@@ -495,7 +491,7 @@ ww_result$job$model
 #>  |- generation_dist_assume
 #>  |- R_estimate_splines
 #>  |- seeding_estimate_rw
-#>  |- infection_noise_estimate (overdispersion = FALSE)
+#>  |- infection_noise_estimate (overdispersion = TRUE)
 ```
 
 ➡️ Check out the [model specification](vignettes/model-specification.md)
@@ -508,11 +504,11 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#> [1] "R"                           "R_samples"                  
-#> [3] "expected_infections"         "expected_infections_samples"
-#> [5] "infections"                  "infections_samples"         
-#> [7] "expected_load"               "expected_concentration"     
-#> [9] "concentration"
+#>  [1] "R"                           "R_samples"                  
+#>  [3] "expected_infections"         "expected_infections_samples"
+#>  [5] "infections"                  "infections_samples"         
+#>  [7] "expected_load"               "expected_concentration"     
+#>  [9] "concentration"               "normalized_concentration"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -520,30 +516,30 @@ number.
 
 ``` r
 ww_result$summary$R
-#>            date      mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#>   1: 2021-12-06 1.0677532 1.0597600  0.7376447 0.9644702  1.168880   1.392586
-#>   2: 2021-12-07 1.0686402 1.0612000  0.7641206 0.9684573  1.163675   1.383842
-#>   3: 2021-12-08 1.0696771 1.0627000  0.7790942 0.9695755  1.162902   1.379000
-#>   4: 2021-12-09 1.0708548 1.0631000  0.7895383 0.9734535  1.161805   1.367851
-#>   5: 2021-12-10 1.0721631 1.0644950  0.8011415 0.9788717  1.161825   1.358601
-#>  ---                                                                         
-#> 140: 2022-04-24 0.9772645 0.9715175  0.7512149 0.8977970  1.052825   1.226163
-#> 141: 2022-04-25 0.9771118 0.9699495  0.7359722 0.8900868  1.056298   1.250144
-#> 142: 2022-04-26 0.9771515 0.9729495  0.7167654 0.8845507  1.061923   1.281037
-#> 143: 2022-04-27 0.9774270 0.9738840  0.6972232 0.8773860  1.070855   1.309254
-#> 144: 2022-04-28 0.9778231 0.9760445  0.6676156 0.8707375  1.075880   1.340137
-#>      seeding
-#>   1:    TRUE
-#>   2:    TRUE
-#>   3:    TRUE
-#>   4:    TRUE
-#>   5:    TRUE
-#>  ---        
-#> 140:   FALSE
-#> 141:   FALSE
-#> 142:   FALSE
-#> 143:   FALSE
-#> 144:   FALSE
+#>            date     mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
+#>   1: 2021-12-06 1.057070 1.0534600  0.7180864 0.9475715  1.164473   1.389037
+#>   2: 2021-12-07 1.057873 1.0568600  0.7347721 0.9507918  1.159447   1.373973
+#>   3: 2021-12-08 1.058745 1.0567550  0.7454529 0.9565968  1.155763   1.369990
+#>   4: 2021-12-09 1.059704 1.0586950  0.7618145 0.9586132  1.154875   1.363541
+#>   5: 2021-12-10 1.060766 1.0602150  0.7736401 0.9642983  1.151640   1.356843
+#>  ---                                                                        
+#> 140: 2022-04-24 1.002303 0.9965760  0.7710008 0.9179753  1.078525   1.260889
+#> 141: 2022-04-25 1.001677 0.9931750  0.7660747 0.9120835  1.084307   1.282745
+#> 142: 2022-04-26 1.001139 0.9912940  0.7396670 0.9065590  1.090285   1.300052
+#> 143: 2022-04-27 1.001043 0.9908050  0.7076593 0.8989483  1.095713   1.332602
+#> 144: 2022-04-28 1.001217 0.9886565  0.6802538 0.8908200  1.102902   1.366871
+#>          type seeding
+#>   1: estimate    TRUE
+#>   2: estimate    TRUE
+#>   3: estimate    TRUE
+#>   4: estimate    TRUE
+#>   5: estimate    TRUE
+#>  ---                 
+#> 140: estimate   FALSE
+#> 141: estimate   FALSE
+#> 142: estimate   FALSE
+#> 143: estimate   FALSE
+#> 144: estimate   FALSE
 ```
 
 The `fitted` attribute provides access to all details of the fitted stan
@@ -587,7 +583,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.8404351 0.8599965 0.7253768 0.8287051
+#> [1] 0.9085252 0.8085946 0.9519023 0.9128638
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -599,14 +595,17 @@ is not NULL), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "77c97cfa2bfba2be740b2fbae8ae59b1"
+#> [1] "26d196fc076d5a62250ef75adfafc374"
 #> 
 #> $input
-#> [1] "079bf4474da23e47636126383424f64c"
+#> [1] "67b770f362109ab2c1dac1ec3005cc82"
 #> 
 #> $fit_opts
-#> [1] "3d0f79a45e43b33e7c77ffaee9760d1c"
+#> [1] "0b699761abddab7374683c99704ac469"
+#> 
+#> $results_opts
+#> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "4c66acdaea245b71fe10c9366a583479"
+#> [1] "1dd36391cea4ba7b2e97de06c36e8048"
 ```
