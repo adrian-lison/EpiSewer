@@ -157,7 +157,7 @@ vector lognormal4_rng(vector mean_log, vector cv) {
 // --------------------------------------------------------
 
 /**
-  * The log of the lognormal density given mean on log scale and coefficient of
+  * The log of the lognormal density given mean and coefficient of
   * variation on unit scale
   *
   * @param y vector with observed data
@@ -176,7 +176,7 @@ real lognormal5_lpdf(vector y, vector mean, real cv) {
 }
 
 /**
-  * The log of the lognormal density given mean on log scale and coefficient of
+  * The log of the lognormal density given mean and coefficient of
   * variation on unit scale
   *
   * @param y vector with observed data
@@ -195,7 +195,7 @@ real lognormal5_lpdf(vector y, vector mean, vector cv) {
 }
 
 /**
-  * Generate lognormal variate given mean on log scale and coefficient of
+  * Generate lognormal variate given mean and coefficient of
   * variation on unit scale
   *
   * @param mean vector of means
@@ -212,7 +212,7 @@ vector lognormal5_rng(vector mean, real cv) {
 }
 
 /**
-  * Generate lognormal variate given mean on log scale and coefficient of
+  * Generate lognormal variate given mean and coefficient of
   * variation on unit scale
   *
   * @param mean vector of means
@@ -226,6 +226,42 @@ vector lognormal5_rng(vector mean, vector cv) {
   vector[n] sigma2 = log1p(cv^2);
   vector[n] mu = log(mean) - sigma2/2;
   return to_vector(lognormal_rng(mu, sqrt(sigma2)));
+}
+
+/**
+  * The log of the lognormal density given mean and sd on unit scale
+  *
+  * @param y vector with observed data
+  *
+  * @param mean vector of means
+  *
+  * @param sd vector with standard deviation for each observation
+  *
+  * @return The log of the lognormal density of y
+  */
+real lognormal6_lpdf(vector y, vector mean, vector sd) {
+  int n = num_elements(y);
+  vector[n] sigma2 = log1p((sd ./ mean)^2);
+  vector[n] mu = log(mean) - sigma2/2;
+  return lognormal_lpdf(y | mu, sqrt(sigma2));
+}
+
+/**
+  * The log of the lognormal density given median and cv on unit scale
+  *
+  * @param y vector with observed data
+  *
+  * @param median vector of medians
+  *
+  * @param sd vector with standard deviation for each observation
+  *
+  * @return The log of the lognormal density of y
+  */
+real lognormal7_lpdf(vector y, vector median, vector cv) {
+  int n = num_elements(y);
+  vector[n] sigma2 = log1p(cv^2);
+  vector[n] mu = log(median);
+  return lognormal_lpdf(y | mu, sqrt(sigma2));
 }
 
 // --------------------------------------------------------

@@ -201,8 +201,17 @@ load_variation_none <- function(modeldata = modeldata_init()) {
 #'   mean equal to the average `load_per_case` and a coefficient of variation to
 #'   be estimated.
 #'
+#' @param cv_prior_mu Mean of the truncated normal prior for the coefficient of
+#'   individual-level variation. Default is a CV of 1, which means that
+#'   approximately 60% of individuals shed less than the mean, and approximately
+#'   10% of individuals shed less than 10% of the mean.
+#' @param cv_prior_sigma Standard deviation of the truncated normal prior for
+#'   the coefficient of individual-level variation. If this is set to zero, the
+#'   coefficient of variation is fixed to the mean.
+#'
 #' @details Note that measurement noise and individual-level load variation
-#'   might not be jointly identifiable.
+#'   might not be jointly identifiable. This is why the coefficient of variation
+#'   of the individual-level load is fixed by default.
 #'
 #' @details Also note that the accuracy of the variation model depends on the
 #'   estimated number of cases to be on the right scale (which in turn depends
@@ -217,18 +226,13 @@ load_variation_none <- function(modeldata = modeldata_init()) {
 #'   - the population-level CV will be underestimated (especially if the prior
 #'   on the individual-level CV is strong)
 #'
-#' @param cv_prior_mu Mean of the truncated normal prior for the coefficient of
-#'   individual-level variation.
-#' @param cv_prior_sigma Standard deviation of the truncated normal prior for
-#'   the coefficient of individual-level variation.
-#'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
 #' @family {load variation models}
 load_variation_estimate <- function(
-    cv_prior_mu = 0,
-    cv_prior_sigma = 1,
+    cv_prior_mu = 1,
+    cv_prior_sigma = 0,
     modeldata = modeldata_init()) {
   modeldata$load_vari <- 1
   modeldata$nu_zeta_prior <- set_prior(

@@ -407,9 +407,9 @@ model {
   if (I_sample) {
     if (I_overdispersion) {
       target += normal_prior_lpdf(I_xi | I_xi_prior, 0); // truncated normal
-      I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota .* (1 + iota * (param_or_fixed(I_xi, I_xi_prior) ^ 2)))); // approximates negative binomial
+      I[1 : (L + S + D + T)] ~ normal(iota, iota .* soft_upper(sqrt(iota .* (1 + iota * (param_or_fixed(I_xi, I_xi_prior) ^ 2)))./iota, 0.5, 10)) T[0, ]; // approximates negative binomial
     } else {
-      I[1 : (L + S + D + T)] ~ normal(iota, sqrt(iota)); // approximates Poisson
+      I[1 : (L + S + D + T)] ~ normal(iota, iota .* soft_upper(sqrt(iota)./iota, 0.5, 10)) T[0, ]; // approximates Poisson
     }
   }
 

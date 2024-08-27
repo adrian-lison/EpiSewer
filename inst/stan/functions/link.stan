@@ -10,6 +10,13 @@ Helper for link functions
   }
 
   /**
+  * Soft upper limit using the softplus function
+  */
+  vector soft_upper(vector x, real u, real k) {
+    return(u - softplus(u - x, k));
+  }
+
+  /**
   * Logistic
   */
   vector logistic(vector x, real c, real a, real k) {
