@@ -5,17 +5,20 @@
 \title{Estimate individual-level load variation}
 \usage{
 load_variation_estimate(
-  cv_prior_mu = 0,
-  cv_prior_sigma = 1,
+  cv_prior_mu = 1,
+  cv_prior_sigma = 0,
   modeldata = modeldata_init()
 )
 }
 \arguments{
 \item{cv_prior_mu}{Mean of the truncated normal prior for the coefficient of
-individual-level variation.}
+individual-level variation. Default is a CV of 1, which means that
+approximately 60\% of individuals shed less than the mean, and approximately
+10\% of individuals shed less than 10\% of the mean.}
 
 \item{cv_prior_sigma}{Standard deviation of the truncated normal prior for
-the coefficient of individual-level variation.}
+the coefficient of individual-level variation. If this is set to zero, the
+coefficient of variation is fixed to the mean.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -39,7 +42,8 @@ be estimated.
 }
 \details{
 Note that measurement noise and individual-level load variation
-might not be jointly identifiable.
+might not be jointly identifiable. This is why the coefficient of variation
+of the individual-level load is fixed by default.
 
 Also note that the accuracy of the variation model depends on the
 estimated number of cases to be on the right scale (which in turn depends
