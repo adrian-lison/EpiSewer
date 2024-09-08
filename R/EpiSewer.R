@@ -96,7 +96,7 @@ EpiSewer <- function(
 #'   argument in [EpiSewer()].
 #' @export
 sewer_data <- function(measurements = NULL, flows = NULL, ...) {
-  data <- as.list(environment())
+  data <- c(as.list(environment()), list(...))
   return(data)
 }
 
@@ -140,10 +140,11 @@ sewer_data <- function(measurements = NULL, flows = NULL, ...) {
 sewer_assumptions <- function(generation_dist = NULL,
                               incubation_dist = NULL,
                               shedding_dist = NULL,
+                              min_cases = 1,
                               load_per_case = NULL,
                               residence_dist = c(1),
                               ...) {
-  assumptions <- as.list(environment())
+  assumptions <- c(as.list(environment()), list(...))
   return(assumptions)
 }
 
