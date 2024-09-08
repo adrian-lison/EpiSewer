@@ -3,22 +3,27 @@
 #' @param f_env The environment to be checked
 #' @param data A list with data
 #' @param assumptions A list with assumptions
-#' @param required_data A character vector with the names of required data
+#' @param required_data A character vector with the names of required data.
+#'   Different options for one item can be provided using "|" as a separator.
+#'   EpiSewer will then check if at least one of the options is present.
 #' @param required_assumptions A character vector with the names of required
-#'   assumptions
-#'
+#'   assumptions. Different options for one item can be provided using "|" as a
+#'   separator. EpiSewer will then check if at least one of the options is
+#'   present.
 #' @return TRUE if all required data and assumptions are present in `f_env`.
 check_provided <- function(f_env = list(), data = list(), assumptions = list(),
                            required_data = c(), required_assumptions = c()) {
   f_env <- update_env(f_env, data, assumptions, required_data, required_assumptions)
-  if (all(c(required_data, required_assumptions) %in% names(f_env))) {
-    missing <- sapply(
-      as.list(f_env)[c(required_data, required_assumptions)], is.null
-    )
-    return(!any(missing))
-  } else {
+  present <- sapply(c(required_data, required_assumptions), function(item) {
+    options <- stringr::str_split(string = item, "\\|")[[1]]
+    for (o in options) {
+      if (o %in% names(f_env) && !is.null(f_env[[o]])) {
+        return(TRUE)
+      }
+    }
     return(FALSE)
-  }
+  })
+  return(all(present))
 }
 
 #' Add required data and assumptions to an environment
@@ -34,14 +39,18 @@ check_provided <- function(f_env = list(), data = list(), assumptions = list(),
 #'   were provided in `data` and `assumptions` were inserted if missing.
 update_env <- function(f_env = list(), data = list(), assumptions = list(),
                        required_data = c(), required_assumptions = c()) {
-  for (r in required_data) {
-    if (!(r %in% names(f_env) && !is.null(f_env[[r]]))) {
-      f_env[[r]] <- data[[r]]
+  for (req in required_data) {
+    for (r in stringr::str_split(string = req, "\\|")[[1]]) {
+      if (!(r %in% names(f_env) && !is.null(f_env[[r]]))) {
+        f_env[[r]] <- data[[r]]
+      }
     }
   }
-  for (r in required_assumptions) {
-    if (!(r %in% names(f_env) && !is.null(f_env[[r]]))) {
-      f_env[[r]] <- assumptions[[r]]
+  for (req in required_assumptions) {
+    for (r in stringr::str_split(string = req, "\\|")[[1]]) {
+      if (!(r %in% names(f_env) && !is.null(f_env[[r]]))) {
+        f_env[[r]] <- assumptions[[r]]
+      }
     }
   }
   return(f_env)
@@ -73,7 +82,12 @@ copy_env <- function(env, exclude = c()) {
 #' @param f_expr Expression with arbitrary R code in which attributes are
 #'   assigned to `modeldata.`
 #' @param required_data A character vector with the names of required data.
-#' @param required_assumptions A character vector with the names of required.
+#'   Different options for one item can be provided using "|" as a separator.
+#'   EpiSewer will then check if at least one of the options is present.
+#' @param required_assumptions A character vector with the names of required
+#'   assumptions. Different options for one item can be provided using "|" as a
+#'   separator. EpiSewer will then check if at least one of the options is
+#'   present.
 #' @param modeldata Modeldata object in the calling function.
 #' @param calling_env Calling environment, should be `rlang::caller_env()`.
 #'
@@ -109,22 +123,22 @@ tbp <- function(f_name, f_expr,
       )
     f_lazy$env$modeldata <- modeldata
 
-    # apply function to modeldata
-    lazyeval::lazy_eval(f_lazy)
-
     # register used data
     f_sewer_data <- list()
-    f_sewer_data[[f_name]] <- as.list(f_lazy$env)[required_data]
+    f_sewer_data[[f_name]] <- as.list(f_lazy$env)[purrr::list_c(stringr::str_split(required_data, "\\|"))]
     f_lazy$env$modeldata$.sewer_data <- c(
       f_lazy$env$modeldata$.sewer_data, f_sewer_data
     )
 
     # register used assumptions
     f_sewer_assumptions <- list()
-    f_sewer_assumptions[[f_name]] <- as.list(f_lazy$env)[required_assumptions]
+    f_sewer_assumptions[[f_name]] <- as.list(f_lazy$env)[purrr::list_c(stringr::str_split(required_assumptions, "\\|"))]
     f_lazy$env$modeldata$.sewer_assumptions <- c(
       f_lazy$env$modeldata$.sewer_assumptions, f_sewer_assumptions
     )
+
+    # apply function to modeldata
+    lazyeval::lazy_eval(f_lazy)
 
     return(f_lazy$env$modeldata)
   }

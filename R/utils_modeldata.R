@@ -379,6 +379,13 @@ modeldata_validate <- function(modeldata,
     cli::cli_abort("Please supply a modeldata object.")
   }
 
+  for (i in 1:3) { # update three times to catch all lazy evals
+    modeldata <- modeldata_update(
+      modeldata,
+      data = data, assumptions = assumptions, throw_error = F
+    )
+  }
+
   # check for conflicting data
   for (comp in names(modeldata$.sewer_data)) {
     overlaps_data <- intersect(
@@ -387,8 +394,9 @@ modeldata_validate <- function(modeldata,
     for (o in overlaps_data) {
       if (!is.null(data[[o]]) &&
         !is.null(modeldata$.sewer_data[[comp]][o]) &&
-        !identical(data[[o]], modeldata$.sewer_data[[comp]][o][[1]])) {
-        rlang::cli_abort(paste0(
+        !isTRUE(all.equal(data[[o]], modeldata$.sewer_data[[comp]][o][[1]]))
+        ) {
+        cli::cli_abort(paste0(
           "You provided different data for `", o,
           "` in sewer_data() and ", comp, "()."
         ))
@@ -396,30 +404,25 @@ modeldata_validate <- function(modeldata,
     }
   }
 
+  dont_check <- names(sewer_assumptions())[!sapply(sewer_assumptions(), is.null)]
   # check for conflicting assumptions
   for (comp in names(modeldata$.sewer_assumptions)) {
     overlaps_assumptions <- intersect(
       names(assumptions), names(modeldata$.sewer_assumptions[[comp]])
     )
     for (o in overlaps_assumptions) {
-      if (!is.null(assumptions[[o]]) &&
+      if (
+        !(o %in% dont_check) &&
+        !is.null(assumptions[[o]]) &&
         !is.null(modeldata$.sewer_assumptions[[comp]][o]) &&
-        !identical(
-          assumptions[[o]], modeldata$.sewer_assumptions[[comp]][o][[1]]
-        )) {
+        !isTRUE(all.equal(assumptions[[o]], modeldata$.sewer_assumptions[[comp]][o][[1]]))
+        ) {
         cli::cli_abort(paste0(
           "You provided different assumptions for `", o,
           "` in sewer_assumptions() and ", comp, "()."
         ))
       }
     }
-  }
-
-  for (i in 1:2) { # update two times to catch all lazy evals
-    modeldata <- modeldata_update(
-      modeldata,
-      data = data, assumptions = assumptions, throw_error = F
-    )
   }
 
   for (modeldata_sub in list(modeldata$.metainfo, modeldata, modeldata$.init)) {
@@ -431,7 +434,11 @@ modeldata_validate <- function(modeldata,
           message_data <- paste(
             "Data (also via sewer_data()):",
             paste(
-              "`", modeldata_sub[[name]]$required_data, "`",
+              "`",
+              stringr::str_replace_all(
+                modeldata_sub[[name]]$required_data, "\\|", " or "
+              ),
+              "`",
               sep = "", collapse = ", "
             )
           )
@@ -440,7 +447,11 @@ modeldata_validate <- function(modeldata,
           message_assumptions <- paste(
             "Assumptions (also via sewer_assumptions()):",
             paste(
-              "`", modeldata_sub[[name]]$required_assumptions, "`",
+              "`",
+              stringr::str_replace_all(
+                modeldata_sub[[name]]$required_assumptions, "\\|", " or "
+                ),
+              "`",
               sep = "", collapse = ", "
             )
           )
