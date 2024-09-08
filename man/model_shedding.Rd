@@ -7,7 +7,7 @@
 model_shedding(
   incubation_dist = incubation_dist_assume(),
   shedding_dist = shedding_dist_assume(),
-  load_per_case = load_per_case_assume(),
+  load_per_case = load_per_case_calibrate(),
   load_variation = load_variation_estimate()
 )
 }
