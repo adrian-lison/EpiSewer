@@ -274,6 +274,11 @@ concentrations_observe <-
       switch, c(distribution, as.list(c(available_distributions,-1)))
       )
 
+    modeldata$.metainfo$measurements_cols <- list(
+      date_col = date_col,
+      concentration_col = concentration_col
+      )
+
     return(modeldata)
   }
 
