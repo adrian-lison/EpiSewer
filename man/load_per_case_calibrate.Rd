@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_shedding.R
 \name{load_per_case_calibrate}
 \alias{load_per_case_calibrate}
-\title{Calibrate the average load per case to case numbers}
+\title{Calibrate the average load per case using case count data}
 \usage{
 load_per_case_calibrate(
   cases = NULL,
@@ -21,9 +21,8 @@ load_per_case_calibrate(
 day. Must have at least a column with dates and a column with case numbers.}
 
 \item{min_cases}{This is an alternative to supplying a \code{data.frame} of cases.
-If \code{min_cases}is specified, the \code{load_per_case} is calibrated based on the
-smallest observed load in the wastewater. EpiSewer uses \code{min_cases = 10} as
-a default if no case data is supplied.}
+If \code{min_cases} is specified, then \code{load_per_case} is calibrated based on
+the smallest observed load in the wastewater. EpiSewer uses \code{min_cases = 10} as a default if no case data is supplied (see \code{\link[=sewer_assumptions]{sewer_assumptions()}}).}
 
 \item{ascertainment_prop}{Proportion of all cases that get detected /
 reported. Can be used to account for underreporting of infections. Default
@@ -43,23 +42,20 @@ vector of the same length as \code{measurement_shift}. If \code{NULL} (default),
 weights are chosen to be approximately inversely proportional to the shift
 distance.}
 
-\item{date_col}{Name of the date column in all provided data frames.}
+\item{date_col}{Name of the date column in the provided cases \code{data.frame}.}
 
 \item{case_col}{Name of the column containing the case numbers.}
 
 \item{signif_fig}{Significant figures to round to. Since this heuristic only
-provides crude estimates which should not be overinterpreted, the result
-gets rounded. Default is rounding to the 2 most significant figures.}
+provides crude estimates which should not be over-interpreted, the result
+gets rounded (this also increases stability when fitting the model at
+different points in time). Default is rounding to the 2 most significant
+figures.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
 also be an already partly specified model returned by other \code{EpiSewer}
 modeling functions.}
-
-\item{concentration_col}{Name of the column containing the measured
-concentrations.}
-
-\item{flow_col}{Name of the column containing the flows.}
 }
 \value{
 A \code{modeldata} object containing data and specifications of the model
@@ -95,3 +91,8 @@ for shedding profiles or reporting delays, but the \code{measurement_shift}
 argument allows to average over a set of relative shifts between the two
 time series.
 }
+\seealso{
+Other {load per case functions}: 
+\code{\link{load_per_case_assume}()}
+}
+\concept{{load per case functions}}

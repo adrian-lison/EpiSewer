@@ -143,8 +143,9 @@ shedding_dist_assume <-
 #' @inherit modeldata_init return
 #' @export
 #'
-#' @seealso {Helper for finding a suitable load per case assumption}
+#' @seealso {Helper for finding a suitable load per case assumption:}
 #'   [suggest_load_per_case()]
+#' @family {load per case functions}
 load_per_case_assume <-
   function(load_per_case = NULL, modeldata = modeldata_init()) {
     modeldata <- tbp("load_per_case_assume",
@@ -164,7 +165,7 @@ load_per_case_assume <-
     return(modeldata)
   }
 
-#' Calibrate the average load per case to case numbers
+#' Calibrate the average load per case using case count data
 #'
 #' @description This option calibrates the average total shedding load per case
 #'   based on the relationship between measured concentrations and case counts.
@@ -176,9 +177,9 @@ load_per_case_assume <-
 #' @param cases A `data.frame` of case numbers with each row representing one
 #'   day. Must have at least a column with dates and a column with case numbers.
 #' @param min_cases This is an alternative to supplying a `data.frame` of cases.
-#'   If `min_cases`is specified, the `load_per_case` is calibrated based on the
-#'   smallest observed load in the wastewater. EpiSewer uses `min_cases = 10` as
-#'   a default if no case data is supplied.
+#'   If `min_cases` is specified, then `load_per_case` is calibrated based on
+#'   the smallest observed load in the wastewater. EpiSewer uses `min_cases =
+#'   10` as a default if no case data is supplied (see [sewer_assumptions()]).
 #' @param ascertainment_prop Proportion of all cases that get detected /
 #'   reported. Can be used to account for underreporting of infections. Default
 #'   is `ascertainment_prop=1`, meaning that 100% of infections become confirmed
@@ -194,14 +195,13 @@ load_per_case_assume <-
 #'   vector of the same length as `measurement_shift`. If `NULL` (default), the
 #'   weights are chosen to be approximately inversely proportional to the shift
 #'   distance.
-#' @param date_col Name of the date column in all provided data frames.
-#' @param concentration_col Name of the column containing the measured
-#'   concentrations.
+#' @param date_col Name of the date column in the provided cases `data.frame`.
 #' @param case_col Name of the column containing the case numbers.
-#' @param flow_col Name of the column containing the flows.
 #' @param signif_fig Significant figures to round to. Since this heuristic only
-#'   provides crude estimates which should not be overinterpreted, the result
-#'   gets rounded. Default is rounding to the 2 most significant figures.
+#'   provides crude estimates which should not be over-interpreted, the result
+#'   gets rounded (this also increases stability when fitting the model at
+#'   different points in time). Default is rounding to the 2 most significant
+#'   figures.
 #'
 #' @details In `EpiSewer`, the `load_per_case` serves as a scaling factor
 #'   describing how many pathogen particles are shed by the average infected
@@ -222,6 +222,7 @@ load_per_case_assume <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
+#' @family {load per case functions}
 load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
                                     ascertainment_prop = 1,
                                     measurement_shift = seq(-7,7),

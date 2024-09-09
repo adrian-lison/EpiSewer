@@ -128,17 +128,18 @@ sewer_data <- function(measurements = NULL, flows = NULL, cases = NULL, ...) {
 #'   time period (default is 10). This assumption is used to calibrate the
 #'   `load_per_case` factor (a scaling factor that describes how many pathogen
 #'   particles are shed by the average infected individual overall and how much
-#'   of this is detectable at the sampling site). The `load_per_case` depends
-#'   both on biological factors as well as on the specific sewage system and
-#'   laboratory quantification. If `min_cases` is specified, `load_per_case` is
-#'   chosen such that the estimated time series of infections does not go
-#'   significantly below `min_cases`. Will be automatically passed to
-#'   [load_per_case_calibrate()].
+#'   of this is detectable at the sampling site). If `min_cases` is specified,
+#'   `load_per_case` is chosen such that the estimated time series of infections
+#'   does not go significantly below `min_cases`. Will be automatically passed
+#'   to [load_per_case_calibrate()].
 #' @param load_per_case This argument allows to directly specify the average
-#'   total load per case, instead of calibrating it to case data. Important: To
+#'   total load per case, instead of calibrating it to case data. Note that the
+#'   `load_per_case` depends both on biological factors as well as on the
+#'   specific sewage system and laboratory quantification. Important: To
 #'   actually use this assumption, the model option [load_per_case_assume()]
-#'   must be used. See [suggest_load_per_case()] if you want to do a manual
-#'   calibration to case data.
+#'   must be specified in [EpiSewer()] via [model_shedding()]. If you want to
+#'   use this option to do a manual calibration to case data, the helper
+#'   function [suggest_load_per_case()] might also be useful.
 #' @param residence_dist Sewer residence time distribution for pathogen
 #'   particles. By default, `EpiSewer` assumes that particles arrive at the
 #'   sampling site within the day of shedding. However, for larger sewage
