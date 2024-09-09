@@ -8,8 +8,8 @@ sewer_assumptions(
   generation_dist = NULL,
   incubation_dist = NULL,
   shedding_dist = NULL,
+  min_cases = 10,
   load_per_case = NULL,
-  min_cases = 1,
   residence_dist = c(1),
   ...
 )
@@ -31,19 +31,28 @@ be automatically passed to \code{\link[=incubation_dist_assume]{incubation_dist_
 shed by an individual is distributed over time (and therefore sums to 1).
 Will be automatically passed to \code{\link[=shedding_dist_assume]{shedding_dist_assume()}}.}
 
-\item{load_per_case}{Average total load per case. This is a scaling factor
-that describes how many pathogen particles are shed by the average infected
-individual overall and how much of this is detectable at the sampling site.
-It depends both on biological factors as well as on the specific
-sewage system. See \code{\link[=suggest_load_per_case]{suggest_load_per_case()}} to help you
-make a suitable assumption. Will be automatically passed to
-\code{\link[=load_per_case_assume]{load_per_case_assume()}}.}
+\item{min_cases}{The minimum incidence (new cases per day) during the modeled
+time period (default is 10). This assumption is used to calibrate the
+\code{load_per_case} factor (a scaling factor that describes how many pathogen
+particles are shed by the average infected individual overall and how much
+of this is detectable at the sampling site). The \code{load_per_case} depends
+both on biological factors as well as on the specific sewage system and
+laboratory quantification. If \code{min_cases} is specified, \code{load_per_case} is
+chosen such that the estimated time series of infections does not go
+significantly below \code{min_cases}. Will be automatically passed to
+\code{\link[=load_per_case_calibrate]{load_per_case_calibrate()}}.}
+
+\item{load_per_case}{This argument allows to directly specify the average
+total load per case, instead of calibrating it to case data. Important: To
+actually use this assumption, the model option \code{\link[=load_per_case_assume]{load_per_case_assume()}}
+must be used. See \code{\link[=suggest_load_per_case]{suggest_load_per_case()}} if you want to do a manual
+calibration to case data.}
 
 \item{residence_dist}{Sewer residence time distribution for pathogen
 particles. By default, \code{EpiSewer} assumes that particles arrive at the
 sampling site within the day of shedding. However, for larger sewage
-systems, particles may travel longer than a day depending on where and
-when they were shed into the wastewater. Will be automatically passed to
+systems, particles may travel longer than a day depending on where and when
+they were shed into the wastewater. Will be automatically passed to
 \code{\link[=residence_dist_assume]{residence_dist_assume()}}.}
 
 \item{...}{Further assumptions to be passed to \code{\link[=EpiSewer]{EpiSewer()}}.}
@@ -56,4 +65,9 @@ A \code{list} with all assumptions supplied. Can be passed to the
 Specify model assumptions such as the generation time
 distribution or shedding load distribution. This is a convenience function
 to collect all assumptions in one object.
+}
+\details{
+Note that if case data is supplied via \code{sewer_data}, the \code{min_cases}
+assumption is overwritten and the supplied case data is used for a more
+accurate calibration instead.
 }
