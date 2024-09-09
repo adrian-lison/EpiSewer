@@ -164,24 +164,21 @@ load_per_case_assume <-
     return(modeldata)
   }
 
-#' Assume the average load per case
+#' Calibrate the average load per case to case numbers
 #'
-#' @description This option assumes an average total shedding load per case. In
-#'   the `EpiSewer` model, this serves as a scaling factor describing how
-#'   many pathogen particles are shed by the average infected individual overall
-#'   and how much of this is detectable at the sampling site. This depends
-#'   both on biological factors as well as on the specific sewage system.
+#' @description This option calibrates the average total shedding load per case
+#'   based on the relationship between measured concentrations and case counts.
+#'   The goal is to obtain a `load_per_case` that is on the right order of
+#'   magnitude - this will not be sufficient for accurate prevalence estimation
+#'   from wastewater, but fully sufficient for monitoring trends and estimating
+#'   Rt.
 #'
-#' @description This helper function uses a crude heuristic to infer the
-#'   `load_per_case` based on the relationship between measured concentrations
-#'   and case counts. The goal is to obtain a `load_per_case` assumption that is
-#'   on the right order of magnitude - this will not be sufficient for accurate
-#'   prevalence estimation from wastewater, but fully sufficient for monitoring
-#'   trends and estimating Rt.
-#'
-#' @param cases A `data.frame` with each row representing one day. Must have at
-#'   least a column with dates and a column with case numbers.
-#' @param min_cases
+#' @param cases A `data.frame` of case numbers with each row representing one
+#'   day. Must have at least a column with dates and a column with case numbers.
+#' @param min_cases This is an alternative to supplying a `data.frame` of cases.
+#'   If `min_cases`is specified, the `load_per_case` is calibrated based on the
+#'   smallest observed load in the wastewater. EpiSewer uses `min_cases = 10` as
+#'   a default if no case data is supplied.
 #' @param ascertainment_prop Proportion of all cases that get detected /
 #'   reported. Can be used to account for underreporting of infections. Default
 #'   is `ascertainment_prop=1`, meaning that 100% of infections become confirmed
@@ -206,24 +203,21 @@ load_per_case_assume <-
 #'   provides crude estimates which should not be overinterpreted, the result
 #'   gets rounded. Default is rounding to the 2 most significant figures.
 #'
-#' @details In the `EpiSewer` model, the `load_per_case` serves as a scaling
-#'   factor describing how many pathogen particles are shed by the average
-#'   infected individual overall and how much of this is detectable at the
-#'   sampling site. This depends both on biological factors as well as on the
-#'   specific sewage system. It is therefore almost always necessary to assume
-#'   the load per case based on a comparison of measured concentrations/loads
-#'   and case numbers.
+#' @details In `EpiSewer`, the `load_per_case` serves as a scaling factor
+#'   describing how many pathogen particles are shed by the average infected
+#'   individual overall and how much of this is detectable at the sampling site.
+#'   This depends both on biological factors as well as on the specific sewage
+#'   system and laboratory quantification. It is therefore almost always
+#'   necessary to assume the load per case based on a comparison of measured
+#'   concentrations/loads and case numbers.
 #'
-#' @details The heuristic used here is to fit a linear regression model with
-#'   loads (computed using concentrations and flows) as dependent variable and
-#'   case numbers as independent variable over all measurements. This does not
-#'   explicitly account for shedding profiles or reporting delays, but the
-#'   `measurement_shift` argument allows to average over a set of relative
-#'   shifts between the two time series.
-#'
-#' @details The flow volume unit should be the same as for the concentration
-#'   measurements, e.g. if concentrations are measured in gc/mL, then the flow
-#'   should be in mL as well.
+#' @details If a `data.frame` of cases is supplied via the `cases` argument, the
+#'   average load per case is determined by fitting a linear regression model
+#'   with loads (computed using concentrations and flows) as dependent variable
+#'   and case numbers as independent variable. This does not explicitly account
+#'   for shedding profiles or reporting delays, but the `measurement_shift`
+#'   argument allows to average over a set of relative shifts between the two
+#'   time series.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
