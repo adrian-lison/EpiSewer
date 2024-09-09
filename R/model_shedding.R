@@ -239,87 +239,77 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
   modeldata <- tbp("load_per_case_calibrate",
    {
      if (!is.null(cases)) {
-       measurements <- setnames(
-         copy(measurements),
-         old = with(
-           modeldata$.metainfo$measurements_cols,
-           c(date_col, concentration_col)
+       modeldata <- tbc("load_per_case_cases_suggest", {
+         measurements <- setnames(
+           copy(measurements),
+           old = with(
+             modeldata$.metainfo$measurements_cols,
+             c(date_col, concentration_col)
            ),
-         new = c("date", "concentration")
+           new = c("date", "concentration")
          )
 
-       flows <- setnames(
-         copy(flows),
-         old = with(
-           modeldata$.metainfo$flows_cols,
-           c(date_col, flow_col)
-         ),
-         new = c("date", "flow")
-       )
-
-       required_data_cols <- c(date_col, case_col)
-       if (!all(required_data_cols %in% names(cases))) {
-         cli::cli_abort(
-           c(paste(
-             "The following columns must be present",
-             "in the provided cases `data.frame`:",
-             paste(required_data_cols, collapse = ", ")
+         flows <- setnames(
+           copy(flows),
+           old = with(
+             modeldata$.metainfo$flows_cols,
+             c(date_col, flow_col)
            ),
-           paste("Please adjust the `data.frame` or specify the right column",
-                 "names via the `_col` arguments of this function."))
+           new = c("date", "flow")
          )
-       }
-       cases = as.data.table(cases)[, .SD, .SDcols = required_data_cols]
-       setnames(cases, old = required_data_cols, new = c("date", "cases"))
 
-       modeldata$.metainfo$cases_suggest_load <- suggest_load_per_case(
-         measurements = measurements,
-         cases = cases,
-         flows = flows,
-         ascertainment_prop = ascertainment_prop,
-         measurement_shift = measurement_shift,
-         shift_weights = shift_weights,
-         date_col = "date",
-         concentration_col = "concentration",
-         flow_col = "flow",
-         case_col = "cases",
-         signif_fig = signif_fig
+         required_data_cols <- c(date_col, case_col)
+         if (!all(required_data_cols %in% names(cases))) {
+           cli::cli_abort(
+             c(paste(
+               "The following columns must be present",
+               "in the provided cases `data.frame`:",
+               paste(required_data_cols, collapse = ", ")
+             ),
+             paste("Please adjust the `data.frame` or specify the right column",
+                   "names via the `_col` arguments of this function."))
+           )
+         }
+         cases = as.data.table(cases)[, .SD, .SDcols = required_data_cols]
+         setnames(cases, old = required_data_cols, new = c("date", "cases"))
+
+         suggested_load <- suggest_load_per_case(
+           measurements = measurements,
+           cases = cases,
+           flows = flows,
+           ascertainment_prop = ascertainment_prop,
+           measurement_shift = measurement_shift,
+           shift_weights = shift_weights,
+           date_col = "date",
+           concentration_col = "concentration",
+           flow_col = "flow",
+           case_col = "cases",
+           signif_fig = signif_fig
+         )
+         modeldata$load_mean <- suggested_load
+         modeldata$.metainfo$load_per_case <- suggested_load
+       },
+       required = c(".metainfo$measurements_cols", ".metainfo$flows_cols"),
+       modeldata = modeldata
        )
-       modeldata$.metainfo$min_cases_calibrate <- numeric()
      }
      else if (!is.null(min_cases)) {
-       modeldata$.metainfo$min_cases_calibrate <- min_cases
-       modeldata$.metainfo$cases_suggest_load <- numeric(0)
+       modeldata <- tbc("load_per_case_min_cases_calibrate", {
+         min_load <- min(modeldata$.metainfo$load_curve_crude$load, na.rm = TRUE)
+         load_per_case <- min_load/min_cases
+         load_per_case <- signif(load_per_case, signif_fig)
+         modeldata$load_mean <- load_per_case
+         modeldata$.metainfo$load_per_case <- load_per_case
+       },
+       required = c(".metainfo$load_curve_crude"),
+       modeldata = modeldata
+       )
      }
      return(modeldata)
    },
    required_assumptions = "min_cases|cases",
    required_data = c("min_cases|cases", "measurements", "flows"),
    modeldata = modeldata
-  )
-
-  modeldata <- tbc("load_per_case_min_cases_calibrate", {
-    if (length(modeldata$.metainfo$min_cases_calibrate) > 0) {
-      min_cases_calibrate <- modeldata$.metainfo$min_cases_calibrate
-      min_load <- min(modeldata$.metainfo$load_curve_crude$load, na.rm = TRUE)
-      load_per_case <- min_load/min_cases_calibrate
-      load_per_case <- signif(load_per_case, signif_fig)
-      modeldata$load_mean <- load_per_case
-      modeldata$.metainfo$load_per_case <- load_per_case
-    }
-  },
-  required = c(".metainfo$load_curve_crude", ".metainfo$min_cases_calibrate"),
-  modeldata = modeldata
-  )
-
-  modeldata <- tbc("load_per_case_cases_suggest", {
-    if (length(modeldata$.metainfo$cases_suggest_load) > 0) {
-      modeldata$load_mean <- modeldata$.metainfo$cases_suggest_load
-      modeldata$.metainfo$load_per_case <- modeldata$.metainfo$cases_suggest_load
-    }
-  },
-  required = c(".metainfo$load_curve_crude", ".metainfo$cases_suggest_load"),
-  modeldata = modeldata
   )
 
   modeldata$.str$shedding[["load_per_case"]] <- list(
