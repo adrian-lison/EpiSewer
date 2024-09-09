@@ -496,7 +496,7 @@ modeldata_validate <- function(modeldata,
   }
 
   for (check in modeldata$.checks) {
-    check(modeldata)
+    check(modeldata, data, assumptions)
   }
 
   return(modeldata)

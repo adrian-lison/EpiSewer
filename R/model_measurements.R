@@ -426,8 +426,8 @@ noise_estimate_ <-
         modeldata$.init$nu_upsilon_b_mu <- numeric(0)
         modeldata$.init$nu_upsilon_b_cv <- numeric(0)
         modeldata$.init$nu_upsilon_b_noise_raw <- numeric(0)
-        modeldata$.checks$check_total_partitions_col <- function(d) {
-          if (!"dPCR_total_partitions" %in% names(d)) {
+        modeldata$.checks$check_total_partitions_col <- function(md, ...) {
+          if (!"dPCR_total_partitions" %in% names(md)) {
             cli::cli_abort(paste0(
               "You specified `total_partitions_observe = TRUE`, which requires ",
               "a column with the number of total partitions in the PCR for ",
@@ -516,8 +516,8 @@ noise_estimate_ <-
         "n_samples"
       )
 
-      modeldata$.checks$check_replicate_ids <- function(d) {
-        if (!"replicate_ids" %in% names(d)) {
+      modeldata$.checks$check_replicate_ids <- function(md, ...) {
+        if (!"replicate_ids" %in% names(md)) {
           cli::cli_abort(paste(
             "Variation before the replication stage can only be estimated with",
             "replicate measurements. Please specify a column `replicate_col`",

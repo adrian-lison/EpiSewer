@@ -311,6 +311,18 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
     load_per_case_calibrate = c()
   )
 
+  modeldata$.checks$check_load_per_case_function <- function(md, d, a) {
+    if ("load_per_case" %in% names(a) && !is.null(a$load_per_case)) {
+      cli::cli_inform(c("i"=paste0(
+        "You supplied a `load_per_case` assumption via ",
+        cli_help("sewer_assumptions"), ", but EpiSewer currently uses ",
+        cli_help("load_per_case_calibrate"), " to determine the load per case.",
+        " If you want to use the supplied `load_per_case` assumption, please ",
+        "specify ", cli_help("load_per_case_assume"), " instead."
+      )))
+    }
+  }
+
   return(modeldata)
 }
 
