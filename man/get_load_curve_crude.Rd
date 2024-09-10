@@ -13,6 +13,7 @@ get_load_curve_crude(
   max_shift = NULL,
   T_start_date,
   impute_zero = NA,
+  impute_zero_runs = FALSE,
   interpolate = TRUE,
   loess_window = 56,
   plot_smoothed_curve = FALSE
@@ -20,11 +21,18 @@ get_load_curve_crude(
 }
 \arguments{
 \item{max_shift}{How far into the past should the time series be expanded? If
-NULL (default), only expands by the mean total delay. If \code{max_shift} is supplied and
-larger than he mean total delay, LOESS extrapolation is used.}
+NULL (default), only expands by the mean total delay. If \code{max_shift} is
+supplied and larger than he mean total delay, LOESS extrapolation is used.}
 
 \item{impute_zero}{How should zero measurements be imputed? If NA (default),
-they are removed.}
+they are removed. This is the imputation value for the measured
+concentration. Imputed loads are calculated as \code{impute_zero * flow}.}
+
+\item{impute_zero_runs}{Should runs of zero measurements be imputed by
+accounting for how many measurements in a row have been zero? This is based
+on the posterior expectation of the concentration for a number of zero
+measurements. In effect, the imputed concentration will get smaller and
+smaller during a run of zeros.}
 
 \item{interpolate}{Should a log-linear interpolation of missing dates be
 performed? This makes the loess smoothing window more consistent.}

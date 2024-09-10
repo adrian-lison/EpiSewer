@@ -4,12 +4,23 @@
 \alias{shedding_dist_assume}
 \title{Assume a shedding load distribution}
 \usage{
-shedding_dist_assume(shedding_dist = NULL, modeldata = modeldata_init())
+shedding_dist_assume(
+  shedding_dist = NULL,
+  shedding_reference = NULL,
+  modeldata = modeldata_init()
+)
 }
 \arguments{
 \item{shedding_dist}{A numeric vector representing a discrete shedding load
 distribution, with elements describing the share of load shed 0 days, 1
 day, 2 days, and so on after the start of shedding.}
+
+\item{shedding_reference}{Is the shedding load distribution relative to the
+day of \code{"infection"} or the day of \code{"symptom_onset"}? This is important because
+shedding load distributions provided in the literature are sometimes by
+days since infection and sometimes by days since symptom onset. If
+\code{shedding_reference="symptom_onset"}, EpiSewer also needs information about
+the incubation period distribution (see \code{\link[=incubation_dist_assume]{incubation_dist_assume()}}).}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
