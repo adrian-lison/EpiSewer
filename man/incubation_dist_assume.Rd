@@ -30,11 +30,10 @@ This option assumes a fixed incubation period distribution for
 the shedding model in \code{EpiSewer}.
 }
 \details{
-\code{EpiSewer} uses the incubation period as a proxy for the time
-between infection and the start of shedding. This is because shedding load
-distributions in the literature are often given from symptom onset onwards.
-If the assumed shedding load distribution instead starts from the time of
-infection, then use \code{incubation_dist=c(1)} (i.e. no lag).
+The incubation period is the time between infection and symptom
+onset. This assumption is used when \code{shedding_reference="symptom_onset"},
+i.e. to support shedding load distributions referenced by days since
+symptom onset.
 }
 \seealso{
 Helpers to discretize continuous probability distributions:

@@ -51,7 +51,8 @@ component, you can consult the documentation or use the helper
 
 ``` r
 EpiSewer::component_functions("infection_noise")
-#> [1] "infection_noise_none()"     "infection_noise_estimate()"
+#> [1] "infection_noise_none()"    
+#> [2] "infection_noise_estimate()"
 ```
 
 #### 💡 Multiple modeling options
@@ -64,8 +65,10 @@ and `R_estimate_approx` (approximation of renewal model).
 
 ``` r
 EpiSewer::component_functions("R")
-#> [1] "R_estimate_approx()"  "R_estimate_rw()"     
-#> [3] "R_estimate_splines()" "R_estimate_ets()"
+#> [1] "R_estimate_approx()" 
+#> [2] "R_estimate_rw()"     
+#> [3] "R_estimate_splines()"
+#> [4] "R_estimate_ets()"
 ```
 
 #### ❗ Modeling restrictions
@@ -100,8 +103,9 @@ ww_data <- sewer_data(
 
 ww_assumptions <- sewer_assumptions(
   generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
-  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
   shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
+  shedding_reference = "symptom_onset",
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
 )
 
 EpiSewer(
@@ -128,8 +132,9 @@ ww_data <- sewer_data(
 # Leave out the generation time distribution
 ww_assumptions <- sewer_assumptions(
   #generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
-  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
   shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
+  shedding_reference = "symptom_onset",
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
 )
 
 # Provide flows directly to sewage module
@@ -137,7 +142,7 @@ ww_sewage <- model_sewage(
   flows = flows_observe(SARS_CoV_2_Zurich$flows)
 )
 
-# Provide load per case directly to shedding module
+# Provide generation time distribution directly to infections module
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(
     get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)
