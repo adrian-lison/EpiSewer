@@ -24,7 +24,8 @@ plot_concentration(
   flow_col = "flow",
   date_col = "date",
   outlier_col = "is_outlier",
-  type = "time"
+  type = "time",
+  intervals = c(0.5, 0.95)
 )
 }
 \arguments{

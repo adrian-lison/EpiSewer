@@ -17,7 +17,8 @@ plot_infections(
   facet_models = FALSE,
   facet_direction = "rows",
   base_model = "",
-  model_levels = NULL
+  model_levels = NULL,
+  intervals = c(0.5, 0.95)
 )
 }
 \arguments{

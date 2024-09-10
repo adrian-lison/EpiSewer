@@ -123,6 +123,10 @@ flows_observe <-
 
         flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]
         flows <- setnames(flows, old = c(date_col, flow_col), new = c("date", "flow"))
+        modeldata$.metainfo$flows_cols <- list(
+          date_col = date_col,
+          flow_col = flow_col
+        )
 
         flows[, date := lubridate::as_date(date)]
 

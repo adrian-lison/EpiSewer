@@ -411,7 +411,7 @@ R_estimate_splines <- function(
     coef_intercept_prior_mu = 1,
     coef_intercept_prior_sigma = 0.8,
     coef_sd_prior_mu = 0,
-    coef_sd_prior_sigma = 0.5,
+    coef_sd_prior_sigma = 0.25,
     link = "inv_softplus",
     R_max = 6,
     modeldata = modeldata_init()) {

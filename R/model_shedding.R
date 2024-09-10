@@ -36,7 +36,7 @@
 model_shedding <- function(
     incubation_dist = incubation_dist_assume(),
     shedding_dist = shedding_dist_assume(),
-    load_per_case = load_per_case_assume(),
+    load_per_case = load_per_case_calibrate(),
     load_variation = load_variation_estimate()) {
   verify_is_modeldata(incubation_dist, "incubation_dist")
   verify_is_modeldata(shedding_dist, "shedding_dist")
@@ -143,8 +143,9 @@ shedding_dist_assume <-
 #' @inherit modeldata_init return
 #' @export
 #'
-#' @seealso {Helper for finding a suitable load per case assumption}
+#' @seealso {Helper for finding a suitable load per case assumption:}
 #'   [suggest_load_per_case()]
+#' @family {load per case functions}
 load_per_case_assume <-
   function(load_per_case = NULL, modeldata = modeldata_init()) {
     modeldata <- tbp("load_per_case_assume",
@@ -163,6 +164,171 @@ load_per_case_assume <-
 
     return(modeldata)
   }
+
+#' Calibrate the average load per case using case count data
+#'
+#' @description This option calibrates the average total shedding load per case
+#'   based on the relationship between measured concentrations and case counts.
+#'   The goal is to obtain a `load_per_case` that is on the right order of
+#'   magnitude - this will not be sufficient for accurate prevalence estimation
+#'   from wastewater, but fully sufficient for monitoring trends and estimating
+#'   Rt.
+#'
+#' @param cases A `data.frame` of case numbers with each row representing one
+#'   day. Must have at least a column with dates and a column with case numbers.
+#' @param min_cases This is an alternative to supplying a `data.frame` of cases.
+#'   If `min_cases` is specified, then `load_per_case` is calibrated based on
+#'   the smallest observed load in the wastewater. EpiSewer uses `min_cases =
+#'   10` as a default if no case data is supplied (see [sewer_assumptions()]).
+#' @param ascertainment_prop Proportion of all cases that get detected /
+#'   reported. Can be used to account for underreporting of infections. Default
+#'   is `ascertainment_prop=1`, meaning that 100% of infections become confirmed
+#'   cases.
+#' @param measurement_shift The specific timing between wastewater
+#'   concentrations and case numbers depends on reporting delays and shedding
+#'   profiles and is typically uncertain. This argument allows to shift the
+#'   concentration and case number time series relative to each other and to
+#'   average over several potential lags/leads, as specified by an integer
+#'   vector. The default is `measurement_shift = seq(-7,7)`, i.e. a shift of
+#'   concentrations between up to one week before and after case numbers.
+#' @param shift_weights Weights for the shifted comparisons. Must be an numeric
+#'   vector of the same length as `measurement_shift`. If `NULL` (default), the
+#'   weights are chosen to be approximately inversely proportional to the shift
+#'   distance.
+#' @param date_col Name of the date column in the provided cases `data.frame`.
+#' @param case_col Name of the column containing the case numbers.
+#' @param signif_fig Significant figures to round to. Since this heuristic only
+#'   provides crude estimates which should not be over-interpreted, the result
+#'   gets rounded (this also increases stability when fitting the model at
+#'   different points in time). Default is rounding to the 2 most significant
+#'   figures.
+#'
+#' @details In `EpiSewer`, the `load_per_case` serves as a scaling factor
+#'   describing how many pathogen particles are shed by the average infected
+#'   individual overall and how much of this is detectable at the sampling site.
+#'   This depends both on biological factors as well as on the specific sewage
+#'   system and laboratory quantification. It is therefore almost always
+#'   necessary to assume the load per case based on a comparison of measured
+#'   concentrations/loads and case numbers.
+#'
+#' @details If a `data.frame` of cases is supplied via the `cases` argument, the
+#'   average load per case is determined by fitting a linear regression model
+#'   with loads (computed using concentrations and flows) as dependent variable
+#'   and case numbers as independent variable. This does not explicitly account
+#'   for shedding profiles or reporting delays, but the `measurement_shift`
+#'   argument allows to average over a set of relative shifts between the two
+#'   time series.
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {load per case functions}
+load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
+                                    ascertainment_prop = 1,
+                                    measurement_shift = seq(-7,7),
+                                    shift_weights = 1/(abs(measurement_shift)+1),
+                                    date_col = "date",
+                                    case_col = "cases",
+                                    signif_fig = 2,
+                                    modeldata = modeldata_init()) {
+  modeldata <- tbp("load_per_case_calibrate",
+   {
+     if (!is.null(cases)) {
+       modeldata <- tbc("load_per_case_cases_suggest", {
+         measurements <- setnames(
+           copy(modeldata$.sewer_data$concentrations_observe$measurements),
+           old = with(
+             modeldata$.metainfo$measurements_cols,
+             c(date_col, concentration_col)
+           ),
+           new = c("date", "concentration")
+         )
+
+         flows <- setnames(
+           copy(modeldata$.sewer_data$flows_observe$flows),
+           old = with(
+             modeldata$.metainfo$flows_cols,
+             c(date_col, flow_col)
+           ),
+           new = c("date", "flow")
+         )
+
+         required_data_cols <- c(date_col, case_col)
+         if (!all(required_data_cols %in% names(cases))) {
+           cli::cli_abort(
+             c(paste(
+               "The following columns must be present",
+               "in the provided cases `data.frame`:",
+               paste(required_data_cols, collapse = ", ")
+             ),
+             paste("Please adjust the `data.frame` or specify the right column",
+                   "names via the `_col` arguments of this function."))
+           )
+         }
+         cases = as.data.table(cases)[, .SD, .SDcols = required_data_cols]
+         setnames(cases, old = required_data_cols, new = c("date", "cases"))
+
+         suggested_load <- suggest_load_per_case(
+           measurements = measurements,
+           cases = cases,
+           flows = flows,
+           ascertainment_prop = ascertainment_prop,
+           measurement_shift = measurement_shift,
+           shift_weights = shift_weights,
+           date_col = "date",
+           concentration_col = "concentration",
+           flow_col = "flow",
+           case_col = "cases",
+           signif_fig = signif_fig
+         )
+         modeldata$load_mean <- suggested_load
+         modeldata$.metainfo$load_per_case <- suggested_load
+       },
+       required = c(
+         ".metainfo$measurements_cols", ".metainfo$flows_cols",
+         ".sewer_data$concentrations_observe$measurements",
+         ".sewer_data$flows_observe$flows"
+         ),
+       modeldata = modeldata
+       )
+     }
+     else if (!is.null(min_cases)) {
+       modeldata <- tbc("load_per_case_min_cases_calibrate", {
+         min_load <- min(modeldata$.metainfo$load_curve_crude$load, na.rm = TRUE)
+         load_per_case <- min_load/min_cases
+         load_per_case <- signif(load_per_case, signif_fig)
+         modeldata$load_mean <- load_per_case
+         modeldata$.metainfo$load_per_case <- load_per_case
+       },
+       required = c(".metainfo$load_curve_crude"),
+       modeldata = modeldata
+       )
+     }
+     return(modeldata)
+   },
+   required_assumptions = "min_cases|cases",
+   required_data = "min_cases|cases",
+   modeldata = modeldata
+  )
+
+  modeldata$.str$shedding[["load_per_case"]] <- list(
+    load_per_case_calibrate = c()
+  )
+
+  modeldata$.checks$check_load_per_case_function <- function(md, d, a) {
+    if ("load_per_case" %in% names(a) && !is.null(a$load_per_case)) {
+      cli::cli_inform(c("i"=paste0(
+        "You supplied a `load_per_case` assumption via ",
+        cli_help("sewer_assumptions"), ", but EpiSewer currently uses ",
+        cli_help("load_per_case_calibrate"), " to determine the load per case.",
+        " If you want to use the supplied `load_per_case` assumption, please ",
+        "specify ", cli_help("load_per_case_assume"), " instead."
+      )))
+    }
+  }
+
+  return(modeldata)
+}
 
 #' Do not model individual-level load variation
 #'

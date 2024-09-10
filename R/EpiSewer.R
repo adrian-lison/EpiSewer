@@ -90,13 +90,18 @@ EpiSewer <- function(
 #'   [concentrations_observe()].
 #' @param flows A `data.frame` with wastewater flow volumes at the sampling site
 #'   for each day. Will be automatically passed to [flows_observe()].
+#' @param cases A `data.frame` of case numbers with each row representing one
+#'   day. Must have at least a column with dates and a column with case numbers.
+#'   This data is not used for model fitting, but for calibration of the
+#'   `load_per_case` assumption. Will be automatically passed to
+#'   [load_per_case_calibrate()].
 #' @param ... Further observations to be passed to [EpiSewer()].
 #'
 #' @return A `list` with all observations supplied. Can be passed to the `data`
 #'   argument in [EpiSewer()].
 #' @export
-sewer_data <- function(measurements = NULL, flows = NULL, ...) {
-  data <- as.list(environment())
+sewer_data <- function(measurements = NULL, flows = NULL, cases = NULL, ...) {
+  data <- c(as.list(environment()), list(...))
   return(data)
 }
 
@@ -119,20 +124,33 @@ sewer_data <- function(measurements = NULL, flows = NULL, ...) {
 #' @param shedding_dist Shedding load distribution. Describes how the total load
 #'   shed by an individual is distributed over time (and therefore sums to 1).
 #'   Will be automatically passed to [shedding_dist_assume()].
-#' @param load_per_case Average total load per case. This is a scaling factor
-#'   that describes how many pathogen particles are shed by the average infected
-#'   individual overall and how much of this is detectable at the sampling site.
-#'   It depends both on biological factors as well as on the specific
-#'   sewage system. See [suggest_load_per_case()] to help you
-#'   make a suitable assumption. Will be automatically passed to
-#'   [load_per_case_assume()].
+#' @param min_cases The minimum incidence (new cases per day) during the modeled
+#'   time period (default is 10). This assumption is used to calibrate the
+#'   `load_per_case` factor (a scaling factor that describes how many pathogen
+#'   particles are shed by the average infected individual overall and how much
+#'   of this is detectable at the sampling site). If `min_cases` is specified,
+#'   `load_per_case` is chosen such that the estimated time series of infections
+#'   does not go significantly below `min_cases`. Will be automatically passed
+#'   to [load_per_case_calibrate()].
+#' @param load_per_case This argument allows to directly specify the average
+#'   total load per case, instead of calibrating it to case data. Note that the
+#'   `load_per_case` depends both on biological factors as well as on the
+#'   specific sewage system and laboratory quantification. Important: To
+#'   actually use this assumption, the model option [load_per_case_assume()]
+#'   must be specified in [EpiSewer()] via [model_shedding()]. If you want to
+#'   use this option to do a manual calibration to case data, the helper
+#'   function [suggest_load_per_case()] might also be useful.
 #' @param residence_dist Sewer residence time distribution for pathogen
 #'   particles. By default, `EpiSewer` assumes that particles arrive at the
 #'   sampling site within the day of shedding. However, for larger sewage
-#'   systems, particles may travel longer than a day depending on where and
-#'   when they were shed into the wastewater. Will be automatically passed to
+#'   systems, particles may travel longer than a day depending on where and when
+#'   they were shed into the wastewater. Will be automatically passed to
 #'   [residence_dist_assume()].
 #' @param ... Further assumptions to be passed to [EpiSewer()].
+
+#' @details Note that if case data is supplied via `sewer_data`, the `min_cases`
+#'   assumption is overwritten and the supplied case data is used for a more
+#'   accurate calibration instead.
 #'
 #' @return A `list` with all assumptions supplied. Can be passed to the
 #'   `assumptions` argument in [EpiSewer()].
@@ -140,10 +158,11 @@ sewer_data <- function(measurements = NULL, flows = NULL, ...) {
 sewer_assumptions <- function(generation_dist = NULL,
                               incubation_dist = NULL,
                               shedding_dist = NULL,
+                              min_cases = 10,
                               load_per_case = NULL,
                               residence_dist = c(1),
                               ...) {
-  assumptions <- as.list(environment())
+  assumptions <- c(as.list(environment()), list(...))
   return(assumptions)
 }
 
