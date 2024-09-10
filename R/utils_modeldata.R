@@ -379,7 +379,7 @@ modeldata_validate <- function(modeldata,
     cli::cli_abort("Please supply a modeldata object.")
   }
 
-  for (i in 1:3) { # update three times to catch all lazy evals
+  for (i in 1:4) { # update three times to catch all lazy evals
     modeldata <- modeldata_update(
       modeldata,
       data = data, assumptions = assumptions, throw_error = F

@@ -53,11 +53,10 @@ model_shedding <- function(
 #' @description This option assumes a fixed incubation period distribution for
 #'   the shedding model in `EpiSewer`.
 #'
-#' @details `EpiSewer` uses the incubation period as a proxy for the time
-#'   between infection and the start of shedding. This is because shedding load
-#'   distributions in the literature are often given from symptom onset onwards.
-#'   If the assumed shedding load distribution instead starts from the time of
-#'   infection, then use `incubation_dist=c(1)` (i.e. no lag).
+#' @details The incubation period is the time between infection and symptom
+#'   onset. This assumption is used when `shedding_reference="symptom_onset"`,
+#'   i.e. to support shedding load distributions referenced by days since
+#'   symptom onset.
 #'
 #' @param incubation_dist A numeric vector representing a discrete incubation
 #'   period distribution, starting with the probability for an incubation period
@@ -71,17 +70,37 @@ model_shedding <- function(
 #'   [get_discrete_gamma()], [get_discrete_lognormal()]
 incubation_dist_assume <-
   function(incubation_dist = NULL, modeldata = modeldata_init()) {
-    modeldata <- tbp("incubation_dist_assume",
-      {
-        modeldata$L <- length(incubation_dist) - 1
-        incubation_dist <- check_dist(
-          incubation_dist, "incubation period distribution"
+
+    modeldata <- tbc("incubation_dist_compute", {
+      if (modeldata$.metainfo$shedding_reference == "symptom_onset") {
+
+        modeldata <- tbp("incubation_dist_assume",
+         {
+           modeldata$L <- length(incubation_dist) - 1
+           incubation_dist <- check_dist(
+             incubation_dist, "incubation period distribution"
+           )
+           modeldata$incubation_dist <- incubation_dist
+           return(modeldata)
+         },
+         required_assumptions = "incubation_dist",
+         modeldata = modeldata
         )
-        modeldata$incubation_dist <- incubation_dist
+
+      } else if (modeldata$.metainfo$shedding_reference == "infection") {
+        # this is a workaround because the incubation period is currently
+        # not needed for anything else than for modeling the shedding
+        # profile.
+        modeldata$L <- 0
+        modeldata$incubation_dist <- c(1)
         return(modeldata)
-      },
-      required_assumptions = "incubation_dist",
-      modeldata = modeldata
+      }
+
+    },
+    required = c(
+      ".metainfo$shedding_reference"
+    ),
+    modeldata = modeldata
     )
 
     modeldata$.str$shedding[["incubation_dist"]] <- list(
@@ -99,6 +118,12 @@ incubation_dist_assume <-
 #' @param shedding_dist A numeric vector representing a discrete shedding load
 #'   distribution, with elements describing the share of load shed 0 days, 1
 #'   day, 2 days, and so on after the start of shedding.
+#' @param shedding_reference Is the shedding load distribution relative to the
+#'   day of `"infection"` or the day of `"symptom_onset"`? This is important because
+#'   shedding load distributions provided in the literature are sometimes by
+#'   days since infection and sometimes by days since symptom onset. If
+#'   `shedding_reference="symptom_onset"`, EpiSewer also needs information about
+#'   the incubation period distribution (see [incubation_dist_assume()]).
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -107,15 +132,27 @@ incubation_dist_assume <-
 #' @seealso Helpers to discretize continuous probability distributions:
 #'   [get_discrete_gamma()], [get_discrete_lognormal()]
 shedding_dist_assume <-
-  function(shedding_dist = NULL, modeldata = modeldata_init()) {
+  function(shedding_dist = NULL, shedding_reference = NULL, modeldata = modeldata_init()) {
     modeldata <- tbp("shedding_dist_assume",
       {
         modeldata$S <- length(shedding_dist) - 1
         shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
         modeldata$shedding_dist <- shedding_dist
+        if (!shedding_reference %in% c("infection", "symptom_onset")) {
+          cli::cli_abort(paste(
+            "The provided `shedding_reference` argument is invalid.",
+            'Must be either "infection" or "symptom_onset".'
+          ))
+        }
+        modeldata$.metainfo$shedding_reference <- shedding_reference
+
+        modeldata$.str$shedding[["shedding_dist"]] <- list(
+          shedding_dist_assume = c(shedding_reference = shedding_reference)
+        )
+
         return(modeldata)
       },
-      required_assumptions = "shedding_dist",
+      required_assumptions = c("shedding_dist", "shedding_reference"),
       modeldata = modeldata
     )
 

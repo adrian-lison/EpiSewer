@@ -115,15 +115,21 @@ sewer_data <- function(measurements = NULL, flows = NULL, cases = NULL, ...) {
 #'   distribution of the time between infection of a primary case and infection
 #'   of its secondary cases. Will be automatically passed to
 #'   [generation_dist_assume()].
-#' @param incubation_dist Incubation period distribution. `EpiSewer` uses this
-#'   as a proxy for the time between infection and the start of shedding, as
-#'   shedding load distributions in the literature are often given from symptom
-#'   onset onwards. If the supplied shedding load distribution instead starts
-#'   with the time of infection, use `incubation_dist=c(1)` (i.e. no lag). Will
-#'   be automatically passed to [incubation_dist_assume()].
 #' @param shedding_dist Shedding load distribution. Describes how the total load
 #'   shed by an individual is distributed over time (and therefore sums to 1).
 #'   Will be automatically passed to [shedding_dist_assume()].
+#' @param shedding_reference Is the shedding load distribution relative to the
+#'   day of `"infection"` or the day of `"symptom_onset"`? This is important because
+#'   shedding load distributions provided in the literature are sometimes by
+#'   days since infection and sometimes by days since symptom onset. If
+#'   `shedding_reference="symptom_onset"`, EpiSewer also needs information about
+#'   the incubation period distribution. Will be automatically passed to
+#'   [shedding_dist_assume()].
+#' @param incubation_dist Incubation period distribution. The incubation period
+#'   is the time between infection and symptom onset. This assumption is used
+#'   when `shedding_reference="symptom_onset"`, i.e. to support shedding load
+#'   distributions referenced by days since symptom onset. Will be automatically
+#'   passed to [incubation_dist_assume()].
 #' @param min_cases The minimum incidence (new cases per day) during the modeled
 #'   time period (default is 10). This assumption is used to calibrate the
 #'   `load_per_case` factor (a scaling factor that describes how many pathogen
@@ -156,8 +162,9 @@ sewer_data <- function(measurements = NULL, flows = NULL, cases = NULL, ...) {
 #'   `assumptions` argument in [EpiSewer()].
 #' @export
 sewer_assumptions <- function(generation_dist = NULL,
-                              incubation_dist = NULL,
                               shedding_dist = NULL,
+                              shedding_reference = NULL,
+                              incubation_dist = NULL,
                               min_cases = 10,
                               load_per_case = NULL,
                               residence_dist = c(1),
