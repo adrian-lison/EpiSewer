@@ -34,28 +34,29 @@ on Mondays and Thursdays to test `EpiSewer` on sparse data.
 
 ``` r
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
-head(measurements_sparse, 20)
-#>           date concentration  weekday
-#>  1: 2022-01-03      455.7580   Monday
-#>  2: 2022-01-06      330.7298 Thursday
-#>  3: 2022-01-10      387.6885   Monday
-#>  4: 2022-01-13      791.1111 Thursday
-#>  5: 2022-01-17      551.7701   Monday
-#>  6: 2022-01-20      643.9910 Thursday
-#>  7: 2022-01-24      741.9150   Monday
-#>  8: 2022-01-27      770.1810 Thursday
-#>  9: 2022-01-31      627.1725   Monday
-#> 10: 2022-02-03      561.2913 Thursday
-#> 11: 2022-02-07      357.1349   Monday
-#> 12: 2022-02-10      540.7527 Thursday
-#> 13: 2022-02-14            NA   Monday
-#> 14: 2022-02-17      554.2492 Thursday
-#> 15: 2022-02-21      414.7324   Monday
-#> 16: 2022-02-24      784.3849 Thursday
-#> 17: 2022-02-28      732.9672   Monday
-#> 18: 2022-03-03     1376.6457 Thursday
-#> 19: 2022-03-07     1420.4823   Monday
-#> 20: 2022-03-10     2128.1925 Thursday
+head(measurements_sparse, 10)
+#>           date concentration
+#>  1: 2022-01-03      455.7580
+#>  2: 2022-01-06      330.7298
+#>  3: 2022-01-10      387.6885
+#>  4: 2022-01-13      791.1111
+#>  5: 2022-01-17      551.7701
+#>  6: 2022-01-20      643.9910
+#>  7: 2022-01-24      741.9150
+#>  8: 2022-01-27      770.1810
+#>  9: 2022-01-31      627.1725
+#> 10: 2022-02-03      561.2913
+#>      weekday
+#>  1:   Monday
+#>  2: Thursday
+#>  3:   Monday
+#>  4: Thursday
+#>  5:   Monday
+#>  6: Thursday
+#>  7:   Monday
+#>  8: Thursday
+#>  9:   Monday
+#> 10: Thursday
 ```
 
 ### Modeling
@@ -133,7 +134,9 @@ function for each option. To see all available options, you can use
 
 ``` r
 component_functions("LOD")
-#> [1] "LOD_none()"          "LOD_assume()"        "LOD_estimate_dPCR()"
+#> [1] "LOD_none()"         
+#> [2] "LOD_assume()"       
+#> [3] "LOD_estimate_dPCR()"
 ```
 
 For example, we could assume a limit of detection of `2.56 gc/mL` (based
@@ -210,8 +213,9 @@ particles into the wastewater:
 
 ``` r
 ww_shedding <- model_shedding(
+  shedding_dist = shedding_dist_assume(
+    get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30), shedding_reference = "symptom_onset"),
   incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)),
-  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30)),
   load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
   load_variation = load_variation_estimate()
 )
@@ -220,8 +224,9 @@ ww_shedding <- model_shedding(
 The shedding module requires a number of assumptions (see explanations
 in the [README](../README.md)):
 
-- `incubation_dist` and `shedding_dist`: We use the same incubation
-  period and shedding load distribution as before.
+- `shedding_dist` and `incubation_dist`: We use the same shedding load
+  distribution (by days since symptom onset) as before. We also need to
+  assume an incubation period distribution.
 - `load_per_case`: The load per case assumption is calibrated based on
   observed case data. In the [README](../README.md), we supplied the
   case data via `sewer_data()`. Here, we now supply it directly to
@@ -446,8 +451,8 @@ ww_sewage <- model_sewage(
 )
 
 ww_shedding <- model_shedding(
+  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30), shedding_reference = "symptom_onset"),
   incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)),
-  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30)),
   load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
   load_variation = load_variation_estimate()
 )

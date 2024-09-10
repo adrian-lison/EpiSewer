@@ -110,32 +110,10 @@ Technology) to the public domain (CC BY 4.0 license).
 data_zurich <- SARS_CoV_2_Zurich
 ```
 
-#### Inspect the data
-
 The dataset contains `measurements`, `flows` and metadata about `units`.
 There is also data about confirmed `cases` in the catchment area, which
 we do not need explicitly, but can use to inform some of our prior
 assumptions.
-
-``` r
-str(data_zurich)
-#> List of 4
-#>  $ measurements:Classes 'data.table' and 'data.frame':   120 obs. of  2 variables:
-#>   ..$ date         : Date[1:120], format: "2022-01-01" "2022-01-02" ...
-#>   ..$ concentration: num [1:120] NA NA 456 748 574 ...
-#>   ..- attr(*, ".internal.selfref")=<externalptr> 
-#>  $ flows       :Classes 'data.table' and 'data.frame':   120 obs. of  2 variables:
-#>   ..$ date: Date[1:120], format: "2022-01-01" "2022-01-02" ...
-#>   ..$ flow: num [1:120] 3.41e+11 3.41e+11 1.59e+11 1.61e+11 3.72e+11 ...
-#>   ..- attr(*, ".internal.selfref")=<externalptr> 
-#>  $ cases       :Classes 'data.table' and 'data.frame':   120 obs. of  2 variables:
-#>   ..$ date : Date[1:120], format: "2022-01-01" "2022-01-02" ...
-#>   ..$ cases: num [1:120] NA NA 1520 1727 1639 ...
-#>   ..- attr(*, ".internal.selfref")=<externalptr> 
-#>  $ units       :List of 2
-#>   ..$ concentration: chr "gc/mL"
-#>   ..$ flow         : chr "mL/day"
-```
 
 ##### Measurements
 
@@ -168,7 +146,7 @@ we can still use it to estimate reproduction numbers from it.
 
 ``` r
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
-head(measurements_sparse, 20)
+head(measurements_sparse, 10)
 #>           date concentration  weekday
 #>  1: 2022-01-03      455.7580   Monday
 #>  2: 2022-01-06      330.7298 Thursday
@@ -180,16 +158,6 @@ head(measurements_sparse, 20)
 #>  8: 2022-01-27      770.1810 Thursday
 #>  9: 2022-01-31      627.1725   Monday
 #> 10: 2022-02-03      561.2913 Thursday
-#> 11: 2022-02-07      357.1349   Monday
-#> 12: 2022-02-10      540.7527 Thursday
-#> 13: 2022-02-14            NA   Monday
-#> 14: 2022-02-17      554.2492 Thursday
-#> 15: 2022-02-21      414.7324   Monday
-#> 16: 2022-02-24      784.3849 Thursday
-#> 17: 2022-02-28      732.9672   Monday
-#> 18: 2022-03-03     1376.6457 Thursday
-#> 19: 2022-03-07     1420.4823   Monday
-#> 20: 2022-03-10     2128.1925 Thursday
 ```
 
 ##### Flows
@@ -273,13 +241,17 @@ concentration measurements, we have to make a number of assumptions.
 
 - **Generation time distribution**: Distribution of the time between a
   primary infection and its resulting secondary infections
-- **Incubation period distribution**: Time between infection and symptom
-  onset. It is here assumed that shedding only starts with symptom
-  onset.
 - **Shedding load distribution**: Distribution of the load shed by an
-  average individual over time since their symptom onset.
+  average individual over time. We also have to specify whether this
+  distribution is relative to the day of infection or the day of symptom
+  onset (both exist in the literature). In our case, the shedding load
+  distribution is in days since symptom onset.
+- **Incubation period distribution**: Because our shedding load
+  distribution is referenced by the day of symptom onset, we also need
+  to make an assumption about the time between infection and symptom
+  onset.
 
-The generation time, incubation period and shedding load distribution
+The generation time, shedding load and incubation period distribution
 are all disease-specific and are typically obtained from literature.
 `EpiSewer` requires these distributions to be discretized, and offers
 specific functions to obtain discretized versions of popular continuous
@@ -288,8 +260,9 @@ probability distributions.
 ``` r
 ww_assumptions <- sewer_assumptions(
   generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
+  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
+  shedding_reference = "symptom_onset", # shedding load distribution is relative to symptom onset
   incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
-  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30)
 )
 ```
 
