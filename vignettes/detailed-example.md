@@ -254,8 +254,8 @@ The module has the following epidemiological components:
   available (see `component_functions("R")`).
 - `seeding`: The renewal model used by `EpiSewer` requires a seeding
   phase during which the reproduction number cannot be modeled. We thus
-  let the initial infections be estimated using a simple random walk
-  model.
+  let the initial infections be estimated using a simple geometric
+  random walk model.
 - `infection_noise`: We also model noise in the infection process,
   meaning that `EpiSewer` will fit a stochastic infection model. This
   makes sense in most cases.

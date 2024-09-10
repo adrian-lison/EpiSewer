@@ -32,11 +32,12 @@ functions. There are 5 types of modeling functions:
 - `_assume`: We assume the values for this component. For example, we
   can use `generation_dist_assume()` to provide a generation time
   distribution from the literature.
-- `_calibrate`: Similar to `_assume`, but instead of directly specifying
-  the value for an assumption, we calibrate it some other assumption or
-  data. For example, we can use `load_per_case_calibrate()` to calibrate
-  the shedding load per case to some case data (so that the estimated
-  infections will roughly match the observed case numbers).
+- `_calibrate`: This is similar to `_assume`, but instead of directly
+  specifying the value for an assumption, we calibrate it to some other
+  assumption or data. For example, we can use
+  `load_per_case_calibrate()` to calibrate the shedding load per case to
+  case data (so that the estimated infections will roughly match the
+  observed case numbers).
 - `_estimate`: We estimate this component as a parameter of the model.
   For example, we can use `noise_estimate()` if we don’t know how much
   noise the measurements have and want to estimate this from the data.
