@@ -236,7 +236,7 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
      if (!is.null(cases)) {
        modeldata <- tbc("load_per_case_cases_suggest", {
          measurements <- setnames(
-           copy(measurements),
+           copy(modeldata$.sewer_data$concentrations_observe$measurements),
            old = with(
              modeldata$.metainfo$measurements_cols,
              c(date_col, concentration_col)
@@ -245,7 +245,7 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
          )
 
          flows <- setnames(
-           copy(flows),
+           copy(modeldata$.sewer_data$flows_observe$flows),
            old = with(
              modeldata$.metainfo$flows_cols,
              c(date_col, flow_col)
@@ -284,7 +284,11 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
          modeldata$load_mean <- suggested_load
          modeldata$.metainfo$load_per_case <- suggested_load
        },
-       required = c(".metainfo$measurements_cols", ".metainfo$flows_cols"),
+       required = c(
+         ".metainfo$measurements_cols", ".metainfo$flows_cols",
+         ".sewer_data$concentrations_observe$measurements",
+         ".sewer_data$flows_observe$flows"
+         ),
        modeldata = modeldata
        )
      }
@@ -303,7 +307,7 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
      return(modeldata)
    },
    required_assumptions = "min_cases|cases",
-   required_data = c("min_cases|cases", "measurements", "flows"),
+   required_data = "min_cases|cases",
    modeldata = modeldata
   )
 
