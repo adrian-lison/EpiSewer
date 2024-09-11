@@ -930,7 +930,7 @@ plot_growth_rate <- function(results, median = FALSE, seeding = FALSE,
 
 #' Plot the epidemic doubling time
 #'
-#' @description Plots the estimated doubling time over time from a fitted
+#' @description Plots the estimated time-varying doubling time from a fitted
 #'   `EpiSewer` model.
 #'
 #' @param forecast Should forecasted doubling times be shown? Default is true.
@@ -939,9 +939,9 @@ plot_growth_rate <- function(results, median = FALSE, seeding = FALSE,
 #'
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the estimated doubling time over time. Can be
-#'   further manipulated using [ggplot2] functions to adjust themes and scales,
-#'   and to add further geoms.
+#' @return A ggplot object showing the estimated time-varying doubling time. Can
+#'   be further manipulated using [ggplot2] functions to adjust themes and
+#'   scales, and to add further geoms.
 #'
 #' @export
 plot_doubling_time <- function(results, median = FALSE, seeding = FALSE,
