@@ -38,70 +38,104 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
   T_shift_onset <- with(data, S)
   T_shift_load <- with(data, 0)
 
+  index_cols <- c(".draw", "date", "type", "seeding")
+
   # pseudo-randomize selected draws
   set.seed(which.min(fit$draws("R")))
   draw_ids <- sample.int(prod(dim(fit$draws("R[1]"))), ndraws)
 
-  summary[["R"]] <- get_summary_1d_date(
-    fit, "R",
-    T_shift = T_shift_R, .metainfo = .metainfo,
-    var_forecast = "R_forecast",
-    intervals = intervals
-  )
-  summary[["R"]]$seeding <- FALSE
-  summary[["R"]][1:(data$G), "seeding"] <- TRUE
-
-  summary[["R_samples"]] <- get_latent_trajectories(
+  # draws
+  R_samples <- get_latent_trajectories(
     fit, var = "R", var_forecast = "R_forecast",
     T_shift = T_shift_R,
-    .metainfo = .metainfo, draw_ids = draw_ids
+    .metainfo = .metainfo
   )
-  summary[["R_samples"]]$seeding <- FALSE
-  summary[["R_samples"]][1:(data$G * ndraws), "seeding"] <- TRUE
 
-  summary[["expected_infections"]] <- get_summary_1d_date(
-    fit, "iota",
-    T_shift = T_shift_latent, .metainfo = .metainfo,
-    var_forecast = "iota_forecast",
-    intervals = intervals
-  )
-  summary[["expected_infections"]]$seeding <- FALSE
-  summary[["expected_infections"]][1:(data$G * 2), "seeding"] <- TRUE
-
-  summary[["expected_infections_samples"]] <- get_latent_trajectories(
+  expected_I_samples <- get_latent_trajectories(
     fit,  var = "iota", var_forecast = "iota_forecast",
-    T_shift = T_shift_latent, .metainfo = .metainfo, draw_ids = draw_ids
+    T_shift = T_shift_latent, .metainfo = .metainfo
   )
-  summary[["expected_infections_samples"]]$seeding <- FALSE
-  summary[["expected_infections_samples"]][
-    1:(data$G * 2 * ndraws), "seeding"
-  ] <- TRUE
 
   if (data$I_sample) {
-    summary[["infections"]] <- get_summary_1d_date(
-      fit, "I",
-      T_shift = T_shift_latent, .metainfo = .metainfo,
-      var_forecast = "I_forecast",
-      intervals = intervals
-    )
-    summary[["infections"]]$seeding <- FALSE
-    summary[["infections"]][1:(data$G * 2), "seeding"] <- TRUE
-
-    summary[["infections_samples"]] <- get_latent_trajectories(
+    I_samples <- get_latent_trajectories(
       fit,  var = "I", var_forecast = "I_forecast",
-      T_shift = T_shift_latent, .metainfo = .metainfo, draw_ids = draw_ids
+      T_shift = T_shift_latent, .metainfo = .metainfo
     )
-    summary[["infections_samples"]]$seeding <- FALSE
-    summary[["infections_samples"]][
-      1:(data$G * 2 * ndraws), "seeding"
-    ] <- TRUE
-  } else {
-    summary[["infections"]] <- summary[["expected_infections"]]
-    summary[["infections_samples"]] <- summary[["expected_infections_samples"]]
-    colnames(summary[["infections_samples"]])[
-      colnames(summary[["infections_samples"]]) == "iota"
-      ] <- "I"
+  }  else {
+    I_samples <- setnames(copy(expected_I_samples), "iota", "I")
   }
+
+  all_samples <- Reduce(
+    function(...) merge(..., all = TRUE, by = c(".draw", "date", "type")),
+    list(R_samples, expected_I_samples, I_samples)
+    )
+  min_date <- all_samples[, min(date)]
+  last_seeding <- min_date + (data$G * 2)
+  all_samples[, seeding := date < last_seeding]
+  setcolorder(all_samples, c(".draw", "date", "type", "seeding"))
+  all_samples[, type := factor(type, levels = c("estimate", "forecast"))]
+
+  ## add growth rate
+  all_samples[, infectiousness := frollapply(
+      iota, FUN = weighted.mean, n = length(data$generation_dist),
+      weights = data$generation_dist
+      ), by = ".draw"]
+  all_samples[, growth_rate := (
+    log(infectiousness) - shift(log(infectiousness), type="lag")
+    ), by = ".draw"]
+  all_samples[, growth_rate := shift(
+    growth_rate, type="lead",
+    n = round(weighted.mean(1:length(data$generation_dist), data$generation_dist))
+    ), by = ".draw"]
+
+  ## add doubling time
+  all_samples[ , doubling_time := log(2)/growth_rate]
+
+  ## add days_growing
+  all_samples[
+    shift(R, type="lead") > 1 & R < 0, date_R_cross_1 := date - min_date
+  ]
+  all_samples[R <= 1, date_R_cross_1 := date - min_date]
+  all_samples[
+    , date_R_cross_1 := nafill(date_R_cross_1, type = "locf"), by = ".draw"
+  ]
+  all_samples[, date_R_cross_1 := min_date + date_R_cross_1]
+  all_samples[, days_growing := date - date_R_cross_1]
+  all_samples[, date_R_cross_1 := NULL]
+
+  summary[["samples"]] <- all_samples[.draw %in% draw_ids, ]
+
+  # summaries
+
+  summary[["R"]] <- summarize_samples_dt(
+    all_samples, index_cols = index_cols,
+    variable = "R", intervals = intervals, cols_end = c(2,3)
+  )[!(is.na(median) & type == "estimate")]
+
+  summary[["expected_infections"]] <- summarize_samples_dt(
+    all_samples, index_cols = index_cols,
+    variable = "iota", intervals = intervals, cols_end = c(2,3)
+  )[!(is.na(median) & type == "estimate")]
+
+  summary[["infections"]] <- summarize_samples_dt(
+    all_samples, index_cols = index_cols,
+    variable = "I", intervals = intervals, cols_end = c(2,3)
+  )[!(is.na(median) & type == "estimate")]
+
+  summary[["growth_rate"]] <- summarize_samples_dt(
+    all_samples, index_cols = index_cols,
+    variable = "growth_rate", intervals = intervals, cols_end = c(2,3)
+  )[!(is.na(median) & type == "estimate")]
+
+  summary[["doubling_time"]] <- summarize_samples_dt(
+    all_samples, index_cols = index_cols,
+    variable = "doubling_time", intervals = intervals, cols_end = c(2,3)
+  )[!(is.na(median) & type == "estimate")]
+
+  summary[["days_growing"]] <- summarize_samples_dt(
+    all_samples, index_cols = index_cols,
+    variable = "days_growing", intervals = intervals, cols_end = c(2,3)
+  )[!(is.na(median) & type == "estimate")]
 
   summary[["expected_load"]] <- get_summary_1d_date_log(
     fit, "pi_log",
