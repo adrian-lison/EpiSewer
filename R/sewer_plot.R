@@ -1284,3 +1284,79 @@ plot_prior_posterior <- function(result, param_name) {
 
   return(plot)
 }
+
+#' Plot a growth report
+#'
+#' @description For a given date, the growth report shows the probability that
+#'   infections have been growing for at least 3, 7, 14, 21, and 28 days,
+#'   respectively. The report uses a diverging bar plot which is scaled between
+#'   "very unlikely" (0% posterior probability) and "very likely" (100%
+#'   posterior probability).
+#'
+#' @param result Results object returned by [EpiSewer()] after model fitting. In
+#'   contrast to other plotting functions, this cannot be a list of multiple
+#'   result objects, because growth report plots are always for a single model
+#'   fit.
+#' @param date The date for which the growth report should be plotted. If NULL,
+#'   the most recent date for which a reliable report can be provided is
+#'   automatically selected, see `partial_prob`.
+#' @param partial_prob To select the most recent reliable date, we subtract a
+#'   certain quantile of the shedding load distribution from the current date.
+#'   For example, if `partial_prob=0.8` (default), we select the date for which
+#'   80% of the shedding load of individuals infected before this date has been
+#'   shed.
+#'
+#' @return A growth report plot showing the probability that infections have
+#'   been growing for at least 3, 7, 14, 21, and 28 days, respectively. Can be
+#'   further manipulated using [ggplot2] functions to adjust themes and scales,
+#'   and to add further geoms.
+#' @export
+plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
+  if (!(class(result) == "list" && "summary" %in% names(result))) {
+    cli::cli_abort(paste(
+      "For prior-posterior visualization,",
+      "please supply an `EpiSewer` results object."
+    ))
+  }
+  if (is.null(date)) {
+    # check that partial_prob between 0 and 1
+    if (partial_prob < 0 || partial_prob > 1) {
+      cli::cli_abort("The `partial_prob` argument must be between 0 and 1.")
+    }
+    tddist <- result$job$metainfo$total_delay_dist
+    partial_delay <- which(cumsum(tddist) >= partial_prob)[1] - 1
+    date_select <- result$job$metainfo$T_end_date - partial_delay
+  } else {
+    # check that date is in format %Y-%m-%d
+    date_select <- tryCatch(lubridate::ymd(date), error = function(e) {
+      cli::cli_abort("The date must be in format %Y-%m-%d.")
+    })
+  }
+  days <- forcats::fct_inorder(paste(c(3,7,14,21,28), "days"), ordered = TRUE)
+  result$summary$days_growing[date == date_select,] |>
+    ggplot() +
+    geom_hline(yintercept = -0.5, linetype = "solid") +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    geom_hline(yintercept = 0.5, linetype = "solid") +
+    geom_bar(aes(x=days[1], y=at_least_3 - 0.5, fill = (at_least_3-0.5)), stat="identity") +
+    geom_bar(aes(x=days[2], y=at_least_7 - 0.5, fill = (at_least_7-0.5)), stat="identity") +
+    geom_bar(aes(x=days[3], y=at_least_14 - 0.5, fill = (at_least_14-0.5)), stat="identity") +
+    geom_bar(aes(x=days[4], y=at_least_21 - 0.5, fill = (at_least_21-0.5)), stat="identity") +
+    geom_bar(aes(x=days[5], y=at_least_28 - 0.5, fill = (at_least_28-0.5)), stat="identity") +
+    scale_y_continuous(
+      breaks = seq(-0.5, 0.5, by = 0.25),
+      labels = c("very\nunlikely", "rather\nunlikely", "neutral", "rather\nlikely", "very\nlikely"),
+      expand = expansion(add=c(0.02, 0.02))) +
+    scale_fill_gradient2(low = "#006622", mid = "white", high = "#e60000") +
+    theme_bw() +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      axis.text.x = element_text(face = "bold"),
+      ) +
+    coord_cartesian(ylim = c(-0.5,0.5)) +
+    ggtitle(paste(
+      "Probability that until", format(as.Date(date_select), "%b %d, %Y"),
+      "infections have been growing for at least..."))
+}
