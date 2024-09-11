@@ -137,6 +137,19 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     variable = "days_growing", intervals = intervals, cols_end = c(2,3)
   )[!(is.na(median) & type == "estimate")]
 
+  days_growing_probs <- all_samples[
+    , setNames(lapply(
+      c(3,7,14,21,28),
+      function(d) sum(days_growing>=d, na.rm = T)/sum(!is.na(days_growing))
+      ), paste("at_least", c(3,7,14,21,28), sep = "_")),
+    by = c("date", "type", "seeding")
+  ]
+
+  summary[["days_growing"]] <- merge(
+    summary[["days_growing"]], days_growing_probs,
+    by = c("date", "type", "seeding")
+  )
+
   summary[["expected_load"]] <- get_summary_1d_date_log(
     fit, "pi_log",
     T_shift = T_shift_load, .metainfo = .metainfo,
