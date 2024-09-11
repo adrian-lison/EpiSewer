@@ -52,7 +52,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
   }
   if (draws) {
     data_to_plot <- combine_samples(
-      results, "infections_samples", draws, ndraws
+      results, "I", draws, ndraws
     )
   } else {
     data_to_plot <- combine_summaries(
@@ -68,7 +68,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
   }
 
   if (!seeding) {
-    data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
+    data_to_plot <- data_to_plot[seeding==FALSE, ]
   }
 
   if (!forecast) {
@@ -220,7 +220,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
   }
   if (draws) {
     data_to_plot <- combine_samples(
-      results, "R_samples", draws, ndraws
+      results, "R", draws, ndraws
     )
   } else {
     data_to_plot <- combine_summaries(
@@ -236,7 +236,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
   }
 
   if (!seeding) {
-    data_to_plot <- data_to_plot[!data_to_plot$seeding, ]
+    data_to_plot <- data_to_plot[seeding==FALSE, ]
   }
 
   if (!forecast) {
@@ -868,11 +868,125 @@ plot_load <- function(results, median = FALSE,
                       facet_models = FALSE, facet_direction = "rows",
                       base_model = "", model_levels = NULL,
                       intervals = c(0.5, 0.95)) {
+  plot_time_series(
+    results,
+    variable = "expected_load",
+    variable_name = "Load [gene copies / day]",
+    yintercept = NULL,
+    median = median,
+    seeding = FALSE,
+    forecast = forecast,
+    forecast_horizon = forecast_horizon,
+    date_margin_left = date_margin_left,
+    date_margin_right = date_margin_right,
+    facet_models = facet_models,
+    facet_direction = facet_direction,
+    base_model = base_model,
+    model_levels = model_levels,
+    intervals = intervals
+  )
+}
+
+#' Plot the epidemic growth rate
+#'
+#' @description Plots the estimated growth rate over time from a fitted
+#'   `EpiSewer` model.
+#'
+#' @param forecast Should forecasted growth rates be shown? Default is true.
+#'   This requires that the model was fitted with a forecast horizon, see
+#'   [model_forecast()].
+#'
+#' @inheritParams plot_infections
+#'
+#' @return A ggplot object showing the estimated growth rate over time. Can be
+#'   further manipulated using [ggplot2] functions to adjust themes and scales,
+#'   and to add further geoms.
+#'
+#' @export
+plot_growth_rate <- function(results, median = FALSE, seeding = FALSE,
+                      forecast = TRUE, forecast_horizon = NULL,
+                      date_margin_left = 0, date_margin_right = 0,
+                      facet_models = FALSE, facet_direction = "rows",
+                      base_model = "", model_levels = NULL,
+                      intervals = c(0.5, 0.95)) {
+  plot_time_series(
+    results,
+    variable = "growth_rate",
+    variable_name = "Growth rate",
+    yintercept = 0,
+    median = median,
+    seeding = seeding,
+    forecast = forecast,
+    forecast_horizon = forecast_horizon,
+    date_margin_left = date_margin_left,
+    date_margin_right = date_margin_right,
+    facet_models = facet_models,
+    facet_direction = facet_direction,
+    base_model = base_model,
+    model_levels = model_levels,
+    intervals = intervals
+  )
+}
+
+#' Plot the epidemic doubling time
+#'
+#' @description Plots the estimated doubling time over time from a fitted
+#'   `EpiSewer` model.
+#'
+#' @param forecast Should forecasted doubling times be shown? Default is true.
+#'   This requires that the model was fitted with a forecast horizon, see
+#'   [model_forecast()].
+#'
+#' @inheritParams plot_infections
+#'
+#' @return A ggplot object showing the estimated doubling time over time. Can be
+#'   further manipulated using [ggplot2] functions to adjust themes and scales,
+#'   and to add further geoms.
+#'
+#' @export
+plot_doubling_time <- function(results, median = FALSE, seeding = FALSE,
+                             forecast = TRUE, forecast_horizon = NULL,
+                             date_margin_left = 0, date_margin_right = 0,
+                             facet_models = FALSE, facet_direction = "rows",
+                             base_model = "", model_levels = NULL,
+                             intervals = c(0.5, 0.95)) {
+  plt <- plot_time_series(
+    results,
+    variable = "doubling_time",
+    variable_name = "Doubling time",
+    yintercept = 0,
+    median = median,
+    seeding = seeding,
+    forecast = forecast,
+    forecast_horizon = forecast_horizon,
+    date_margin_left = date_margin_left,
+    date_margin_right = date_margin_right,
+    facet_models = facet_models,
+    facet_direction = facet_direction,
+    base_model = base_model,
+    model_levels = model_levels,
+    intervals = intervals
+  )
+  plt <- suppressMessages(plt + coord_cartesian(ylim = c(-100, 100)))
+}
+
+plot_time_series <- function(results, variable, variable_name = variable,
+                             yintercept = NULL,
+                             median = FALSE, seeding = FALSE,
+                      forecast = TRUE, forecast_horizon = NULL,
+                      date_margin_left = 0, date_margin_right = 0,
+                      facet_models = FALSE, facet_direction = "rows",
+                      base_model = "", model_levels = NULL,
+                      intervals = c(0.5, 0.95)) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
-  data_to_plot <- combine_summaries(results, "expected_load")
+  data_to_plot <- combine_summaries(results, variable)
   data_to_plot <- rename_intervals_plotting(data_to_plot, intervals)
+
+  if (!seeding) {
+    data_to_plot <- data_to_plot[seeding==FALSE, ]
+  }
 
   if (!forecast) {
     data_to_plot <- data_to_plot[type == "estimate",]
@@ -891,7 +1005,7 @@ plot_load <- function(results, median = FALSE,
   if (!is.null(model_levels)) {
     data_to_plot$model <- factor(
       data_to_plot$model, levels = model_levels, ordered = TRUE
-      )
+    )
   }
 
   if (!base_model %in% c("", as.character(data_to_plot$model))) {
@@ -903,12 +1017,13 @@ plot_load <- function(results, median = FALSE,
   data_base_model <- data_to_plot[model==base_model,]
   data_base_model <- data_base_model[
     ,setdiff(names(data_base_model), "model"), with = FALSE
-    ]
+  ]
 
   has_forecast <- "forecast" %in% data_to_plot$type
 
   plot <- ggplot(data_to_plot[model!=base_model,],
                  aes(x = date)) +
+    {if(!is.null(yintercept)) geom_hline(yintercept = yintercept, linetype = "dashed") } +
     theme_bw() +
     theme(legend.title = element_blank()) +
     scale_x_date(
@@ -916,7 +1031,7 @@ plot_load <- function(results, median = FALSE,
       date_breaks = "1 month", date_labels = "%b\n%Y"
     ) +
     xlab("Date") +
-    ylab("Load [gene copies / day]") +
+    ylab(variable_name) +
     coord_cartesian(xlim = c(xmin, xmax))
 
   if (base_model!="") {
