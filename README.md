@@ -8,13 +8,14 @@ license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/
 [![DOI](https://zenodo.org/badge/676114941.svg)](https://zenodo.org/doi/10.5281/zenodo.10569101)
 
 The `EpiSewer` R package provides a Bayesian generative model to
-estimate effective reproduction numbers from concentration measurements
-at a wastewater treatment plant (or other sampling site) over time. This
-allows to track the transmission dynamics of a pathogen in the
-associated catchment population. The `EpiSewer` model is tailored to the
-specifics of wastewater concentration measurements, offers comprehensive
-uncertainty quantification via MCMC sampling in `stan`, and provides
-easily configurable modeling components.
+estimate effective reproduction numbers and other epidemiological
+indicators from concentration measurements at a wastewater treatment
+plant (or other sampling site) over time. This allows to track the
+transmission dynamics of a pathogen in the associated catchment
+population. The `EpiSewer` model is tailored to the specifics of
+wastewater concentration measurements, offers comprehensive uncertainty
+quantification via MCMC sampling in `stan`, and provides easily
+configurable modeling components.
 
 <img src="man/figures/weekly_zurich_animated.gif" width="100%" />
 
@@ -41,7 +42,9 @@ easily configurable modeling components.
 **Infections**  
 ⭐ Stochastic infection model with overdispersion  
 ⭐ Flexible $R_t$ smoothing (random walk, exponential smoothing,
-splines)
+splines)  
+⭐ Epidemiological indicators: $R_t$, growth rate, doubling time, and
+more
 
 **Forecast**  
 ⭐ Probabilistic forecasts of $R_t$, infections, concentrations and more
@@ -359,12 +362,44 @@ plot_R(ww_result)
 <img src="man/figures/README-R-1.png" width="100%" />
 
 Note that the estimates for R go back further into the past than our
-observations. This is due to the delay from infection to shedding,
-i.e. concentration measurements observed today are mostly a signal of
+observations. This is due to the delay from infection to shedding, i.e.
+concentration measurements observed today are mostly a signal of
 infections in the past. This is also why the R estimates close to the
 present are strongly uncertain. The measurements observed until the
 present provide only a delayed signal about transmission dynamics, so
 the most recent R estimates are informed by only little data.
+
+#### Growth report
+
+We can also display a growth report which shows the probability that
+infections have been growing for a prolonged period of time. By default,
+`EpiSewer` selects the most recent date for which reliable estimates are
+possible as a reference.
+
+``` r
+plot_growth_report(ww_result)
+```
+
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" /> As
+the model was fitted at the end of the seasonal wave in Zurich, there is
+high posterior support that infections are currently not growing for a
+prolonged period of time.
+
+You can also display a growth report for other dates. Let’s for example
+have a look at the report for mid-Feburary 2022. Here we can see that
+there is strong posterior support that infections have been growing for
+at least a week. At the same time, it seems rather unlikely that they
+have already been growing for 3 weeks or longer.
+
+``` r
+plot_growth_report(ww_result, date = "2022-02-19")
+```
+
+<img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
+
+💡 `EpiSewer` also provides further indicators of transmission dynamics,
+see e.g. `plot_growth_rate()` and `plot_doubling_time()`. These can
+however be more volatile and sometimes difficult to interpret.
 
 #### Latent parameters
 
