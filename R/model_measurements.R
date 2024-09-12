@@ -741,7 +741,7 @@ noise_estimate_constant_var <-
       " comparison purposes with better models like ",
       cli_help("noise_estimate"), " or ", cli_help("noise_estimate_dPCR"), ".",
       " You can specify ",
-      "{.code noise_estimate_constant_var(warn=TRUE)} to disable this warning."
+      "{.code noise_estimate_constant_var(warn=FALSE)} to disable this warning."
       )))
     }
     return(noise_estimate_(
