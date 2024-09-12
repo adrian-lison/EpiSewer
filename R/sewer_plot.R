@@ -1347,7 +1347,7 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
       breaks = seq(-0.5, 0.5, by = 0.25),
       labels = c("very\nunlikely", "rather\nunlikely", "neutral", "rather\nlikely", "very\nlikely"),
       expand = expansion(add=c(0.02, 0.02))) +
-    scale_fill_gradient2(low = "#006622", mid = "white", high = "#e60000") +
+    scale_fill_gradient2(low = "#006622", mid = "white", high = "#e60000", limits = c(-0.5, 0.5)) +
     theme_bw() +
     theme(
       legend.position = "none",
