@@ -380,8 +380,8 @@ possible as a reference.
 plot_growth_report(ww_result)
 ```
 
-<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" /> As
-the model was fitted at the end of the seasonal wave in Zurich, there is
+<img src="man/figures/README-growth_report-1.png" width="100%" /> As the
+model was fitted at the end of the seasonal wave in Zurich, there is
 high posterior support that infections are currently not growing for a
 prolonged period of time.
 
@@ -395,7 +395,7 @@ have already been growing for 3 weeks or longer.
 plot_growth_report(ww_result, date = "2022-02-19")
 ```
 
-<img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
+<img src="man/figures/README-growth_report2-1.png" width="100%" />
 
 💡 `EpiSewer` also provides further indicators of transmission dynamics,
 see e.g. `plot_growth_rate()` and `plot_doubling_time()`. These can
