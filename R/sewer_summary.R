@@ -75,17 +75,19 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
   setcolorder(all_samples, c(".draw", "date", "type", "seeding"))
   all_samples[, type := factor(type, levels = c("estimate", "forecast"))]
 
+  gen_dist <- data$generation_dist
+
   ## add growth rate
   all_samples[, infectiousness := frollapply(
-      iota, FUN = weighted.mean, n = length(data$generation_dist),
-      weights = data$generation_dist
+      iota, FUN = weighted.mean, n = length(gen_dist),
+      weights = gen_dist
       ), by = ".draw"]
   all_samples[, growth_rate := (
     log(infectiousness) - shift(log(infectiousness), type="lag")
     ), by = ".draw"]
   all_samples[, growth_rate := shift(
     growth_rate, type="lead",
-    n = round(weighted.mean(1:length(data$generation_dist), data$generation_dist))
+    n = round(weighted.mean(1:length(gen_dist), gen_dist))
     ), by = ".draw"]
 
   ## add doubling time
@@ -96,6 +98,11 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     shift(R, type="lead") > 1 & R < 0, date_R_cross_1 := date - min_date
   ]
   all_samples[R <= 1, date_R_cross_1 := date - min_date]
+  all_samples[
+    shift(date, type="lead") == min_date + length(gen_dist) &
+      shift(R, type="lead") > 1,
+    date_R_cross_1 := date - min_date
+    ]
   all_samples[
     , date_R_cross_1 := nafill(date_R_cross_1, type = "locf"), by = ".draw"
   ]
