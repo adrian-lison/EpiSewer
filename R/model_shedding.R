@@ -91,8 +91,8 @@ incubation_dist_assume <-
         # this is a workaround because the incubation period is currently
         # not needed for anything else than for modeling the shedding
         # profile.
-        modeldata$L <- 0
-        modeldata$incubation_dist <- c(1)
+        modeldata$L <- 1
+        modeldata$incubation_dist <- c(1, 0)
         return(modeldata)
       }
 
