@@ -8,13 +8,14 @@ license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/
 [![DOI](https://zenodo.org/badge/676114941.svg)](https://zenodo.org/doi/10.5281/zenodo.10569101)
 
 The `EpiSewer` R package provides a Bayesian generative model to
-estimate effective reproduction numbers from concentration measurements
-at a wastewater treatment plant (or other sampling site) over time. This
-allows to track the transmission dynamics of a pathogen in the
-associated catchment population. The `EpiSewer` model is tailored to the
-specifics of wastewater concentration measurements, offers comprehensive
-uncertainty quantification via MCMC sampling in `stan`, and provides
-easily configurable modeling components.
+estimate effective reproduction numbers and other epidemiological
+indicators from concentration measurements at a wastewater treatment
+plant (or other sampling site) over time. This allows to track the
+transmission dynamics of a pathogen in the associated catchment
+population. The `EpiSewer` model is tailored to the specifics of
+wastewater concentration measurements, offers comprehensive uncertainty
+quantification via MCMC sampling in `stan`, and provides easily
+configurable modeling components.
 
 <img src="man/figures/weekly_zurich_animated.gif" width="100%" />
 
@@ -41,7 +42,9 @@ easily configurable modeling components.
 **Infections**  
 ⭐ Stochastic infection model with overdispersion  
 ⭐ Flexible $R_t$ smoothing (random walk, exponential smoothing,
-splines)
+splines)  
+⭐ Epidemiological indicators: $R_t$, growth rate, doubling time, and
+more
 
 **Forecast**  
 ⭐ Probabilistic forecasts of $R_t$, infections, concentrations and more
@@ -100,28 +103,33 @@ library(ggplot2)
 
 ### Data
 
-#### Load exemplary data
+#### Data requirements
 
-The below wastewater data are from Zurich, Switzerland. They are
-provided by EAWAG (Swiss Federal Institute of Aquatic Science and
+The below example of wastewater data is from Zurich, Switzerland. Data
+are provided by EAWAG (Swiss Federal Institute of Aquatic Science and
 Technology) to the public domain (CC BY 4.0 license).
 
 ``` r
 data_zurich <- SARS_CoV_2_Zurich
+names(data_zurich)
+#> [1] "measurements" "flows"        "cases"        "units"
 ```
 
-The dataset contains `measurements`, `flows` and metadata about `units`.
-There is also data about confirmed `cases` in the catchment area, which
-we do not need explicitly, but can use to inform some of our prior
-assumptions.
+- `measurements`: `EpiSewer` requires a time series of concentration
+  measurements. Measurements should ideally be in gc/mL (gc = gene
+  copies).
+- `flows`: Data about the daily wastewater volume flowing through the
+  sampling site (should be in mL/day). Flow data is highly recommended,
+  but not strictly necessary (see documentation of `flows_assume()`).
+- `cases`: Data about confirmed cases in the catchment area. This is
+  optional but can help informing some of our prior assumptions.
 
 ##### Measurements
 
 The `measurements` data contains daily viral concentration measurements
-(in gc/mL, gc = gene copies) for the SARS-CoV-2 N1 gene at the
-wastewater treatment plant in Zurich. Some days have missing
-measurements, but this is no problem: `EpiSewer` naturally accounts for
-missing values during estimation.
+(in gc/mL) for the SARS-CoV-2 N1 gene at the wastewater treatment plant
+in Zurich. Some days have missing measurements, but this is no problem:
+`EpiSewer` naturally accounts for missing values during estimation.
 
 ``` r
 data_zurich$measurements
@@ -141,8 +149,8 @@ data_zurich$measurements
 
 To show the handling of missing data more clearly, we make our data
 artificially sparse by keeping only measurements that were made on
-Mondays and Thursdays. This data only has two measurements per week, but
-we can still use it to estimate reproduction numbers from it.
+*Mondays* and *Thursdays.* This means we will only have two measurements
+per week.
 
 ``` r
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
@@ -184,7 +192,7 @@ data_zurich$flows
 #> 120: 2022-04-30 2.08685e+11
 ```
 
-Note: It’s not a problem if you only have flow data on dates with
+❗ Note: It’s not a problem if you only have flow data on dates with
 measurements. However, for each measured date, there must also be a flow
 value. If flow information is missing for measured dates, please make
 sure to impute it using a suitable method before passing it to
@@ -217,7 +225,8 @@ If you don’t have case data: don’t worry! In general, the assumed
 shedding load per case does not have a large effect on the effective
 reproduction number, and `EpiSewer` will use a robust default. You just
 have to keep in mind that the absolute number of infections estimated by
-`EpiSewer` should not be interpreted as true incidence or prevalence.
+`EpiSewer` should **not be interpreted as true incidence or
+prevalence**.
 
 #### Gather the data
 
@@ -242,14 +251,11 @@ concentration measurements, we have to make a number of assumptions.
 - **Generation time distribution**: Distribution of the time between a
   primary infection and its resulting secondary infections
 - **Shedding load distribution**: Distribution of the load shed by an
-  average individual over time. We also have to specify whether this
-  distribution is relative to the day of infection or the day of symptom
-  onset (both exist in the literature). In our case, the shedding load
-  distribution is in days since symptom onset.
+  average individual over time. We also specify that our distribution is
+  relative to the day of symptom onset.
 - **Incubation period distribution**: Because our shedding load
-  distribution is referenced by the day of symptom onset, we also need
-  to make an assumption about the time between infection and symptom
-  onset.
+  distribution is in *days since symptom onset*, we also need to make an
+  assumption about the time between infection and symptom onset.
 
 The generation time, shedding load and incubation period distribution
 are all disease-specific and are typically obtained from literature.
@@ -265,6 +271,11 @@ ww_assumptions <- sewer_assumptions(
   incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
 )
 ```
+
+💡 Sometimes, shedding load distributions are instead specified in *days
+since infection*. In that case, you can use
+`shedding_reference = "infection"` and don’t need to supply an
+incubation period distribution.
 
 ### Estimation
 
@@ -286,7 +297,9 @@ options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 500, iter_sampling = 500, chains = 4, seed = 42))
+  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(
+    iter_warmup = 500, iter_sampling = 500, chains = 4, seed = 42
+    ))
 )
 ```
 
@@ -349,12 +362,44 @@ plot_R(ww_result)
 <img src="man/figures/README-R-1.png" width="100%" />
 
 Note that the estimates for R go back further into the past than our
-observations. This is due to the delay from infection to shedding,
-i.e. concentration measurements observed today are mostly a signal of
+observations. This is due to the delay from infection to shedding, i.e.
+concentration measurements observed today are mostly a signal of
 infections in the past. This is also why the R estimates close to the
 present are strongly uncertain. The measurements observed until the
 present provide only a delayed signal about transmission dynamics, so
 the most recent R estimates are informed by only little data.
+
+#### Growth report
+
+We can also display a growth report which shows the probability that
+infections have been growing for a prolonged period of time. By default,
+`EpiSewer` selects the most recent date for which reliable estimates are
+possible as a reference.
+
+``` r
+plot_growth_report(ww_result)
+```
+
+<img src="man/figures/README-growth_report-1.png" width="100%" /> As the
+model was fitted at the end of the seasonal wave in Zurich, there is
+high posterior support that infections are currently not growing for a
+prolonged period of time.
+
+You can also display a growth report for other dates. Let’s for example
+have a look at the report for mid-February 2022. Here we can see that
+there is strong posterior support that infections have been growing for
+at least a week. At the same time, it seems rather unlikely that they
+have already been growing for 3 weeks or longer.
+
+``` r
+plot_growth_report(ww_result, date = "2022-02-19")
+```
+
+<img src="man/figures/README-growth_report2-1.png" width="100%" />
+
+💡 `EpiSewer` also provides further indicators of transmission dynamics,
+see e.g. `plot_growth_rate()` and `plot_doubling_time()`. These can
+however be more volatile and sometimes difficult to interpret.
 
 #### Latent parameters
 
@@ -454,7 +499,7 @@ ww_result$job$model
 #> 
 #> shedding
 #>  |- incubation_dist_assume
-#>  |- shedding_dist_assume
+#>  |- shedding_dist_assume (shedding_reference = symptom_onset)
 #>  |- load_per_case_calibrate
 #>  |- load_variation_estimate
 #> 
@@ -475,75 +520,38 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#>  [1] "R"                           "R_samples"                  
-#>  [3] "expected_infections"         "expected_infections_samples"
-#>  [5] "infections"                  "infections_samples"         
-#>  [7] "expected_load"               "expected_concentration"     
-#>  [9] "concentration"               "normalized_concentration"
+#>  [1] "samples"                  "R"                       
+#>  [3] "expected_infections"      "infections"              
+#>  [5] "growth_rate"              "doubling_time"           
+#>  [7] "days_growing"             "expected_load"           
+#>  [9] "expected_concentration"   "concentration"           
+#> [11] "normalized_concentration"
 ```
 
 For example, we can access the exact estimates for the reproduction
 number.
 
 ``` r
-ww_result$summary$R
-#>            date      mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#>   1: 2021-12-06 1.0497105 1.0440850  0.7324020 0.9372597  1.152850   1.395459
-#>   2: 2021-12-07 1.0504627 1.0428250  0.7470177 0.9427265  1.150043   1.380040
-#>   3: 2021-12-08 1.0513557 1.0414700  0.7572534 0.9485155  1.150755   1.377987
-#>   4: 2021-12-09 1.0523994 1.0445300  0.7605042 0.9530230  1.149892   1.369603
-#>   5: 2021-12-10 1.0536019 1.0476200  0.7645480 0.9585617  1.151843   1.366598
-#>  ---                                                                         
-#> 140: 2022-04-24 0.9908783 0.9840755  0.7743726 0.9103605  1.068210   1.238869
-#> 141: 2022-04-25 0.9908823 0.9864830  0.7554894 0.9075050  1.070715   1.259401
-#> 142: 2022-04-26 0.9908275 0.9854005  0.7305369 0.8984277  1.075215   1.288115
-#> 143: 2022-04-27 0.9906875 0.9831945  0.7067889 0.8923962  1.079940   1.311145
-#> 144: 2022-04-28 0.9906861 0.9843720  0.6770662 0.8848575  1.089002   1.357520
-#>          type seeding
-#>   1: estimate    TRUE
-#>   2: estimate    TRUE
-#>   3: estimate    TRUE
-#>   4: estimate    TRUE
-#>   5: estimate    TRUE
-#>  ---                 
-#> 140: estimate   FALSE
-#> 141: estimate   FALSE
-#> 142: estimate   FALSE
-#> 143: estimate   FALSE
-#> 144: estimate   FALSE
+head(ww_result$summary$R, 5)
+#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
+#> 1: 2021-12-06 1.049711 1.044085  0.7324020 0.9372597  1.152850   1.395459
+#> 2: 2021-12-07 1.050463 1.042825  0.7470177 0.9427265  1.150043   1.380040
+#> 3: 2021-12-08 1.051356 1.041470  0.7572534 0.9485155  1.150755   1.377987
+#> 4: 2021-12-09 1.052399 1.044530  0.7605042 0.9530230  1.149892   1.369603
+#> 5: 2021-12-10 1.053602 1.047620  0.7645480 0.9585617  1.151843   1.366598
+#>        type seeding
+#> 1: estimate    TRUE
+#> 2: estimate    TRUE
+#> 3: estimate    TRUE
+#> 4: estimate    TRUE
+#> 5: estimate    TRUE
 ```
 
 The `fitted` attribute provides access to all details of the fitted stan
-model. See
+model (see
 [cmdstanr](https://mc-stan.org/cmdstanr/reference/CmdStanMCMC.html) for
-details.
-
-``` r
-names(ww_result$fitted)
-#>  [1] ".__enclos_env__"            "functions"                 
-#>  [3] "runset"                     "num_chains"                
-#>  [5] "inv_metric"                 "diagnostic_summary"        
-#>  [7] "sampler_diagnostics"        "loo"                       
-#>  [9] "clone"                      "draws"                     
-#> [11] "output"                     "initialize"                
-#> [13] "code"                       "profiles"                  
-#> [15] "return_codes"               "metadata"                  
-#> [17] "time"                       "data_file"                 
-#> [19] "latent_dynamics_files"      "profile_files"             
-#> [21] "output_files"               "save_data_file"            
-#> [23] "save_profile_files"         "save_latent_dynamics_files"
-#> [25] "save_output_files"          "cmdstan_diagnose"          
-#> [27] "cmdstan_summary"            "summary"                   
-#> [29] "lp"                         "constrain_variables"       
-#> [31] "variable_skeleton"          "unconstrain_draws"         
-#> [33] "unconstrain_variables"      "hessian"                   
-#> [35] "grad_log_prob"              "log_prob"                  
-#> [37] "init_model_methods"         "init"                      
-#> [39] "save_object"                "expose_functions"          
-#> [41] "print"                      "num_procs"
-```
-
-For example, we can use this to show sampler diagnostics for each chain:
+details). For example, we can use this to show sampler diagnostics for
+each chain:
 
 ``` r
 ww_result$fitted$diagnostic_summary()
@@ -561,7 +569,7 @@ Finally, the `checksums` attribute gives us several checksums that
 uniquely identify the job which was run. These can be used to check
 whether two job results used the same or different models, input data,
 fitting options, or inits. If all checksums are identical (and the seed
-is not NULL), then the results should also be identical.
+is not `NULL`), then the results should also be identical.
 
 ``` r
 ww_result$checksums
@@ -569,7 +577,7 @@ ww_result$checksums
 #> [1] "26d196fc076d5a62250ef75adfafc374"
 #> 
 #> $input
-#> [1] "9badc2ce7121173440674cddd2983edc"
+#> [1] "fd1bc664ef6320ad9f8427d3a0f3d18c"
 #> 
 #> $fit_opts
 #> [1] "5309bbbc3cd1cc109eac60d2fc82de45"
@@ -578,5 +586,5 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "1d9c76935ccd48de3825db5a0a09e848"
+#> [1] "30505348d747504aa36fe8fb6bdfaaf3"
 ```
