@@ -386,7 +386,7 @@ high posterior support that infections are currently not growing for a
 prolonged period of time.
 
 You can also display a growth report for other dates. Let’s for example
-have a look at the report for mid-Feburary 2022. Here we can see that
+have a look at the report for mid-February 2022. Here we can see that
 there is strong posterior support that infections have been growing for
 at least a week. At the same time, it seems rather unlikely that they
 have already been growing for 3 weeks or longer.
