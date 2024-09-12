@@ -1331,6 +1331,11 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
     date_select <- tryCatch(lubridate::ymd(date), error = function(e) {
       cli::cli_abort("The date must be in format %Y-%m-%d.")
     })
+    if (!date_select %in% result$summary$days_growing[ , unique(date)]) {
+      cli::cli_abort(paste0(
+        "The date ", date, " is not available in the model results."
+      ))
+    }
   }
   days <- forcats::fct_inorder(paste(c(3,7,14,21,28), "days"), ordered = TRUE)
   result$summary$days_growing[date == date_select,] |>
