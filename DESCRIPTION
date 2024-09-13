@@ -38,10 +38,11 @@ Imports:
     purrr (>= 1.0.1)
 Suggests:
     testthat (>= 3.0.0),
-    zoo,
-    bookdown
+    zoo
 Config/Needs/website:
-    r-lib/pkgdown
+    r-lib/pkgdown,
+    hadley/emo,
+    draw
 Remotes:
     stan-dev/cmdstanr
 SystemRequirements:
@@ -49,3 +50,4 @@ SystemRequirements:
 LazyData: true
 Config/testthat/edition: 3
 URL: https://adrian-lison.github.io/EpiSewer/, https://github.com/adrian-lison/EpiSewer
+BugReports: https://github.com/adrian-lison/EpiSewer/issues

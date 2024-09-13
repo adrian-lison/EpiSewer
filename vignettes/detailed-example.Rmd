@@ -279,7 +279,17 @@ Note that this time we don't need a `data` or `assumptions` argument, because we
 The above model is identical to the default model fitted in the [README](../README.md), so we don't repeat the results again.
 
 ```{r, eval = TRUE, include = FALSE}
-ww_result <- readRDS(here::here("data", "result_example.rds"))
+ww_result <- EpiSewer(
+  measurements = ww_measurements,
+  sampling = ww_sampling,
+  sewage = ww_sewage,
+  shedding = ww_shedding,
+  infections = ww_infections,
+  forecast = ww_forecast,
+  fit_opts = ww_fit_opts,
+  results_opts = ww_results_opts,
+  run_fit = FALSE
+)
 ```
 
 Remember that you can print a summary of the full modeling details from the job object:
