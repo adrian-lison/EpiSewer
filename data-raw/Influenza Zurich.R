@@ -1,4 +1,5 @@
 source("local/local_data.R")
+library(data.table)
 
 WW_data <- read_local_data_EAWAG()
 
@@ -29,4 +30,20 @@ Influenza_A_Zurich <- list(
 )
 
 usethis::use_data(Influenza_A_Zurich, overwrite = TRUE)
+
+measurements <- copy(Influenza_A_Zurich$measurements)
+measurements[,is_outlier := FALSE]
+measurements[date %in% as.Date(c("2023-01-17", "2023-02-19")), is_outlier := TRUE]
+measurements <- measurements[date <= as.Date("2022-12-19")]
+ww_data_influenza_Zurich <- sewer_data(measurements = measurements, flows = Influenza_A_Zurich$flows)
+usethis::use_data(ww_data_influenza_Zurich, overwrite = TRUE)
+
+generation_dist <- get_discrete_gamma_shifted(gamma_mean = 2.6, gamma_sd = 1.5, maxX = 8)
+shedding_dist <- get_discrete_gamma(gamma_mean = 2.491217, gamma_sd = 1.004283, maxX = 6)
+ww_assumptions_influenza_Zurich <- sewer_assumptions(
+  generation_dist = generation_dist,
+  shedding_dist = shedding_dist,
+  shedding_reference = "infection"
+)
+usethis::use_data(ww_assumptions_influenza_Zurich, overwrite = TRUE)
 
