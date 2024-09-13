@@ -65,10 +65,8 @@ and `R_estimate_approx` (approximation of renewal model).
 
 ``` r
 EpiSewer::component_functions("R")
-#> [1] "R_estimate_approx()" 
-#> [2] "R_estimate_rw()"     
-#> [3] "R_estimate_splines()"
-#> [4] "R_estimate_ets()"
+#> [1] "R_estimate_splines()" "R_estimate_ets()"    
+#> [3] "R_estimate_approx()"  "R_estimate_rw()"
 ```
 
 #### ❗ Modeling restrictions

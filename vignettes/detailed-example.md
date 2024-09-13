@@ -35,28 +35,17 @@ on Mondays and Thursdays to test `EpiSewer` on sparse data.
 ``` r
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
 head(measurements_sparse, 10)
-#>           date concentration
-#>  1: 2022-01-03      455.7580
-#>  2: 2022-01-06      330.7298
-#>  3: 2022-01-10      387.6885
-#>  4: 2022-01-13      791.1111
-#>  5: 2022-01-17      551.7701
-#>  6: 2022-01-20      643.9910
-#>  7: 2022-01-24      741.9150
-#>  8: 2022-01-27      770.1810
-#>  9: 2022-01-31      627.1725
-#> 10: 2022-02-03      561.2913
-#>      weekday
-#>  1:   Monday
-#>  2: Thursday
-#>  3:   Monday
-#>  4: Thursday
-#>  5:   Monday
-#>  6: Thursday
-#>  7:   Monday
-#>  8: Thursday
-#>  9:   Monday
-#> 10: Thursday
+#>           date concentration  weekday
+#>  1: 2022-01-03      455.7580   Monday
+#>  2: 2022-01-06      330.7298 Thursday
+#>  3: 2022-01-10      387.6885   Monday
+#>  4: 2022-01-13      791.1111 Thursday
+#>  5: 2022-01-17      551.7701   Monday
+#>  6: 2022-01-20      643.9910 Thursday
+#>  7: 2022-01-24      741.9150   Monday
+#>  8: 2022-01-27      770.1810 Thursday
+#>  9: 2022-01-31      627.1725   Monday
+#> 10: 2022-02-03      561.2913 Thursday
 ```
 
 ### Modeling
@@ -134,8 +123,7 @@ function for each option. To see all available options, you can use
 
 ``` r
 component_functions("LOD")
-#> [1] "LOD_none()"         
-#> [2] "LOD_assume()"       
+#> [1] "LOD_none()"          "LOD_assume()"       
 #> [3] "LOD_estimate_dPCR()"
 ```
 
@@ -407,7 +395,7 @@ ww_result$job$model
 #> 
 #> shedding
 #>  |- incubation_dist_assume
-#>  |- shedding_dist_assume
+#>  |- shedding_dist_assume (shedding_reference = symptom_onset)
 #>  |- load_per_case_calibrate
 #>  |- load_variation_estimate
 #> 

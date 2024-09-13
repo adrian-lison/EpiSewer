@@ -398,7 +398,7 @@ plot_growth_report(ww_result, date = "2022-02-19")
 <img src="man/figures/README-growth_report2-1.png" width="100%" />
 
 💡 `EpiSewer` also provides further indicators of transmission dynamics,
-see e.g. `plot_growth_rate()` and `plot_doubling_time()`. These can
+see e.g. `plot_growth_rate()` and `plot_doubling_time()`. These can
 however be more volatile and sometimes difficult to interpret.
 
 #### Latent parameters
@@ -574,7 +574,7 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "26d196fc076d5a62250ef75adfafc374"
+#> [1] "6346549bd7c2ac9a9d200503d7356a29"
 #> 
 #> $input
 #> [1] "fd1bc664ef6320ad9f8427d3a0f3d18c"
