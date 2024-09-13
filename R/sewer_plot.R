@@ -1200,7 +1200,7 @@ plot_LOD <- function(modeldata) {
 #'   functions to adjust themes and scales, and to add further geoms.
 #' @export
 plot_prior_posterior <- function(result, param_name) {
-  if (!(class(result) == "list" && "summary" %in% names(result))) {
+  if (!(class(result) == c("EpiSewerJobResult", "list") && "summary" %in% names(result))) {
     cli::cli_abort(paste(
       "For prior-posterior visualization,",
       "please supply an `EpiSewer` results object."
@@ -1315,7 +1315,7 @@ plot_prior_posterior <- function(result, param_name) {
 #'   adjust themes and scales, and to add further geoms.
 #' @export
 plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
-  if (!(class(result) == "list" && "summary" %in% names(result))) {
+  if (!(class(result) == c("EpiSewerJobResult", "list") && "summary" %in% names(result))) {
     cli::cli_abort(paste(
       "For prior-posterior visualization,",
       "please supply an `EpiSewer` results object."
