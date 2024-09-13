@@ -1,15 +1,22 @@
 
-# EpiSewer: Estimate Reproduction Numbers from Wastewater Measurements <img src='man/figures/EpiSewer_logo.png' align="right" height="140" />
+<a href='https://adrian-lison.github.io/EpiSewer/'><img src='man/figures/EpiSewer_logo.png' align="right" height="130" alt="EpiSewer package website"/></a>
+
+# EpiSewer: Estimate Epidemiological Indicators from Wastewater Measurements
+
+<!-- badges: start -->
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![MIT
 license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epinowcast/epinowcast/blob/master/LICENSE.md/)
 [![DOI](https://zenodo.org/badge/676114941.svg)](https://zenodo.org/doi/10.5281/zenodo.10569101)
+<!-- badges: end -->
+
+## About
 
 The `EpiSewer` R package provides a Bayesian generative model to
 estimate effective reproduction numbers and other epidemiological
-indicators from concentration measurements at a wastewater treatment
+parameters from concentration measurements at a wastewater treatment
 plant (or other sampling site) over time. This allows to track the
 transmission dynamics of a pathogen in the associated catchment
 population. The `EpiSewer` model is tailored to the specifics of
