@@ -11,7 +11,7 @@ Note that below, the full model with all options is specified, while `EpiSewer` 
 
 ## Infections module
 
-### Reproduction number ($R_t$)
+### Reproduction number
 
 #### Link function
 The model employs a link function to ensure that $R_t>0$ regardless of the smoothing approach used. An obvious choice for this is the log link, which however has the disadvantage that it implies an asymmetric prior on changes in $R_t$ (for example, a change from $R_t=2$ to $R_t=1$ would be much more likely than a change from $R_t=1$ to $R_t=2$). `EpiSewer` therefore provides alternative link functions which are configured to behave approximately like the identity function around $R_t=1$ but ensure that $R_t>0$.
