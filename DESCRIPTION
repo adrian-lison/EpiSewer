@@ -40,7 +40,7 @@ Suggests:
     testthat (>= 3.0.0),
     zoo
 Config/Needs/website:
-    r-lib/pkgdown (>= 2.1.0)
+    r-lib/pkgdown
 Remotes:
     stan-dev/cmdstanr
 SystemRequirements:
