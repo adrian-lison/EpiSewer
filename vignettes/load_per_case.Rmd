@@ -1,0 +1,33 @@
+#### Shedding load per case
+In addition to the shedding load distribution, we also require a scaling factor 
+that describes how much total viral material is shed by the average infected 
+individual and is detectable at the sampling site. We call this scaling factor
+*shedding load per case* because it scales the estimated number of cases/infections
+in our model. The shedding load per case (gc/person) depends both on biological factors as 
+well as on the sewage system.
+
+Fortunately, if we are only interested in the effective reproduction number, 
+a rough estimate for the shedding load per case is sufficient: 
+getting it wrong cannot strongly bias the reproduction number estimates, and 
+will distort the uncertainty of estimates only in rather extreme cases.
+
+If we also have case data available (ideally catchment-specific, or we might
+down-scale case counts from a higher aggregation level to roughly the size
+of our catchment), then we can use the function `suggest_load_per_case` to 
+obtain a rough estimate of a suitable shedding load per case. The argument 
+`ascertainment_prop` can be used to account for underdetection of infections. 
+For simplicity, we here assume `ascertainment_prop=1`, meaning that 100% of 
+infections become confirmed cases (which is often not realistic).
+```{r}
+suggest_load_per_case(
+  data_zurich$measurements,
+  data_zurich$cases,
+  data_zurich$flows,
+  ascertainment_prop = 1
+)
+```
+
+Hence we will assume `1e+11 gc/person` as the average shedding load.
+```{r}
+load_per_case <- 1e+11
+```

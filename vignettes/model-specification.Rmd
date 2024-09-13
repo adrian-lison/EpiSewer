@@ -1,0 +1,196 @@
+---
+output: github_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "figures/specification-",
+  out.width = "100%",
+  dpi = 330,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+# Modeling in EpiSewer
+
+This is a conceptual overview over the modeling functionality in `EpiSewer`. See [here](model-definition.md) for a mathematical definition of the underlying generative model, and [here](detailed-example.md) for an example vignette.
+
+```{r, warning = FALSE, echo = FALSE}
+library(EpiSewer)
+```
+
+```{r, eval = TRUE, include = FALSE}
+require(emo)
+library(draw)
+drawSettings(pageWidth = 18, pageHeight = 3, units = "inches")
+```
+
+```{r, echo = FALSE, warning=FALSE}
+textInf <- paste(paste("-", rlang::fn_fmls_names(EpiSewer::model_infections)), collapse = "\n")
+textShed <- paste(paste("-", rlang::fn_fmls_names(EpiSewer::model_shedding)), collapse = "\n")
+textSewage <- paste(paste("-", rlang::fn_fmls_names(EpiSewer::model_sewage)), collapse = "\n")
+textSampl <- paste(paste("-", rlang::fn_fmls_names(EpiSewer::model_sampling)), collapse = "\n")
+textMeas <- paste(paste("-", rlang::fn_fmls_names(EpiSewer::model_measurements)), collapse = "\n")
+textForc <- paste(paste("-", rlang::fn_fmls_names(EpiSewer::model_forecast)), collapse = "\n")
+```
+
+## Modules
+`EpiSewer` uses 5 different modules to describe the data generating process behind the wastewater measurements: `infections`, `shedding`, `sewage`, `sampling`, and `measurements`. There is a 6th module to specify `forecast` functionality. Each of these modules consists of a number of module components, as shown below.
+
+```{r model, eval = TRUE, echo = FALSE, fig.width=18, fig.height=3}
+start_x = 1.5
+w = 2
+gap = 1
+s = w + gap
+fontsize1 <- 17
+fontsize2 <- 15
+
+drawPage()
+drawText(x = start_x - 1.4, y = 1.5, angle = 90, text = "modules", hjust = 0, size = fontsize1, face = "bold")
+drawText(x = start_x - 1.4, y = 1.3, angle = 90, text = "components", hjust = 1, size = fontsize2)
+
+# infections
+drawBox(x = start_x, y = 2, width = 2, height = 1, lineWidth = 2)
+drawText(x = start_x, y = 2, text = "infections", size = fontsize1, face = "bold")
+drawText(x = start_x - 1, y = 1.3, text = textInf, size = fontsize2, hjust = 0, vjust = 1)
+
+drawLine(x = c(start_x + w/2,start_x + w/2 + gap), y = 2, arrowEnds = "last", arrowLength = 0.3, lineWidth = 2)
+
+# shedding
+drawBox(x = start_x + s, y = 2, width = 2, height = 1, lineWidth = 2)
+drawText(x = start_x + s, y = 2, text = "shedding", size = fontsize1, face = "bold")
+drawText(x = start_x + s - 1, y = 1.3, text = textShed, size = fontsize2, hjust = 0, vjust = 1)
+
+drawLine(x = c(start_x + s + w/2,start_x + s + w/2 + gap), y = 2, arrowEnds = "last", arrowLength = 0.3, lineWidth = 2)
+
+# sewage
+drawBox(x = start_x + 2*s, y = 2, width = 2, height = 1, lineWidth = 2)
+drawText(x = start_x + 2*s, y = 2, text = "sewage", size = fontsize1, face = "bold")
+drawText(x = start_x + 2*s - 1, y = 1.3, text = textSewage, size = fontsize2, hjust = 0, vjust = 1)
+
+drawLine(x = c(start_x + 2*s + w/2,start_x + 2*s + w/2 + gap), y = 2, arrowEnds = "last", arrowLength = 0.3, lineWidth = 2)
+
+# sampling
+drawBox(x = start_x + 3*s, y = 2, width = 2, height = 1, lineWidth = 2)
+drawText(x = start_x + 3*s, y = 2, text = "sampling", size = fontsize1, face = "bold")
+drawText(x = start_x + 3*s - 1, y = 1.3, text = textSampl, size = fontsize2, hjust = 0, vjust = 1)
+
+drawLine(x = c(start_x + 3*s + w/2,start_x + 3*s + w/2 + gap), y = 2, arrowEnds = "last", arrowLength = 0.3, lineWidth = 2)
+
+# measurements
+drawBox(x = start_x + 4*s, y = 2, width = 2, height = 1, lineWidth = 2)
+drawText(x = start_x + 4*s, y = 2, text = "measurements", size = fontsize1, face = "bold")
+drawText(x = start_x + 4*s - 1, y = 1.3, text = textMeas, size = fontsize2, hjust = 0, vjust = 1)
+
+drawLine(x = start_x + 4.5*s, y = c(0.2,2.7), lineWidth = 2)
+
+# forecast
+drawBox(x = start_x + 5*s, y = 2, width = 2, height = 1, lineWidth = 2)
+drawText(x = start_x + 5*s, y = 2, text = "forecast", size = fontsize1, face = "bold")
+drawText(x = start_x + 5*s - 1, y = 1.3, text = textForc, size = fontsize2, hjust = 0, vjust = 1)
+```
+
+The modules are defined using their corresponding module function, i.e. by 
+calling `model_infections()`, `model_shedding()`, `model_sewage()`, `model_sampling()`, `model_measurements()`, or `model_forecast()`.
+
+## Modeling functions
+Components in a module can be specified using suitable modeling functions.
+There are 5 types of modeling functions:
+
+- `_observe`: We provide observation data for this component. For example, we can use `concentrations_observe()` if we have observed concentration measurements and want to fit the model to them.
+- `_assume`: We assume the values for this component. For example, we can use `generation_dist_assume()` to provide a generation time distribution from the literature.
+- `_calibrate`: This is similar to `_assume`, but instead of directly specifying the value for an assumption, we calibrate it to some other assumption or data. For example, we can use `load_per_case_calibrate()` to calibrate the shedding load per case to case data (so that the estimated infections will roughly match the observed case numbers).
+- `_estimate`: We estimate this component as a parameter of the model. For example, we can use 
+`noise_estimate()` if we don't know how much noise the measurements have and want to estimate this from the data.
+- `_none`: We do not model this component. For example, we can use `sample_effects_none()` if we don't want to model any sample effects on the measurements.
+
+To find out which modeling functions are available for a given component, you can consult the documentation or use the helper `component_functions()`:
+```{r}
+EpiSewer::component_functions("infection_noise")
+```
+
+#### `r emo::ji("bulb")` Multiple modeling options
+Some components have multiple versions of the same modeling function type. For example, there are currently three approaches to estimate the reproduction number, namely `R_estimate_splines` (smoothing splines), `R_estimate_rw` (random walk), `R_estimate_ets` (exponential smoothing), and `R_estimate_approx` (approximation of renewal model).
+
+```{r}
+EpiSewer::component_functions("R")
+```
+
+#### `r emo::ji("exclamation_mark")` Modeling restrictions
+Not all components support all modeling types. For example, `EpiSewer` currently only offers `generation_dist_assume`, but not `generation_dist_estimate`, `generation_dist_calibrate`, or `generation_dist_observe`.
+
+```{r}
+EpiSewer::component_functions("generation_dist")
+```
+
+This is because estimating the generation time distribution from data is not yet supported (but may be added in the future).
+
+## Data and assumptions
+
+The `sewer_data()` and `sewer_assumptions()` functions are convenience functions that allow you to collect all observation data and modeling assumptions in one place. This can improve overview and allows to run `EpiSewer` under its default settings without repeating the component definitions:
+
+```{r, eval = FALSE}
+ww_data <- sewer_data(
+  measurements = SARS_CoV_2_Zurich$measurements,
+  flows = SARS_CoV_2_Zurich$flows,
+  cases = SARS_CoV_2_Zurich$cases # optional
+  )
+
+ww_assumptions <- sewer_assumptions(
+  generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
+  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
+  shedding_reference = "symptom_onset",
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
+)
+
+EpiSewer(
+  data = ww_data,
+  assumptions = ww_assumptions
+)
+```
+
+What happens under the hood is that when individual model components are not provided with the data or assumptions they need, they search the data and assumption arguments passed to the `EpiSewer` function.
+
+`r emo::ji("bulb")` It is always possible to mix both approaches and specify data or assumptions explicitly in the model component:
+
+```{r, eval = FALSE}
+# Leave out flows from the data
+ww_data <- sewer_data(
+  measurements = SARS_CoV_2_Zurich$measurements,
+  #flows = SARS_CoV_2_Zurich$flows
+  cases = SARS_CoV_2_Zurich$cases
+)
+
+# Leave out the generation time distribution
+ww_assumptions <- sewer_assumptions(
+  #generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
+  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
+  shedding_reference = "symptom_onset",
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
+)
+
+# Provide flows directly to sewage module
+ww_sewage <- model_sewage(
+  flows = flows_observe(SARS_CoV_2_Zurich$flows)
+)
+
+# Provide generation time distribution directly to infections module
+ww_infections <- model_infections(
+  generation_dist = generation_dist_assume(
+    get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)
+  )
+)
+
+# Combine everything
+result <- EpiSewer(
+  data = ww_data,
+  assumptions = ww_assumptions,
+  sewage = ww_sewage,
+  infections = ww_infections
+)
+```
+
+Note that if the same data or assumptions are supplied via the `sewer_data()`/`sewer_assumptions()` *and* the individual component, `EpiSewer` will compare both arguments and throw an error if they differ.
