@@ -1,4 +1,4 @@
-Detailed EpiSewer example
+Detailed example
 ================
 
 This vignette repeats the introductory example from the

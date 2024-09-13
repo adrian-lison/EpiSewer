@@ -41,7 +41,8 @@ Suggests:
     zoo
 Config/Needs/website:
     r-lib/pkgdown,
-    hadley/emo
+    hadley/emo,
+    here
 Remotes:
     stan-dev/cmdstanr
 SystemRequirements:

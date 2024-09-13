@@ -12,6 +12,8 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE
 )
+
+here::i_am("README.Rmd")
 ```
 
 ```{r, eval = TRUE, include = FALSE}
@@ -239,11 +241,11 @@ ww_result <- EpiSewer(
 `r emo::ji("bulb")` We are here using a shorthand version of the `EpiSewer()` function which uses all available default settings. To find out how the `EpiSewer` model can be customized, see the [model specification](vignettes/model-specification.md) and [detailed example](vignettes/detailed-example.md) vignettes.
 
 ```{r, eval = FALSE, include = FALSE}
-saveRDS(ww_result, file.path("data", "result_example.rds"))
+saveRDS(ww_result, here::here("data", "result_example.rds"))
 ```
 
 ```{r, eval = TRUE, include = FALSE}
-ww_result <- readRDS(file.path("data", "result_example.rds"))
+ww_result <- readRDS(here::here("data", "result_example.rds"))
 ```
 
 ### Plotting the results

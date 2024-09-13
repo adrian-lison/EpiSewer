@@ -1,5 +1,5 @@
-
-# Modeling in EpiSewer
+Modeling in EpiSewer
+================
 
 This is a conceptual overview over the modeling functionality in
 `EpiSewer`. See [here](model-definition.md) for a mathematical
