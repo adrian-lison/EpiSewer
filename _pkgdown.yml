@@ -1,8 +1,12 @@
 url: https://adrian-lison.github.io/EpiSewer/
 template:
   bootstrap: 5
-  bootswatch: sandstone
-  math-rendering: mathjax
+  bslib:
+    bootswatch: flatly
+    pkgdown-nav-height: 80px
+    primary: "#1f407a"
+    secondary: "#53a8ed"
+    success: "#53a8ed"
 
 home:
   sidebar:
