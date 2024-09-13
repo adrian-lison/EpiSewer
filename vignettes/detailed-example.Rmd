@@ -13,8 +13,6 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE
 )
-
-here::i_am("vignettes/detailed-example.Rmd")
 ```
 
 ```{r, eval = TRUE, include = FALSE}
