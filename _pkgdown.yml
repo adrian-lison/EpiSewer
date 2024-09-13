@@ -4,14 +4,16 @@ template:
   bslib:
     bootswatch: flatly
     pkgdown-nav-height: 80px
-    primary: "#1f407a"
-    secondary: "#53a8ed"
-    success: "#53a8ed"
-
+    primary: '#1f407a'
+    secondary: '#53a8ed'
+    success: '#53a8ed'
 home:
   sidebar:
-    structure: [links, license, citation, authors]
-
+    structure:
+    - links
+    - license
+    - citation
+    - authors
 articles:
 - title: Introduction
   navbar: Introduction
@@ -23,41 +25,40 @@ articles:
   contents:
   - model-definition
   - load_per_case
-
 reference:
-- title: "EpiSewer"
+- title: EpiSewer
   contents:
   - sewer_data
   - sewer_assumptions
   - EpiSewer
-- title: "Measurements module"
-  desc: "Modeling functions for the measurement process"
+- title: Measurements module
+  desc: Modeling functions for the measurement process
   contents:
   - model_measurements
   - starts_with("concentrations_")
   - starts_with("noise_")
   - starts_with("LOD_")
-- title: "Sampling module"
-  desc: "Modeling functions for the sampling process"
+- title: Sampling module
+  desc: Modeling functions for the sampling process
   contents:
   - model_sampling
   - starts_with("sample_effects_")
-- title: "Sewage module"
-  desc: "Modeling functions for the sewage process"
+- title: Sewage module
+  desc: Modeling functions for the sewage process
   contents:
   - model_sewage
   - starts_with("flows_")
   - starts_with("residence_dist_")
-- title: "Shedding module"
-  desc: "Modeling functions for the shedding process"
+- title: Shedding module
+  desc: Modeling functions for the shedding process
   contents:
   - model_shedding
   - starts_with("shedding_dist_")
   - starts_with("incubation_dist_")
   - starts_with("load_per_case_")
   - starts_with("load_variation_")
-- title: "Infections module"
-  desc: "Modeling functions for the infection process"
+- title: Infections module
+  desc: Modeling functions for the infection process
   contents:
   - model_infections
   - R_estimate_splines
@@ -67,13 +68,13 @@ reference:
   - starts_with("generation_dist_")
   - starts_with("seeding_")
   - starts_with("infection_noise")
-- title: "Forecast module"
-  desc: "Modeling functions for specifying forecasts"
+- title: Forecast module
+  desc: Modeling functions for specifying forecasts
   contents:
   - model_forecast
   - starts_with("horizon_")
-- title: "Model fitting"
-  desc: "Functions to specify and run the sampling of EpiSewer models"
+- title: Model fitting
+  desc: Functions to specify and run the sampling of EpiSewer models
   contents:
   - set_fit_opts
   - sampler_stan_mcmc
@@ -81,8 +82,8 @@ reference:
   - set_results_opts
   - sewer_compile
   - run
-- title: "Plotting"
-  desc: "Functions for plotting"
+- title: Plotting
+  desc: Functions for plotting
   contents:
   - plot_R
   - plot_growth_report
@@ -94,17 +95,16 @@ reference:
   - plot_prior_posterior
   - plot_LOD
   - plot_sample_effects
-- title: "Specification"
-  desc: "Helper functions for specifying distributions and other assumptions"
+- title: Specification
+  desc: Helper functions for specifying distributions and other assumptions
   contents:
   - starts_with("get_discrete_")
-  -  suggest_load_per_case
-- title: "Preprocessing"
-  desc: "Functions for preprocessing data"
-  contents:
-  - mark_outlier_spikes_median
-- title: "Utilities"
-  desc: "Utility functions"
+  - suggest_load_per_case
+- title: Preprocessing
+  desc: Functions for preprocessing data
+  contents: mark_outlier_spikes_median
+- title: Utilities
+  desc: Utility functions
   contents:
   - component_functions
   - modeldata_init
