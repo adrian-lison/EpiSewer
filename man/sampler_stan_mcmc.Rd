@@ -56,27 +56,25 @@ using the Stan functions \code{reduce_sum()} or \code{map_rect()}). This is in
 contrast with \code{parallel_chains}, which specifies the number of chains to
 run in parallel. The actual number of CPU cores used is
 \code{parallel_chains*threads_per_chain}. For an example of using threading see
-the Stan case study
-\href{https://mc-stan.org/users/documentation/case-studies/reduce_sum_tutorial.html}{Reduce Sum: A Minimal Example}.}
+the Stan case study \href{https://mc-stan.org/users/documentation/case-studies/reduce_sum_tutorial.html}{Reduce Sum: A Minimal Example}.}
 
 \item{seed}{(positive integer(s)) A seed for the (P)RNG to pass to CmdStan.
 In the case of multi-chain sampling the single \code{seed} will automatically be
 augmented by the the run (chain) ID so that each chain uses a different
-seed. The exception is the transformed data block, which defaults to
-using same seed for all chains so that the same data is generated for all
-chains if RNG functions are used. The only time \code{seed} should be specified
-as a vector (one element per chain) is if RNG functions are used in
-transformed data and the goal is to generate \emph{different} data for each
-chain.}
+seed. The exception is the transformed data block, which defaults to using
+same seed for all chains so that the same data is generated for all chains
+if RNG functions are used. The only time \code{seed} should be specified as a
+vector (one element per chain) is if RNG functions are used in transformed
+data and the goal is to generate \emph{different} data for each chain.}
 
 \item{refresh}{(non-negative integer) The number of iterations between
 printed screen updates. If \code{refresh = 0}, only error messages will be
 printed.}
 
-\item{show_messages}{(logical) When \code{TRUE} (the default), prints all
-output during the sampling process, such as iteration numbers and elapsed times.
-If the output is silenced then the \code{\link[cmdstanr:fit-method-output]{$output()}} method of
-the resulting fit object can be used to display the silenced messages.}
+\item{show_messages}{(logical) When \code{TRUE} (the default), prints all output
+during the execution process, such as iteration numbers and elapsed times.
+If the output is silenced then the \code{\link[cmdstanr:fit-method-output]{$output()}} method
+of the resulting fit object can be used to display the silenced messages.}
 
 \item{show_exceptions}{(logical) When \code{TRUE} (the default), prints all
 informational messages, for example rejection of the current proposal.

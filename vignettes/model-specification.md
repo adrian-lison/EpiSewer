@@ -10,18 +10,21 @@ definition of the underlying generative model, and
 
 `EpiSewer` uses 5 different modules to describe the data generating
 process behind the wastewater measurements: `infections`, `shedding`,
-`sewage`, `sampling`, and `measurements`. Each of these modules consists
-of a number of module components, as shown below.
+`sewage`, `sampling`, and `measurements`. There is a 6th module to
+specify `forecast` functionality. Each of these modules consists of a
+number of module components, as shown below.
+
 <img src="figures/specification-model-1.png" width="100%" />
 
 The modules are defined using their corresponding module function,
 i.e. by calling `model_infections()`, `model_shedding()`,
-`model_sewage()`, `model_sampling()`, or `model_measurements()`.
+`model_sewage()`, `model_sampling()`, `model_measurements()`, or
+`model_forecast()`.
 
 ## Modeling functions
 
 Components in a module can be specified using suitable modeling
-functions. There are 4 types of modeling functions:
+functions. There are 5 types of modeling functions:
 
 - `_observe`: We provide observation data for this component. For
   example, we can use `concentrations_observe()` if we have observed
@@ -29,6 +32,12 @@ functions. There are 4 types of modeling functions:
 - `_assume`: We assume the values for this component. For example, we
   can use `generation_dist_assume()` to provide a generation time
   distribution from the literature.
+- `_calibrate`: This is similar to `_assume`, but instead of directly
+  specifying the value for an assumption, we calibrate it to some other
+  assumption or data. For example, we can use
+  `load_per_case_calibrate()` to calibrate the shedding load per case to
+  case data (so that the estimated infections will roughly match the
+  observed case numbers).
 - `_estimate`: We estimate this component as a parameter of the model.
   For example, we can use `noise_estimate()` if we don’t know how much
   noise the measurements have and want to estimate this from the data.
@@ -42,7 +51,8 @@ component, you can consult the documentation or use the helper
 
 ``` r
 EpiSewer::component_functions("infection_noise")
-#> [1] "infection_noise_none()"     "infection_noise_estimate()"
+#> [1] "infection_noise_none()"    
+#> [2] "infection_noise_estimate()"
 ```
 
 #### 💡 Multiple modeling options
@@ -50,19 +60,23 @@ EpiSewer::component_functions("infection_noise")
 Some components have multiple versions of the same modeling function
 type. For example, there are currently three approaches to estimate the
 reproduction number, namely `R_estimate_splines` (smoothing splines),
-`R_estimate_rw` (random walk), and `R_estimate_ets` (exponential
-smoothing).
+`R_estimate_rw` (random walk), `R_estimate_ets` (exponential smoothing),
+and `R_estimate_approx` (approximation of renewal model).
 
 ``` r
 EpiSewer::component_functions("R")
-#> [1] "R_estimate_ets()"     "R_estimate_splines()" "R_estimate_rw()"
+#> [1] "R_estimate_approx()" 
+#> [2] "R_estimate_rw()"     
+#> [3] "R_estimate_splines()"
+#> [4] "R_estimate_ets()"
 ```
 
 #### ❗ Modeling restrictions
 
 Not all components support all modeling types. For example, `EpiSewer`
 currently only offers `generation_dist_assume`, but not
-`generation_dist_estimate` or `generation_dist_observe`.
+`generation_dist_estimate`, `generation_dist_calibrate`, or
+`generation_dist_observe`.
 
 ``` r
 EpiSewer::component_functions("generation_dist")
@@ -70,8 +84,7 @@ EpiSewer::component_functions("generation_dist")
 ```
 
 This is because estimating the generation time distribution from data is
-not yet supported (but may be added in the future), and directly
-*observing* the generation time distribution is generally not possible.
+not yet supported (but may be added in the future).
 
 ## Data and assumptions
 
@@ -84,14 +97,15 @@ definitions:
 ``` r
 ww_data <- sewer_data(
   measurements = SARS_CoV_2_Zurich$measurements,
-  flows = SARS_CoV_2_Zurich$flows
+  flows = SARS_CoV_2_Zurich$flows,
+  cases = SARS_CoV_2_Zurich$cases # optional
   )
 
 ww_assumptions <- sewer_assumptions(
   generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
-  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
   shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
-  load_per_case = 6e+11
+  shedding_reference = "symptom_onset",
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
 )
 
 EpiSewer(
@@ -112,14 +126,15 @@ assumptions explicitly in the model component:
 ww_data <- sewer_data(
   measurements = SARS_CoV_2_Zurich$measurements,
   #flows = SARS_CoV_2_Zurich$flows
+  cases = SARS_CoV_2_Zurich$cases
 )
 
-# Leave out load per case from the assumptions
+# Leave out the generation time distribution
 ww_assumptions <- sewer_assumptions(
-  generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
-  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
+  #generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
   shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
-  #load_per_case = 6e+11
+  shedding_reference = "symptom_onset",
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
 )
 
 # Provide flows directly to sewage module
@@ -127,9 +142,11 @@ ww_sewage <- model_sewage(
   flows = flows_observe(SARS_CoV_2_Zurich$flows)
 )
 
-# Provide load per case directly to shedding module
-ww_shedding <- model_shedding(
-  load_per_case = load_per_case_assume(6e+11)
+# Provide generation time distribution directly to infections module
+ww_infections <- model_infections(
+  generation_dist = generation_dist_assume(
+    get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)
+  )
 )
 
 # Combine everything
@@ -137,7 +154,7 @@ result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
   sewage = ww_sewage,
-  shedding = ww_shedding
+  infections = ww_infections
 )
 ```
 

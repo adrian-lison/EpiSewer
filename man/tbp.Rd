@@ -20,9 +20,14 @@ is provided.}
 \item{f_expr}{Expression with arbitrary R code in which attributes are
 assigned to \code{modeldata.}}
 
-\item{required_data}{A character vector with the names of required data.}
+\item{required_data}{A character vector with the names of required data.
+Different options for one item can be provided using "|" as a separator.
+EpiSewer will then check if at least one of the options is present.}
 
-\item{required_assumptions}{A character vector with the names of required.}
+\item{required_assumptions}{A character vector with the names of required
+assumptions. Different options for one item can be provided using "|" as a
+separator. EpiSewer will then check if at least one of the options is
+present.}
 
 \item{modeldata}{Modeldata object in the calling function.}
 

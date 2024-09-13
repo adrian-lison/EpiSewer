@@ -52,6 +52,49 @@ modeldata_update_metainfo <- function(modeldata) {
       )[1]-1
   }
 
+  # LOD expected scale
+  if (modeldata_check(modeldata,
+                      required = c("LOD_model", "LOD_scale"),
+                      throw_error = FALSE
+  )) {
+    if (modeldata$LOD_model == 0) {
+      modeldata$.metainfo$LOD_expected_scale <- NA
+    }
+  }
+
+  if (modeldata_check(modeldata,
+                      required = c("LOD_model", "LOD_scale"),
+                      throw_error = FALSE
+  )) {
+    if (modeldata$LOD_model == 1) {
+      modeldata$.metainfo$LOD_expected_scale <- modeldata$LOD_scale
+    }
+  }
+
+  if (modeldata_check(modeldata,
+                      required = c(
+                        "LOD_model", "n_averaged",
+                        "dPCR_total_partitions", "total_partitions_observe",
+                         "nu_upsilon_b_mu_prior", "nu_upsilon_c_prior"
+                        ),
+                      throw_error = FALSE
+  )) {
+    if (modeldata$LOD_model == 2) {
+    total_partitions_median = median(modeldata$dPCR_total_partitions)
+    n_averaged_median = median(modeldata$n_averaged)
+    total_partitions_expected <- ifelse(
+      modeldata$total_partitions_observe,
+      total_partitions_median,
+      modeldata$nu_upsilon_b_mu_prior$nu_upsilon_b_mu_prior[1] * 1e4
+      )
+    conversion_expected <- modeldata$nu_upsilon_c_prior$nu_upsilon_c_prior[1] * 1e-5
+
+    modeldata$.metainfo$LOD_expected_scale <- total_partitions_expected *
+      conversion_expected *
+      n_averaged_median
+    }
+  }
+
   if (modeldata_check(
     modeldata,
     required = c(
@@ -89,7 +132,8 @@ modeldata_update_metainfo <- function(modeldata) {
       ".metainfo$total_delay_dist",
       ".metainfo$length_I",
       "T",
-      ".metainfo$T_start_date"
+      ".metainfo$T_start_date",
+      ".metainfo$LOD_expected_scale"
     ),
     throw_error = FALSE
   )) {
@@ -98,7 +142,9 @@ modeldata_update_metainfo <- function(modeldata) {
         measured_concentrations, measure_to_sample, sample_to_date, flow,
         .metainfo$total_delay_dist, max_shift = .metainfo$length_I - T,
         .metainfo$T_start_date,
-        impute_zero = NA, interpolate = TRUE, loess_window = 56
+        impute_zero = 1/.metainfo$LOD_expected_scale, # asymptotic posterior expectation for non-detects
+        impute_zero_runs = TRUE,
+        interpolate = TRUE, loess_window = 56, plot_smoothed_curve = FALSE
     ))
   }
 

@@ -4,7 +4,7 @@
 \alias{sewer_data}
 \title{Specify observation data}
 \usage{
-sewer_data(measurements = NULL, flows = NULL, ...)
+sewer_data(measurements = NULL, flows = NULL, cases = NULL, ...)
 }
 \arguments{
 \item{measurements}{A \code{data.frame} with measured concentrations of the
@@ -13,6 +13,12 @@ pathogen of interest. Will be automatically passed to
 
 \item{flows}{A \code{data.frame} with wastewater flow volumes at the sampling site
 for each day. Will be automatically passed to \code{\link[=flows_observe]{flows_observe()}}.}
+
+\item{cases}{A \code{data.frame} of case numbers with each row representing one
+day. Must have at least a column with dates and a column with case numbers.
+This data is not used for model fitting, but for calibration of the
+\code{load_per_case} assumption. Will be automatically passed to
+\code{\link[=load_per_case_calibrate]{load_per_case_calibrate()}}.}
 
 \item{...}{Further observations to be passed to \code{\link[=EpiSewer]{EpiSewer()}}.}
 }

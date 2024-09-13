@@ -99,10 +99,15 @@ concentrations_observe <-
 
     modeldata <- tbp("concentrations_observe",
       {
-        required_data_cols <- c(
+        required_data_cols <- list(
           date_col, concentration_col, replicate_col,
           n_averaged_col, total_partitions_col
           )
+        data_col_names <- c(
+          "date", "concentration", "replicate_id",
+          "n_averaged", "total_partitions"
+          )[!sapply(required_data_cols,is.null)]
+        required_data_cols <- purrr::list_c(required_data_cols)
         if (!all(required_data_cols %in% names(measurements))) {
           cli::cli_abort(
             c(paste(
@@ -114,15 +119,29 @@ concentrations_observe <-
                   "names via the `_col` arguments of this function."))
           )
         }
+        measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
+        measurements <- setnames(measurements, old = required_data_cols, new = data_col_names)
+        modeldata$.metainfo$measurements_cols <- list(
+          date_col = date_col,
+          concentration_col = concentration_col,
+          replicate_col = replicate_col,
+          n_averaged_col = n_averaged_col,
+          total_partitions_col = total_partitions_col
+        )
+
+        # housekeeping
+        measurements <- measurements[!is.na(concentration) & !is.na(date), ]
+        measurements[, date := as.Date(date)]
+        measurements[, concentration := as.numeric(concentration)]
 
         if (nrow(measurements)==0) {
-          cli::cli_abort("The provided measurements `data.frame` is empty.")
+          cli::cli_abort(
+            "The provided measurements `data.frame` contains no measurements."
+            )
         }
 
-        measurements[[date_col]] <- as.Date(measurements[[date_col]])
-
         if (is.null(replicate_col)) {
-          if (any(duplicated(measurements[[date_col]]))) {
+          if (any(duplicated(measurements[["date"]]))) {
             cli::cli_abort(
               paste(
                 "Duplicated dates found in measurements `data.frame`.",
@@ -134,52 +153,36 @@ concentrations_observe <-
           }
         }
 
-        modeldata$T <-
-          as.integer(max(measurements[[date_col]]) -
-            min(measurements[[date_col]]) + composite_window)
+        modeldata$T <- as.integer(
+          measurements[, max(date) - min(date) + composite_window]
+          )
 
-        modeldata$.metainfo$T_start_date <-
-          min(measurements[[date_col]]) - composite_window + 1
-        modeldata$.metainfo$T_end_date <- max(measurements[[date_col]])
+        modeldata$.metainfo$T_start_date <- measurements[
+          , min(date) - composite_window + 1
+          ]
+        modeldata$.metainfo$T_end_date <- measurements[, max(date)]
 
         modeldata$w <- composite_window
         modeldata$.metainfo$composite_window <- composite_window
 
-        measured <- !is.na(measurements[[concentration_col]])
-        modeldata$n_measured <- sum(measured)
-        modeldata$n_samples <- length(
-          unique(measurements[[date_col]][measured])
-          )
+        modeldata$n_measured <- nrow(measurements)
+        modeldata$n_samples <- length(unique(measurements[["date"]]))
         measured_dates <- as.integer(
-          measurements[[date_col]][measured] -
-            modeldata$.metainfo$T_start_date + 1
+          measurements[["date"]] - modeldata$.metainfo$T_start_date + 1
         )
         modeldata$sample_to_date <- sort(unique(measured_dates))
-        modeldata$measure_to_sample <- sapply(
-          measured_dates,
-          function(x) which(x == modeldata$sample_to_date)[[1]]
-        )
-        modeldata$measured_concentrations <- as.numeric(
-          measurements[[concentration_col]][measured]
-        )
-        modeldata$.metainfo$measured_dates <- as.Date(
-          measurements[[date_col]][measured]
-        )
+        modeldata$measure_to_sample <- sapply(measured_dates, function(x) {
+          which(x == modeldata$sample_to_date)[[1]]
+        })
+        modeldata$measured_concentrations <- measurements[["concentration"]]
+        modeldata$.metainfo$measured_dates <- measurements[["date"]]
 
         if (!is.null(replicate_col)) {
-          modeldata$replicate_ids <- as.integer(
-            measurements[[replicate_col]][measured]
-          )
+          modeldata$replicate_ids <- as.integer(measurements[["replicate_id"]])
         }
 
         if (!is.null(n_averaged_col)){
-          if (!n_averaged_col %in% names(measurements)) {
-            cli::cli_abort(paste0(
-                "The column `", n_averaged_col, "` does not exist in the ",
-                "measurements `data.frame`."
-              ))
-          }
-          modeldata$n_averaged <- as.numeric(measurements[[n_averaged_col]][measured])
+          modeldata$n_averaged <- as.numeric(measurements[["n_averaged"]])
           if (any(is.na(modeldata$n_averaged))) {
             cli::cli_abort(paste0(
                 "The column `", n_averaged_col, "` contains missing ",
@@ -199,8 +202,8 @@ concentrations_observe <-
 
         if (!is.null(total_partitions_col)) {
           modeldata$dPCR_total_partitions <- as.integer(
-            measurements[[total_partitions_col]][measured]
-          )
+            measurements[["total_partitions"]]
+            )
         } else {
           modeldata$dPCR_total_partitions <- rep(0, modeldata$n_measured)
         }
@@ -423,8 +426,8 @@ noise_estimate_ <-
         modeldata$.init$nu_upsilon_b_mu <- numeric(0)
         modeldata$.init$nu_upsilon_b_cv <- numeric(0)
         modeldata$.init$nu_upsilon_b_noise_raw <- numeric(0)
-        modeldata$.checks$check_total_partitions_col <- function(d) {
-          if (!"dPCR_total_partitions" %in% names(d)) {
+        modeldata$.checks$check_total_partitions_col <- function(md, ...) {
+          if (!"dPCR_total_partitions" %in% names(md)) {
             cli::cli_abort(paste0(
               "You specified `total_partitions_observe = TRUE`, which requires ",
               "a column with the number of total partitions in the PCR for ",
@@ -513,8 +516,8 @@ noise_estimate_ <-
         "n_samples"
       )
 
-      modeldata$.checks$check_replicate_ids <- function(d) {
-        if (!"replicate_ids" %in% names(d)) {
+      modeldata$.checks$check_replicate_ids <- function(md, ...) {
+        if (!"replicate_ids" %in% names(md)) {
           cli::cli_abort(paste(
             "Variation before the replication stage can only be estimated with",
             "replicate measurements. Please specify a column `replicate_col`",
@@ -738,7 +741,7 @@ noise_estimate_constant_var <-
       " comparison purposes with better models like ",
       cli_help("noise_estimate"), " or ", cli_help("noise_estimate_dPCR"), ".",
       " You can specify ",
-      "{.code noise_estimate_constant_var(warn=TRUE)} to disable this warning."
+      "{.code noise_estimate_constant_var(warn=FALSE)} to disable this warning."
       )))
     }
     return(noise_estimate_(

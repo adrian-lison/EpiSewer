@@ -22,8 +22,8 @@ library(ggplot2)
 
 ### Data
 
-This is again the wastewater data are from Zurich, Switzerland, provided
-by EAWAG (Swiss Federal Institute of Aquatic Science and Technology).
+This is again the wastewater data from Zurich, Switzerland, provided by
+EAWAG (Swiss Federal Institute of Aquatic Science and Technology).
 
 ``` r
 data_zurich <- SARS_CoV_2_Zurich
@@ -34,28 +34,29 @@ on Mondays and Thursdays to test `EpiSewer` on sparse data.
 
 ``` r
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
-head(measurements_sparse, 20)
-#>           date concentration  weekday
-#>  1: 2022-01-03      455.7580   Monday
-#>  2: 2022-01-06      330.7298 Thursday
-#>  3: 2022-01-10      387.6885   Monday
-#>  4: 2022-01-13      791.1111 Thursday
-#>  5: 2022-01-17      551.7701   Monday
-#>  6: 2022-01-20      643.9910 Thursday
-#>  7: 2022-01-24      741.9150   Monday
-#>  8: 2022-01-27      770.1810 Thursday
-#>  9: 2022-01-31      627.1725   Monday
-#> 10: 2022-02-03      561.2913 Thursday
-#> 11: 2022-02-07      357.1349   Monday
-#> 12: 2022-02-10      540.7527 Thursday
-#> 13: 2022-02-14            NA   Monday
-#> 14: 2022-02-17      554.2492 Thursday
-#> 15: 2022-02-21      414.7324   Monday
-#> 16: 2022-02-24      784.3849 Thursday
-#> 17: 2022-02-28      732.9672   Monday
-#> 18: 2022-03-03     1376.6457 Thursday
-#> 19: 2022-03-07     1420.4823   Monday
-#> 20: 2022-03-10     2128.1925 Thursday
+head(measurements_sparse, 10)
+#>           date concentration
+#>  1: 2022-01-03      455.7580
+#>  2: 2022-01-06      330.7298
+#>  3: 2022-01-10      387.6885
+#>  4: 2022-01-13      791.1111
+#>  5: 2022-01-17      551.7701
+#>  6: 2022-01-20      643.9910
+#>  7: 2022-01-24      741.9150
+#>  8: 2022-01-27      770.1810
+#>  9: 2022-01-31      627.1725
+#> 10: 2022-02-03      561.2913
+#>      weekday
+#>  1:   Monday
+#>  2: Thursday
+#>  3:   Monday
+#>  4: Thursday
+#>  5:   Monday
+#>  6: Thursday
+#>  7:   Monday
+#>  8: Thursday
+#>  9:   Monday
+#> 10: Thursday
 ```
 
 ### Modeling
@@ -63,10 +64,10 @@ head(measurements_sparse, 20)
 In the [README](../README.md), we used a shortcut to collect all
 observation data via `sewer_data()` and all assumptions via
 `sewer_assumptions()`. These are convenience functions to make the
-`EpiSewer` command more concise. In this example however, we want to be
-explicit and will supply the data and assumptions to the relevant
-modules and components (see the [model
-specification](model-specification.md) vignette).
+`EpiSewer` command more concise. In this example however, we will
+explicitly supply the data and assumptions to the relevant modules and
+components (see the [model specification](model-specification.md)
+vignette).
 
 #### Measurements
 
@@ -93,11 +94,12 @@ components. In this case, there is:
 We used a specific modeling function for each of the components. The
 suffix of each function explains what we modeled:
 
-- `concentrations_observe`: the concentrations are modeled as
-  observation data to which the model can be fitted
-- `noise_estimate`: the degree of measurement noise is estimated from
-  the data
-- `LOD_none`: we do not model a limit of detection
+- `concentrations_observe`: The concentrations are modeled as
+  observation data to which the model can be fitted.
+- `noise_estimate`: The degree of measurement noise is estimated from
+  the data.
+- `LOD_none`: We do not model a limit of detection. This also means that
+  zero measurements are dropped.
 
 We can also print the module object to see what we have modeled:
 
@@ -123,7 +125,7 @@ ww_measurements2 <- model_measurements(
 ```
 
 ➡️ To find out which options are available for a given modeling
-function, you can consult its function documentation.
+function, check out its function documentation.
 
 Before we move to the next module, remember that there can be multiple
 modeling options for a component, and `EpiSewer` offers one modeling
@@ -132,7 +134,9 @@ function for each option. To see all available options, you can use
 
 ``` r
 component_functions("LOD")
-#> [1] "LOD_none()"           "LOD_assume()"         "LOD_estimate_dPCR()"
+#> [1] "LOD_none()"         
+#> [2] "LOD_assume()"       
+#> [3] "LOD_estimate_dPCR()"
 ```
 
 For example, we could assume a limit of detection of `2.56 gc/mL` (based
@@ -144,6 +148,18 @@ ww_measurements3 <- model_measurements(
   concentrations = concentrations_observe(measurements = measurements_sparse),
   noise = noise_estimate(cv_prior_mu = 0.5, cv_prior_sigma = 0.1), # prior on coefficient of variation
   LOD = LOD_assume(limit = 2.56, prob = 0.95)
+)
+```
+
+If our measurements are based on digital PCR (dPCR), we can also model
+the LOD with an explicit model of dPCR noise. Note that we also have to
+adapt the noise component accordingly.
+
+``` r
+ww_measurements4 <- model_measurements(
+  concentrations = concentrations_observe(measurements = measurements_sparse),
+  noise = noise_estimate_dPCR(), # also model dPCR noise
+  LOD = LOD_estimate_dPCR()
 )
 ```
 
@@ -197,28 +213,32 @@ particles into the wastewater:
 
 ``` r
 ww_shedding <- model_shedding(
+  shedding_dist = shedding_dist_assume(
+    get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30), shedding_reference = "symptom_onset"),
   incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)),
-  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30)),
-  load_per_case = load_per_case_assume(6e+11),
-  load_variation = load_variation_none()
+  load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
+  load_variation = load_variation_estimate()
 )
 ```
 
 The shedding module requires a number of assumptions (see explanations
 in the [README](../README.md)):
 
-- `incubation_dist` and `shedding_dist`: We use the same incubation
-  period and shedding load distribution as before.
-- `load_per_case`: We again assume an average shedding load of
-  `6e+11 gc/person` as before.
+- `shedding_dist` and `incubation_dist`: We use the same shedding load
+  distribution (by days since symptom onset) as before. We also need to
+  assume an incubation period distribution.
+- `load_per_case`: The load per case assumption is calibrated based on
+  observed case data. In the [README](../README.md), we supplied the
+  case data via `sewer_data()`. Here, we now supply it directly to
+  `load_per_case_calibrate()`.
 - `load_variation`: `EpiSewer` offers the option to model
-  individual-level variation in shedding. However, we keep it simple
-  here and do not model such variation (`load_variation_none()`).
+  individual-level variation in shedding, and this is recommended as a
+  default.
 
 #### Infections
 
-Last but not least, the `infections` module describes the underlying
-process leading to infected individuals:
+The `infections` module describes the underlying process leading to
+infected individuals:
 
 ``` r
 ww_infections <- model_infections(
@@ -239,15 +259,43 @@ The module has the following epidemiological components:
   available (see `component_functions("R")`).
 - `seeding`: The renewal model used by `EpiSewer` requires a seeding
   phase during which the reproduction number cannot be modeled. We thus
-  let the initial infections be estimated using a simple random walk
-  model.
+  let the initial infections be estimated using a simple geometric
+  random walk model.
 - `infection_noise`: We also model noise in the infection process,
   meaning that `EpiSewer` will fit a stochastic infection model. This
   makes sense in most cases.
 
+#### Forecast
+
+Last but not least, there is the `forecast` module. This module
+describes how the generative model defined by the other modules is used
+to produce forecasts of Rt, infections, concentrations and other
+quantities. By default, as in our [README](../README.md) example, we
+produce no forecasts by effectively setting the forecast horizon to
+zero.
+
+``` r
+ww_forecast <- model_forecast(
+  horizon = horizon_none()
+)
+```
+
+If we want to produce forecasts, we can define the forecast horizon
+(e.g. 7 days) as follows:
+
+``` r
+ww_forecast2 <- model_forecast(
+  horizon = horizon_assume(horizon = 7)
+)
+```
+
+The forecast module currently only has a single component to define the
+forecast horizon. In the future, this may be extended to allow users to
+customize how forecasts are obtained.
+
 #### Side notes
 
-We have now specified all five `EpiSewer` modules. While this seems like
+We have now specified all six `EpiSewer` modules. While this seems like
 a lot of code, note that the majority of component specifications are
 optional and have sensible defaults. In practice, you only need to
 explicitly write out components that need certain assumptions or that
@@ -268,24 +316,68 @@ since it is pathogen-specific.
 💡 An advantage of coding each component explicitly is that your
 modeling decisions are clearly documented.
 
-### Estimation
+### Settings
 
-We have assigned the five `EpiSewer` modules to individual variables,
-which can now be passed to the `EpiSewer()` function to estimate the
-effective reproduction number:
+Before starting the estimation, let’s have a quick look at some settings
+for model fitting and post-processing.
+
+The `fit_opts` settings describe how the model is fitted. The first
+argument, `model` tells EpiSewer where to find the `stan` files with the
+model code. The default is the `EpiSewer` package itself, but you can
+also tweak this setting to provide your own customized model files (see
+`model_stan_opts()` for details). The `sampler` argument specifies the
+sampling algorithm used for model fitting. Currently, only sampling via
+stan’s MCMC algorithm is supported. The function `sampler_stan_mcmc()`
+allows you to pass various arguments to stan, including number of
+chains, iterations, and much more.
 
 ``` r
-ww_measurements <- model_measurements()
-options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
+ww_fit_opts <- set_fit_opts(
+  model = model_stan_opts(package = "EpiSewer"),
+  sampler = sampler_stan_mcmc(
+    iter_warmup = 500,
+    iter_sampling = 500,
+    chains = 4,
+    parallel_chains = 4, # run all chains in parallel
+    seed = 42
+  )
+)
+```
+
+The `results_opts` argument specifies what results to return after model
+fitting. We specify `fitted=TRUE`, which means that the whole fitted
+model object will be stored. Setting this to `fitted=FALSE` saves
+memory - but certain things like detailed diagnostics or extracting
+draws of additional parameters will not be possible. We also specify
+that parameters of interest should be summarized with 50% and 95%
+credible intervals (in addition to the mean and median). Moreover, we
+want to explicitly store 50 posterior samples for the Rt and infections
+time series (useful for spaghetti plots etc.).
+
+``` r
+ww_results_opts <- set_results_opts(
+  fitted = TRUE,
+  summary_intervals = c(0.5, 0.95),
+  samples_ndraws = 50
+)
+```
+
+### Estimation
+
+Now we have everything we need. To fit the model, we simply pass all the
+EpiSewer modules and settings defined above to the `EpiSewer()`
+function.
+
+``` r
 ww_result <- EpiSewer(
-  data = sewer_data(measurements = measurements_sparse),
   measurements = ww_measurements,
   sampling = ww_sampling,
   sewage = ww_sewage,
   shedding = ww_shedding,
   infections = ww_infections,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4), model = model_stan_opts(package = "EpiSewer")),
-  run_fit = FALSE
+  forecast = ww_forecast,
+  fit_opts = ww_fit_opts,
+  results_opts = ww_results_opts
 )
 ```
 
@@ -316,14 +408,14 @@ ww_result$job$model
 #> shedding
 #>  |- incubation_dist_assume
 #>  |- shedding_dist_assume
-#>  |- load_per_case_assume
-#>  |- load_variation_none
+#>  |- load_per_case_calibrate
+#>  |- load_variation_estimate
 #> 
 #> infections
 #>  |- generation_dist_assume
 #>  |- R_estimate_splines
 #>  |- seeding_estimate_rw
-#>  |- infection_noise_estimate
+#>  |- infection_noise_estimate (overdispersion = TRUE)
 ```
 
 ### Full model
@@ -335,10 +427,14 @@ point to adapt the specification and try out different modeling options
 out the `component_functions()` helper).
 
 Also, don’t forget that the modeling functions have further arguments to
-customize priors and further modeling details. Again, the function
-documentation is your friend.
+customize priors and other modeling details. As always, the function
+documentation is your friend!
 
 ``` r
+measurements_sparse <- data_zurich$measurements[
+  , weekday := weekdays(data_zurich$measurements$date)
+  ][weekday %in% c("Monday","Thursday"),]
+
 ww_measurements <- model_measurements(
   concentrations = concentrations_observe(measurements = measurements_sparse),
   noise = noise_estimate(),
@@ -355,10 +451,10 @@ ww_sewage <- model_sewage(
 )
 
 ww_shedding <- model_shedding(
+  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30), shedding_reference = "symptom_onset"),
   incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)),
-  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30)),
-  load_per_case = load_per_case_assume(6e+11),
-  load_variation = load_variation_none()
+  load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
+  load_variation = load_variation_estimate()
 )
 
 ww_infections <- model_infections(
@@ -368,13 +464,35 @@ ww_infections <- model_infections(
   infection_noise = infection_noise_estimate()
 )
 
-options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
+ww_forecast <- model_forecast(
+  horizon = horizon_none()
+)
+
+ww_fit_opts <- set_fit_opts(
+  model = model_stan_opts(package = "EpiSewer"),
+  sampler = sampler_stan_mcmc(
+    iter_warmup = 500,
+    iter_sampling = 500,
+    chains = 4,
+    parallel_chains = 4, # run all chains in parallel
+    seed = 42
+  )
+)
+
+ww_results_opts <- set_results_opts(
+  fitted = TRUE,
+  summary_intervals = c(0.5, 0.95),
+  samples_ndraws = 50
+)
+
 ww_result <- EpiSewer(
   measurements = ww_measurements,
   sampling = ww_sampling,
   sewage = ww_sewage,
   shedding = ww_shedding,
   infections = ww_infections,
-  fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(iter_warmup = 1000, iter_sampling = 1000, chains = 4))
+  forecast = ww_forecast,
+  fit_opts = ww_fit_opts,
+  results_opts = ww_results_opts
 )
 ```

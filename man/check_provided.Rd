@@ -19,10 +19,14 @@ check_provided(
 
 \item{assumptions}{A list with assumptions}
 
-\item{required_data}{A character vector with the names of required data}
+\item{required_data}{A character vector with the names of required data.
+Different options for one item can be provided using "|" as a separator.
+EpiSewer will then check if at least one of the options is present.}
 
 \item{required_assumptions}{A character vector with the names of required
-assumptions}
+assumptions. Different options for one item can be provided using "|" as a
+separator. EpiSewer will then check if at least one of the options is
+present.}
 }
 \value{
 TRUE if all required data and assumptions are present in \code{f_env}.

@@ -257,9 +257,11 @@ combine_summary_list <- function(summary_list) {
 }
 
 combine_samples <- function(
-    result_list, summary_name, draws = FALSE, ndraws = NULL) {
+    result_list, variable_name, draws = FALSE, ndraws = NULL) {
   summary_list <- lapply(result_list, function(x) {
-    res <- x$summary[[summary_name]]
+    res <- x$summary$samples[
+      , .SD, .SDcols = c("date", "type", "seeding", ".draw", variable_name)
+      ]
     if (!is.null(ndraws)) {
       draw_ids <- unique(res$.draw)
       if (ndraws > length(draw_ids)) {
@@ -279,4 +281,33 @@ combine_samples <- function(
   )
   setDT(combined)
   return(combined)
+}
+
+summarize_samples_dt <- function(dt, index_cols, variable, intervals, cols_end) {
+  summary_dt <- dt[, .SD, .SDcols=c(index_cols, variable)]
+  summary_functions <- c(
+    list(
+      function(x) mean(x, na.rm = TRUE),
+      function(x) median(x, na.rm = TRUE)
+    ),
+    lapply(
+      rev(intervals),
+      function(i) function(x) quantile(x, (1 - i) / 2, na.rm = TRUE)
+    ),
+    lapply(
+      intervals,
+      function(i) function(x) quantile(x, (1 + i) / 2, na.rm = TRUE)
+    )
+  )
+  summary_names <- c(
+    "mean", "median",
+    paste0("lower_", rev(intervals)),
+    paste0("upper_", intervals)
+  )
+  result <- summary_dt[,
+                    setNames(lapply(summary_functions, function(f) f(.SD[[1]])), summary_names),
+                    by=c("date", "type", "seeding"), .SDcols=c(variable)
+  ]
+  setcolorder(result, c(1, (max(cols_end)+1):ncol(result), cols_end))
+  return(result)
 }

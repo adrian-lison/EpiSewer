@@ -6,8 +6,10 @@
 \usage{
 sewer_assumptions(
   generation_dist = NULL,
-  incubation_dist = NULL,
   shedding_dist = NULL,
+  shedding_reference = NULL,
+  incubation_dist = NULL,
+  min_cases = 10,
   load_per_case = NULL,
   residence_dist = c(1),
   ...
@@ -19,30 +21,47 @@ distribution of the time between infection of a primary case and infection
 of its secondary cases. Will be automatically passed to
 \code{\link[=generation_dist_assume]{generation_dist_assume()}}.}
 
-\item{incubation_dist}{Incubation period distribution. \code{EpiSewer} uses this
-as a proxy for the time between infection and the start of shedding, as
-shedding load distributions in the literature are often given from symptom
-onset onwards. If the supplied shedding load distribution instead starts
-with the time of infection, use \code{incubation_dist=c(1)} (i.e. no lag). Will
-be automatically passed to \code{\link[=incubation_dist_assume]{incubation_dist_assume()}}.}
-
 \item{shedding_dist}{Shedding load distribution. Describes how the total load
 shed by an individual is distributed over time (and therefore sums to 1).
 Will be automatically passed to \code{\link[=shedding_dist_assume]{shedding_dist_assume()}}.}
 
-\item{load_per_case}{Average total load per case. This is a scaling factor
-that describes how many pathogen particles are shed by the average infected
-individual overall and how much of this is detectable at the sampling site.
-It depends both on biological factors as well as on the specific
-sewage system. See \code{\link[=suggest_load_per_case]{suggest_load_per_case()}} to help you
-make a suitable assumption. Will be automatically passed to
-\code{\link[=load_per_case_assume]{load_per_case_assume()}}.}
+\item{shedding_reference}{Is the shedding load distribution relative to the
+day of \code{"infection"} or the day of \code{"symptom_onset"}? This is important because
+shedding load distributions provided in the literature are sometimes by
+days since infection and sometimes by days since symptom onset. If
+\code{shedding_reference="symptom_onset"}, EpiSewer also needs information about
+the incubation period distribution. Will be automatically passed to
+\code{\link[=shedding_dist_assume]{shedding_dist_assume()}}.}
+
+\item{incubation_dist}{Incubation period distribution. The incubation period
+is the time between infection and symptom onset. This assumption is used
+when \code{shedding_reference="symptom_onset"}, i.e. to support shedding load
+distributions referenced by days since symptom onset. Will be automatically
+passed to \code{\link[=incubation_dist_assume]{incubation_dist_assume()}}.}
+
+\item{min_cases}{The minimum incidence (new cases per day) during the modeled
+time period (default is 10). This assumption is used to calibrate the
+\code{load_per_case} factor (a scaling factor that describes how many pathogen
+particles are shed by the average infected individual overall and how much
+of this is detectable at the sampling site). If \code{min_cases} is specified,
+\code{load_per_case} is chosen such that the estimated time series of infections
+does not go significantly below \code{min_cases}. Will be automatically passed
+to \code{\link[=load_per_case_calibrate]{load_per_case_calibrate()}}.}
+
+\item{load_per_case}{This argument allows to directly specify the average
+total load per case, instead of calibrating it to case data. Note that the
+\code{load_per_case} depends both on biological factors as well as on the
+specific sewage system and laboratory quantification. Important: To
+actually use this assumption, the model option \code{\link[=load_per_case_assume]{load_per_case_assume()}}
+must be specified in \code{\link[=EpiSewer]{EpiSewer()}} via \code{\link[=model_shedding]{model_shedding()}}. If you want to
+use this option to do a manual calibration to case data, the helper
+function \code{\link[=suggest_load_per_case]{suggest_load_per_case()}} might also be useful.}
 
 \item{residence_dist}{Sewer residence time distribution for pathogen
 particles. By default, \code{EpiSewer} assumes that particles arrive at the
 sampling site within the day of shedding. However, for larger sewage
-systems, particles may travel longer than a day depending on where and
-when they were shed into the wastewater. Will be automatically passed to
+systems, particles may travel longer than a day depending on where and when
+they were shed into the wastewater. Will be automatically passed to
 \code{\link[=residence_dist_assume]{residence_dist_assume()}}.}
 
 \item{...}{Further assumptions to be passed to \code{\link[=EpiSewer]{EpiSewer()}}.}
@@ -55,4 +74,9 @@ A \code{list} with all assumptions supplied. Can be passed to the
 Specify model assumptions such as the generation time
 distribution or shedding load distribution. This is a convenience function
 to collect all assumptions in one object.
+}
+\details{
+Note that if case data is supplied via \code{sewer_data}, the \code{min_cases}
+assumption is overwritten and the supplied case data is used for a more
+accurate calibration instead.
 }

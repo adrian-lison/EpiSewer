@@ -74,121 +74,10 @@ EpiSewer <- function(
   if (run_fit) {
     return(run(job))
   } else {
-    return(list(job = job))
+    res <- list(job = job)
+    class(res) <- c("EpiSewerJobResult", class(res))
+    return(res)
   }
-}
-
-
-#' Specify observation data
-#'
-#' @description Specify wastewater observation data such as concentration
-#'   measurements and flows. This is a convenience function to collect all
-#'   observation data in one object.
-#'
-#' @param measurements A `data.frame` with measured concentrations of the
-#'   pathogen of interest. Will be automatically passed to
-#'   [concentrations_observe()].
-#' @param flows A `data.frame` with wastewater flow volumes at the sampling site
-#'   for each day. Will be automatically passed to [flows_observe()].
-#' @param ... Further observations to be passed to [EpiSewer()].
-#'
-#' @return A `list` with all observations supplied. Can be passed to the `data`
-#'   argument in [EpiSewer()].
-#' @export
-sewer_data <- function(measurements = NULL, flows = NULL, ...) {
-  data <- as.list(environment())
-  return(data)
-}
-
-#' Specify modeling assumptions
-#'
-#' @description Specify model assumptions such as the generation time
-#'   distribution or shedding load distribution. This is a convenience function
-#'   to collect all assumptions in one object.
-#'
-#' @param generation_dist Generation time distribution. The intrinsic
-#'   distribution of the time between infection of a primary case and infection
-#'   of its secondary cases. Will be automatically passed to
-#'   [generation_dist_assume()].
-#' @param incubation_dist Incubation period distribution. `EpiSewer` uses this
-#'   as a proxy for the time between infection and the start of shedding, as
-#'   shedding load distributions in the literature are often given from symptom
-#'   onset onwards. If the supplied shedding load distribution instead starts
-#'   with the time of infection, use `incubation_dist=c(1)` (i.e. no lag). Will
-#'   be automatically passed to [incubation_dist_assume()].
-#' @param shedding_dist Shedding load distribution. Describes how the total load
-#'   shed by an individual is distributed over time (and therefore sums to 1).
-#'   Will be automatically passed to [shedding_dist_assume()].
-#' @param load_per_case Average total load per case. This is a scaling factor
-#'   that describes how many pathogen particles are shed by the average infected
-#'   individual overall and how much of this is detectable at the sampling site.
-#'   It depends both on biological factors as well as on the specific
-#'   sewage system. See [suggest_load_per_case()] to help you
-#'   make a suitable assumption. Will be automatically passed to
-#'   [load_per_case_assume()].
-#' @param residence_dist Sewer residence time distribution for pathogen
-#'   particles. By default, `EpiSewer` assumes that particles arrive at the
-#'   sampling site within the day of shedding. However, for larger sewage
-#'   systems, particles may travel longer than a day depending on where and
-#'   when they were shed into the wastewater. Will be automatically passed to
-#'   [residence_dist_assume()].
-#' @param ... Further assumptions to be passed to [EpiSewer()].
-#'
-#' @return A `list` with all assumptions supplied. Can be passed to the
-#'   `assumptions` argument in [EpiSewer()].
-#' @export
-sewer_assumptions <- function(generation_dist = NULL,
-                              incubation_dist = NULL,
-                              shedding_dist = NULL,
-                              load_per_case = NULL,
-                              residence_dist = c(1),
-                              ...) {
-  assumptions <- as.list(environment())
-  return(assumptions)
-}
-
-#' Configure results returned after model fitting
-#'
-#' @param fitted If `TRUE` (default), the fitted model object is also returned,
-#'   not only summaries of the model fitting. Note that this makes the results
-#'   object substantially larger.
-#' @param summary_intervals Which credible intervals (CrIs) should be used to
-#'   summarize the posterior distributions? Default is `c(0.5, 0.95)`, i.e. the
-#'   50% and 95% CrI are returned
-#' @param samples_ndraws Number of exemplary posterior samples to return. Note
-#'   that the summaries always use all available samples.
-#'
-#' @return A `list` with settings for the results.
-#' @export
-#' @examples
-#' ww_data <- ww_data_SARS_CoV_2_Zurich
-#' ww_assumptions <- ww_assumptions_SARS_CoV_2_Zurich
-#'
-#' ww_fit_opts <- set_fit_opts(
-#'   sampler = sampler_stan_mcmc(
-#'     chains = 2,
-#'     parallel_chains = 2,
-#'     iter_warmup = 400,
-#'     iter_sampling = 400,
-#'     seed = 42 # ensures reproducibility
-#'   )
-#' )
-#'
-#' ww_results_opts <- set_results_opts(
-#'   fitted = TRUE, # return full model fit
-#'   summary_intervals = c(0.5, 0.8, 0.95),
-#'   samples_ndraws = 100
-#' )
-#'
-#' ww_result <- EpiSewer(
-#'   data = ww_data,
-#'   assumptions = ww_assumptions,
-#'   fit_opts = ww_fit_opts,
-#'   results_opts = ww_results_opts
-#' )
-set_results_opts <- function(fitted = TRUE, summary_intervals = c(0.5, 0.95), samples_ndraws = 50) {
-  opts <- as.list(environment())
-  return(opts)
 }
 
 #' Constructor for EpiSewerJob objects
@@ -228,20 +117,22 @@ EpiSewerJob <- function(job_name,
   job[["overwrite"]] <- overwrite
   job[["results_exclude"]] <- results_exclude
 
-  class(job) <- "EpiSewerJob"
+  class(job) <- c("EpiSewerJob", class(job))
 
   return(job)
 }
 
 #' @export
 setClass("EpiSewerJob")
-
 #' Run a job.
 #'
 #' @export
-setGeneric("run", function(job) UseMethod("run", job))
+run <- function(job) {
+  UseMethod("run")
+}
 
-setMethod("run", c("EpiSewerJob"), function(job) {
+#' @export
+run.EpiSewerJob <- function(job) {
   arguments <- c(
     list(data = job$data),
     init = function() job$init,
@@ -330,8 +221,221 @@ setMethod("run", c("EpiSewerJob"), function(job) {
     result$sampler_output <- fit_res$sampler_output
   }
 
+  class(result) <- c("EpiSewerJobResult", class(result))
   return(result)
-})
+}
+
+#' @export
+run.EpiSewerJobResult <- function(job) {
+  return(run(job$job))
+}
+
+#' @export
+test_run <- function(job) {
+  UseMethod("test_run")
+}
+
+#' @export
+test_run.EpiSewerJob <- function(job) {
+  job$fit_opts$sampler$iter_warmup <- 5
+  job$fit_opts$sampler$iter_sampling <- 5
+  job$fit_opts$sampler$show_messages <- FALSE
+  job$fit_opts$sampler$show_exceptions <- FALSE
+  job$results_opts$samples_ndraws <- 2
+  return(run(job))
+}
+
+#' @export
+test_run.EpiSewerJobResult <- function(job) {
+  return(test_run(job$job))
+}
+
+#' Print an EpiSewerJob.
+#' @export
+print.EpiSewerJob <- function(x) {
+  cat(paste0("\n",x$job_name,"\n"))
+  cat("-----\n")
+  cat(paste0(
+    "Time period: ",
+    x$metainfo$T_start_date, " to ", x$metainfo$T_end_date, "\n",
+    "Observations: ", x$data$n_measured, " measurements on ",
+    length(unique(x$data$sample_to_date)), " days\n"
+    ))
+  if (x$metainfo$forecast_horizon > 0) {
+    cat(paste0(
+      "Forecast horizon: ", x$metainfo$forecast_horizon, " days\n"
+    ))
+  }
+  cat("\nUse ...$model for a summary of the model specification.")
+}
+
+#' @export
+setClass("EpiSewerJobResult")
+
+#' Print an EpiSewerJobResult.
+#' @export
+print.EpiSewerJobResult <- function(x) {
+  print(x$job)
+  if (all(c("runtime","diagnostics") %in% names(x))) {
+    cat("\n\n")
+    cat(paste0("Model fitted in ", round(x$runtime$total),
+               " seconds (", nrow(x$runtime$chains) ," chains, ",
+               job$job$fit_opts$sampler$iter_sampling, " iterations each)\n"))
+    cat("-----")
+    num_divergent <- sum(x$diagnostics$num_divergent)
+    if (num_divergent>0) cat("\nDivergent transitions:", num_divergent)
+    num_max_treedepth <- sum(x$diagnostics$num_max_treedepth)
+    if (num_max_treedepth>0) cat("\nMaximum treedepth reached:", num_max_treedepth)
+    num_ebfmi_low <- sum(x$diagnostics$num_ebfmi_low<0.2)
+    if (num_ebfmi_low>0) cat("\nE-BFMI problems:", num_ebfmi_low)
+    if (num_divergent==0 && num_max_treedepth==0 && num_ebfmi_low==0) {
+      cat("\nAll diagnostics are perfect.")
+    }
+  } else if ("errors" %in% names(x)) {
+    cat("\n\n")
+    cat("Model fitting failed:\n  ")
+    cat(paste(x$errors, collapse="\n  "))
+    cat("\nDetailed sampler output can be accessed via ...$sampler_output.")
+  }
+}
+
+#' Specify observation data
+#'
+#' @description Specify wastewater observation data such as concentration
+#'   measurements and flows. This is a convenience function to collect all
+#'   observation data in one object.
+#'
+#' @param measurements A `data.frame` with measured concentrations of the
+#'   pathogen of interest. Will be automatically passed to
+#'   [concentrations_observe()].
+#' @param flows A `data.frame` with wastewater flow volumes at the sampling site
+#'   for each day. Will be automatically passed to [flows_observe()].
+#' @param cases A `data.frame` of case numbers with each row representing one
+#'   day. Must have at least a column with dates and a column with case numbers.
+#'   This data is not used for model fitting, but for calibration of the
+#'   `load_per_case` assumption. Will be automatically passed to
+#'   [load_per_case_calibrate()].
+#' @param ... Further observations to be passed to [EpiSewer()].
+#'
+#' @return A `list` with all observations supplied. Can be passed to the `data`
+#'   argument in [EpiSewer()].
+#' @export
+sewer_data <- function(measurements = NULL, flows = NULL, cases = NULL, ...) {
+  data <- c(as.list(environment()), list(...))
+  return(data)
+}
+
+#' Specify modeling assumptions
+#'
+#' @description Specify model assumptions such as the generation time
+#'   distribution or shedding load distribution. This is a convenience function
+#'   to collect all assumptions in one object.
+#'
+#' @param generation_dist Generation time distribution. The intrinsic
+#'   distribution of the time between infection of a primary case and infection
+#'   of its secondary cases. Will be automatically passed to
+#'   [generation_dist_assume()].
+#' @param shedding_dist Shedding load distribution. Describes how the total load
+#'   shed by an individual is distributed over time (and therefore sums to 1).
+#'   Will be automatically passed to [shedding_dist_assume()].
+#' @param shedding_reference Is the shedding load distribution relative to the
+#'   day of `"infection"` or the day of `"symptom_onset"`? This is important because
+#'   shedding load distributions provided in the literature are sometimes by
+#'   days since infection and sometimes by days since symptom onset. If
+#'   `shedding_reference="symptom_onset"`, EpiSewer also needs information about
+#'   the incubation period distribution. Will be automatically passed to
+#'   [shedding_dist_assume()].
+#' @param incubation_dist Incubation period distribution. The incubation period
+#'   is the time between infection and symptom onset. This assumption is used
+#'   when `shedding_reference="symptom_onset"`, i.e. to support shedding load
+#'   distributions referenced by days since symptom onset. Will be automatically
+#'   passed to [incubation_dist_assume()].
+#' @param min_cases The minimum incidence (new cases per day) during the modeled
+#'   time period (default is 10). This assumption is used to calibrate the
+#'   `load_per_case` factor (a scaling factor that describes how many pathogen
+#'   particles are shed by the average infected individual overall and how much
+#'   of this is detectable at the sampling site). If `min_cases` is specified,
+#'   `load_per_case` is chosen such that the estimated time series of infections
+#'   does not go significantly below `min_cases`. Will be automatically passed
+#'   to [load_per_case_calibrate()].
+#' @param load_per_case This argument allows to directly specify the average
+#'   total load per case, instead of calibrating it to case data. Note that the
+#'   `load_per_case` depends both on biological factors as well as on the
+#'   specific sewage system and laboratory quantification. Important: To
+#'   actually use this assumption, the model option [load_per_case_assume()]
+#'   must be specified in [EpiSewer()] via [model_shedding()]. If you want to
+#'   use this option to do a manual calibration to case data, the helper
+#'   function [suggest_load_per_case()] might also be useful.
+#' @param residence_dist Sewer residence time distribution for pathogen
+#'   particles. By default, `EpiSewer` assumes that particles arrive at the
+#'   sampling site within the day of shedding. However, for larger sewage
+#'   systems, particles may travel longer than a day depending on where and when
+#'   they were shed into the wastewater. Will be automatically passed to
+#'   [residence_dist_assume()].
+#' @param ... Further assumptions to be passed to [EpiSewer()].
+
+#' @details Note that if case data is supplied via `sewer_data`, the `min_cases`
+#'   assumption is overwritten and the supplied case data is used for a more
+#'   accurate calibration instead.
+#'
+#' @return A `list` with all assumptions supplied. Can be passed to the
+#'   `assumptions` argument in [EpiSewer()].
+#' @export
+sewer_assumptions <- function(generation_dist = NULL,
+                              shedding_dist = NULL,
+                              shedding_reference = NULL,
+                              incubation_dist = NULL,
+                              min_cases = 10,
+                              load_per_case = NULL,
+                              residence_dist = c(1),
+                              ...) {
+  assumptions <- c(as.list(environment()), list(...))
+  return(assumptions)
+}
+
+#' Configure results returned after model fitting
+#'
+#' @param fitted If `TRUE` (default), the fitted model object is also returned,
+#'   not only summaries of the model fitting. Note that this makes the results
+#'   object substantially larger.
+#' @param summary_intervals Which credible intervals (CrIs) should be used to
+#'   summarize the posterior distributions? Default is `c(0.5, 0.95)`, i.e. the
+#'   50% and 95% CrI are returned
+#' @param samples_ndraws Number of exemplary posterior samples to return. Note
+#'   that the summaries always use all available samples.
+#'
+#' @return A `list` with settings for the results.
+#' @export
+#' @examples
+#' ww_data <- ww_data_SARS_CoV_2_Zurich
+#' ww_assumptions <- ww_assumptions_SARS_CoV_2_Zurich
+#'
+#' ww_fit_opts <- set_fit_opts(
+#'   sampler = sampler_stan_mcmc(
+#'     chains = 2,
+#'     parallel_chains = 2,
+#'     iter_warmup = 400,
+#'     iter_sampling = 400,
+#'     seed = 42 # ensures reproducibility
+#'   )
+#' )
+#'
+#' ww_results_opts <- set_results_opts(
+#'   fitted = TRUE, # return full model fit
+#'   summary_intervals = c(0.5, 0.8, 0.95),
+#'   samples_ndraws = 100
+#' )
+#'
+#' ww_result <- EpiSewer(
+#'   data = ww_data,
+#'   assumptions = ww_assumptions,
+#'   fit_opts = ww_fit_opts,
+#'   results_opts = ww_results_opts
+#' )
+set_results_opts <- function(fitted = TRUE, summary_intervals = c(0.5, 0.95), samples_ndraws = 50) {
+  opts <- as.list(environment())
+  return(opts)
+}
 
 #' Get checksums that uniquely identify an EpiSewer job.
 #'

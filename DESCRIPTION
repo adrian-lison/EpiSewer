@@ -26,7 +26,7 @@ Imports:
     ggpattern,
     lazyeval,
     lubridate,
-    Matrix,
+    Matrix (>= 1.5-1),
     rlang,
     cli,
     rstan,
@@ -34,7 +34,8 @@ Imports:
     splines,
     stats,
     stringr,
-    vctrs
+    vctrs,
+    purrr (>= 1.0.1)
 Suggests:
     testthat (>= 3.0.0),
     zoo

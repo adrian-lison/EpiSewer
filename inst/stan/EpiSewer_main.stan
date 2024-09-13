@@ -64,7 +64,7 @@ data {
 
   // Shedding ----
   real<lower=0> load_mean; // mean load shed per person
-  int<lower=0> S; // maximum number of days with shedding
+  int<lower=1> S; // maximum number of days with shedding
   vector[S + 1] shedding_dist; // shedding load distribution
   // --> probability for shedding today comes first
   int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads?
@@ -75,7 +75,7 @@ data {
   array[load_vari ? n_zeta_exact : 0] int<lower = 1, upper = S + D + T> zeta_exact; // dates on which zeta should not be approximated
 
   // Incubation period ----
-  int<lower=0> L; // maximum incubation period
+  int<lower=1> L; // maximum incubation period
   vector[L + 1] incubation_dist; // incubation period distribution
   // --> probability for a delay of zero comes first
 
