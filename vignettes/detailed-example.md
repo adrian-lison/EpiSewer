@@ -395,7 +395,7 @@ ww_result$job$model
 #> 
 #> shedding
 #>  |- incubation_dist_assume
-#>  |- shedding_dist_assume (shedding_reference = symptom_onset)
+#>  |- shedding_dist_assume
 #>  |- load_per_case_calibrate
 #>  |- load_variation_estimate
 #> 
