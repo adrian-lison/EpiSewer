@@ -1,5 +1,5 @@
 
-<a href='https://adrian-lison.github.io/EpiSewer/'><img src='man/figures/EpiSewer_logo.png' align="right" height="130" alt="EpiSewer package website"/></a>
+<a href='https://adrian-lison.github.io/EpiSewer/'><img src='man/figures/EpiSewer_logo.png' align="right" width="140" alt="EpiSewer package website"/></a>
 
 # EpiSewer: Estimate Epidemiological Indicators from Wastewater Measurements
 
