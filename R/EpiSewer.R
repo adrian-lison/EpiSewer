@@ -74,10 +74,210 @@ EpiSewer <- function(
   if (run_fit) {
     return(run(job))
   } else {
-    return(list(job = job))
+    res <- list(job = job)
+    class(res) <- c("EpiSewerJobResult", class(res))
+    return(res)
   }
 }
 
+#' Constructor for EpiSewerJob objects
+EpiSewerJob <- function(job_name,
+                        modeldata,
+                        fit_opts,
+                        results_opts,
+                        jobarray_size = 1,
+                        overwrite = TRUE,
+                        results_exclude = c()) {
+  job <- list()
+
+  job[["job_name"]] <- job_name
+  job[["jobarray_size"]] <- jobarray_size
+
+  # ToDo rlang::flatten is deprecated, replace
+  data_arguments <- suppressWarnings(
+    rlang::flatten(modeldata[!(names(modeldata) %in% c(
+      ".init", ".metainfo", ".checks", ".str",
+      ".sewer_data", ".sewer_assumptions"
+    ))])
+  )
+  data_arguments_raw <- data_arguments[
+    stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
+  ]
+  job[["data"]] <- data_arguments_raw
+  job[["model"]] <- modeldata$.str
+  job[["init"]] <- modeldata$.init
+  job[["fit_opts"]] <- fit_opts
+  job[["results_opts"]] <- results_opts
+
+  job[["priors_text"]] <- data_arguments[
+    stringr::str_detect(names(data_arguments), "_prior_text")
+  ]
+  job[["metainfo"]] <- modeldata$.metainfo
+
+  job[["overwrite"]] <- overwrite
+  job[["results_exclude"]] <- results_exclude
+
+  class(job) <- c("EpiSewerJob", class(job))
+
+  return(job)
+}
+
+#' @export
+setClass("EpiSewerJob")
+#' Run a job.
+#'
+#' @export
+run <- function(job) {
+  UseMethod("run")
+}
+
+#' @export
+run.EpiSewerJob <- function(job) {
+  arguments <- c(
+    list(data = job$data),
+    init = function() job$init,
+    job$fit_opts$sampler
+  )
+
+  fitting_successful <- FALSE
+  result <- list()
+  result$job <- job
+
+  result$stan_model <- get_stan_model(
+    model_metainfo = job$metainfo,
+    model_folder = job$fit_opts$model$model_folder,
+    profile = job$fit_opts$model$profile,
+    threads = job$fit_opts$model$threads,
+    force_recompile = job$fit_opts$model$force_recompile,
+    package = job$fit_opts$model$package
+  )
+
+  stanmodel_instance <- result$stan_model$load_model[[1]]()
+
+  result$checksums <- get_checksums(job, stanmodel_instance)
+
+  fit_res <- tryCatch(
+    {
+      fit_res <- withWarnings(suppress_messages_warnings(
+        do.call(stanmodel_instance$sample, arguments),
+        c(
+          "Registered S3 method overwritten by 'data.table'",
+          "Cannot parse stat file, cannot read file: No such file or directory",
+          "cannot open file '/proc/stat': No such file or directory"
+        )
+      ))
+      if (length(fit_res$warnings) == 0) {
+        fitting_successful <- TRUE
+        fit_res <- fit_res$value
+      } else {
+        cat("\n")
+        cli::cli_warn(
+          paste(
+            "There was an error while fitting the model.",
+            "Only the model input is returned."
+          )
+        )
+        fit_res <- list(
+          errors = unlist(lapply(
+            fit_res$warnings, function(x) stringr::str_remove(x$message, "\n")
+          )),
+          sampler_output = fit_res$value$output()
+        )
+      }
+      fit_res
+    },
+    error = function(err) {
+      cat("\n")
+      cli::cli_warn(c(
+        paste(
+          "There was an error while fitting the model.",
+          "Only the model input is returned."
+        ),
+        err$message
+      ))
+      return(list(errors = err, sampler_output = NULL))
+    }
+  )
+
+  if (fitting_successful) {
+    result$summary <- try(summarize_fit(
+      fit = fit_res,
+      data = job$data,
+      .metainfo = job$metainfo,
+      intervals = job$results_opts$summary_intervals,
+      ndraws = job$results_opts$samples_ndraws
+      ))
+    if (job$results_opts$fitted) {
+      fit_res$draws()
+      try(fit_res$sampler_diagnostics(), silent = TRUE)
+      try(fit_res$init(), silent = TRUE)
+      try(fit_res$profiles(), silent = TRUE)
+      result$fitted <- fit_res
+    }
+    result$diagnostics <- try(suppressMessages(fit_res$diagnostic_summary()))
+    result$runtime <- try(fit_res$time())
+  } else {
+    result$errors <- fit_res$errors
+    result$sampler_output <- fit_res$sampler_output
+  }
+
+  class(result) <- c("EpiSewerJobResult", class(result))
+  return(result)
+}
+
+#' @export
+run.EpiSewerJobResult <- function(job) {
+  return(run(job$job))
+}
+
+#' Print an EpiSewerJob.
+#' @export
+print.EpiSewerJob <- function(x) {
+  cat(paste0("\n",x$job_name,"\n"))
+  cat("-----\n")
+  cat(paste0(
+    "Time period: ",
+    x$metainfo$T_start_date, " to ", x$metainfo$T_end_date, "\n",
+    "Observations: ", x$data$n_measured, " measurements on ",
+    length(unique(x$data$sample_to_date)), " days\n"
+    ))
+  if (x$metainfo$forecast_horizon > 0) {
+    cat(paste0(
+      "Forecast horizon: ", x$metainfo$forecast_horizon, " days\n"
+    ))
+  }
+  cat("\nUse ...$model for a summary of the model specification.")
+}
+
+#' @export
+setClass("EpiSewerJobResult")
+
+#' Print an EpiSewerJobResult.
+#' @export
+print.EpiSewerJobResult <- function(x) {
+  print(x$job)
+  if (all(c("runtime","diagnostics") %in% names(x))) {
+    cat("\n\n")
+    cat(paste0("Model fitted in ", round(x$runtime$total),
+               " seconds (", nrow(x$runtime$chains) ," chains, ",
+               job$job$fit_opts$sampler$iter_sampling, " iterations each)\n"))
+    cat("-----")
+    num_divergent <- sum(x$diagnostics$num_divergent)
+    if (num_divergent>0) cat("\nDivergent transitions:", num_divergent)
+    num_max_treedepth <- sum(x$diagnostics$num_max_treedepth)
+    if (num_max_treedepth>0) cat("\nMaximum treedepth reached:", num_max_treedepth)
+    num_ebfmi_low <- sum(x$diagnostics$num_ebfmi_low<0.2)
+    if (num_ebfmi_low>0) cat("\nE-BFMI problems:", num_ebfmi_low)
+    if (num_divergent==0 && num_max_treedepth==0 && num_ebfmi_low==0) {
+      cat("\nAll diagnostics are perfect.")
+    }
+  } else if ("errors" %in% names(x)) {
+    cat("\n\n")
+    cat("Model fitting failed:\n  ")
+    cat(paste(x$errors, collapse="\n  "))
+    cat("\nDetailed sampler output can be accessed via ...$sampler_output.")
+  }
+}
 
 #' Specify observation data
 #'
@@ -216,148 +416,6 @@ set_results_opts <- function(fitted = TRUE, summary_intervals = c(0.5, 0.95), sa
   opts <- as.list(environment())
   return(opts)
 }
-
-#' Constructor for EpiSewerJob objects
-EpiSewerJob <- function(job_name,
-                        modeldata,
-                        fit_opts,
-                        results_opts,
-                        jobarray_size = 1,
-                        overwrite = TRUE,
-                        results_exclude = c()) {
-  job <- list()
-
-  job[["job_name"]] <- job_name
-  job[["jobarray_size"]] <- jobarray_size
-
-  # ToDo rlang::flatten is deprecated, replace
-  data_arguments <- suppressWarnings(
-    rlang::flatten(modeldata[!(names(modeldata) %in% c(
-      ".init", ".metainfo", ".checks", ".str",
-      ".sewer_data", ".sewer_assumptions"
-    ))])
-  )
-  data_arguments_raw <- data_arguments[
-    stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
-  ]
-  job[["data"]] <- data_arguments_raw
-  job[["model"]] <- modeldata$.str
-  job[["init"]] <- modeldata$.init
-  job[["fit_opts"]] <- fit_opts
-  job[["results_opts"]] <- results_opts
-
-  job[["priors_text"]] <- data_arguments[
-    stringr::str_detect(names(data_arguments), "_prior_text")
-  ]
-  job[["metainfo"]] <- modeldata$.metainfo
-
-  job[["overwrite"]] <- overwrite
-  job[["results_exclude"]] <- results_exclude
-
-  class(job) <- "EpiSewerJob"
-
-  return(job)
-}
-
-#' @export
-setClass("EpiSewerJob")
-
-#' Run a job.
-#'
-#' @export
-setGeneric("run", function(job) UseMethod("run", job))
-
-setMethod("run", c("EpiSewerJob"), function(job) {
-  arguments <- c(
-    list(data = job$data),
-    init = function() job$init,
-    job$fit_opts$sampler
-  )
-
-  fitting_successful <- FALSE
-  result <- list()
-  result$job <- job
-
-  result$stan_model <- get_stan_model(
-    model_metainfo = job$metainfo,
-    model_folder = job$fit_opts$model$model_folder,
-    profile = job$fit_opts$model$profile,
-    threads = job$fit_opts$model$threads,
-    force_recompile = job$fit_opts$model$force_recompile,
-    package = job$fit_opts$model$package
-  )
-
-  stanmodel_instance <- result$stan_model$load_model[[1]]()
-
-  result$checksums <- get_checksums(job, stanmodel_instance)
-
-  fit_res <- tryCatch(
-    {
-      fit_res <- withWarnings(suppress_messages_warnings(
-        do.call(stanmodel_instance$sample, arguments),
-        c(
-          "Registered S3 method overwritten by 'data.table'",
-          "Cannot parse stat file, cannot read file: No such file or directory",
-          "cannot open file '/proc/stat': No such file or directory"
-        )
-      ))
-      if (length(fit_res$warnings) == 0) {
-        fitting_successful <- TRUE
-        fit_res <- fit_res$value
-      } else {
-        cat("\n")
-        cli::cli_warn(
-          paste(
-            "There was an error while fitting the model.",
-            "Only the model input is returned."
-          )
-        )
-        fit_res <- list(
-          errors = unlist(lapply(
-            fit_res$warnings, function(x) stringr::str_remove(x$message, "\n")
-          )),
-          sampler_output = fit_res$value$output()
-        )
-      }
-      fit_res
-    },
-    error = function(err) {
-      cat("\n")
-      cli::cli_warn(c(
-        paste(
-          "There was an error while fitting the model.",
-          "Only the model input is returned."
-        ),
-        err$message
-      ))
-      return(list(errors = err, sampler_output = NULL))
-    }
-  )
-
-  if (fitting_successful) {
-    result$summary <- try(summarize_fit(
-      fit = fit_res,
-      data = job$data,
-      .metainfo = job$metainfo,
-      intervals = job$results_opts$summary_intervals,
-      ndraws = job$results_opts$samples_ndraws
-      ))
-    if (job$results_opts$fitted) {
-      fit_res$draws()
-      try(fit_res$sampler_diagnostics(), silent = TRUE)
-      try(fit_res$init(), silent = TRUE)
-      try(fit_res$profiles(), silent = TRUE)
-      result$fitted <- fit_res
-    }
-    result$diagnostics <- try(suppressMessages(fit_res$diagnostic_summary()))
-    result$runtime <- try(fit_res$time())
-  } else {
-    result$errors <- fit_res$errors
-    result$sampler_output <- fit_res$sampler_output
-  }
-
-  return(result)
-})
 
 #' Get checksums that uniquely identify an EpiSewer job.
 #'
