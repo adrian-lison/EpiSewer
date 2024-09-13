@@ -9,3 +9,4 @@ get_gamma_scale_alternative(gamma_mean, gamma_sd)
 \description{
 Get scale of a Gamma distribution given its mean and sd
 }
+\keyword{internal}

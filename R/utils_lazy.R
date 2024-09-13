@@ -11,6 +11,7 @@
 #'   separator. EpiSewer will then check if at least one of the options is
 #'   present.
 #' @return TRUE if all required data and assumptions are present in `f_env`.
+#' @keywords internal
 check_provided <- function(f_env = list(), data = list(), assumptions = list(),
                            required_data = c(), required_assumptions = c()) {
   f_env <- update_env(f_env, data, assumptions, required_data, required_assumptions)
@@ -37,6 +38,7 @@ check_provided <- function(f_env = list(), data = list(), assumptions = list(),
 #'
 #' @return The updated environment, where all required data and assumptions that
 #'   were provided in `data` and `assumptions` were inserted if missing.
+#' @keywords internal
 update_env <- function(f_env = list(), data = list(), assumptions = list(),
                        required_data = c(), required_assumptions = c()) {
   for (req in required_data) {
@@ -65,6 +67,7 @@ update_env <- function(f_env = list(), data = list(), assumptions = list(),
 #'   parent. This ensure that all functions in the namespace are accessible.
 #'
 #' @return A copy of the environment
+#' @keywords internal
 copy_env <- function(env, exclude = c()) {
   copy <- new.env()
   for(name in ls(env, all.names=TRUE)) {
@@ -97,6 +100,7 @@ copy_env <- function(env, exclude = c()) {
 #'   `.metainfo`). This means that there can also be cascades: once a `tbp` is
 #'   resolved, this may lead to an update of some metainformation, such that a
 #'   `tbc` can be resolved in the next update.
+#' @keywords internal
 tbp <- function(f_name, f_expr,
                 required_data = c(), required_assumptions = c(),
                 modeldata = NULL,
@@ -180,6 +184,7 @@ tbp <- function(f_name, f_expr,
 
 #' Print to-be-provided object
 #' @export
+#' @keywords internal
 print.tbp <- function(x) {
   req_data <- c()
   req_assumptions <- c()
@@ -212,6 +217,7 @@ solve.tbp <- function(x, modeldata, data = list(), assumptions = list()) {
 }
 
 #' To be evaluated
+#' @keywords internal
 tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
   if (modeldata_check(calling_env$modeldata, required, throw_error = FALSE)) {
     return(r_expr)
@@ -233,6 +239,7 @@ tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
 
 #' Print to-be-evaluated object
 #' @export
+#' @keywords internal
 print.tbe <- function(x) {
   print(paste("Waiting for information:", rlang::expr_text(x$lazy_r$expr)))
 }
@@ -264,6 +271,7 @@ solve.tbe <- function(x, modeldata, throw_error = TRUE) {
 #'   `.metainfo`). This means that there can also be cascades: once a `tbp` is
 #'   resolved, this may lead to an update of some metainformation, such that a
 #'   `tbc` can be resolved in the next update.
+#' @keywords internal
 tbc <- function(f_name, f_expr, required = c(), required_values = NULL,
                 advice = NULL,
                 modeldata = NULL, calling_env = rlang::caller_env()) {
@@ -309,6 +317,7 @@ tbc <- function(f_name, f_expr, required = c(), required_values = NULL,
 
 #' Print to-be-computed object
 #' @export
+#' @keywords internal
 print.tbc <- function(x) {
   print(paste(
     "Waiting for the following information to compute values:",

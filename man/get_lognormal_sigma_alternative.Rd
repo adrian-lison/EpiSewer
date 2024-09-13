@@ -29,3 +29,4 @@ Compute sigma parameter of Log-Normal from other quantities.
 Currently, only conversion from mu + a quantile is supported, but
 other alternatives may be added.
 }
+\keyword{internal}

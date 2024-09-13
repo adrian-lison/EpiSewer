@@ -81,7 +81,7 @@ mark_outlier_spikes_median <- function(
 }
 
 
-#' Estimate load per case from wastewater data and case numbers
+#' Suggest load per case assumption using wastewater data and case numbers
 #'
 #' @description This helper function uses a crude heuristic to infer the
 #'   `load_per_case` based on the relationship between measured concentrations

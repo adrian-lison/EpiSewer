@@ -18,3 +18,4 @@ A string with a link to the help page of the function
 \description{
 Print link to help page of function in CLI
 }
+\keyword{internal}

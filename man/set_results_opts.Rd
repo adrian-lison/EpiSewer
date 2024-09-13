@@ -48,10 +48,10 @@ ww_results_opts <- set_results_opts(
   samples_ndraws = 100
 )
 
-ww_result <- EpiSewer(
+\dontrun{ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
   fit_opts = ww_fit_opts,
   results_opts = ww_results_opts
-)
+)}
 }

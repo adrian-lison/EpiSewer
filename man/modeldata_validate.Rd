@@ -38,3 +38,4 @@ The reason why defaults are inserted for missing optional variables is that
 stan does not explicitly allow default variables, so they are specified with
 a little hack by using zero-length dimensions.
 }
+\keyword{internal}

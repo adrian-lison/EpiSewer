@@ -14,3 +14,4 @@ solely inferred from modeldata. This function is designed such that calling
 it will never do harm to the modeldata object and not throw errors if
 something is missing in the modeldata object.
 }
+\keyword{internal}

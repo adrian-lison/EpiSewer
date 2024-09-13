@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_infections.R
 \name{R_estimate_rw}
 \alias{R_estimate_rw}
-\title{Smooth Rt estimates via a random walk}
+\title{Estimate Rt via a random walk}
 \usage{
 R_estimate_rw(
   intercept_prior_mu = 1,

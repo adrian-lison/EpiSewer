@@ -19,3 +19,4 @@ A vector with clipped/fenced values
 \description{
 Clip values of a vector between a lower and an upper bound
 }
+\keyword{internal}

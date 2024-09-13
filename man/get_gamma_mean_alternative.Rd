@@ -9,3 +9,4 @@ get_gamma_mean_alternative(gamma_shape, gamma_scale)
 \description{
 Get mean of a Gamma distribution given its shape and scale
 }
+\keyword{internal}

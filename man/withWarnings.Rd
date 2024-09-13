@@ -15,3 +15,4 @@ A \code{list}, with two elements: value and warnings
 \description{
 Collect warnings arising during computation of a result
 }
+\keyword{internal}

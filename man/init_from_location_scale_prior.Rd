@@ -24,3 +24,4 @@ mean is zero (useful for truncated normal priors for example.)
 If the provided prior has zero variance, it is assumed that the
 parameter will not be sampled and an empty init is returned.
 }
+\keyword{internal}

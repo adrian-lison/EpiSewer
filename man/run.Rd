@@ -2,10 +2,17 @@
 % Please edit documentation in R/EpiSewer.R
 \name{run}
 \alias{run}
-\title{Run a job.}
+\title{Fit an EpiSewer model.}
 \usage{
 run(job)
 }
+\arguments{
+\item{job}{An EpiSewerJob object as returned by \code{\link[=EpiSewer]{EpiSewer()}}.}
+}
 \description{
-Run a job.
+This function allows to (re-)run the model fitting from an
+existing EpiSewerJob object. It is especially useful when combined with the
+\code{run_fit=FALSE} option in \code{\link[=EpiSewer]{EpiSewer()}}. This allows to first create the
+EpiSewerJob object and then run the model fitting later or on a different
+machine.
 }

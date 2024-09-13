@@ -89,7 +89,7 @@ generation_dist_assume <-
     return(modeldata)
   }
 
-#' Smooth Rt estimates via exponential smoothing
+#' Estimate Rt via exponential smoothing
 #'
 #'@description This option estimates the effective reproduction number over time
 #'  using exponential smoothing. It implements Holt's linear trend method with
@@ -265,7 +265,7 @@ R_estimate_ets <- function(
   return(modeldata)
 }
 
-#' Smooth Rt estimates via a random walk
+#' Estimate Rt via a random walk
 #'
 #' @description This option estimates the effective reproduction number over
 #'   time using a random walk.
@@ -335,7 +335,7 @@ R_estimate_rw <- function(
   return(modeldata)
 }
 
-#' Smooth Rt estimates via smoothing splines
+#' Estimate Rt via smoothing splines
 #'
 #' @description This option estimates the effective reproduction number using
 #'   penalized B-splines.

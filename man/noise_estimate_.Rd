@@ -120,3 +120,4 @@ variation model, \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}} is a 
 digital PCR (\code{cv_type = "dPCR"}), which may however also work with other
 quantification methods such as qPCR.
 }
+\keyword{internal}

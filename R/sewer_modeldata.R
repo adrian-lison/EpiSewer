@@ -6,6 +6,7 @@
 #'   solely inferred from modeldata. This function is designed such that calling
 #'   it will never do harm to the modeldata object and not throw errors if
 #'   something is missing in the modeldata object.
+#' @keywords internal
 modeldata_update_metainfo <- function(modeldata) {
   if (modeldata_check(modeldata,
     required = c("S", "D", "T"),

@@ -155,8 +155,8 @@ The priors of this component have the following functional form:
 \link{LOD_estimate_dPCR} for a limit of detection model specialised for
 dPCR.
 
-Other \link{noise models}: 
+Other {noise models}: 
 \code{\link{noise_estimate_constant_var}()},
 \code{\link{noise_estimate}()}
 }
-\concept{\link{noise models}}
+\concept{{noise models}}

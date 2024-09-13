@@ -21,3 +21,4 @@ Copy an environment
 The new environment has the calling environment of \code{copy_env} as its
 parent. This ensure that all functions in the namespace are accessible.
 }
+\keyword{internal}

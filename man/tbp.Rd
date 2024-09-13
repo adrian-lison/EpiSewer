@@ -44,3 +44,4 @@ computed) is that \code{tbp} is for promises based on data and assumptions, and
 resolved, this may lead to an update of some metainformation, such that a
 \code{tbc} can be resolved in the next update.
 }
+\keyword{internal}

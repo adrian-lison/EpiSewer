@@ -1151,8 +1151,14 @@ plot_sample_effects <- function(results,
 #' @export
 #'
 #' @examples
-#' modeldata <- LOD_assume(limit = 1e7, sharpness = 10)
-#' plot_LOD(modeldata)
+#' # Particles arrive within the same day
+#' residence_dist_assume(residence_dist = c(1))
+#'
+#' # Particles always arrive after one day
+#' residence_dist_assume(residence_dist = c(0, 1))
+#'
+#' # 1/4 of particles only arrives after one day
+#' residence_dist_assume(residence_dist = c(0.75, 0.25))
 plot_LOD <- function(modeldata) {
   if (!all(c("LOD_model", "LOD_scale") %in% names(modeldata))) {
     cli::cli_abort(c(

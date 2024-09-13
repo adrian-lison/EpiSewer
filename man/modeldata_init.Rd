@@ -18,6 +18,3 @@ performed before model fitting (\code{.checks}).
 \description{
 Construct an unspecified EpiSewer model
 }
-\examples{
-modeldata_init()
-}

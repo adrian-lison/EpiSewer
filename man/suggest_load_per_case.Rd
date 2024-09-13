@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_preprocess.R
 \name{suggest_load_per_case}
 \alias{suggest_load_per_case}
-\title{Estimate load per case from wastewater data and case numbers}
+\title{Suggest load per case assumption using wastewater data and case numbers}
 \usage{
 suggest_load_per_case(
   measurements,

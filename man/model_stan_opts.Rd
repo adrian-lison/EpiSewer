@@ -38,7 +38,7 @@ made changes to the stan code.}
 directory, allowing users to provide their own customized model files.}
 }
 \value{
-
+A list with details of the stan model
 }
 \description{
 Specify details of the stan model

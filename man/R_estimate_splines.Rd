@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_infections.R
 \name{R_estimate_splines}
 \alias{R_estimate_splines}
-\title{Smooth Rt estimates via smoothing splines}
+\title{Estimate Rt via smoothing splines}
 \usage{
 R_estimate_splines(
   knot_distance = 7,

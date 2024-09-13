@@ -2,29 +2,34 @@
 
 ## Parameterization ----
 #' Get shape of a Gamma distribution given its mean and sd
+#' @keywords internal
 get_gamma_shape_alternative <- function(gamma_mean, gamma_sd) {
   gamma_shape <- (gamma_mean / gamma_sd)^2
   return(gamma_shape)
 }
 
 #' Get rate of a Gamma distribution given its mean and sd
+#' @keywords internal
 get_gamma_rate_alternative <- function(gamma_mean, gamma_sd) {
   gamma_rate <- gamma_mean / (gamma_sd^2)
   return(gamma_rate)
 }
 
 #' Get scale of a Gamma distribution given its mean and sd
+#' @keywords internal
 get_gamma_scale_alternative <- function(gamma_mean, gamma_sd) {
   return(1 / get_gamma_rate_alternative(gamma_mean, gamma_sd))
 }
 
 #' Get mean of a Gamma distribution given its shape and scale
+#' @keywords internal
 get_gamma_mean_alternative <- function(gamma_shape, gamma_scale) {
   gamma_mean <- gamma_shape * gamma_scale
   return(gamma_mean)
 }
 
 #' Get sd of a Gamma distribution given its shape and scale
+#' @keywords internal
 get_gamma_sd_alternative <- function(gamma_shape, gamma_scale) {
   gamma_sd <- sqrt(gamma_shape) * gamma_scale
   return(gamma_sd)
@@ -169,6 +174,7 @@ erfinv <- function (x) qnorm((1 + x)/2)/sqrt(2) # inverse error function
 #' alternatives may be added.
 #'
 #' @return Mu parameter of Log-Normal distribution.
+#' @keywords internal
 get_lognormal_mu_alternative <- function(unit_mean = NULL, unit_sd = NULL, unit_q5 = NULL, unit_q95 = NULL) {
   if (!is.null(unit_mean) && !is.null(unit_sd)) {
     sigma2 <- log((unit_sd / unit_mean)^2 + 1)
@@ -200,6 +206,7 @@ get_lognormal_mu_alternative <- function(unit_mean = NULL, unit_sd = NULL, unit_
 #'   other alternatives may be added.
 #'
 #' @return Sigma parameter of Log-Normal distribution.
+#' @keywords internal
 get_lognormal_sigma_alternative <- function(mu, unit_mean = NULL, unit_sd = NULL,
                                             unit_q5 = NULL, unit_q95 = NULL) {
   if (!is.null(unit_mean) && !is.null(unit_sd)) {
@@ -356,6 +363,7 @@ check_dist <- function(dist, name = "probability distribution") {
 #'   Otherwise, it starts at 1.
 #'
 #' @return Mean of the discrete distribution
+#' @keywords internal
 dist_mean <- function(dist, include_zero = TRUE) {
   if (include_zero) {
     mean <- sum((0:(length(dist) - 1)) * dist)

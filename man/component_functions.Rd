@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_modeldata.R
 \name{component_functions}
 \alias{component_functions}
-\title{Get modeling functions for a component}
+\title{Get a list of modeling functions for a component}
 \usage{
 component_functions(component)
 }
@@ -14,8 +14,6 @@ A character vector with all available modeling functions for the
 component.
 }
 \description{
-Get modeling functions for a component
-}
-\examples{
-component_functions("R")
+This function returns a list of all available modeling functions
+for a given component.
 }
