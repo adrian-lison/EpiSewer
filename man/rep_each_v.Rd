@@ -9,3 +9,4 @@ rep_each_v(x, each)
 \description{
 Vectorized version of \code{rep} with \code{each} argument, \code{each} can be a vector
 }
+\keyword{internal}

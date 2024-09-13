@@ -21,3 +21,4 @@ A vector with knot positions.
 \description{
 Places knots for fitting B-splines to a time series
 }
+\keyword{internal}

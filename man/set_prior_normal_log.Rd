@@ -43,3 +43,4 @@ deviate from that guess.
 A normal prior on the log scale is effectively a log-normal prior on
 the unit/natural scale.
 }
+\keyword{internal}

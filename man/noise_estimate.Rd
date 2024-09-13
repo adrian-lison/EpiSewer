@@ -80,8 +80,8 @@ The priors of this component have the following functional form:
 }
 }
 \seealso{
-Other \link{noise models}: 
+Other {noise models}: 
 \code{\link{noise_estimate_constant_var}()},
 \code{\link{noise_estimate_dPCR}()}
 }
-\concept{\link{noise models}}
+\concept{{noise models}}

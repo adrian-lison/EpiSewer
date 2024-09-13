@@ -24,6 +24,6 @@ been passed through several other modeling functions, as long as
 \code{\link[=LOD_assume]{LOD_assume()}} was applied at some point.
 }
 \examples{
-modeldata <- LOD_assume(limit = 1e7, sharpness = 10)
+modeldata <- LOD_assume(limit = 2.56, prob = 0.95)
 plot_LOD(modeldata)
 }

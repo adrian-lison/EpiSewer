@@ -291,6 +291,7 @@ concentrations_observe <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @family {observation types}
+#' @keywords internal
 partitions_observe <-
   function(data,
            composite_window = 1,
@@ -377,6 +378,7 @@ partitions_observe <-
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
+#' @keywords internal
 noise_estimate_ <-
   function(replicates = FALSE,
            cv_prior_mu = 0,
@@ -578,7 +580,7 @@ noise_estimate_ <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family [noise models]
+#' @family {noise models}
 noise_estimate <-
   function(replicates = FALSE,
            cv_prior_mu = 0,
@@ -655,7 +657,7 @@ noise_estimate <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family [noise models]
+#' @family {noise models}
 #' @seealso [LOD_estimate_dPCR] for a limit of detection model specialised for
 #'   dPCR.
 noise_estimate_dPCR <-
@@ -722,7 +724,7 @@ noise_estimate_dPCR <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family [noise models]
+#' @family {noise models}
 noise_estimate_constant_var <-
   function(replicates = FALSE,
            cv_prior_mu = 0,

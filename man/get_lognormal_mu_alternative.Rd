@@ -26,3 +26,4 @@ Compute mu parameter of Log-Normal from other quantities.
 Currently, only conversion from quantiles is supported, but other
 alternatives may be added.
 }
+\keyword{internal}

@@ -1,4 +1,4 @@
-#' Estimate the effective reproduction number from wastewater measurements
+#' Estimate epidemiological parameters from wastewater measurements
 #'
 #' @description `EpiSewer` estimates the effective reproduction number Rt and
 #'   other parameters of interest from wastewater measurements over time. This
@@ -81,6 +81,7 @@ EpiSewer <- function(
 }
 
 #' Constructor for EpiSewerJob objects
+#' @keywords internal
 EpiSewerJob <- function(job_name,
                         modeldata,
                         fit_opts,
@@ -124,7 +125,15 @@ EpiSewerJob <- function(job_name,
 
 #' @export
 setClass("EpiSewerJob")
-#' Run a job.
+#' Fit an EpiSewer model.
+#'
+#' @description This function allows to (re-)run the model fitting from an
+#'   existing EpiSewerJob object. It is especially useful when combined with the
+#'   `run_fit=FALSE` option in [EpiSewer()]. This allows to first create the
+#'   EpiSewerJob object and then run the model fitting later or on a different
+#'   machine.
+#'
+#' @param job An EpiSewerJob object as returned by [EpiSewer()].
 #'
 #' @export
 run <- function(job) {
@@ -252,6 +261,7 @@ test_run.EpiSewerJobResult <- function(job) {
 
 #' Print an EpiSewerJob.
 #' @export
+#' @keywords internal
 print.EpiSewerJob <- function(x) {
   cat(paste0("\n",x$job_name,"\n"))
   cat("-----\n")
@@ -274,6 +284,7 @@ setClass("EpiSewerJobResult")
 
 #' Print an EpiSewerJobResult.
 #' @export
+#' @keywords internal
 print.EpiSewerJobResult <- function(x) {
   print(x$job)
   if (all(c("runtime","diagnostics") %in% names(x))) {
@@ -426,12 +437,12 @@ sewer_assumptions <- function(generation_dist = NULL,
 #'   samples_ndraws = 100
 #' )
 #'
-#' ww_result <- EpiSewer(
+#' \dontrun{ww_result <- EpiSewer(
 #'   data = ww_data,
 #'   assumptions = ww_assumptions,
 #'   fit_opts = ww_fit_opts,
 #'   results_opts = ww_results_opts
-#' )
+#' )}
 set_results_opts <- function(fitted = TRUE, summary_intervals = c(0.5, 0.95), samples_ndraws = 50) {
   opts <- as.list(environment())
   return(opts)

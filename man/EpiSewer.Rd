@@ -2,7 +2,7 @@
 % Please edit documentation in R/EpiSewer.R
 \name{EpiSewer}
 \alias{EpiSewer}
-\title{Estimate the effective reproduction number from wastewater measurements}
+\title{Estimate epidemiological parameters from wastewater measurements}
 \usage{
 EpiSewer(
   data = sewer_data(),

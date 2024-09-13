@@ -25,6 +25,7 @@
 #' @return A `list` containing the model definition and a link to the compiled
 #'   stan model.
 #' @export
+#' @keywords internal
 get_stan_model <- function(
     model_metainfo = NULL,
     model_filename = NULL,
@@ -79,7 +80,7 @@ get_stan_model <- function(
 #' @param sampler Which type of sampler should be used for model fitting?
 #'   Currently, only [sampler_stan_mcmc()] is supported.
 #' @param results Details about the results to be returned, see
-#'   [results_opts()]. For example, what credible intervals to use for
+#'   [set_results_opts()]. For example, what credible intervals to use for
 #'   summarizing posterior distributions or whether to return the fitted model
 #'   object.
 #' @param model Details about the model file to be used, see
@@ -108,12 +109,12 @@ get_stan_model <- function(
 #'   samples_ndraws = 100
 #' )
 #'
-#' ww_result <- EpiSewer(
+#' \dontrun{ww_result <- EpiSewer(
 #'   data = ww_data,
 #'   assumptions = ww_assumptions,
 #'   fit_opts = ww_fit_opts,
 #'   results_opts = ww_results_opts
-#' )
+#' )}
 set_fit_opts <- function(sampler = sampler_stan_mcmc(),
                          model = model_stan_opts()) {
   opts <- as.list(environment())
@@ -171,7 +172,7 @@ sampler_stan_mcmc <- function(
 #'   (defaults to EpiSewer). If NULL, will search in the normal working
 #'   directory, allowing users to provide their own customized model files.
 #'
-#' @return
+#' @return A list with details of the stan model
 #' @export
 model_stan_opts <- function(model_filename = NULL, model_folder = "stan",
                             profile = TRUE, threads = FALSE,
@@ -265,7 +266,7 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 #' @details If one or several models are not successfully compiled, please
 #'   ensure that `cmdstan` is properly set up and try updating it to a newer
 #'   version using [cmdstanr::install_cmdstan()]. If the problem persists,
-#'   please run [EpiSewer::sewer_compile(verbose = TRUE)] and post the output in
+#'   please run [sewer_compile(verbose = TRUE)] and post the output in
 #'   a new issue on GitHub, along with your [cmdstanr::cmdstan_version()].
 #'
 #' @export
@@ -335,6 +336,7 @@ sewer_compile <- function(model = NULL, force_recompile = FALSE, verbose = FALSE
 
 #' Computes a checksum of a stanmodel, i.e. of the code from its main
 #' stan file and all included stan files
+#' @keywords internal
 get_checksum_model <- function(stanmodel, only_functions = FALSE) {
   if ("try-error" %in% class(stanmodel)) {
     cli::cli_abort("There was an error compiling the stan model.")

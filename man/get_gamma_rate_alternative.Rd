@@ -9,3 +9,4 @@ get_gamma_rate_alternative(gamma_mean, gamma_sd)
 \description{
 Get rate of a Gamma distribution given its mean and sd
 }
+\keyword{internal}

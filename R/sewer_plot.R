@@ -1151,7 +1151,7 @@ plot_sample_effects <- function(results,
 #' @export
 #'
 #' @examples
-#' modeldata <- LOD_assume(limit = 1e7, sharpness = 10)
+#' modeldata <- LOD_assume(limit = 2.56, prob = 0.95)
 #' plot_LOD(modeldata)
 plot_LOD <- function(modeldata) {
   if (!all(c("LOD_model", "LOD_scale") %in% names(modeldata))) {

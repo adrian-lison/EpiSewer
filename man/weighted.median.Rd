@@ -17,3 +17,4 @@ Weighted median of the values in x
 \description{
 Compute a weighted median of values
 }
+\keyword{internal}

@@ -9,6 +9,7 @@
 #' @param UB Upper bound
 #'
 #' @return A vector with clipped/fenced values
+#' @keywords internal
 fence <- function(vec, LB = -Inf, UB = Inf) {
   pmax(LB, pmin(vec, UB))
 }
@@ -20,6 +21,7 @@ fence <- function(vec, LB = -Inf, UB = Inf) {
 #'
 #' @return A boolean vector with element-wise comparisons. Comparisons including
 #' NAs are coded as FALSE.
+#' @keywords internal
 compareNA <- function(v1, v2) {
   same <- (v1 == v2) | (is.na(v1) & is.na(v2))
   same[is.na(same)] <- FALSE
@@ -32,6 +34,7 @@ compareNA <- function(v1, v2) {
 #' @param w Weights for each entry
 #'
 #' @return Weighted median of the values in x
+#' @keywords internal
 weighted.median <- function(x, w) {
   w <- w[order(x)]
   x <- x[order(x)]
@@ -42,6 +45,7 @@ weighted.median <- function(x, w) {
 }
 
 #' Vectorized version of `rep` with `each` argument, `each` can be a vector
+#' @keywords internal
 rep_each_v <- function(x, each) {
   unlist(mapply(function(i, e) rep(i, each = e), i = x, e = each))
 }
@@ -56,6 +60,7 @@ rep_each_v <- function(x, each) {
 #'   extrapolation of splines towards the present.
 #'
 #' @return A vector with knot positions.
+#' @keywords internal
 place_knots <- function(ts_length, knot_distance, partial_window = 30) {
   if (!knot_distance>1) {
     cli::cli_abort("Knot distance must be larger than one.")
@@ -105,13 +110,14 @@ place_knots <- function(ts_length, knot_distance, partial_window = 30) {
 #'   with the observed time series values y, you directly get the (weighted
 #'   least squares) estimate of the trend.
 #'
-#' @examples
-#' x = 1:6
-#' y = x*4 + rnorm(6, 0, 0.1)
-#' w <- c(0.1, 0.1, 0.1, 0.2, 0.2, 0.3) # weights
-#' trend_reg <- get_regression_linear_trend(x, weights = w)
-#' as.vector(trend_reg %*% y) # this gives you the trend estimate
-#' summary(lm(y ~ x, weights = w))$coefficients["x","Estimate"] # should be the same
+#' #@examples
+#' #x = 1:6
+#' #y = x*4 + rnorm(6, 0, 0.1)
+#' #w <- c(0.1, 0.1, 0.1, 0.2, 0.2, 0.3) # weights
+#' #trend_reg <- get_regression_linear_trend(x, weights = w)
+#' #as.vector(trend_reg %*% y) # this gives you the trend estimate
+#' #summary(lm(y ~ x, weights = w))$coefficients["x","Estimate"] # should be the same
+#' @keywords internal
 get_regression_linear_trend <- function(x, weights = rep(1/length(x), length(x))) {
   if (length(weights) != length(x)) {
     cli::cli_abort(
@@ -267,6 +273,7 @@ suppress_messages_warnings <- function(.expr, .f_list, ...) {
 #'
 #' This can be used to provide abort statements as a direct argument to
 #' tryCatch without wrapping them in a function call
+#' @keywords internal
 abort_f <- function(...) {
   return(function(err) {
     cli::cli_abort(
@@ -280,6 +287,7 @@ abort_f <- function(...) {
 #' @param expr Expression with the computation to run
 #'
 #' @return A `list`, with two elements: value and warnings
+#' @keywords internal
 withWarnings <- function(expr) {
   myWarnings <- NULL
   wHandler <- function(w) {
@@ -297,6 +305,7 @@ withWarnings <- function(expr) {
 #'   name is used as label
 #'
 #' @return A string with a link to the help page of the function
+#' @keywords internal
 cli_help <- function(function_name, label = NULL) {
   function_name <- paste0(function_name, "()")
   if (is.null(label)) {

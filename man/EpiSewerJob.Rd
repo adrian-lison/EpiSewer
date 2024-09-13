@@ -17,3 +17,4 @@ EpiSewerJob(
 \description{
 Constructor for EpiSewerJob objects
 }
+\keyword{internal}

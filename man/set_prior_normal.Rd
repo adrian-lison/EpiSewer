@@ -22,3 +22,4 @@ Prior specification for modeldata.
 \description{
 Define a normal prior in modeldata
 }
+\keyword{internal}

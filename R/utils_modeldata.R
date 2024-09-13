@@ -10,6 +10,7 @@
 #'   modeling functions.
 #'
 #' @return Nothing
+#' @keywords internal
 template_model_helpers <- function(modeldata) { }
 
 #' Construct an unspecified EpiSewer model
@@ -22,9 +23,6 @@ template_model_helpers <- function(modeldata) { }
 #'   initialization (`init`), meta data (`.metainfo`), and checks to be
 #'   performed before model fitting (`.checks`).
 #' @export
-#'
-#' @examples
-#' modeldata_init()
 modeldata_init <- function() {
   modeldata <- list()
   modeldata$.init <- list()
@@ -45,6 +43,7 @@ modeldata_init <- function() {
 }
 
 #' Verification of modeldata objects
+#' @keywords internal
 verify_is_modeldata <- function(modeldata, arg_name) {
   if (!all(c(".init", ".metainfo", ".checks") %in% names(modeldata))) {
     error_msg <- paste0(
@@ -85,6 +84,7 @@ verify_is_modeldata <- function(modeldata, arg_name) {
 #' @return A character vector with all available modeling functions for the
 #'   component. If collapse is not NULL, the helper functions are collapsed into
 #'   a single string.
+#' @keywords internal
 component_functions_ <- function(component, collapse = "\n",
                                  prefix = "- [", suffix = "()]") {
   if (!component %in% all_components()) {
@@ -136,16 +136,16 @@ component_functions_ <- function(component, collapse = "\n",
   }
 }
 
-#' Get modeling functions for a component
+#' Get a list of modeling functions for a component
+#'
+#' @description This function returns a list of all available modeling functions
+#'   for a given component.
 #'
 #' @inheritParams component_functions_
 #'
 #' @return A character vector with all available modeling functions for the
 #'   component.
 #' @export
-#'
-#' @examples
-#' component_functions("R")
 component_functions <- function(component) {
   return(component_functions_(
     component,
@@ -154,6 +154,7 @@ component_functions <- function(component) {
 }
 
 #' Define a prior in modeldata
+#' @keywords internal
 set_prior <- function(param, dist = "normal", ...) {
   prior <- c(as.list(environment()), list(...))
   prior_data <- list()
@@ -178,6 +179,7 @@ set_prior <- function(param, dist = "normal", ...) {
 #'   via the two-sigma rule-of-thumb (approximately 95% of probability mass).
 #'
 #' @return Prior specification for modeldata.
+#' @keywords internal
 set_prior_normal <- function(param, mu, sigma = NULL, two_sigma = NULL) {
   if (is.null(sigma)) {
     if (is.null(two_sigma)) {
@@ -214,6 +216,7 @@ set_prior_normal <- function(param, mu, sigma = NULL, two_sigma = NULL) {
 #'   the unit/natural scale.
 #'
 #' @return Prior specification for modeldata.
+#' @keywords internal
 set_prior_normal_log <- function(param,
                                  unit_median = NULL,
                                  unit_q5 = NULL, unit_q95 = NULL,
@@ -264,6 +267,7 @@ set_prior_normal_log <- function(param,
 #'   parameter will not be sampled and an empty init is returned.
 #'
 #' @return Location of the prior plus 1/4 of the scale.
+#' @keywords internal
 init_from_location_scale_prior <- function(prior) {
   prior_data_select <- !stringr::str_detect(names(prior), pattern = "_text$")
   if (sum(prior_data_select) != 1) {
@@ -299,6 +303,7 @@ init_from_location_scale_prior <- function(prior) {
 #'
 #' @return If throw_error is `TRUE`, nothing is returned, otherwise a logical is
 #'   returned (`TRUE` if all required variables are present)
+#' @keywords internal
 modeldata_check <- function(modeldata,
                             required,
                             required_values = NULL,
@@ -371,6 +376,7 @@ modeldata_check <- function(modeldata,
 #' @return If no error is thrown due to missing mandatory variables, the same
 #'   modeldata object is returned again, where optional variables have been
 #'   replaced by zero-length dimension defaults for stan.
+#' @keywords internal
 modeldata_validate <- function(modeldata,
                                data = list(),
                                assumptions = list(),
@@ -664,6 +670,7 @@ add_dummy_inits <- function(modeldata, dummies) {
 #' @param type If "structure", the model structure is printed. If "data", the
 #'   modeldata content (data, inits, metainfo) is printed.
 #' @export
+#' @keywords internal
 print.modeldata <- function(x, type = "structure") {
   if (type == "structure") {
     print(x$.str)
@@ -679,6 +686,7 @@ print.modeldata <- function(x, type = "structure") {
 #' Print a `modelstructure` object
 #'
 #' @export
+#' @keywords internal
 print.modelstructure <- function(.str) {
   output <- sapply(names(.str), function(module) {
     if (length(.str[[module]]) > 0) {

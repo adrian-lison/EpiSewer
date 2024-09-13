@@ -1,5 +1,5 @@
 Package: EpiSewer
-Title: Estimate Reproduction Numbers from Wastewater Measurements
+Title: Estimate Epidemiological Parameters from Wastewater Measurements
 Version: 0.0.2
 Authors@R: 
     person(given = "Adrian",
@@ -11,7 +11,7 @@ Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 Depends:
     R (>= 3.5.0)
 Imports: 
@@ -38,10 +38,14 @@ Imports:
     purrr (>= 1.0.1)
 Suggests:
     testthat (>= 3.0.0),
-    zoo
+    zoo,
+    bookdown
+Config/Needs/website:
+    r-lib/pkgdown
 Remotes:
     stan-dev/cmdstanr
 SystemRequirements:
     CmdStan (>=2.30)
 LazyData: true
 Config/testthat/edition: 3
+URL: https://adrian-lison.github.io/EpiSewer/, https://github.com/adrian-lison/EpiSewer

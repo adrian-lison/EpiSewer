@@ -38,6 +38,12 @@ This function summarizes important parameters of interest from a
 fitted \code{EpiSewer} model.
 }
 \details{
+Normally, this function is automatically called by EpiSewer after
+model fitting, but it may also be run manually, for example to update the
+summary intervals or number of exemplary samples. Note that this is only
+possible if the result contains the full fitted model object (see
+\code{\link[=set_results_opts]{set_results_opts()}}).
+
 The summaries for infections and R include a column \code{seeding}, which
 indicates whether the corresponding date was still in the seeding phase or
 not. The seeding phase is here defined as 2xG days long, where G is the

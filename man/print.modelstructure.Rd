@@ -9,3 +9,4 @@
 \description{
 Print a \code{modelstructure} object
 }
+\keyword{internal}

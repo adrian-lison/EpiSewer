@@ -10,9 +10,9 @@ model_forecast(horizon = horizon_none())
 \item{horizon}{The forecast horizon. How many days into the future should
 EpiSewer forecast? Note that this functionality is intended for short-term
 forecasts. Projections over longer horizons can be highly inaccurate.
-Available options- \code{\link[=horizon_none]{horizon_none()}}
+Available options: - \code{\link[=horizon_none]{horizon_none()}}
 \itemize{
-\item \code{\link[=horizon_assume]{horizon_assume()}})`
+\item \code{\link[=horizon_assume]{horizon_assume()}}
 }}
 }
 \value{

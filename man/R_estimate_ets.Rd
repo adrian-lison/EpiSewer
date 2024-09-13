@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_infections.R
 \name{R_estimate_ets}
 \alias{R_estimate_ets}
-\title{Smooth Rt estimates via exponential smoothing}
+\title{Estimate Rt via exponential smoothing}
 \usage{
 R_estimate_ets(
   level_prior_mu = 1,

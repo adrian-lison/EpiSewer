@@ -41,3 +41,4 @@ Other {observation types}:
 \code{\link{concentrations_observe}()}
 }
 \concept{{observation types}}
+\keyword{internal}

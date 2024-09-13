@@ -1,5 +1,5 @@
 ---
-title: "Detailed EpiSewer example"
+title: "Detailed example"
 output: github_document
 ---
 

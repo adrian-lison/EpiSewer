@@ -18,3 +18,4 @@ NAs are coded as FALSE.
 \description{
 Compare entries of two vectors with potentially missing values
 }
+\keyword{internal}

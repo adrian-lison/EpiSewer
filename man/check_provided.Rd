@@ -34,3 +34,4 @@ TRUE if all required data and assumptions are present in \code{f_env}.
 \description{
 Check if all required data and assumptions have been provided.
 }
+\keyword{internal}

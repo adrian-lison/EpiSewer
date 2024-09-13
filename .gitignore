@@ -12,3 +12,4 @@ inst/stan/*
 vignettes/*.html
 data/result_example.rds
 local/
+docs

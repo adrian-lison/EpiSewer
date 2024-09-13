@@ -20,3 +20,4 @@ This function does not actually do anything. It only serves as a
 template for the documentation of other functions using inheritance of
 params.
 }
+\keyword{internal}

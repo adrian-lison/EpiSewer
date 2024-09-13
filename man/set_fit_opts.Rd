@@ -15,7 +15,7 @@ Currently, only \code{\link[=sampler_stan_mcmc]{sampler_stan_mcmc()}} is support
 customized models.}
 
 \item{results}{Details about the results to be returned, see
-\code{\link[=results_opts]{results_opts()}}. For example, what credible intervals to use for
+\code{\link[=set_results_opts]{set_results_opts()}}. For example, what credible intervals to use for
 summarizing posterior distributions or whether to return the fitted model
 object.}
 }
@@ -45,10 +45,10 @@ ww_results_opts <- set_results_opts(
   samples_ndraws = 100
 )
 
-ww_result <- EpiSewer(
+\dontrun{ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
   fit_opts = ww_fit_opts,
   results_opts = ww_results_opts
-)
+)}
 }

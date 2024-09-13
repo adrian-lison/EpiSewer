@@ -25,6 +25,7 @@
 #'   inspection purposes?
 #'
 #' @return A `data.frame` with columns `date_index`, `date`, and `load`.
+#' @keywords internal
 get_load_curve_crude <- function(
     measured_concentrations, measure_to_sample, sample_to_date, flow,
     total_delay_dist, max_shift = NULL, T_start_date, impute_zero = NA,
@@ -142,25 +143,10 @@ get_load_curve_crude <- function(
 #' @param load_per_case Load per case in gene copies.
 #'
 #' @return A `data.frame` with columns `date_index`, `date`, and `load`.
+#' @keywords internal
 get_infection_curve_crude <- function(load_curve_crude, load_per_case) {
   infection_curve_crude <- copy(load_curve_crude)
   infection_curve_crude[, infections := load / load_per_case]
   infection_curve_crude[, load := NULL]
   return(infection_curve_crude)
-}
-
-get_zero_impute <- function(LOD_model, LOD_scale, modeldata) {
-  if (LOD_model == 0) {
-    return(NA)
-  } else if (LOD_model == 1) {
-    # integrate exp(-LOD_scale)
-  } else if (LOD_model == 2) {
- #LOD_expected_scale = (
-    # (total_partitions_observe ? total_partitions_median : (nu_upsilon_b_mu_prior[1] * 1e4)) *
-    #   nu_upsilon_c_prior[1] * 1e-5 *
-    #   n_averaged_median
-    # )
-  } else {
-    cli::cli_abort("Unknown LOD_model.")
-  }
 }

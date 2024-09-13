@@ -22,3 +22,4 @@ a crude estimate of the loads by date of infection. This is useful for
 different calibration purposes, such as determining a suitable
 \code{load_per_case} assumption.
 }
+\keyword{internal}

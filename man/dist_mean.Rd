@@ -18,3 +18,4 @@ Mean of the discrete distribution
 \description{
 Get the mean of a discrete distribution
 }
+\keyword{internal}

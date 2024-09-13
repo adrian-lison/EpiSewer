@@ -48,3 +48,4 @@ stan model.
 \description{
 Loads a specific stan model for model fitting in \code{EpiSewer}.
 }
+\keyword{internal}

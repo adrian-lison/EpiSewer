@@ -40,3 +40,4 @@ Note that data and assumptions are only assigned to the environment
 if the corresponding attributes are not yet present. If already present,
 they are not overwritten.
 }
+\keyword{internal}

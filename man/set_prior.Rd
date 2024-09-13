@@ -9,3 +9,4 @@ set_prior(param, dist = "normal", ...)
 \description{
 Define a prior in modeldata
 }
+\keyword{internal}

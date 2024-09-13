@@ -42,3 +42,4 @@ returned (\code{TRUE} if all required variables are present)
 \code{modeldata_check} accepts various additional arguments which are turned into
 a sophisticated error message about missing variables
 }
+\keyword{internal}
