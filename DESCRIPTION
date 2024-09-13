@@ -38,10 +38,9 @@ Imports:
     purrr (>= 1.0.1)
 Suggests:
     testthat (>= 3.0.0),
-    zoo,
-    bookdown
+    zoo
 Config/Needs/website:
-    r-lib/pkgdown
+    r-lib/pkgdown (= 2.1.0)
 Remotes:
     stan-dev/cmdstanr
 SystemRequirements:
