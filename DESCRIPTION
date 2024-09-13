@@ -48,3 +48,4 @@ SystemRequirements:
 LazyData: true
 Config/testthat/edition: 3
 URL: https://adrian-lison.github.io/EpiSewer/, https://github.com/adrian-lison/EpiSewer
+BugReports: https://github.com/adrian-lison/EpiSewer/issues
