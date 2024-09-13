@@ -24,12 +24,6 @@ been passed through several other modeling functions, as long as
 \code{\link[=LOD_assume]{LOD_assume()}} was applied at some point.
 }
 \examples{
-# Particles arrive within the same day
-residence_dist_assume(residence_dist = c(1))
-
-# Particles always arrive after one day
-residence_dist_assume(residence_dist = c(0, 1))
-
-# 1/4 of particles only arrives after one day
-residence_dist_assume(residence_dist = c(0.75, 0.25))
+modeldata <- LOD_assume(limit = 2.56, prob = 0.95)
+plot_LOD(modeldata)
 }
