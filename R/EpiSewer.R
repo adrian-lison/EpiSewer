@@ -230,6 +230,26 @@ run.EpiSewerJobResult <- function(job) {
   return(run(job$job))
 }
 
+#' @export
+test_run <- function(job) {
+  UseMethod("test_run")
+}
+
+#' @export
+test_run.EpiSewerJob <- function(job) {
+  job$fit_opts$sampler$iter_warmup <- 5
+  job$fit_opts$sampler$iter_sampling <- 5
+  job$fit_opts$sampler$show_messages <- FALSE
+  job$fit_opts$sampler$show_exceptions <- FALSE
+  job$results_opts$samples_ndraws <- 2
+  return(run(job))
+}
+
+#' @export
+test_run.EpiSewerJobResult <- function(job) {
+  return(test_run(job$job))
+}
+
 #' Print an EpiSewerJob.
 #' @export
 print.EpiSewerJob <- function(x) {
