@@ -71,16 +71,17 @@
 
     
     
-<p>This vignette repeats the introductory example from the <a href="../README.html">README</a>, but shows how to specify the different
+<p>This vignette repeats the introductory example from the <a href="../index.html">README</a>, but shows how to specify the different
 modules and components in <code>EpiSewer</code> explicitly.</p>
 <p>💡 For a conceptual overview over modules and components, we
-recommend to first read the <a href="model-specification.html">model
-specification</a> vignette.</p>
+recommend to first read the <code><a href="../articles/model-specification.html">vignette("model-specification")</a></code>
+vignette.</p>
 <div class="section level3">
 <h3 id="loading-the-package">Loading the package<a class="anchor" aria-label="anchor" href="#loading-the-package"></a>
 </h3>
 <p>We assume that <code>EpiSewer</code> is already successfully
-installed (see <a href="../README.html#Installing%20the%20package">README</a>).</p>
+installed (see <a href="../index.html">README</a>: installing the
+package).</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://adrian-lison.github.io/EpiSewer/">EpiSewer</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
@@ -116,12 +117,13 @@ data.</p>
 <div class="section level3">
 <h3 id="modeling">Modeling<a class="anchor" aria-label="anchor" href="#modeling"></a>
 </h3>
-<p>In the <a href="../README.html">README</a>, we used a shortcut to
+<p>In the <a href="../index.html">README</a>, we used a shortcut to
 collect all observation data via <code><a href="../reference/sewer_data.html">sewer_data()</a></code> and all
 assumptions via <code><a href="../reference/sewer_assumptions.html">sewer_assumptions()</a></code>. These are convenience
 functions to make the <code>EpiSewer</code> command more concise. In
 this example however, we will explicitly supply the data and assumptions
-to the relevant modules and components (see the <a href="model-specification.html">model specification</a> vignette).</p>
+to the relevant modules and components (see the
+<code><a href="../articles/model-specification.html">vignette("model-specification")</a></code> vignette).</p>
 <div class="section level4">
 <h4 id="measurements">Measurements<a class="anchor" aria-label="anchor" href="#measurements"></a>
 </h4>
@@ -261,7 +263,7 @@ shed pathogen particles into the wastewater:</p>
 <span>  load_variation <span class="op">=</span> <span class="fu"><a href="../reference/load_variation_estimate.html">load_variation_estimate</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The shedding module requires a number of assumptions (see
-explanations in the <a href="../README.html">README</a>):</p>
+explanations in the <a href="../index.html">README</a>):</p>
 <ul>
 <li>
 <code>shedding_dist</code> and <code>incubation_dist</code>: We use
@@ -269,7 +271,7 @@ the same shedding load distribution (by days since symptom onset) as
 before. We also need to assume an incubation period distribution.</li>
 <li>
 <code>load_per_case</code>: The load per case assumption is
-calibrated based on observed case data. In the <a href="../README.html">README</a>, we supplied the case data via
+calibrated based on observed case data. In the <a href="../index.html">README</a>, we supplied the case data via
 <code><a href="../reference/sewer_data.html">sewer_data()</a></code>. Here, we now supply it directly to
 <code><a href="../reference/load_per_case_calibrate.html">load_per_case_calibrate()</a></code>.</li>
 <li>
@@ -317,7 +319,7 @@ infection model. This makes sense in most cases.</li>
 <p>Last but not least, there is the <code>forecast</code> module. This
 module describes how the generative model defined by the other modules
 is used to produce forecasts of Rt, infections, concentrations and other
-quantities. By default, as in our <a href="../README.html">README</a>
+quantities. By default, as in our <a href="../index.html">README</a>
 example, we produce no forecasts by effectively setting the forecast
 horizon to zero.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
@@ -421,7 +423,7 @@ the EpiSewer modules and settings defined above to the
 <p>Note that this time we don’t need a <code>data</code> or
 <code>assumptions</code> argument, because we provided all data and
 assumptions to the respective module components.</p>
-<p>The above model is identical to the default model fitted in the <a href="../README.html">README</a>, so we don’t repeat the results
+<p>The above model is identical to the default model fitted in the <a href="../index.html">README</a>, so we don’t repeat the results
 again.</p>
 <p>Remember that you can print a summary of the full modeling details
 from the job object:</p>
