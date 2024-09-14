@@ -19,13 +19,13 @@ knitr::opts_chunk$set(
 require(emo)
 ```
 
-This vignette repeats the introductory example from the [README](../README.md), but shows how to specify the different modules and components in `EpiSewer` explicitly.
+This vignette repeats the introductory example from the [README](../index.html), but shows how to specify the different modules and components in `EpiSewer` explicitly.
 
-`r emo::ji("bulb")` For a conceptual overview over modules and components, we recommend to first read the [model specification](model-specification.md) vignette.
+`r emo::ji("bulb")` For a conceptual overview over modules and components, we recommend to first read the `vignette("model-specification")` vignette.
 
 ### Loading the package
 
-We assume that `EpiSewer` is already successfully installed (see [README](../README.md#Installing%20the%20package)).
+We assume that `EpiSewer` is already successfully installed (see [README](../index.html): installing the package).
 ```{r}
 library(EpiSewer)
 library(data.table)
@@ -47,7 +47,7 @@ head(measurements_sparse, 10)
 
 ### Modeling
 
-In the [README](../README.md), we used a shortcut to collect all observation data via `sewer_data()` and all assumptions via `sewer_assumptions()`. These are convenience functions to make the `EpiSewer` command more concise. In this example however, we will explicitly supply the data and assumptions to the relevant modules and components (see the [model specification](model-specification.md) vignette).
+In the [README](../index.html), we used a shortcut to collect all observation data via `sewer_data()` and all assumptions via `sewer_assumptions()`. These are convenience functions to make the `EpiSewer` command more concise. In this example however, we will explicitly supply the data and assumptions to the relevant modules and components (see the `vignette("model-specification")` vignette).
 
 #### Measurements
 
@@ -161,10 +161,10 @@ ww_shedding <- model_shedding(
 ```
 
 
-The shedding module requires a number of assumptions (see explanations in the [README](../README.md)):
+The shedding module requires a number of assumptions (see explanations in the [README](../index.html)):
 
 - `shedding_dist` and `incubation_dist`: We use the same shedding load distribution (by days since symptom onset) as before. We also need to assume an incubation period distribution.
-- `load_per_case`: The load per case assumption is calibrated based on observed case data. In the [README](../README.md), we supplied the case data via `sewer_data()`. Here, we now supply it directly to `load_per_case_calibrate()`.
+- `load_per_case`: The load per case assumption is calibrated based on observed case data. In the [README](../index.html), we supplied the case data via `sewer_data()`. Here, we now supply it directly to `load_per_case_calibrate()`.
 - `load_variation`: `EpiSewer` offers the option to model individual-level variation in shedding, and this is recommended as a default.
 
 #### Infections
@@ -189,7 +189,7 @@ The module has the following epidemiological components:
 
 #### Forecast
 
-Last but not least, there is the `forecast` module. This module describes how the generative model defined by the other modules is used to produce forecasts of Rt, infections, concentrations and other quantities. By default, as in our [README](../README.md) example, we produce no forecasts by effectively setting the forecast horizon to zero.
+Last but not least, there is the `forecast` module. This module describes how the generative model defined by the other modules is used to produce forecasts of Rt, infections, concentrations and other quantities. By default, as in our [README](../index.html) example, we produce no forecasts by effectively setting the forecast horizon to zero.
 ```{r}
 ww_forecast <- model_forecast(
   horizon = horizon_none()
@@ -276,7 +276,7 @@ ww_result <- EpiSewer(
 
 Note that this time we don't need a `data` or `assumptions` argument, because we provided all data and assumptions to the respective module components.
 
-The above model is identical to the default model fitted in the [README](../README.md), so we don't repeat the results again.
+The above model is identical to the default model fitted in the [README](../index.html), so we don't repeat the results again.
 
 ```{r, eval = TRUE, include = FALSE}
 ww_result <- EpiSewer(

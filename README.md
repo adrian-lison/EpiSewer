@@ -94,8 +94,11 @@ issue on GitHub, along with your `cmdstanr::cmdstan_version()`.
 
 This is a quick introduction to using the `EpiSewer` package. To learn
 more about modeling with `EpiSewer`, see the [model
-specification](vignettes/model-specification.md) and [detailed
-example](vignettes/detailed-example.md) vignettes.
+specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html)
+and [detailed
+example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html)
+vignettes on the [package
+website](https://adrian-lison.github.io/EpiSewer/).
 
 ### Loading the package
 
@@ -313,8 +316,10 @@ ww_result <- EpiSewer(
 💡 We are here using a shorthand version of the `EpiSewer()` function
 which uses all available default settings. To find out how the
 `EpiSewer` model can be customized, see the [model
-specification](vignettes/model-specification.md) and [detailed
-example](vignettes/detailed-example.md) vignettes.
+specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html)
+and [detailed
+example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html)
+vignettes.
 
 ### Plotting the results
 
@@ -517,10 +522,12 @@ ww_result$job$model
 #>  |- infection_noise_estimate (overdispersion = TRUE)
 ```
 
-➡️ Check out the [model specification](vignettes/model-specification.md)
-and [detailed example](vignettes/detailed-example.md) vignettes to
-better understand the modeling details and customize the `EpiSewer`
-model.
+➡️ Check out the [model
+specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html)
+and [detailed
+example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html)
+vignettes to better understand the modeling details and customize the
+`EpiSewer` model.
 
 The `summary` attribute stores summarized results for important
 parameters from the model.
