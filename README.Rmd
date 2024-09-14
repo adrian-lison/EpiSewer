@@ -96,7 +96,7 @@ If the models are not successfully compiled, please ensure that `cmdstan` is pro
 
 ## Introduction
 
-This is a quick introduction to using the `EpiSewer` package. To learn more about modeling with `EpiSewer`, see the [model specification](vignettes/model-specification.md) and [detailed example](vignettes/detailed-example.md) vignettes.
+This is a quick introduction to using the `EpiSewer` package. To learn more about modeling with `EpiSewer`, see the [model specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html) and [detailed example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html) vignettes on the [package website](https://adrian-lison.github.io/EpiSewer/).
 
 ### Loading the package
 
@@ -236,7 +236,7 @@ ww_result <- EpiSewer(
 )
 ```
 
-`r emo::ji("bulb")` We are here using a shorthand version of the `EpiSewer()` function which uses all available default settings. To find out how the `EpiSewer` model can be customized, see the [model specification](vignettes/model-specification.md) and [detailed example](vignettes/detailed-example.md) vignettes.
+`r emo::ji("bulb")` We are here using a shorthand version of the `EpiSewer()` function which uses all available default settings. To find out how the `EpiSewer` model can be customized, see the [model specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html) and [detailed example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html) vignettes.
 
 ```{r, eval = FALSE, include = FALSE}
 saveRDS(ww_result, file.path("data", "result_example.rds"))
@@ -381,7 +381,7 @@ In particular, we can print a concise summary of the modeling details (the `EpiS
 ```{r}
 ww_result$job$model
 ```
-`r emo::ji("right_arrow")` Check out the [model specification](vignettes/model-specification.md) and [detailed example](vignettes/detailed-example.md) vignettes to better understand the modeling details and customize the `EpiSewer` model.
+`r emo::ji("right_arrow")` Check out the [model specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html) and [detailed example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html) vignettes to better understand the modeling details and customize the `EpiSewer` model.
 
 The `summary` attribute stores summarized results for important parameters from the model.
 ```{r}

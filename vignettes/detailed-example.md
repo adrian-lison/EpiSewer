@@ -2,17 +2,16 @@ Detailed example
 ================
 
 This vignette repeats the introductory example from the
-[README](../README.md), but shows how to specify the different modules
+[README](../index.html), but shows how to specify the different modules
 and components in `EpiSewer` explicitly.
 
 💡 For a conceptual overview over modules and components, we recommend
-to first read the [model specification](model-specification.md)
-vignette.
+to first read the `vignette("model-specification")` vignette.
 
 ### Loading the package
 
 We assume that `EpiSewer` is already successfully installed (see
-[README](../README.md#Installing%20the%20package)).
+[README](../index.html#Installing%20the%20package)).
 
 ``` r
 library(EpiSewer)
@@ -50,13 +49,12 @@ head(measurements_sparse, 10)
 
 ### Modeling
 
-In the [README](../README.md), we used a shortcut to collect all
+In the [README](../index.html), we used a shortcut to collect all
 observation data via `sewer_data()` and all assumptions via
 `sewer_assumptions()`. These are convenience functions to make the
 `EpiSewer` command more concise. In this example however, we will
 explicitly supply the data and assumptions to the relevant modules and
-components (see the [model specification](model-specification.md)
-vignette).
+components (see the `vignette("model-specification")` vignette).
 
 #### Measurements
 
@@ -210,13 +208,13 @@ ww_shedding <- model_shedding(
 ```
 
 The shedding module requires a number of assumptions (see explanations
-in the [README](../README.md)):
+in the [README](../index.html)):
 
 - `shedding_dist` and `incubation_dist`: We use the same shedding load
   distribution (by days since symptom onset) as before. We also need to
   assume an incubation period distribution.
 - `load_per_case`: The load per case assumption is calibrated based on
-  observed case data. In the [README](../README.md), we supplied the
+  observed case data. In the [README](../index.html), we supplied the
   case data via `sewer_data()`. Here, we now supply it directly to
   `load_per_case_calibrate()`.
 - `load_variation`: `EpiSewer` offers the option to model
@@ -258,7 +256,7 @@ The module has the following epidemiological components:
 Last but not least, there is the `forecast` module. This module
 describes how the generative model defined by the other modules is used
 to produce forecasts of Rt, infections, concentrations and other
-quantities. By default, as in our [README](../README.md) example, we
+quantities. By default, as in our [README](../index.html) example, we
 produce no forecasts by effectively setting the forecast horizon to
 zero.
 
@@ -374,7 +372,7 @@ because we provided all data and assumptions to the respective module
 components.
 
 The above model is identical to the default model fitted in the
-[README](../README.md), so we don’t repeat the results again.
+[README](../index.html), so we don’t repeat the results again.
 
 Remember that you can print a summary of the full modeling details from
 the job object:

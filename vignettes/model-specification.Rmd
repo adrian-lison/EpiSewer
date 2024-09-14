@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This is a conceptual overview over the modeling functionality in `EpiSewer`. See [here](model-definition.md) for a mathematical definition of the underlying generative model, and [here](detailed-example.md) for an example vignette.
+This is a conceptual overview over the modeling functionality in `EpiSewer`. See `vignette("model-definition")` for a mathematical definition of the underlying generative model, and `vignette("detailed-example")` for an example vignette.
 
 ```{r, warning = FALSE, echo = FALSE}
 library(EpiSewer)
@@ -39,7 +39,7 @@ textForc <- paste(paste("-", rlang::fn_fmls_names(EpiSewer::model_forecast)), co
 ## Modules
 `EpiSewer` uses 5 different modules to describe the data generating process behind the wastewater measurements: `infections`, `shedding`, `sewage`, `sampling`, and `measurements`. There is a 6th module to specify `forecast` functionality. Each of these modules consists of a number of module components, as shown below.
 
-```{r model, eval = TRUE, echo = FALSE, fig.width=18, fig.height=3}
+```{r model, eval = TRUE, echo = FALSE, fig.width=18, fig.height=3, fig.alt="The 6 modules of the EpiSewer model"}
 start_x = 1.5
 w = 2
 gap = 1
@@ -112,14 +112,14 @@ EpiSewer::component_functions("infection_noise")
 ```
 
 #### `r emo::ji("bulb")` Multiple modeling options
-Some components have multiple versions of the same modeling function type. For example, there are currently three approaches to estimate the reproduction number, namely `R_estimate_splines` (smoothing splines), `R_estimate_rw` (random walk), `R_estimate_ets` (exponential smoothing), and `R_estimate_approx` (approximation of renewal model).
+Some components have multiple versions of the same modeling function type. For example, there are currently three approaches to estimate the reproduction number, namely `R_estimate_splines()` (smoothing splines), `R_estimate_rw()` (random walk), `R_estimate_ets()` (exponential smoothing), and `R_estimate_approx()` (approximation of renewal model).
 
 ```{r}
 EpiSewer::component_functions("R")
 ```
 
 #### `r emo::ji("exclamation_mark")` Modeling restrictions
-Not all components support all modeling types. For example, `EpiSewer` currently only offers `generation_dist_assume`, but not `generation_dist_estimate`, `generation_dist_calibrate`, or `generation_dist_observe`.
+Not all components support all modeling types. For example, `EpiSewer` currently only offers `generation_dist_assume()`, but not `generation_dist_estimate`, `generation_dist_calibrate`, or `generation_dist_observe`.
 
 ```{r}
 EpiSewer::component_functions("generation_dist")
@@ -151,7 +151,7 @@ EpiSewer(
 )
 ```
 
-What happens under the hood is that when individual model components are not provided with the data or assumptions they need, they search the data and assumption arguments passed to the `EpiSewer` function.
+What happens under the hood is that when individual model components are not provided with the data or assumptions they need, they search the data and assumption arguments passed to the `EpiSewer()` function.
 
 `r emo::ji("bulb")` It is always possible to mix both approaches and specify data or assumptions explicitly in the model component:
 
@@ -192,4 +192,4 @@ result <- EpiSewer(
 )
 ```
 
-Note that if the same data or assumptions are supplied via the `sewer_data()`/`sewer_assumptions()` *and* the individual component, `EpiSewer` will compare both arguments and throw an error if they differ.
+Note that if the same data or assumptions are supplied via the `sewer_data()`/`sewer_assumptions()` *and* the individual component, `EpiSewer()` will compare both arguments and throw an error if they differ.
