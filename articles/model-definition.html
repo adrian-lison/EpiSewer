@@ -87,6 +87,8 @@ selected by the user to be included.</p>
 <div class="section level3">
 <h3 id="reproduction-number">Reproduction number<a class="anchor" aria-label="anchor" href="#reproduction-number"></a>
 </h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math></p>
 <div class="section level4">
 <h4 id="link-function">Link function<a class="anchor" aria-label="anchor" href="#link-function"></a>
 </h4>
@@ -290,9 +292,10 @@ number from line list data with missing symptom onset dates. Preprint at
 (2023).&lt;/p&gt;'><sup>5</sup></a> to model both expected and realized
 infections.</p>
 <div class="section level4">
-<h4 id="expected-infections-iota_t">Expected infections
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ι</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\iota_t</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#expected-infections-iota_t"></a>
+<h4 id="expected-infections">Expected infections<a class="anchor" aria-label="anchor" href="#expected-infections"></a>
 </h4>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ι</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\iota_t</annotation></semantics></math></p>
 <div class="section level5">
 <h5 id="seeding">Seeding<a class="anchor" aria-label="anchor" href="#seeding"></a>
 </h5>
@@ -327,9 +330,10 @@ the discrete generation time distribution with maximum generation time
 </div>
 </div>
 <div class="section level4">
-<h4 id="realized-infections-i_t">Realized infections
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mi>t</mi></msub><annotation encoding="application/x-tex">I_t</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#realized-infections-i_t"></a>
+<h4 id="realized-infections">Realized infections<a class="anchor" aria-label="anchor" href="#realized-infections"></a>
 </h4>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mi>t</mi></msub><annotation encoding="application/x-tex">I_t</annotation></semantics></math></p>
 <div class="section level5">
 <h5 id="option-1-poisson">Option 1: Poisson<a class="anchor" aria-label="anchor" href="#option-1-poisson"></a>
 </h5>
@@ -367,9 +371,10 @@ but on
 <h2 id="shedding-module">Shedding module<a class="anchor" aria-label="anchor" href="#shedding-module"></a>
 </h2>
 <div class="section level3">
-<h3 id="expected-symptom-onsets-lambda_t">Expected symptom onsets
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\lambda_t</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#expected-symptom-onsets-lambda_t"></a>
+<h3 id="expected-symptom-onsets">Expected symptom onsets<a class="anchor" aria-label="anchor" href="#expected-symptom-onsets"></a>
 </h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\lambda_t</annotation></semantics></math></p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>λ</mi><mi>t</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>s</mi><mo>=</mo><mn>0</mn></mrow><mi>L</mi></munderover><msub><mi>I</mi><mrow><mi>t</mi><mo>−</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msubsup><mi>τ</mi><mi>s</mi><mtext mathvariant="normal">inc</mtext></msubsup></mrow><annotation encoding="application/x-tex">\begin{equation}
 \lambda_t = \sum_{s=0}^L I_{t-s}\, \tau^\text{inc}_s
 \end{equation}</annotation></semantics></math></p>
@@ -379,9 +384,10 @@ is the incubation period distribution with maximum incubation period
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>.</p>
 </div>
 <div class="section level3">
-<h3 id="total-load-shed-in-catchment-omega_t">Total load shed in catchment
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ω</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\omega_t</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#total-load-shed-in-catchment-omega_t"></a>
+<h3 id="total-load-shed-in-catchment">Total load shed in catchment<a class="anchor" aria-label="anchor" href="#total-load-shed-in-catchment"></a>
 </h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ω</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\omega_t</annotation></semantics></math></p>
 <div class="section level5">
 <h5 id="option-1-without-individual-level-variation">Option 1: Without individual-level variation<a class="anchor" aria-label="anchor" href="#option-1-without-individual-level-variation"></a>
 </h5>
@@ -457,9 +463,10 @@ which will typically be the case.</p>
 <h2 id="sewage-module">Sewage module<a class="anchor" aria-label="anchor" href="#sewage-module"></a>
 </h2>
 <div class="section level3">
-<h3 id="load-at-sampling-site-pi_t">Load at sampling site
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>π</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\pi_t</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#load-at-sampling-site-pi_t"></a>
+<h3 id="load-at-sampling-site">Load at sampling site<a class="anchor" aria-label="anchor" href="#load-at-sampling-site"></a>
 </h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>π</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\pi_t</annotation></semantics></math></p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>π</mi><mi>t</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>d</mi><mo>=</mo><mn>0</mn></mrow><mi>D</mi></munderover><msub><mi>ω</mi><mrow><mi>t</mi><mo>−</mo><mi>d</mi></mrow></msub><mspace width="0.167em"></mspace><msubsup><mi>τ</mi><mi>d</mi><mtext mathvariant="normal">res</mtext></msubsup></mrow><annotation encoding="application/x-tex">\begin{equation}
 \pi_t = \sum_{d=0}^D \omega_{t-d}\, \tau^\text{res}_d
 \end{equation}</annotation></semantics></math></p>
@@ -468,9 +475,10 @@ which will typically be the case.</p>
 is the sewer residence time distribution of pathogen particles.</p>
 </div>
 <div class="section level3">
-<h3 id="concentration-at-sampling-site-chi_t">Concentration at sampling site
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>χ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\chi_t</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#concentration-at-sampling-site-chi_t"></a>
+<h3 id="concentration-at-sampling-site">Concentration at sampling site<a class="anchor" aria-label="anchor" href="#concentration-at-sampling-site"></a>
 </h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>χ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\chi_t</annotation></semantics></math></p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>χ</mi><mi>t</mi></msub><mo>=</mo><mfrac><msub><mi>π</mi><mi>t</mi></msub><msub><mtext mathvariant="normal">flow</mtext><mi>t</mi></msub></mfrac></mrow><annotation encoding="application/x-tex">\begin{equation}
 \chi_t = \frac{\pi_t}{\text{flow}_t}
 \end{equation}</annotation></semantics></math></p>
@@ -485,10 +493,10 @@ site on day
 <h2 id="sampling-module">Sampling module<a class="anchor" aria-label="anchor" href="#sampling-module"></a>
 </h2>
 <div class="section level3">
-<h3 id="concentration-in-single-day-samples-kappa_t-with-sample-effects">Concentration in single-day samples
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>κ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\kappa_t</annotation></semantics></math>),
-with sample effects<a class="anchor" aria-label="anchor" href="#concentration-in-single-day-samples-kappa_t-with-sample-effects"></a>
+<h3 id="concentration-in-single-day-samples-with-sample-effects">Concentration in single-day samples, with sample effects<a class="anchor" aria-label="anchor" href="#concentration-in-single-day-samples-with-sample-effects"></a>
 </h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>κ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\kappa_t</annotation></semantics></math></p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>κ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>χ</mi><mi>t</mi></msub><mo>+</mo><mi>𝐗</mi><mspace width="0.167em"></mspace><mi>η</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
 \kappa_t = \chi_t + \boldsymbol{X} \, \eta
 \end{equation}</annotation></semantics></math></p>
@@ -513,9 +521,10 @@ can be filled with arbitrary values, since they will not contribute to
 the likelihood.</p>
 </div>
 <div class="section level3">
-<h3 id="concentration-in-multi-day-composite-samples-rho_t">Concentration in multi-day composite samples
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\rho_t</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#concentration-in-multi-day-composite-samples-rho_t"></a>
+<h3 id="concentration-in-multi-day-composite-samples">Concentration in multi-day composite samples<a class="anchor" aria-label="anchor" href="#concentration-in-multi-day-composite-samples"></a>
 </h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\rho_t</annotation></semantics></math></p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>t</mi></msub><mo>=</mo><mfrac><mn>1</mn><mi>w</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>w</mi><mo>−</mo><mn>1</mn></mrow></munderover><msub><mi>κ</mi><mrow><mi>t</mi><mo>−</mo><mi>i</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\begin{equation}
 \rho_t = \frac{1}{w} \sum_{i=0}^{w-1} \kappa_{t-i}
 \end{equation}</annotation></semantics></math></p>
@@ -531,9 +540,10 @@ is the day of the latest sample.</p>
 <h2 id="measurements-module">Measurements module<a class="anchor" aria-label="anchor" href="#measurements-module"></a>
 </h2>
 <div class="section level3">
-<h3 id="analysed-concentration-before-replication-stage-psi_t">Analysed concentration before replication stage
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Ψ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\Psi_t</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#analysed-concentration-before-replication-stage-psi_t"></a>
+<h3 id="analysed-concentration-before-replication-stage">Analysed concentration before replication stage<a class="anchor" aria-label="anchor" href="#analysed-concentration-before-replication-stage"></a>
 </h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Ψ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\Psi_t</annotation></semantics></math></p>
 <p>We model
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Ψ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\Psi_t</annotation></semantics></math>
 as Log-Normal distributed with unit-scale mean
@@ -591,9 +601,10 @@ P(\Upsilon_{t,i} &gt; 0 | \Psi_t = \psi_t) = 1 - P(\Upsilon_t = 0 | \Psi_t = \ps
 \end{equation}</annotation></semantics></math></p>
 </div>
 <div class="section level3">
-<h3 id="measured-concentration-upsilon_t">Measured concentration
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Υ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\Upsilon_t</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#measured-concentration-upsilon_t"></a>
+<h3 id="measured-concentration">Measured concentration<a class="anchor" aria-label="anchor" href="#measured-concentration"></a>
 </h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Υ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\Upsilon_t</annotation></semantics></math></p>
 <p>Non-zero concentration measurements are modeled as truncated normal
 distributed, i.e.</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="0.167em"></mspace><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>&gt;</mo><mn>0</mn><mspace width="0.167em"></mspace><mo>∼</mo><msup><mtext mathvariant="normal">Normal</mtext><mo>+</mo></msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><msub><mi>Υ</mi><mi>t</mi></msub></msub><mo>,</mo><mspace width="0.167em"></mspace><msubsup><mi>σ</mi><msub><mi>Υ</mi><mi>t</mi></msub><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\begin{equation}
