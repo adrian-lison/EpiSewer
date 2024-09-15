@@ -20,7 +20,7 @@ require(emo)
 
 <a href='https://adrian-lison.github.io/EpiSewer/'><img src='man/figures/EpiSewer_logo.png' align="right" width="95" alt="EpiSewer package website"/></a>
 
-# EpiSewer: Estimate Epidemiological Indicators from Wastewater Measurements
+# EpiSewer: Estimate Epidemiological Parameters from Wastewater Measurements
 
 <!-- badges: start -->
 [![Lifecycle:
@@ -66,7 +66,7 @@ knitr::include_graphics("man/figures/weekly_zurich_animated.gif")
 **Infections**  
 `r emo::ji("star")` Stochastic infection model with overdispersion  
 `r emo::ji("star")` Flexible $R_t$ smoothing (random walk, exponential smoothing, splines)  
-`r emo::ji("star")` Epidemiological indicators: $R_t$, growth rate, doubling time, and
+`r emo::ji("star")` Transmission indicators: $R_t$, growth rate, doubling time, and
 more  
 
 **Forecast**  
