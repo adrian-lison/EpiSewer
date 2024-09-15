@@ -1,7 +1,7 @@
 
 <a href='https://adrian-lison.github.io/EpiSewer/'><img src='man/figures/EpiSewer_logo.png' align="right" width="95" alt="EpiSewer package website"/></a>
 
-# EpiSewer: Estimate Epidemiological Indicators from Wastewater Measurements
+# EpiSewer: Estimate Epidemiological Parameters from Wastewater Measurements
 
 <!-- badges: start -->
 
@@ -50,8 +50,7 @@ configurable modeling components.
 ⭐ Stochastic infection model with overdispersion  
 ⭐ Flexible $R_t$ smoothing (random walk, exponential smoothing,
 splines)  
-⭐ Epidemiological indicators: $R_t$, growth rate, doubling time, and
-more
+⭐ Transmission indicators: $R_t$, growth rate, doubling time, and more
 
 **Forecast**  
 ⭐ Probabilistic forecasts of $R_t$, infections, concentrations and more
