@@ -58,7 +58,7 @@ splines)
 ## Installing the package
 
 The development version of `EpiSewer` can be installed from GitHub as
-shown below. Please note that the package is still highly experimental
+shown below. Please note that the package is still in early development
 and may be subject to breaking changes.
 
 ``` r
