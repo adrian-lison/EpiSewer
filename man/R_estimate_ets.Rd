@@ -11,6 +11,8 @@ R_estimate_ets(
   trend_prior_sigma = 0.1,
   sd_prior_mu = 0,
   sd_prior_sigma = 0.1,
+  robust = FALSE,
+  robust_df = 4,
   link = "inv_softplus",
   R_max = 6,
   smooth_prior_mu = 0.5,

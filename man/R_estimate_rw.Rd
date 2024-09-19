@@ -9,6 +9,8 @@ R_estimate_rw(
   intercept_prior_sigma = 0.8,
   sd_prior_mu = 0,
   sd_prior_sigma = 0.1,
+  robust = FALSE,
+  robust_df = 4,
   link = "inv_softplus",
   R_max = 6,
   differenced = FALSE,

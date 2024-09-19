@@ -96,6 +96,7 @@ data {
 
   // Reproduction number ----
   int<lower=0, upper=1> R_model; // 0 for ets, 1 for spline smoothing
+  int<lower=-1> R_sd_df; // Degrees of freedom of Student-t dist for innovations. If -1, no student-t but Gaussian
 
   // Hyperpriors for exponential smoothing
   array[R_model == 0 ? 2 : 0] real R_level_start_prior;
@@ -388,12 +389,21 @@ model {
     R_level_start ~ normal(R_level_start_prior[1], R_level_start_prior[2]); // starting prior for level
     R_trend_start ~ normal(R_trend_start_prior[1], R_trend_start_prior[2]); // starting prior for trend
     R_sd ~ normal(R_sd_prior[1], R_sd_prior[2]) T[0, ]; // truncated normal
-    R_noise ~ normal(0, R_sd[1]); // Gaussian noise
+    if (R_sd_df == -1) {
+      R_noise ~ normal(0, R_sd[1]); // Gaussian noise
+    } else {
+      R_noise ~ student_t(R_sd_df, 0, R_sd[1]); // Student's t noise
+    }
+
   } else if (R_model == 1) {
     // R spline smoothing
     bs_coeff_ar_start ~ normal(bs_coeff_ar_start_prior[1], bs_coeff_ar_start_prior[2]); // starting prior
     bs_coeff_ar_sd ~ normal(bs_coeff_ar_sd_prior[1], bs_coeff_ar_sd_prior[2]) T[0, ]; // truncated normal
-    bs_coeff_noise_raw ~ std_normal(); // Gaussian noise
+    if (R_sd_df == -1) {
+      bs_coeff_noise_raw ~ std_normal(); // Gaussian noise
+    } else {
+      bs_coeff_noise_raw ~ student_t(R_sd_df, 0, 1); // Student's t noise
+    }
   }
 
   // Seeding

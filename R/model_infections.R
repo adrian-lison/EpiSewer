@@ -182,6 +182,8 @@ R_estimate_ets <- function(
     trend_prior_sigma = 0.1,
     sd_prior_mu = 0,
     sd_prior_sigma = 0.1,
+    robust = FALSE,
+    robust_df = 4,
     link = "inv_softplus",
     R_max = 6,
     smooth_prior_mu = 0.5,
@@ -249,6 +251,18 @@ R_estimate_ets <- function(
   modeldata$ets_diff <- differenced
   modeldata$ets_noncentered <- noncentered
 
+  if (robust) {
+    if (robust_df <= 0 || !(robust_df %% 1 == 0)) {
+      cli::cli_abort(paste(
+        "The degrees of freedom argument (`robust_df`)",
+        "must be a positive integer number."
+        ))
+    }
+    modeldata$R_sd_df <- robust_df
+  } else {
+    modeldata$R_sd_df <- -1 # indicates Gaussian instead of Student's t noise
+  }
+
   modeldata <- add_dummy_data(modeldata, c(
     "bs_n_basis", "bs_dists", "bs_n_w", "bs_w", "bs_v", "bs_u",
     "bs_coeff_ar_start_prior", "bs_coeff_ar_sd_prior"
@@ -305,6 +319,8 @@ R_estimate_rw <- function(
     intercept_prior_sigma = 0.8,
     sd_prior_mu = 0,
     sd_prior_sigma = 0.1,
+    robust = FALSE,
+    robust_df = 4,
     link = "inv_softplus",
     R_max = 6,
     differenced = FALSE,
@@ -315,6 +331,8 @@ R_estimate_rw <- function(
     level_prior_sigma = intercept_prior_sigma,
     sd_prior_mu = sd_prior_mu,
     sd_prior_sigma = sd_prior_sigma,
+    robust = robust,
+    robust_df = robust_df,
     link = link,
     R_max = R_max,
     smooth_prior_mu = 1,
@@ -412,6 +430,8 @@ R_estimate_splines <- function(
     coef_intercept_prior_sigma = 0.8,
     coef_sd_prior_mu = 0,
     coef_sd_prior_sigma = 0.25,
+    robust = FALSE,
+    robust_df = 4,
     link = "inv_softplus",
     R_max = 6,
     modeldata = modeldata_init()) {
@@ -483,6 +503,18 @@ R_estimate_splines <- function(
   )
 
   modeldata <- add_link_function(link, R_max, modeldata)
+
+  if (robust) {
+    if (robust_df <= 0 || !(robust_df %% 1 == 0)) {
+      cli::cli_abort(paste(
+        "The degrees of freedom argument (`robust_df`)",
+        "must be a positive integer number."
+      ))
+    }
+    modeldata$R_sd_df <- robust_df
+  } else {
+    modeldata$R_sd_df <- -1 # indicates Gaussian instead of Student's t noise
+  }
 
   modeldata <- add_dummy_data(modeldata, c(
     "R_level_start_prior", "R_trend_start_prior", "R_sd_prior",

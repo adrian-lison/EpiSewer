@@ -11,6 +11,8 @@ R_estimate_splines(
   coef_intercept_prior_sigma = 0.8,
   coef_sd_prior_mu = 0,
   coef_sd_prior_sigma = 0.25,
+  robust = FALSE,
+  robust_df = 4,
   link = "inv_softplus",
   R_max = 6,
   modeldata = modeldata_init()
