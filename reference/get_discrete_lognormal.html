@@ -57,7 +57,8 @@ discretized lognormal distribution.</p>
 <span>  <span class="va">sdlog</span>,</span>
 <span>  unit_mean <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  unit_sd <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">maxX</span>,</span>
+<span>  unit_cv <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  maxX <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  include_zero <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  print_params <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -83,9 +84,15 @@ discretized lognormal distribution.</p>
 <dd><p>Alternative parameterization: unit/natural scale sd.</p></dd>
 
 
+<dt id="arg-unit-cv">unit_cv<a class="anchor" aria-label="anchor" href="#arg-unit-cv"></a></dt>
+<dd><p>Alternative parameterization: unit/natural scale coefficient
+of variation.</p></dd>
+
+
 <dt id="arg-maxx">maxX<a class="anchor" aria-label="anchor" href="#arg-maxx"></a></dt>
 <dd><p>Right truncation point. All probability mass beyond <code>maxX</code> will
-be assigned to <code>maxX</code>.</p></dd>
+be assigned to <code>maxX</code>. If <code>NULL</code> (default), this is automatically chosen
+such that the last bin has less than 0.5% of the probability mass.</p></dd>
 
 
 <dt id="arg-include-zero">include_zero<a class="anchor" aria-label="anchor" href="#arg-include-zero"></a></dt>

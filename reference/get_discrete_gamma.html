@@ -58,7 +58,8 @@ discretized Gamma distribution.</p>
 <span>  <span class="va">gamma_scale</span>,</span>
 <span>  <span class="va">gamma_mean</span>,</span>
 <span>  <span class="va">gamma_sd</span>,</span>
-<span>  <span class="va">maxX</span>,</span>
+<span>  <span class="va">gamma_cv</span>,</span>
+<span>  maxX <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  include_zero <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  print_params <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -92,9 +93,15 @@ distribution.</p></dd>
 distribution.</p></dd>
 
 
+<dt id="arg-gamma-cv">gamma_cv<a class="anchor" aria-label="anchor" href="#arg-gamma-cv"></a></dt>
+<dd><p>Alternative parameterization: Coefficient of variation of the
+Gamma distribution.</p></dd>
+
+
 <dt id="arg-maxx">maxX<a class="anchor" aria-label="anchor" href="#arg-maxx"></a></dt>
 <dd><p>Right truncation point. All probability mass beyond <code>maxX</code> will
-be assigned to <code>maxX</code>.</p></dd>
+be assigned to <code>maxX</code>. If <code>NULL</code> (default), this is automatically chosen
+such that the last bin has less than 0.5% of the probability mass.</p></dd>
 
 
 <dt id="arg-include-zero">include_zero<a class="anchor" aria-label="anchor" href="#arg-include-zero"></a></dt>

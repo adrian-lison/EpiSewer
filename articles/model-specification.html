@@ -175,10 +175,10 @@ settings without repeating the component definitions:</p>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="va">ww_assumptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sewer_assumptions.html">sewer_assumptions</a></span><span class="op">(</span></span>
-<span>  generation_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma_shifted.html">get_discrete_gamma_shifted</a></span><span class="op">(</span>gamma_mean <span class="op">=</span> <span class="fl">3</span>, gamma_sd <span class="op">=</span> <span class="fl">2.4</span>, maxX <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>,</span>
-<span>  shedding_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">0.929639</span>, gamma_scale <span class="op">=</span> <span class="fl">7.241397</span>, maxX <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>,</span>
+<span>  generation_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma_shifted.html">get_discrete_gamma_shifted</a></span><span class="op">(</span>gamma_mean <span class="op">=</span> <span class="fl">3</span>, gamma_sd <span class="op">=</span> <span class="fl">2.4</span><span class="op">)</span>,</span>
+<span>  shedding_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">0.929639</span>, gamma_scale <span class="op">=</span> <span class="fl">7.241397</span><span class="op">)</span>,</span>
 <span>  shedding_reference <span class="op">=</span> <span class="st">"symptom_onset"</span>,</span>
-<span>  incubation_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">8.5</span>, gamma_scale <span class="op">=</span> <span class="fl">0.4</span>, maxX <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
+<span>  incubation_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">8.5</span>, gamma_scale <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span>,</span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/EpiSewer.html">EpiSewer</a></span><span class="op">(</span></span>
@@ -201,10 +201,10 @@ assumptions explicitly in the model component:</p>
 <span></span>
 <span><span class="co"># Leave out the generation time distribution</span></span>
 <span><span class="va">ww_assumptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sewer_assumptions.html">sewer_assumptions</a></span><span class="op">(</span></span>
-<span>  <span class="co">#generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),</span></span>
-<span>  shedding_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">0.929639</span>, gamma_scale <span class="op">=</span> <span class="fl">7.241397</span>, maxX <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>,</span>
+<span>  <span class="co">#generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4),</span></span>
+<span>  shedding_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">0.929639</span>, gamma_scale <span class="op">=</span> <span class="fl">7.241397</span><span class="op">)</span>,</span>
 <span>  shedding_reference <span class="op">=</span> <span class="st">"symptom_onset"</span>,</span>
-<span>  incubation_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">8.5</span>, gamma_scale <span class="op">=</span> <span class="fl">0.4</span>, maxX <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
+<span>  incubation_dist <span class="op">=</span> <span class="fu"><a href="../reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">8.5</span>, gamma_scale <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span>,</span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Provide flows directly to sewage module</span></span>
@@ -215,7 +215,7 @@ assumptions explicitly in the model component:</p>
 <span><span class="co"># Provide generation time distribution directly to infections module</span></span>
 <span><span class="va">ww_infections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_infections.html">model_infections</a></span><span class="op">(</span></span>
 <span>  generation_dist <span class="op">=</span> <span class="fu"><a href="../reference/generation_dist_assume.html">generation_dist_assume</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="../reference/get_discrete_gamma_shifted.html">get_discrete_gamma_shifted</a></span><span class="op">(</span>gamma_mean <span class="op">=</span> <span class="fl">3</span>, gamma_sd <span class="op">=</span> <span class="fl">2.4</span>, maxX <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="../reference/get_discrete_gamma_shifted.html">get_discrete_gamma_shifted</a></span><span class="op">(</span>gamma_mean <span class="op">=</span> <span class="fl">3</span>, gamma_sd <span class="op">=</span> <span class="fl">2.4</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>

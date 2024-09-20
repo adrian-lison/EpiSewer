@@ -243,10 +243,10 @@
 <p>The generation time, shedding load and incubation period distribution are all disease-specific and are typically obtained from literature. <code>EpiSewer</code> requires these distributions to be discretized, and offers specific functions to obtain discretized versions of popular continuous probability distributions.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_assumptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sewer_assumptions.html">sewer_assumptions</a></span><span class="op">(</span></span>
-<span>  generation_dist <span class="op">=</span> <span class="fu"><a href="reference/get_discrete_gamma_shifted.html">get_discrete_gamma_shifted</a></span><span class="op">(</span>gamma_mean <span class="op">=</span> <span class="fl">3</span>, gamma_sd <span class="op">=</span> <span class="fl">2.4</span>, maxX <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>,</span>
-<span>  shedding_dist <span class="op">=</span> <span class="fu"><a href="reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">0.929639</span>, gamma_scale <span class="op">=</span> <span class="fl">7.241397</span>, maxX <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>,</span>
+<span>  generation_dist <span class="op">=</span> <span class="fu"><a href="reference/get_discrete_gamma_shifted.html">get_discrete_gamma_shifted</a></span><span class="op">(</span>gamma_mean <span class="op">=</span> <span class="fl">3</span>, gamma_sd <span class="op">=</span> <span class="fl">2.4</span><span class="op">)</span>,</span>
+<span>  shedding_dist <span class="op">=</span> <span class="fu"><a href="reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">0.929639</span>, gamma_scale <span class="op">=</span> <span class="fl">7.241397</span><span class="op">)</span>,</span>
 <span>  shedding_reference <span class="op">=</span> <span class="st">"symptom_onset"</span>, <span class="co"># shedding load distribution is relative to symptom onset</span></span>
-<span>  incubation_dist <span class="op">=</span> <span class="fu"><a href="reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">8.5</span>, gamma_scale <span class="op">=</span> <span class="fl">0.4</span>, maxX <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
+<span>  incubation_dist <span class="op">=</span> <span class="fu"><a href="reference/get_discrete_gamma.html">get_discrete_gamma</a></span><span class="op">(</span>gamma_shape <span class="op">=</span> <span class="fl">8.5</span>, gamma_scale <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span>,</span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>💡 Sometimes, shedding load distributions are instead specified in <em>days since infection</em>. In that case, you can use <code>shedding_reference = "infection"</code> and don’t need to supply an incubation period distribution.</p>
 </div>
@@ -254,7 +254,7 @@
 <h3 id="estimation">Estimation<a class="anchor" aria-label="anchor" href="#estimation"></a>
 </h3>
 <p>Now that we have the data and necessary assumptions, we can use <code>EpiSewer</code> to estimate the effective reproduction number. We here use the default model and settings provided by <code>EpiSewer</code>. With the helper function <code><a href="reference/set_fit_opts.html">set_fit_opts()</a></code> we specify our sampling approach: we apply Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and 500 sampling iterations each.</p>
-<p>Stan regularly provides updates about the progress of the sampler. The overall runtime will depend on your hardware resources, the size of the data, the complexity of the model used, and how well the model actually fits the data. On a MacBook Pro (2 GHz Quad-Core Intel Core i5) the example below takes about 4 minutes to run.</p>
+<p>Stan regularly provides updates about the progress of the sampler. The overall runtime will depend on your hardware resources, the size of the data, the complexity of the model used, and how well the model actually fits the data. On a MacBook Pro (2 GHz Quad-Core Intel Core i5) the example below takes about 5 minutes to run.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="co"># allow stan to use 4 cores, i.e. one for each chain</span></span>
 <span><span class="va">ww_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/EpiSewer.html">EpiSewer</a></span><span class="op">(</span></span>
@@ -379,11 +379,11 @@
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">R</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95</span></span>
-<span><span class="co">#&gt; 1: 2021-12-06 1.049711 1.044085  0.7324020 0.9372597  1.152850   1.395459</span></span>
-<span><span class="co">#&gt; 2: 2021-12-07 1.050463 1.042825  0.7470177 0.9427265  1.150043   1.380040</span></span>
-<span><span class="co">#&gt; 3: 2021-12-08 1.051356 1.041470  0.7572534 0.9485155  1.150755   1.377987</span></span>
-<span><span class="co">#&gt; 4: 2021-12-09 1.052399 1.044530  0.7605042 0.9530230  1.149892   1.369603</span></span>
-<span><span class="co">#&gt; 5: 2021-12-10 1.053602 1.047620  0.7645480 0.9585617  1.151843   1.366598</span></span>
+<span><span class="co">#&gt; 1: 2021-12-03 1.042238 1.044795  0.7012397 0.9294330  1.157058   1.365061</span></span>
+<span><span class="co">#&gt; 2: 2021-12-04 1.043177 1.044975  0.7155260 0.9338175  1.155830   1.355124</span></span>
+<span><span class="co">#&gt; 3: 2021-12-05 1.044297 1.045450  0.7303710 0.9367903  1.154685   1.346828</span></span>
+<span><span class="co">#&gt; 4: 2021-12-06 1.045626 1.045795  0.7430955 0.9419335  1.152473   1.342926</span></span>
+<span><span class="co">#&gt; 5: 2021-12-07 1.047189 1.046505  0.7521539 0.9480593  1.147990   1.336999</span></span>
 <span><span class="co">#&gt;        type seeding</span></span>
 <span><span class="co">#&gt; 1: estimate    TRUE</span></span>
 <span><span class="co">#&gt; 2: estimate    TRUE</span></span>
@@ -400,7 +400,7 @@
 <span><span class="co">#&gt; [1] 0 0 0 0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $ebfmi</span></span>
-<span><span class="co">#&gt; [1] 1.0296476 0.9815957 1.0001229 0.8657642</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.9014503 0.9680378 0.9334176 0.9486877</span></span></code></pre></div>
 <p>Finally, the <code>checksums</code> attribute gives us several checksums that uniquely identify the job which was run. These can be used to check whether two job results used the same or different models, input data, fitting options, or inits. If all checksums are identical (and the seed is not <code>NULL</code>), then the results should also be identical.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_result</span><span class="op">$</span><span class="va">checksums</span></span>
@@ -408,7 +408,7 @@
 <span><span class="co">#&gt; [1] "6346549bd7c2ac9a9d200503d7356a29"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $input</span></span>
-<span><span class="co">#&gt; [1] "fd1bc664ef6320ad9f8427d3a0f3d18c"</span></span>
+<span><span class="co">#&gt; [1] "c6dad2f8ed2b6fdaf952926f3eb3e97d"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $fit_opts</span></span>
 <span><span class="co">#&gt; [1] "5309bbbc3cd1cc109eac60d2fc82de45"</span></span>
@@ -417,7 +417,7 @@
 <span><span class="co">#&gt; [1] "e92f83d0ca5d22b3bb5849d62c5412ee"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $init</span></span>
-<span><span class="co">#&gt; [1] "30505348d747504aa36fe8fb6bdfaaf3"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "82126b86311c9716bda5d21c04c52142"</span></span></code></pre></div>
 </div>
 </div>
 </div>
