@@ -157,13 +157,20 @@ get_discrete_gamma <- function(gamma_shape,
 #' @param gamma_mean Mean of the shifted Gamma distribution.
 #' @param gamma_sd Standard deviation of the shifted Gamma distribution.
 #' @param maxX Right truncation point. All probability mass beyond `maxX` will
-#'   be assigned to `maxX`.
+#'   be assigned to `maxX`.  If `NULL` (default), this is automatically chosen
+#'   such that the last bin has approximately less than 0.5% of the probability
+#'   mass.
 #'
 #' @return A numeric vector representing the PMF of the discretized shifted
 #'   Gamma distribution.
 #' @export
 get_discrete_gamma_shifted <- function(
-    gamma_mean, gamma_sd, maxX = 10) {
+    gamma_mean, gamma_sd, maxX = NULL) {
+  maxX <- 1 + length(get_discrete_gamma(
+    gamma_mean = gamma_mean,
+    gamma_sd = gamma_sd,
+    maxX = maxX
+  ))
   k <- 1:maxX
   if (gamma_sd < 0) {
     stop("gamma_sd must be >=0.")
