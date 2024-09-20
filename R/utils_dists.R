@@ -51,6 +51,8 @@ get_gamma_sd_alternative <- function(gamma_shape, gamma_scale) {
 #'   distribution.
 #' @param gamma_sd Alternative parameterization: Standard deviation of the Gamma
 #'   distribution.
+#' @param gamma_cv Alternative parameterization: Coefficient of variation of the
+#'   Gamma distribution.
 #' @param maxX Right truncation point. All probability mass beyond `maxX` will
 #'   be assigned to `maxX`.
 #' @param include_zero Should the distribution explicitly cover X=0, or should
@@ -65,19 +67,26 @@ get_discrete_gamma <- function(gamma_shape,
                                gamma_scale,
                                gamma_mean,
                                gamma_sd,
+                               gamma_cv,
                                maxX,
                                include_zero = TRUE,
                                print_params = FALSE) {
   if (missing(gamma_shape)) {
-    if (missing(gamma_mean) || missing(gamma_sd)) {
+    if (missing(gamma_mean) || (missing(gamma_sd) && missing(gamma_cv))) {
       stop("No valid combination of parameters supplied", call. = FALSE)
+    }
+    if (missing(gamma_sd)) {
+      gamma_sd <- gamma_mean * gamma_cv
     }
     gamma_shape <- get_gamma_shape_alternative(gamma_mean, gamma_sd)
   }
   if (missing(gamma_rate)) {
     if (missing(gamma_scale)) {
-      if (missing(gamma_mean) || missing(gamma_sd)) {
+      if (missing(gamma_mean) || (missing(gamma_sd) && missing(gamma_cv))) {
         stop("No valid combination of parameters supplied", call. = FALSE)
+      }
+      if (missing(gamma_sd)) {
+        gamma_sd <- gamma_mean * gamma_cv
       }
       gamma_rate <- get_gamma_rate_alternative(gamma_mean, gamma_sd)
     } else {
@@ -253,18 +262,23 @@ get_lognormal_sigma_alternative <- function(mu, unit_mean = NULL, unit_sd = NULL
 #' @param sdlog Log scale standard deviation (scale of lognormal).
 #' @param unit_mean Alternative parameterization: unit/natural scale mean.
 #' @param unit_sd Alternative parameterization: unit/natural scale sd.
+#' @param unit_cv Alternative parameterization: unit/natural scale coefficient
+#'   of variation.
 #' @param maxX Right truncation point. All probability mass beyond `maxX` will
 #'   be assigned to `maxX`.
 #' @param include_zero Should the distribution explicitly cover X=0, or should
-#' X=1 include the probability mass for X=0 too?
+#'   X=1 include the probability mass for X=0 too?
 #' @param print_params Should the log-level parameters be printed?
 #'
 #' @return A numeric vector representing the PMF of the discretized lognormal.
 #' @export
 get_discrete_lognormal <- function(
-    meanlog, sdlog, unit_mean = NULL, unit_sd = NULL, maxX, include_zero = TRUE,
+    meanlog, sdlog, unit_mean = NULL, unit_sd = NULL, unit_cv = NULL, maxX, include_zero = TRUE,
     print_params = FALSE) {
-  if (!is.null(unit_mean) && !is.null(unit_sd)) {
+  if (!is.null(unit_mean) && (!is.null(unit_sd) || !is.null(unit_cv))) {
+    if (is.null(unit_sd)) {
+      unit_sd <- unit_mean * unit_cv
+    }
     sigma2 <- log((unit_sd / unit_mean)^2 + 1)
     meanlog <- log(unit_mean) - sigma2 / 2
     sdlog <- sqrt(sigma2)
