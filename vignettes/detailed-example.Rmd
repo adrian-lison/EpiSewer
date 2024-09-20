@@ -153,8 +153,8 @@ The `shedding` module describes how infected individuals shed pathogen particles
 ```{r}
 ww_shedding <- model_shedding(
   shedding_dist = shedding_dist_assume(
-    get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30), shedding_reference = "symptom_onset"),
-  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)),
+    get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397), shedding_reference = "symptom_onset"),
+  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4)),
   load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
   load_variation = load_variation_estimate()
 )
@@ -173,7 +173,7 @@ The `infections` module describes the underlying process leading to infected ind
 
 ```{r}
 ww_infections <- model_infections(
-  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)),
+  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
   R = R_estimate_splines(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
@@ -212,7 +212,7 @@ We have now specified all six `EpiSewer` modules. While this seems like a lot of
 
 ```{r}
 ww_infections <- model_infections(
-  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12))
+  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4))
 )
 ```
 
@@ -324,14 +324,14 @@ ww_sewage <- model_sewage(
 )
 
 ww_shedding <- model_shedding(
-  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30), shedding_reference = "symptom_onset"),
-  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)),
+  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397), shedding_reference = "symptom_onset"),
+  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4)),
   load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
   load_variation = load_variation_estimate()
 )
 
 ww_infections <- model_infections(
-  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)),
+  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
   R = R_estimate_splines(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()

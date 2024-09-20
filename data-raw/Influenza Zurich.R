@@ -38,8 +38,8 @@ measurements <- measurements[date <= as.Date("2022-12-19")]
 ww_data_influenza_Zurich <- sewer_data(measurements = measurements, flows = Influenza_A_Zurich$flows)
 usethis::use_data(ww_data_influenza_Zurich, overwrite = TRUE)
 
-generation_dist <- get_discrete_gamma_shifted(gamma_mean = 2.6, gamma_sd = 1.5, maxX = 8)
-shedding_dist <- get_discrete_gamma(gamma_mean = 2.491217, gamma_sd = 1.004283, maxX = 6)
+generation_dist <- get_discrete_gamma_shifted(gamma_mean = 2.6, gamma_sd = 1.5)
+shedding_dist <- get_discrete_gamma(gamma_mean = 2.491217, gamma_sd = 1.004283)
 ww_assumptions_influenza_Zurich <- sewer_assumptions(
   generation_dist = generation_dist,
   shedding_dist = shedding_dist,
