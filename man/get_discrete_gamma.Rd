@@ -10,7 +10,8 @@ get_discrete_gamma(
   gamma_scale,
   gamma_mean,
   gamma_sd,
-  maxX,
+  gamma_cv,
+  maxX = NULL,
   include_zero = TRUE,
   print_params = FALSE
 )
@@ -30,8 +31,12 @@ distribution.}
 \item{gamma_sd}{Alternative parameterization: Standard deviation of the Gamma
 distribution.}
 
+\item{gamma_cv}{Alternative parameterization: Coefficient of variation of the
+Gamma distribution.}
+
 \item{maxX}{Right truncation point. All probability mass beyond \code{maxX} will
-be assigned to \code{maxX}.}
+be assigned to \code{maxX}. If \code{NULL} (default), this is automatically chosen
+such that the last bin has less than 0.5\% of the probability mass.}
 
 \item{include_zero}{Should the distribution explicitly cover X=0, or should
 X=1 include the probability mass for X=0 too?}
