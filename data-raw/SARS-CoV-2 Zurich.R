@@ -57,9 +57,9 @@ measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich
 ww_data_SARS_CoV_2_Zurich <- sewer_data(measurements = measurements_sparse, flows = data_zurich$flows, cases = data_zurich$cases)
 usethis::use_data(ww_data_SARS_CoV_2_Zurich, overwrite = TRUE)
 
-generation_dist <- get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)
-incubation_dist <- get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)
-shedding_dist <- get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30)
+generation_dist <- get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)
+incubation_dist <- get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4)
+shedding_dist <- get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397)
 ww_assumptions_SARS_CoV_2_Zurich <- sewer_assumptions(
   generation_dist = generation_dist,
   incubation_dist = incubation_dist,

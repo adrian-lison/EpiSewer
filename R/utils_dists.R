@@ -54,7 +54,8 @@ get_gamma_sd_alternative <- function(gamma_shape, gamma_scale) {
 #' @param gamma_cv Alternative parameterization: Coefficient of variation of the
 #'   Gamma distribution.
 #' @param maxX Right truncation point. All probability mass beyond `maxX` will
-#'   be assigned to `maxX`.
+#'   be assigned to `maxX`. If `NULL` (default), this is automatically chosen
+#'   such that the last bin has less than 0.5% of the probability mass.
 #' @param include_zero Should the distribution explicitly cover X=0, or should
 #'   X=1 include the probability mass for X=0 too?
 #' @param print_params Should the shape and rate parameters be printed?
@@ -68,7 +69,7 @@ get_discrete_gamma <- function(gamma_shape,
                                gamma_mean,
                                gamma_sd,
                                gamma_cv,
-                               maxX,
+                               maxX = NULL,
                                include_zero = TRUE,
                                print_params = FALSE) {
   if (missing(gamma_shape)) {
@@ -97,6 +98,24 @@ get_discrete_gamma <- function(gamma_shape,
   # shortest period (combines periods 0 and 1)
   shortest <- pgamma(2, shape = gamma_shape, rate = gamma_rate)
   # longest period (combines all periods >= maxX)
+  if (is.null(maxX)) {
+    maxX <- which(sapply(1:100, function(maxX) {
+      (1 - pgamma(maxX, shape = gamma_shape, rate = gamma_rate)) < 0.005
+    }))[1]
+    if (is.na(maxX)) {
+      maxX <- 100
+      cli::cli_inform(c(
+        "!" = paste0("Maximum length of distribution was set to 100. ",
+                    "The last bin covers ",
+                    round(
+                      (1 - pgamma(maxX, shape = gamma_shape, rate = gamma_rate)),
+                      4
+                      ),
+                    "% of the probability mass."
+        )
+      ))
+    }
+  }
   longest <- (1 - pgamma(maxX, shape = gamma_shape, rate = gamma_rate))
 
   if (include_zero) {
@@ -138,13 +157,20 @@ get_discrete_gamma <- function(gamma_shape,
 #' @param gamma_mean Mean of the shifted Gamma distribution.
 #' @param gamma_sd Standard deviation of the shifted Gamma distribution.
 #' @param maxX Right truncation point. All probability mass beyond `maxX` will
-#'   be assigned to `maxX`.
+#'   be assigned to `maxX`.  If `NULL` (default), this is automatically chosen
+#'   such that the last bin has approximately less than 0.5% of the probability
+#'   mass.
 #'
 #' @return A numeric vector representing the PMF of the discretized shifted
 #'   Gamma distribution.
 #' @export
 get_discrete_gamma_shifted <- function(
-    gamma_mean, gamma_sd, maxX = 10) {
+    gamma_mean, gamma_sd, maxX = NULL) {
+  maxX <- 1 + length(get_discrete_gamma(
+    gamma_mean = gamma_mean,
+    gamma_sd = gamma_sd,
+    maxX = maxX
+  ))
   k <- 1:maxX
   if (gamma_sd < 0) {
     stop("gamma_sd must be >=0.")
@@ -265,7 +291,8 @@ get_lognormal_sigma_alternative <- function(mu, unit_mean = NULL, unit_sd = NULL
 #' @param unit_cv Alternative parameterization: unit/natural scale coefficient
 #'   of variation.
 #' @param maxX Right truncation point. All probability mass beyond `maxX` will
-#'   be assigned to `maxX`.
+#'   be assigned to `maxX`. If `NULL` (default), this is automatically chosen
+#'   such that the last bin has less than 0.5% of the probability mass.
 #' @param include_zero Should the distribution explicitly cover X=0, or should
 #'   X=1 include the probability mass for X=0 too?
 #' @param print_params Should the log-level parameters be printed?
@@ -273,7 +300,7 @@ get_lognormal_sigma_alternative <- function(mu, unit_mean = NULL, unit_sd = NULL
 #' @return A numeric vector representing the PMF of the discretized lognormal.
 #' @export
 get_discrete_lognormal <- function(
-    meanlog, sdlog, unit_mean = NULL, unit_sd = NULL, unit_cv = NULL, maxX, include_zero = TRUE,
+    meanlog, sdlog, unit_mean = NULL, unit_sd = NULL, unit_cv = NULL, maxX = NULL, include_zero = TRUE,
     print_params = FALSE) {
   if (!is.null(unit_mean) && (!is.null(unit_sd) || !is.null(unit_cv))) {
     if (is.null(unit_sd)) {
@@ -286,6 +313,24 @@ get_discrete_lognormal <- function(
   # shortest period (combines periods 0 and 1)
   shortest <- plnorm(2, meanlog = meanlog, sdlog = sdlog)
   # longest period (combines all periods >= maxX)
+  if (is.null(maxX)) {
+    maxX <- which(sapply(1:100, function(maxX) {
+      (1 - plnorm(maxX, meanlog = meanlog, sdlog = sdlog)) < 0.005
+    }))[1]
+    if (is.na(maxX)) {
+      maxX <- 100
+      cli::cli_inform(c(
+        "!" = paste0("Maximum length of distribution was set to 100. ",
+                    "The last bin covers ",
+                    round(
+                      (1 - plnorm(maxX, meanlog = meanlog, sdlog = sdlog)),
+                      4
+                    ),
+                    "of the probability mass."
+                    )
+        ))
+    }
+  }
   longest <- (1 - plnorm(maxX, meanlog = meanlog, sdlog = sdlog))
 
   if (include_zero) {

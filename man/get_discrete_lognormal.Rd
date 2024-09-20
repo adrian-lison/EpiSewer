@@ -9,7 +9,8 @@ get_discrete_lognormal(
   sdlog,
   unit_mean = NULL,
   unit_sd = NULL,
-  maxX,
+  unit_cv = NULL,
+  maxX = NULL,
   include_zero = TRUE,
   print_params = FALSE
 )
@@ -23,8 +24,12 @@ get_discrete_lognormal(
 
 \item{unit_sd}{Alternative parameterization: unit/natural scale sd.}
 
+\item{unit_cv}{Alternative parameterization: unit/natural scale coefficient
+of variation.}
+
 \item{maxX}{Right truncation point. All probability mass beyond \code{maxX} will
-be assigned to \code{maxX}.}
+be assigned to \code{maxX}. If \code{NULL} (default), this is automatically chosen
+such that the last bin has less than 0.5\% of the probability mass.}
 
 \item{include_zero}{Should the distribution explicitly cover X=0, or should
 X=1 include the probability mass for X=0 too?}

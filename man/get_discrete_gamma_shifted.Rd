@@ -4,7 +4,7 @@
 \alias{get_discrete_gamma_shifted}
 \title{Get PMF of a discretized shifted Gamma distribution}
 \usage{
-get_discrete_gamma_shifted(gamma_mean, gamma_sd, maxX = 10)
+get_discrete_gamma_shifted(gamma_mean, gamma_sd, maxX = NULL)
 }
 \arguments{
 \item{gamma_mean}{Mean of the shifted Gamma distribution.}
@@ -12,7 +12,9 @@ get_discrete_gamma_shifted(gamma_mean, gamma_sd, maxX = 10)
 \item{gamma_sd}{Standard deviation of the shifted Gamma distribution.}
 
 \item{maxX}{Right truncation point. All probability mass beyond \code{maxX} will
-be assigned to \code{maxX}.}
+be assigned to \code{maxX}.  If \code{NULL} (default), this is automatically chosen
+such that the last bin has approximately less than 0.5\% of the probability
+mass.}
 }
 \value{
 A numeric vector representing the PMF of the discretized shifted

@@ -274,10 +274,10 @@ probability distributions.
 
 ``` r
 ww_assumptions <- sewer_assumptions(
-  generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
-  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
+  generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4),
+  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397),
   shedding_reference = "symptom_onset", # shedding load distribution is relative to symptom onset
-  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4),
 )
 ```
 
@@ -299,7 +299,7 @@ Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
 data, the complexity of the model used, and how well the model actually
 fits the data. On a MacBook Pro (2 GHz Quad-Core Intel Core i5) the
-example below takes about 4 minutes to run.
+example below takes about 5 minutes to run.
 
 ``` r
 options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
@@ -547,11 +547,11 @@ number.
 ``` r
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-06 1.049711 1.044085  0.7324020 0.9372597  1.152850   1.395459
-#> 2: 2021-12-07 1.050463 1.042825  0.7470177 0.9427265  1.150043   1.380040
-#> 3: 2021-12-08 1.051356 1.041470  0.7572534 0.9485155  1.150755   1.377987
-#> 4: 2021-12-09 1.052399 1.044530  0.7605042 0.9530230  1.149892   1.369603
-#> 5: 2021-12-10 1.053602 1.047620  0.7645480 0.9585617  1.151843   1.366598
+#> 1: 2021-12-03 1.042238 1.044795  0.7012397 0.9294330  1.157058   1.365061
+#> 2: 2021-12-04 1.043177 1.044975  0.7155260 0.9338175  1.155830   1.355124
+#> 3: 2021-12-05 1.044297 1.045450  0.7303710 0.9367903  1.154685   1.346828
+#> 4: 2021-12-06 1.045626 1.045795  0.7430955 0.9419335  1.152473   1.342926
+#> 5: 2021-12-07 1.047189 1.046505  0.7521539 0.9480593  1.147990   1.336999
 #>        type seeding
 #> 1: estimate    TRUE
 #> 2: estimate    TRUE
@@ -575,7 +575,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 1.0296476 0.9815957 1.0001229 0.8657642
+#> [1] 0.9014503 0.9680378 0.9334176 0.9486877
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -590,7 +590,7 @@ ww_result$checksums
 #> [1] "6346549bd7c2ac9a9d200503d7356a29"
 #> 
 #> $input
-#> [1] "fd1bc664ef6320ad9f8427d3a0f3d18c"
+#> [1] "c6dad2f8ed2b6fdaf952926f3eb3e97d"
 #> 
 #> $fit_opts
 #> [1] "5309bbbc3cd1cc109eac60d2fc82de45"
@@ -599,5 +599,5 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "30505348d747504aa36fe8fb6bdfaaf3"
+#> [1] "82126b86311c9716bda5d21c04c52142"
 ```

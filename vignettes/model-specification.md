@@ -2,9 +2,9 @@ Modeling in EpiSewer
 ================
 
 This is a conceptual overview over the modeling functionality in
-`EpiSewer`. See [here](model-definition.md) for a mathematical
+`EpiSewer`. See `vignette("model-definition")` for a mathematical
 definition of the underlying generative model, and
-[here](detailed-example.md) for an example vignette.
+`vignette("detailed-example")` for an example vignette.
 
 ## Modules
 
@@ -14,7 +14,7 @@ process behind the wastewater measurements: `infections`, `shedding`,
 specify `forecast` functionality. Each of these modules consists of a
 number of module components, as shown below.
 
-<img src="figures/specification-model-1.png" width="100%" />
+<img src="figures/specification-model-1.png" alt="The 6 modules of the EpiSewer model" width="100%" />
 
 The modules are defined using their corresponding module function,
 i.e. by calling `model_infections()`, `model_shedding()`,
@@ -51,28 +51,27 @@ component, you can consult the documentation or use the helper
 
 ``` r
 EpiSewer::component_functions("infection_noise")
-#> [1] "infection_noise_none()"    
-#> [2] "infection_noise_estimate()"
+#> [1] "infection_noise_none()"     "infection_noise_estimate()"
 ```
 
 #### 💡 Multiple modeling options
 
 Some components have multiple versions of the same modeling function
 type. For example, there are currently three approaches to estimate the
-reproduction number, namely `R_estimate_splines` (smoothing splines),
-`R_estimate_rw` (random walk), `R_estimate_ets` (exponential smoothing),
-and `R_estimate_approx` (approximation of renewal model).
+reproduction number, namely `R_estimate_splines()` (smoothing splines),
+`R_estimate_rw()` (random walk), `R_estimate_ets()` (exponential
+smoothing), and `R_estimate_approx()` (approximation of renewal model).
 
 ``` r
 EpiSewer::component_functions("R")
-#> [1] "R_estimate_splines()" "R_estimate_ets()"    
-#> [3] "R_estimate_approx()"  "R_estimate_rw()"
+#> [1] "R_estimate_splines()" "R_estimate_ets()"     "R_estimate_approx()" 
+#> [4] "R_estimate_rw()"
 ```
 
 #### ❗ Modeling restrictions
 
 Not all components support all modeling types. For example, `EpiSewer`
-currently only offers `generation_dist_assume`, but not
+currently only offers `generation_dist_assume()`, but not
 `generation_dist_estimate`, `generation_dist_calibrate`, or
 `generation_dist_observe`.
 
@@ -100,10 +99,10 @@ ww_data <- sewer_data(
   )
 
 ww_assumptions <- sewer_assumptions(
-  generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
-  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
+  generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4),
+  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397),
   shedding_reference = "symptom_onset",
-  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4),
 )
 
 EpiSewer(
@@ -114,7 +113,7 @@ EpiSewer(
 
 What happens under the hood is that when individual model components are
 not provided with the data or assumptions they need, they search the
-data and assumption arguments passed to the `EpiSewer` function.
+data and assumption arguments passed to the `EpiSewer()` function.
 
 💡 It is always possible to mix both approaches and specify data or
 assumptions explicitly in the model component:
@@ -129,10 +128,10 @@ ww_data <- sewer_data(
 
 # Leave out the generation time distribution
 ww_assumptions <- sewer_assumptions(
-  #generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12),
-  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30),
+  #generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4),
+  shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397),
   shedding_reference = "symptom_onset",
-  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10),
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4),
 )
 
 # Provide flows directly to sewage module
@@ -143,7 +142,7 @@ ww_sewage <- model_sewage(
 # Provide generation time distribution directly to infections module
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(
-    get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)
+    get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)
   )
 )
 
@@ -158,5 +157,5 @@ result <- EpiSewer(
 
 Note that if the same data or assumptions are supplied via the
 `sewer_data()`/`sewer_assumptions()` *and* the individual component,
-`EpiSewer` will compare both arguments and throw an error if they
+`EpiSewer()` will compare both arguments and throw an error if they
 differ.

@@ -11,7 +11,7 @@ to first read the `vignette("model-specification")` vignette.
 ### Loading the package
 
 We assume that `EpiSewer` is already successfully installed (see
-[README](../index.html#Installing%20the%20package)).
+[README](../index.html): installing the package).
 
 ``` r
 library(EpiSewer)
@@ -121,8 +121,7 @@ function for each option. To see all available options, you can use
 
 ``` r
 component_functions("LOD")
-#> [1] "LOD_none()"          "LOD_assume()"       
-#> [3] "LOD_estimate_dPCR()"
+#> [1] "LOD_none()"          "LOD_assume()"        "LOD_estimate_dPCR()"
 ```
 
 For example, we could assume a limit of detection of `2.56 gc/mL` (based
@@ -200,8 +199,8 @@ particles into the wastewater:
 ``` r
 ww_shedding <- model_shedding(
   shedding_dist = shedding_dist_assume(
-    get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30), shedding_reference = "symptom_onset"),
-  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)),
+    get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397), shedding_reference = "symptom_onset"),
+  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4)),
   load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
   load_variation = load_variation_estimate()
 )
@@ -228,7 +227,7 @@ infected individuals:
 
 ``` r
 ww_infections <- model_infections(
-  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)),
+  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
   R = R_estimate_splines(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
@@ -291,7 +290,7 @@ described above could simply be written as
 
 ``` r
 ww_infections <- model_infections(
-  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12))
+  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4))
 )
 ```
 
@@ -437,14 +436,14 @@ ww_sewage <- model_sewage(
 )
 
 ww_shedding <- model_shedding(
-  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397, maxX = 30), shedding_reference = "symptom_onset"),
-  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4, maxX = 10)),
+  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397), shedding_reference = "symptom_onset"),
+  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4)),
   load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
   load_variation = load_variation_estimate()
 )
 
 ww_infections <- model_infections(
-  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4, maxX = 12)),
+  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
   R = R_estimate_splines(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
