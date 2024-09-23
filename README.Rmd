@@ -209,7 +209,7 @@ ww_assumptions <- sewer_assumptions(
   generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4),
   shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397),
   shedding_reference = "symptom_onset", # shedding load distribution is relative to symptom onset
-  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4),
+  incubation_dist = get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4)
 )
 ```
 
