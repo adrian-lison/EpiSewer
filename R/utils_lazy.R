@@ -119,6 +119,7 @@ tbp <- function(f_name, f_expr,
                      data = list(), assumptions = list(),
                      required_data = c(), required_assumptions = c()) {
     for(n in names(d_lazy)) {
+      f_lazy$env <- rlang::env_clone(f_lazy$env)
       assign(n, d_lazy[[n]], f_lazy$env)
     }
     f_lazy$env <- update_env(
