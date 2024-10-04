@@ -331,13 +331,20 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
      }
      else if (!is.null(min_cases)) {
        modeldata <- tbc("load_per_case_min_cases_calibrate", {
-         min_load <- min(modeldata$.metainfo$load_curve_crude$load, na.rm = TRUE)
+         max_shift <- modeldata$.metainfo$length_I - modeldata$T
+         lcc <- modeldata$.metainfo$load_curve_crude$load
+         lcc <- lcc[(max_shift + 1):length(lcc)]
+         min_load <- min(lcc, na.rm = TRUE)
          load_per_case <- min_load/min_cases
          load_per_case <- signif(load_per_case, signif_fig)
          modeldata$load_mean <- load_per_case
          modeldata$.metainfo$load_per_case <- load_per_case
        },
-       required = c(".metainfo$load_curve_crude"),
+       required = c(
+         ".metainfo$load_curve_crude",
+         ".metainfo$length_I",
+         "T"
+         ),
        modeldata = modeldata
        )
      }
