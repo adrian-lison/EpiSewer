@@ -11,6 +11,8 @@ R_estimate_ets(
   trend_prior_sigma = 0.1,
   sd_prior_mu = 0,
   sd_prior_sigma = 0.1,
+  sd_changepoint_dist = 28,
+  sd_changepoint_sd = 0.025,
   link = "inv_softplus",
   R_max = 6,
   smooth_prior_mu = 0.5,
@@ -40,11 +42,24 @@ Rt.}
 \item{sd_prior_sigma}{Prior (standard deviation) on the standard deviation of
 the innovations.}
 
+\item{sd_changepoint_dist}{The variability of Rt can change over time, e.g.
+during the height of an epidemic wave, countermeasures may lead to much
+faster changes in Rt than observable at other times. This potential
+variability is accounted for using change points placed at regular
+intervals. The standard deviation of the state space model innovations then
+evolves linearly between the change points. The default change point
+distance is 28 days. If set to zero, no change points are modeled.}
+
+\item{sd_changepoint_sd}{This parameter controls the variability of the change
+points. When change points are modeled, EpiSewer will estimate a baseline
+standard deviation (see \code{sd_prior_mu} and \code{sd_prior_sigma}), and model
+change point values as independently distributed with mean equal to this
+baseline and standard deviation \code{sd_changepoint_sd}.}
+
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
-approximately like the identity function around R=1, but become
-increasingly non-linear below (and in the case of \code{scaled_logit} also
-above) R=1.}
+approximately like the identity function around R=1, but become increasingly
+non-linear below (and in the case of \code{scaled_logit} also above) R=1.}
 
 \item{R_max}{If \code{link=scaled_logit} is used, a maximum reproduction number
 must be assumed. This should be higher than any realistic R value for the

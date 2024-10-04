@@ -10,7 +10,9 @@ R_estimate_splines(
   coef_intercept_prior_mu = 1,
   coef_intercept_prior_sigma = 0.8,
   coef_sd_prior_mu = 0,
-  coef_sd_prior_sigma = 0.25,
+  coef_sd_prior_sigma = 0.2,
+  coef_sd_changepoint_dist = 28,
+  coef_sd_changepoint_sd = 0.05,
   link = "inv_softplus",
   R_max = 6,
   modeldata = modeldata_init()
@@ -19,10 +21,9 @@ R_estimate_splines(
 \arguments{
 \item{knot_distance}{Distance between spline breakpoints (knots) in days
 (default is 7, i.e. one knot each week). Placing knots further apart
-increases the smoothness of Rt estimates and can speed up model fitting.
-The Rt time series remains surprisingly flexible even at larger knot
-distances, but placing knots too far apart can lead to inaccurate
-estimates.}
+increases the smoothness of Rt estimates and can speed up model fitting. The
+Rt time series remains surprisingly flexible even at larger knot distances,
+but placing knots too far apart can lead to inaccurate estimates.}
 
 \item{spline_degree}{Degree of the spline polynomials (default is 3 for cubic
 splines).}
@@ -34,16 +35,31 @@ walk over spline coefficients.}
 of the random walk over spline coefficients.}
 
 \item{coef_sd_prior_mu}{Prior (mean) on the daily standard deviation of the
-random walk over spline coefficients.}
+random walk over spline coefficients (see details).}
 
 \item{coef_sd_prior_sigma}{Prior (standard deviation) on the daily standard
 deviation of the random walk over spline coefficients.}
 
+\item{coef_sd_changepoint_dist}{The variability of Rt can change over time,
+e.g. during the height of an epidemic wave, countermeasures may lead to much
+faster changes in Rt than observable at other times. This potential
+variability is accounted for using change points placed at regular
+intervals. The standard deviation of the random walk over spline
+coefficients then evolves linearly between the change points. The default
+change point distance is 28 days. If set to zero, no change points are
+modeled.}
+
+\item{coef_sd_changepoint_sd}{This parameter controls the variability of the
+change points. When change points are modeled, EpiSewer will estimate a
+baseline standard deviation (see \code{coef_sd_prior_mu} and
+\code{coef_sd_prior_sigma}), and model change point values as independently
+distributed with mean equal to this baseline and standard deviation
+\code{coef_sd_changepoint_sd}.}
+
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
-approximately like the identity function around R=1, but become
-increasingly non-linear below (and in the case of \code{scaled_logit} also
-above) R=1.}
+approximately like the identity function around R=1, but become increasingly
+non-linear below (and in the case of \code{scaled_logit} also above) R=1.}
 
 \item{R_max}{If \code{link=scaled_logit} is used, a maximum reproduction number
 must be assumed. This should be higher than any realistic R value for the
@@ -79,17 +95,19 @@ larger than 1 for the intercept.
 \item The prior on the daily standard deviation should be interpreted in terms
 of daily additive changes (this is at least true around Rt=1, and becomes
 less true as Rt approaches 0 or its upper bound as defined by the \code{link}
-function). For example, a standard deviation of 0.5 roughly allows the
-spline coefficients to change by ±1 (using the 2 sigma rule) each day. The
-daily standard deviation is multiplied by \code{sqrt(knot_distance)} to get the
-actual standard deviation of the coefficients. This way, the prior is
-independent of the chosen \code{knot_distance}. For example, if \code{knot_distance}
-is 7 days, and a daily standard deviation of 0.5 is used, the coefficients
-of two adjacent splines can differ by up to ±2.6. Note however that this
-difference does not directly translate into a change of Rt by ±2.6, as Rt
-is always the weighted sum of several basis functions at any given point.
-It may therefore change much more gradually, depending on the distances
-between knots.
+function). For example, a prior with mean=0 and sd=0.2 allows a daily
+standard deviation between 0 and 0.4. A daily standard deviation of 0.4 in
+turn roughly allows the spline coefficients to change by ±0.8 (using the 2
+sigma rule) each day. The daily standard deviation is summed up over the
+days between two knots to get the actual standard deviation of the
+coefficients. This way, the prior is independent of the chosen
+\code{knot_distance}. For example, if \code{knot_distance} is 7 days, and a constant
+daily standard deviation of 0.4 is estimated, the coefficients of two
+adjacent splines can differ by up to \code{0.8*sqrt(knot_distance)}, i.e. ±2.1.
+Note however that this difference does not directly translate into a change
+of Rt by ±2.1, as Rt is always the weighted sum of several basis functions
+at any given point. It may therefore change much more gradually, depending
+on the distances between knots.
 }
 
 The smoothness of the Rt estimates is influenced both by the knot
