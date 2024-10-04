@@ -144,7 +144,7 @@ modeldata_update_metainfo <- function(modeldata) {
         .metainfo$total_delay_dist, max_shift = .metainfo$length_I - T,
         .metainfo$T_start_date,
         impute_zero = 1/.metainfo$LOD_expected_scale, # asymptotic posterior expectation for non-detects
-        impute_zero_runs = TRUE,
+        impute_zero_runs = FALSE,
         interpolate = TRUE, loess_window = 56, plot_smoothed_curve = FALSE
     ))
   }
