@@ -723,6 +723,11 @@ generated quantities {
           cv_type == 1 ? nu_upsilon_a : 0, // nu_pre (pre-PCR CV)
           cv_type == 1 ? cv_pre_type[1] : 0 // Type of pre-PCR CV
           ));
+      p_zero_all = trim_or_reject_ub(
+        p_zero_all,
+        1-1e-5, // trim to almost 1
+        1.01 // throw error when significantly above 1
+      );
       above_LOD = to_vector(bernoulli_rng(1-p_zero_all));
     } else {
       p_zero_all = rep_vector(0, T+h);
@@ -752,7 +757,7 @@ generated quantities {
     vector[T+h] cv_conditional_all = sqrt(cv_all^2 .* (1-p_zero_all) - p_zero_all);
 
     // correct potentially slightly negative approximations
-    cv_conditional_all = trim_or_reject(
+    cv_conditional_all = trim_or_reject_lb(
       cv_conditional_all,
       1e-5, // trim to almost zero
       -0.01 // throw error when significantly below zero

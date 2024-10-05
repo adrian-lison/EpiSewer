@@ -194,7 +194,7 @@ Helper functions for primitive operations
     return positions[1:nan_count];
   }
 
-  vector trim_or_reject(vector x, real lb_trim, real lb_reject) {
+  vector trim_or_reject_lb(vector x, real lb_trim, real lb_reject) {
     int n = num_elements(x);
     array[n] int rej_positions;
     int rej_count = 0;
@@ -214,4 +214,33 @@ Helper functions for primitive operations
     } else {
       return(fmax(x, rep_vector(lb_trim, n)));
     }
+  }
+
+  vector trim_or_reject_ub(vector x, real ub_trim, real ub_reject) {
+    int n = num_elements(x);
+    array[n] int rej_positions;
+    int rej_count = 0;
+    for (i in 1:n) {
+      if (x[i] > ub_reject) {
+        rej_count += 1;
+        rej_positions[rej_count] = i;
+      }
+    }
+    if (rej_count > 0) {
+      reject(
+        "The following vector elements were above ",
+        "the upper bound for rejection (", ub_reject, "). ",
+        "Indices: ", rej_positions[1:rej_count], " | ",
+        "Values: ", x[rej_positions[1:rej_count]]
+        );
+    } else {
+      return(fmin(x, rep_vector(ub_trim, n)));
+    }
+  }
+
+  /*
+  append_row extended to three elements
+  */
+  vector append_row3(vector x, vector y, vector z) {
+    return append_row(append_row(x, y), z);
   }
