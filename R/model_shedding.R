@@ -133,10 +133,16 @@ incubation_dist_assume <-
 #'   [get_discrete_gamma()], [get_discrete_lognormal()]
 shedding_dist_assume <-
   function(shedding_dist = NULL, shedding_reference = NULL, modeldata = modeldata_init()) {
+
+    modeldata$.str$shedding[["shedding_dist"]] <- list(
+      shedding_dist_assume = c()
+    )
+
     modeldata <- tbp("shedding_dist_assume",
       {
         modeldata$S <- length(shedding_dist) - 1
         shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
+        modeldata$shedding_dist_n <- 1
         modeldata$shedding_dist <- shedding_dist
         if (!shedding_reference %in% c("infection", "symptom_onset")) {
           cli::cli_abort(paste(
@@ -156,9 +162,131 @@ shedding_dist_assume <-
       modeldata = modeldata
     )
 
+    modeldata <- add_dummy_data(modeldata, c(
+      "shedding_dist_matrix", "shedding_dist_weights_prior"
+      ))
+    modeldata$.init$shedding_dist_weights <- c(1)
+
+    return(modeldata)
+  }
+
+#' Estimate a mixture of several shedding load distributions
+#'
+#' @description This option allows to model a mixture of several shedding load
+#'   distributions with a Dirichlet prior over the mixture weights.
+#'
+#' @param shedding_dist_list A list of shedding load distributions. Each entry
+#'   must be a numeric vector representing a discrete shedding load
+#'   distribution, with elements describing the share of load shed 0 days, 1
+#'   day, 2 days, and so on after the start of shedding.
+#' @param prior_weights A numeric vector of the same length as
+#'   `shedding_dist_list` with prior weights for the different shedding load
+#'   distributions. If `NULL`, the distributions are assumed to be equally
+#'   likely (symmetric Dirichlet prior). Will be normalized to sum to the number
+#'   of distributions.
+#' @param shedding_reference Is the shedding load distribution relative to the
+#'   day of `"infection"` or the day of `"symptom_onset"`? This is important
+#'   because shedding load distributions provided in the literature are
+#'   sometimes by days since infection and sometimes by days since symptom
+#'   onset. If `shedding_reference="symptom_onset"`, EpiSewer also needs
+#'   information about the incubation period distribution (see
+#'   [incubation_dist_assume()]).
+#' @param weight_alpha Concentration parameter of the Dirichlet prior for the
+#'   mixture probabilities. The default is `weight_alpha=1`, i.e. a uniform
+#'   distribution over all combinations of weights. This will sample various
+#'   mixtures of the distributions provided. If on the other hand a very small
+#'   `weight_alpha` is chosen, the distributions from `shedding_dist_list` are
+#'   rather considered separately, i.e. in each posterior sample, one of the
+#'   distributions is given almost all the weight. Note however that for very
+#'   small alpha values the Dirichlet prior becomes difficult to sample with
+#'   MCMC, so it may be necessary to increase `adapt_delta` to avoid divergent
+#'   transitions (see [sampler_stan_mcmc()]).
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {shedding load distribution functions}
+#' @seealso Helpers to discretize continuous probability distributions:
+#'   [get_discrete_gamma()], [get_discrete_lognormal()]
+shedding_dist_estimate_mixture <-
+  function(shedding_dist_list, prior_weights = NULL,
+           shedding_reference = NULL, weight_alpha = 1,
+           modeldata = modeldata_init()) {
+
     modeldata$.str$shedding[["shedding_dist"]] <- list(
-      shedding_dist_assume = c()
+      shedding_dist_estimate = c()
     )
+
+    modeldata <- tbp("shedding_dist_estimate",
+     {
+       if (!is.list(shedding_dist_list)) {
+         cli::cli_abort("The `shedding_dist_list` argument must be a list.")
+       }
+       if (length(shedding_dist_list) < 2) {
+         cli::cli_abort(paste(
+           "The `shedding_dist_list` must contain at",
+           "least two shedding load distributions."
+           ))
+       }
+
+       # shedding distributions
+       for (i in seq_along(shedding_dist_list)) {
+         shedding_dist_list[[i]] <- check_dist(
+           shedding_dist_list[[i]], "shedding load distribution"
+           )
+       }
+       modeldata$S <- max(sapply(shedding_dist_list, length)) - 1
+       shedding_dist_matrix <- matrix(
+         rep(0, (modeldata$S + 1) * length(shedding_dist_list)),
+         nrow = modeldata$S + 1
+         )
+       for (i in seq_along(shedding_dist_list)) {
+         shedding_dist_matrix[1:length(shedding_dist_list[[i]]), i] <-
+           shedding_dist_list[[i]]
+       }
+       modeldata$shedding_dist_n <- length(shedding_dist_list)
+       modeldata$shedding_dist_matrix <- shedding_dist_matrix
+
+       # distribution weights
+       if (is.null(prior_weights)) {
+         prior_weights <- rep(1, length(shedding_dist_list))
+       }
+       if (length(prior_weights) != length(shedding_dist_list)) {
+         cli::cli_abort(paste(
+           "The `prior_weights` argument must have the same length as",
+           "the `shedding_dist_list`."
+         ))
+       }
+       prior_weights <- prior_weights / sum(prior_weights) * length(prior_weights)
+
+       modeldata$shedding_dist_weights_prior <- set_prior(
+         "shedding_dist_weights", "dirichlet",
+         alpha = weight_alpha * prior_weights
+       )
+       modeldata$.init$shedding_dist_weights <- rep(
+         1/length(prior_weights), length(prior_weights)
+         )
+
+       # shedding reference
+       if (!shedding_reference %in% c("infection", "symptom_onset")) {
+         cli::cli_abort(paste(
+           "The provided `shedding_reference` argument is invalid.",
+           'Must be either "infection" or "symptom_onset".'
+         ))
+       }
+       modeldata$.metainfo$shedding_reference <- shedding_reference
+
+       modeldata$.str$shedding[["shedding_dist"]] <- list(
+         shedding_dist_estimate = c(shedding_reference = shedding_reference)
+       )
+
+       return(modeldata)
+     },
+     required_assumptions = c("shedding_reference"),
+     modeldata = modeldata
+    )
+
+    modeldata <- add_dummy_data(modeldata, c("shedding_dist"))
 
     return(modeldata)
   }
@@ -179,7 +307,7 @@ shedding_dist_assume <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#'
+#' @family {shedding load distribution functions}
 #' @seealso {Helper for finding a suitable load per case assumption:}
 #'   [suggest_load_per_case()]
 #' @family {load per case functions}

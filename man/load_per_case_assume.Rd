@@ -37,7 +37,11 @@ both on biological factors as well as on the specific sewage system.
 {Helper for finding a suitable load per case assumption:}
 \code{\link[=suggest_load_per_case]{suggest_load_per_case()}}
 
+Other {shedding load distribution functions}: 
+\code{\link{shedding_dist_estimate_mixture}()}
+
 Other {load per case functions}: 
 \code{\link{load_per_case_calibrate}()}
 }
 \concept{{load per case functions}}
+\concept{{shedding load distribution functions}}

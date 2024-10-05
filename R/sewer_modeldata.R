@@ -34,13 +34,35 @@ modeldata_update_metainfo <- function(modeldata) {
                                    "shedding_dist",
                                    "incubation_dist"),
                       throw_error = FALSE
-  )) {
-    inc_shed_dist <- with(
-      modeldata, convolve(incubation_dist, rev(shedding_dist), type = "o")
-    )
-    total_delay_dist <- with(
-      modeldata, convolve(inc_shed_dist, rev(residence_dist), type = "o")
-    )
+  ) && length(modeldata$shedding_dist) > 0) {
+    shedding_dist <- modeldata$shedding_dist
+    incubation_dist <- modeldata$incubation_dist
+    residence_dist <- modeldata$residence_dist
+
+    inc_shed_dist <- convolve(incubation_dist, rev(shedding_dist), type = "o")
+    total_delay_dist <- convolve(inc_shed_dist, rev(residence_dist), type = "o")
+    modeldata$.metainfo$total_delay_dist <- total_delay_dist
+  }
+
+  if (modeldata_check(modeldata,
+                      required = c("residence_dist",
+                                   "shedding_dist_matrix",
+                                   "shedding_dist_weights_prior",
+                                   "incubation_dist"),
+                      throw_error = FALSE
+  ) && length(modeldata$shedding_dist_matrix) > 0) {
+
+    shedding_dist_matrix <- modeldata$shedding_dist_matrix
+    weights_prior <- modeldata$shedding_dist_weights_prior[[
+      "shedding_dist_weights_prior"
+    ]]
+    weights_prior <- weights_prior/sum(weights_prior)
+    shedding_dist <- shedding_dist_matrix %*% weights_prior
+    incubation_dist <- modeldata$incubation_dist
+    residence_dist <- modeldata$residence_dist
+
+    inc_shed_dist <- convolve(incubation_dist, rev(shedding_dist), type = "o")
+    total_delay_dist <- convolve(inc_shed_dist, rev(residence_dist), type = "o")
     modeldata$.metainfo$total_delay_dist <- total_delay_dist
   }
 
