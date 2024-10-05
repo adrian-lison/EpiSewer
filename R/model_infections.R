@@ -243,12 +243,13 @@ R_estimate_ets <- function(
         modeldata = modeldata
       )
       modeldata$.init$R_vari_baseline <- max(
-        modeldata$R_sd_prior$R_sd_prior[1], 0.01
+        modeldata$R_sd_prior$R_sd_prior[1], 1e-2
         )
-      modeldata$.init$R_vari_changepoints <- rep(
-        max(modeldata$R_sd_prior$R_sd_prior[1], 0.01),
-        modeldata$R_vari_n_basis
-      )
+      if (modeldata$R_vari_n_basis > 2) {
+        modeldata$.init$R_vari_changepoints <- rep(1e-2, modeldata$R_vari_n_basis - 2)
+      } else {
+        modeldata$.init$R_vari_changepoints <- rep(1e-2, modeldata$R_vari_n_basis)
+      }
     },
     required = c(
       ".metainfo$length_R",
@@ -525,8 +526,12 @@ R_estimate_splines <- function(
         changepoint_dist = coef_sd_changepoint_dist,
         modeldata = modeldata
         )
-      modeldata$.init$R_vari_baseline <- 0.01
-      modeldata$.init$R_vari_changepoints <- rep(0.01, modeldata$R_vari_n_basis)
+      modeldata$.init$R_vari_baseline <- 1e-2
+      if (modeldata$R_vari_n_basis > 2) {
+        modeldata$.init$R_vari_changepoints <- rep(1e-2, modeldata$R_vari_n_basis - 2)
+      } else {
+        modeldata$.init$R_vari_changepoints <- rep(1e-2, modeldata$R_vari_n_basis)
+      }
 
       # build sparse matrix that represents which days need to be summed up
       # to compute the variance between two knots
@@ -805,22 +810,22 @@ add_R_variability <- function(length_R, h, length_seeding, length_partial,
   if (changepoint_dist == 0) {
     # no changepoints
     B <- matrix(rep(1,length_R+h), ncol = 1)
-  } else if (length_R - length_partial - changepoint_dist <=
-             length_seeding + changepoint_dist/2) {
+  } else if (length_R - length_partial - changepoint_dist <= length_seeding) {
     B <- matrix(rep(1,length_R+h), ncol = 1)
   } else {
     # we here suppress extrapolation warnings if h > changepoint_dist, as we fix
     # spline bases in the next step
     B <- suppressWarnings(splines::bs(
       1:(length_R+h),
-      knots = rev(seq(
-        length_R - length_partial - changepoint_dist,
+      knots = rev(c(seq(
+        length_R - length_partial,
         length_seeding + changepoint_dist/2,
-        by = -changepoint_dist)
-      ),
+        by = -changepoint_dist),
+        length_seeding
+      )),
       degree = 1,
       intercept = TRUE,
-      Boundary.knots = c(length_seeding, length_R - length_partial),
+      Boundary.knots = c(1, length_R),
     ))
     B <- matrix(pmax(0, pmin(B, 1)), ncol = ncol(B)) # fix extrapolated bases
     if (all(B[,ncol(B)]==0)) {

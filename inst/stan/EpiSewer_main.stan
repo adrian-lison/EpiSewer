@@ -236,7 +236,7 @@ parameters {
   vector[R_model == 1 ? (bs_n_basis[1] - 1) : 0] bs_coeff_noise_raw; // additive errors (non-centered)
 
   // Change point model for Rt
-  vector<lower=0>[R_vari_n_basis] R_vari_changepoints; // R variability at changepoints
+  vector<lower=0>[R_vari_n_basis > 2 ? R_vari_n_basis - 2 : R_vari_n_basis] R_vari_changepoints; // R variability at changepoints
 
   // seeding
   real iota_log_seed_intercept;
@@ -282,7 +282,10 @@ transformed parameters {
   if (R_model == 0) {
     R_sd = csr_matrix_times_vector(
       L + S + D + T - G + h, R_vari_n_basis, R_vari_w,
-      R_vari_v, R_vari_u, R_vari_changepoints
+      R_vari_v, R_vari_u,
+      R_vari_n_basis > 2 ? append_row3(
+        [R_vari_baseline]', R_vari_changepoints, [R_vari_baseline]'
+        ) : R_vari_changepoints
       )[2:(L + S + D + T - G)];
     // Innovations state space process implementing exponential smoothing
     R = apply_link(holt_damped_process(
@@ -296,7 +299,10 @@ transformed parameters {
   } else if (R_model == 1) {
     bs_coeff_ar_sd = csr_matrix_times_vector(
       L + S + D + T - G + h, R_vari_n_basis, R_vari_w,
-      R_vari_v, R_vari_u, R_vari_changepoints
+      R_vari_v, R_vari_u,
+      R_vari_n_basis > 2 ? append_row3(
+        [R_vari_baseline]', R_vari_changepoints, [R_vari_baseline]'
+        ) : R_vari_changepoints
       );
     vector[bs_n_basis[1] - 1] bs_coeff_noise = bs_coeff_noise_raw .*
     sqrt(csr_matrix_times_vector(
@@ -596,7 +602,10 @@ generated quantities {
         // Innovations state space process implementing exponential smoothing
         vector[h] R_sd_forecast = csr_matrix_times_vector(
           L + S + D + T - G + h, R_vari_n_basis, R_vari_w,
-          R_vari_v, R_vari_u, R_vari_changepoints
+          R_vari_v, R_vari_u,
+          R_vari_n_basis > 2 ? append_row3(
+            [R_vari_baseline]', R_vari_changepoints, [R_vari_baseline]'
+            ) : R_vari_changepoints
         )[((L + S + D + T - G) + 1):((L + S + D + T - G) + h)];
         R_forecast = apply_link(holt_damped_process(
           [R_level_start[1], R_trend_start[1]]',
