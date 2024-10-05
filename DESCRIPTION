@@ -15,6 +15,7 @@ RoxygenNote: 7.2.3
 Depends:
     R (>= 3.5.0)
 Imports: 
+    cli,
     cmdstanr,
     curl,
     data.table,
@@ -27,15 +28,15 @@ Imports:
     lazyeval,
     lubridate,
     Matrix (>= 1.5-1),
+    purrr (>= 1.0.1),
     rlang,
-    cli,
     rstan,
     scales,
     splines,
     stats,
     stringr,
     vctrs,
-    purrr (>= 1.0.1)
+    withr
 Suggests:
     testthat (>= 3.0.0),
     zoo
