@@ -57,6 +57,8 @@ time using a random walk.</p>
 <span>  intercept_prior_sigma <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  sd_prior_mu <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  sd_prior_sigma <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  sd_changepoint_dist <span class="op">=</span> <span class="fl">7</span> <span class="op">*</span> <span class="fl">26</span>,</span>
+<span>  sd_changepoint_sd <span class="op">=</span> <span class="fl">0.025</span>,</span>
 <span>  link <span class="op">=</span> <span class="st">"inv_softplus"</span>,</span>
 <span>  R_max <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>  differenced <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -87,12 +89,31 @@ the random walk.</p></dd>
 the random walk.</p></dd>
 
 
+<dt id="arg-sd-changepoint-dist">sd_changepoint_dist<a class="anchor" aria-label="anchor" href="#arg-sd-changepoint-dist"></a></dt>
+<dd><p>The variability of Rt can change over time, e.g.
+during the height of an epidemic wave, countermeasures may lead to much
+faster changes in Rt than observable at other times. This potential
+variability is accounted for using change points placed at regular
+intervals. The standard deviation of the random walk then evolves linearly
+between the change points. The default change point distance is 26 weeks
+(182 days). Short changepoint distances (e.g. 4 weeks or less) must be
+chosen with care, as they can make the Rt time series too flexible. If set
+to zero, no change points are modeled.</p></dd>
+
+
+<dt id="arg-sd-changepoint-sd">sd_changepoint_sd<a class="anchor" aria-label="anchor" href="#arg-sd-changepoint-sd"></a></dt>
+<dd><p>This parameter controls the variability of the
+change points. When change points are modeled, EpiSewer will estimate a
+baseline standard deviation (see <code>sd_prior_mu</code> and <code>sd_prior_sigma</code>), and
+model change point values as independently distributed with mean equal to
+this baseline and standard deviation <code>sd_changepoint_sd</code>.</p></dd>
+
+
 <dt id="arg-link">link<a class="anchor" aria-label="anchor" href="#arg-link"></a></dt>
 <dd><p>Link function. Currently supported are <code>inv_softplus</code> (default)
 and <code>scaled_logit</code>. Both of these links are configured to behave
-approximately like the identity function around R=1, but become
-increasingly non-linear below (and in the case of <code>scaled_logit</code> also
-above) R=1.</p></dd>
+approximately like the identity function around R=1, but become increasingly
+non-linear below (and in the case of <code>scaled_logit</code> also above) R=1.</p></dd>
 
 
 <dt id="arg-r-max">R_max<a class="anchor" aria-label="anchor" href="#arg-r-max"></a></dt>
@@ -133,10 +154,10 @@ performed before model fitting (<code>.checks</code>).</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The smoothness of Rt estimates is influenced by the prior on the
 standard deviation of the random walk. It also influences the uncertainty
-of Rt estimates towards the present / date of estimation, when limited
-data signal is available. The prior on the intercept of the random walk
-should reflect your expectation of Rt at the beginning of the time series.
-If estimating from the start of an epidemic, you might want to use a prior
+of Rt estimates towards the present / date of estimation, when limited data
+signal is available. The prior on the intercept of the random walk should
+reflect your expectation of Rt at the beginning of the time series. If
+estimating from the start of an epidemic, you might want to use a prior
 with mean &gt; 1 for the intercept.</p>
 <p>The priors of this component have the following functional form:</p><ul><li><p>intercept of the random walk: <code>Normal</code></p></li>
 <li><p>standard deviation of the random walk: <code>Truncated normal</code></p></li>
