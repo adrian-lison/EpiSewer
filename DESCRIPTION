@@ -1,6 +1,6 @@
 Package: EpiSewer
 Title: Estimate Epidemiological Parameters from Wastewater Measurements
-Version: 0.0.2
+Version: 0.0.3
 Authors@R: 
     person(given = "Adrian",
            family = "Lison",
