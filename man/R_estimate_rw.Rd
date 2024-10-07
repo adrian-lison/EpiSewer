@@ -9,7 +9,7 @@ R_estimate_rw(
   intercept_prior_sigma = 0.8,
   sd_prior_mu = 0,
   sd_prior_sigma = 0.1,
-  sd_changepoint_dist = 28,
+  sd_changepoint_dist = 7 * 26,
   sd_changepoint_sd = 0.025,
   link = "inv_softplus",
   R_max = 6,
@@ -34,14 +34,16 @@ during the height of an epidemic wave, countermeasures may lead to much
 faster changes in Rt than observable at other times. This potential
 variability is accounted for using change points placed at regular
 intervals. The standard deviation of the random walk then evolves linearly
-between the change points. The default change point distance is 28 days. If
-set to zero, no change points are modeled.}
+between the change points. The default change point distance is 26 weeks
+(182 days). Short changepoint distances (e.g. 4 weeks or less) must be
+chosen with care, as they can make the Rt time series too flexible. If set
+to zero, no change points are modeled.}
 
-\item{sd_changepoint_sd}{This parameter controls the variability of the change
-points. When change points are modeled, EpiSewer will estimate a baseline
-standard deviation (see \code{sd_prior_mu} and \code{sd_prior_sigma}), and model
-change point values as independently distributed with mean equal to this
-baseline and standard deviation \code{sd_changepoint_sd}.}
+\item{sd_changepoint_sd}{This parameter controls the variability of the
+change points. When change points are modeled, EpiSewer will estimate a
+baseline standard deviation (see \code{sd_prior_mu} and \code{sd_prior_sigma}), and
+model change point values as independently distributed with mean equal to
+this baseline and standard deviation \code{sd_changepoint_sd}.}
 
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave

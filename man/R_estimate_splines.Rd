@@ -11,7 +11,7 @@ R_estimate_splines(
   coef_intercept_prior_sigma = 0.8,
   coef_sd_prior_mu = 0,
   coef_sd_prior_sigma = 0.2,
-  coef_sd_changepoint_dist = 28,
+  coef_sd_changepoint_dist = 7 * 26,
   coef_sd_changepoint_sd = 0.05,
   link = "inv_softplus",
   R_max = 6,
@@ -38,7 +38,9 @@ of the random walk over spline coefficients.}
 random walk over spline coefficients (see details).}
 
 \item{coef_sd_prior_sigma}{Prior (standard deviation) on the daily standard
-deviation of the random walk over spline coefficients.}
+deviation of the random walk over spline coefficients. Please note that for
+consistency the overall prior on the daily standard deviation of the random
+walk will have a standard deviation of \code{coef_sd_prior_sigma + coef_sd_changepoint_sd} even if no changepoints are modeled (see below).}
 
 \item{coef_sd_changepoint_dist}{The variability of Rt can change over time,
 e.g. during the height of an epidemic wave, countermeasures may lead to much
@@ -46,8 +48,9 @@ faster changes in Rt than observable at other times. This potential
 variability is accounted for using change points placed at regular
 intervals. The standard deviation of the random walk over spline
 coefficients then evolves linearly between the change points. The default
-change point distance is 28 days. If set to zero, no change points are
-modeled.}
+change point distance is 26 weeks (182 days). Short changepoint distances
+(e.g. 4 weeks or less) must be chosen with care, as they can make the Rt
+time series too flexible. If set to zero, no change points are modeled.}
 
 \item{coef_sd_changepoint_sd}{This parameter controls the variability of the
 change points. When change points are modeled, EpiSewer will estimate a

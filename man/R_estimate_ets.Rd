@@ -11,7 +11,7 @@ R_estimate_ets(
   trend_prior_sigma = 0.1,
   sd_prior_mu = 0,
   sd_prior_sigma = 0.1,
-  sd_changepoint_dist = 28,
+  sd_changepoint_dist = 7 * 26,
   sd_changepoint_sd = 0.025,
   link = "inv_softplus",
   R_max = 6,
@@ -40,7 +40,10 @@ Rt.}
 \item{sd_prior_mu}{Prior (mean) on the standard deviation of the innovations.}
 
 \item{sd_prior_sigma}{Prior (standard deviation) on the standard deviation of
-the innovations.}
+the innovations. Please note that for consistency the overall prior on the
+standard deviation of innovations will have a standard deviation of
+\code{sd_prior_sigma + sd_changepoint_sd} even if no changepoints are modeled
+(see below).}
 
 \item{sd_changepoint_dist}{The variability of Rt can change over time, e.g.
 during the height of an epidemic wave, countermeasures may lead to much
@@ -48,7 +51,9 @@ faster changes in Rt than observable at other times. This potential
 variability is accounted for using change points placed at regular
 intervals. The standard deviation of the state space model innovations then
 evolves linearly between the change points. The default change point
-distance is 28 days. If set to zero, no change points are modeled.}
+distance is 26 weeks (182 days). Short changepoint distances (e.g. 4 weeks
+or less) must be chosen with care, as they can make the Rt time series too
+flexible. If set to zero, no change points are modeled.}
 
 \item{sd_changepoint_sd}{This parameter controls the variability of the change
 points. When change points are modeled, EpiSewer will estimate a baseline
