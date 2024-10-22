@@ -1,12 +1,12 @@
 pandoc: 3.1.11
 pkgdown: 2.1.1.9000
-pkgdown_sha: 0cb9d38d1dc25946f01ee7500be9665985d8784e
+pkgdown_sha: 8d9cba19fe597bba170f8d4c99f351491ab4f4d1
 articles:
   detailed-example: detailed-example.html
   load_per_case: load_per_case.html
   model-definition: model-definition.html
   model-specification: model-specification.html
-last_built: 2024-10-07T21:15Z
+last_built: 2024-10-22T16:23Z
 urls:
   reference: https://adrian-lison.github.io/EpiSewer/reference
   article: https://adrian-lison.github.io/EpiSewer/articles
