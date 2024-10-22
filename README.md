@@ -601,3 +601,27 @@ ww_result$checksums
 #> $init
 #> [1] "82126b86311c9716bda5d21c04c52142"
 ```
+
+## Citing the package
+
+To cite `EpiSewer` in a publication, please use:
+
+    @misc{lisonAdrianEpiSewerPackage,
+      title = {{EpiSewer: Estimate Epidemiological Parameters from Wastewater Measurements}},
+      author = {Lison, Adrian},
+      year = {2024},
+      doi = {10.5281/zenodo.10569101},
+      howpublished = {Zenodo}
+    }
+
+If you use the dPCR-specific model of `EpiSewer` (see
+[noise_estimate_dPCR](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.html)),
+please also cite:
+
+    @article{lisonImprovingInferenceWastewaterbased2024,
+      title = {Improving Inference in Wastewater-Based Epidemiology by Modelling the Statistical Features of Digital {{PCR}}},
+      author = {Lison, Adrian and Julian, Timothy and Stadler, Tanja},
+      year = {2024},
+      journal = {bioRxiv preprint},
+      doi = {10.1101/2024.10.14.618307}
+    }
