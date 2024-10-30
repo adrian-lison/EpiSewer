@@ -417,6 +417,10 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   "pp_check", the observations are ordered by concentration and plotted
 #'   against the predicted concentration (useful for posterior predictive
 #'   checks).
+#' @param obs_size Size of the observed concentration points. Default is 1.5.
+#' @param obs_shape Shape of the observed concentration points. Default is 4.
+#' @param obs_forecast_shape Shape of the observed concentration points for
+#'  forecasted values. Default is 8.
 #' @inheritParams plot_infections
 #'
 #' @details When plotting a posterior predictive check (`type="pp_check"`), each
@@ -443,7 +447,10 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
                                date_col = "date",
                                outlier_col = "is_outlier",
                                type = "time",
-                               intervals = c(0.5, 0.95)
+                               intervals = c(0.5, 0.95),
+                               obs_size = 1.5,
+                               obs_shape = 4,
+                               obs_forecast_shape = 8
                                ) {
 
   if (!(type %in% c("time","pp_check"))) {
@@ -697,7 +704,8 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
           geom_point(
             data = measurements,
             aes(y = concentration),
-            color = ifelse(is.null(results),"black","#a6a6a6"), shape = 4
+            color = ifelse(is.null(results),"black","#a6a6a6"),
+            shape = obs_shape, size = obs_size
           )
         }
       } +
@@ -706,7 +714,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
           geom_point(
             data = measurements[.outlier == TRUE, ],
             aes(y = concentration),
-            color = "red", shape = 4
+            color = "red", shape = obs_shape, size = obs_size
           )
         }
       } +
@@ -714,7 +722,9 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         if (!is.null(measurements_modeled)) {
           geom_point(
             data = measurements_modeled[model==base_model & type == "observed", c("date","concentration")],
-            aes(y = concentration), shape = 4, color = "black"
+            aes(y = concentration),
+            shape = obs_shape, size = obs_size,
+            color = "black"
           )
         }
       } +
@@ -722,7 +732,8 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         if (!is.null(measurements_modeled)) {
           geom_point(
             data = measurements_modeled[model==base_model & type == "future", c("date","concentration")],
-            aes(y = concentration), shape = 8, color = "black"
+            aes(y = concentration), color = "black",
+            shape = obs_forecast_shape, size = obs_size
           )
         }
       } +
@@ -730,7 +741,8 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         if (!is.null(measurements_modeled)) {
           geom_point(
             data = measurements_modeled[model!=base_model & type == "observed"],
-            aes(y = concentration, color = model), shape = 4
+            aes(y = concentration, color = model),
+            shape = obs_shape, size = obs_size
           )
         }
       } +
@@ -738,7 +750,8 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         if (!is.null(measurements_modeled)) {
           geom_point(
             data = measurements_modeled[model!=base_model & type == "future"],
-            aes(y = concentration, color = model), shape = 8
+            aes(y = concentration, color = model),
+            shape = obs_forecast_shape, size = obs_size
           )
         }
       } +
@@ -797,7 +810,8 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         if (!is.null(measurements_modeled)) {
           geom_point(
             data = measurements_modeled,
-            aes(y = concentration), color = "black", shape = 4
+            aes(y = concentration), color = "black",
+            shape = obs_shape, size = obs_size
           )
         }
       } +
@@ -806,7 +820,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
           geom_point(
             data = measurements_modeled |> filter(.outlier),
             aes(y = concentration),
-            color = "red", shape = 4
+            color = "red", shape = obs_shape, size = obs_size
           )
         }
       } +

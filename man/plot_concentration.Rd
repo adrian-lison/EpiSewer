@@ -25,7 +25,10 @@ plot_concentration(
   date_col = "date",
   outlier_col = "is_outlier",
   type = "time",
-  intervals = c(0.5, 0.95)
+  intervals = c(0.5, 0.95),
+  obs_size = 1.5,
+  obs_shape = 4,
+  obs_forecast_shape = 8
 )
 }
 \arguments{
@@ -104,6 +107,13 @@ which identifies outlier measurements (for example added by
 "pp_check", the observations are ordered by concentration and plotted
 against the predicted concentration (useful for posterior predictive
 checks).}
+
+\item{obs_size}{Size of the observed concentration points. Default is 1.5.}
+
+\item{obs_shape}{Shape of the observed concentration points. Default is 4.}
+
+\item{obs_forecast_shape}{Shape of the observed concentration points for
+forecasted values. Default is 8.}
 }
 \value{
 A ggplot object showing predicted and observed concentrations over
