@@ -558,6 +558,17 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         )
     }
 
+    if (!forecast) {
+      concentration_pred <- concentration_pred[type == "estimate",]
+    } else if (!is.null(forecast_horizon)) {
+      forecast_dates <- concentration_pred[
+        type == "estimate",
+        .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
+        by = "model"]
+      concentration_pred <- merge(concentration_pred, forecast_dates, by = "model")
+      concentration_pred <- concentration_pred[date <= last_forecast, ]
+    }
+
     if (!is.null(measurements)) {
       measurements_modeled <- vctrs::vec_rbind(!!!lapply(
         results, function(res) {
@@ -585,20 +596,16 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         as.character(measurements_modeled$model),
         ordered = TRUE
       )
+      if (forecast && !is.null(forecast_horizon)) {
+        measurements_modeled <- merge(
+          measurements_modeled, forecast_dates, by = "model"
+          )
+        measurements_modeled <- measurements_modeled[date <= last_forecast, ]
+        measurements_modeled[, last_forecast := NULL]
+      }
     } else {
       measurements_modeled <- NULL
     }
-  }
-
-  if (!forecast) {
-    concentration_pred <- concentration_pred[type == "estimate",]
-  } else if (!is.null(forecast_horizon)) {
-    forecast_dates <- concentration_pred[
-      type == "estimate",
-      .(last_forecast = lubridate::as_date(max(date, na.rm = T)) + forecast_horizon),
-      by = "model"]
-    concentration_pred <- merge(concentration_pred, forecast_dates, by = "model")
-    concentration_pred <- concentration_pred[date <= last_forecast, ]
   }
 
   if (!is.null(concentration_pred)) {
@@ -706,7 +713,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
       {
         if (!is.null(measurements_modeled)) {
           geom_point(
-            data = measurements_modeled[model==base_model & type == "observed",c("date","concentration")],
+            data = measurements_modeled[model==base_model & type == "observed", c("date","concentration")],
             aes(y = concentration), shape = 4, color = "black"
           )
         }
@@ -714,7 +721,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
       {
         if (!is.null(measurements_modeled)) {
           geom_point(
-            data = measurements_modeled[model==base_model & type == "future",c("date","concentration")],
+            data = measurements_modeled[model==base_model & type == "future", c("date","concentration")],
             aes(y = concentration), shape = 8, color = "black"
           )
         }
