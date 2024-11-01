@@ -50,5 +50,12 @@ vector gamma3_rng(vector mean, vector cv) {
   vector[n] cv_squared = (cv^2);
   vector[n] alpha = 1 / cv_squared;
   vector[n] beta = 1 / (mean .* cv_squared);
+  if (min(beta) == 0) {
+    reject(
+        "Inverse scale parameter of Gamma distribution is zero. | ",
+        "Mean: ", mean, " | ",
+        "CV: ", cv, " | "
+        );
+  }
   return to_vector(gamma_rng(alpha, beta));
 }
