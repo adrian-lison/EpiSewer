@@ -292,7 +292,7 @@ print.EpiSewerJobResult <- function(x) {
     cat("\n\n")
     cat(paste0("Model fitted in ", round(x$runtime$total),
                " seconds (", nrow(x$runtime$chains) ," chains, ",
-               job$job$fit_opts$sampler$iter_sampling, " iterations each)\n"))
+               x$job$fit_opts$sampler$iter_sampling, " iterations each)\n"))
     cat("-----")
     num_divergent <- sum(x$diagnostics$num_divergent)
     if (num_divergent>0) cat("\nDivergent transitions:", num_divergent)
