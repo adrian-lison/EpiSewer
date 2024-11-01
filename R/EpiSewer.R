@@ -217,7 +217,7 @@ run.EpiSewerJob <- function(job) {
       ndraws = job$results_opts$samples_ndraws
       ))
     if (job$results_opts$fitted) {
-      fit_res$draws()
+      try(fit_res$draws(), silent = TRUE)
       try(fit_res$sampler_diagnostics(), silent = TRUE)
       try(fit_res$init(), silent = TRUE)
       try(fit_res$profiles(), silent = TRUE)
@@ -250,6 +250,7 @@ test_run.EpiSewerJob <- function(job) {
   job$fit_opts$sampler$iter_sampling <- 5
   job$fit_opts$sampler$show_messages <- FALSE
   job$fit_opts$sampler$show_exceptions <- FALSE
+  job$fit_opts$sampler$output_dir <- withr::local_tempdir()
   job$results_opts$samples_ndraws <- 2
   return(run(job))
 }
