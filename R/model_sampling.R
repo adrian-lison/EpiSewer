@@ -1,28 +1,36 @@
 #' Model the sampling process
 #'
 #' @description This module function is used to specify the components of the
-#'  `sampling` module in `EpiSewer`.
+#'   `sampling` module in `EpiSewer`.
 #'
 #' @description Each component can be specified using one or several helper
-#'  functions (see available options below). See the documentation of the
-#'  individual helper functions to adjust model priors and further settings.
+#'   functions (see available options below). See the documentation of the
+#'   individual helper functions to adjust model priors and further settings.
 #'
-#' @param sample_effects Sample (batch) effects. The pathogen concentration in
-#' a sample may be influenced by sampling-related external factors, for example
-#' the time between sampling and shipping to the lab (age-of-sample effect),
-#' or different sampling or storage methods. `EpiSewer` allows to estimate
-#' such effects using covariates that describe differences between the samples.
-#' Modeling options:
-#' `r component_functions_("sample_effects")`
+#' @param outliers Outliers in concentrations. `EpiSewer` can automatically
+#'   identify independent spikes in the concentration time series and model them
+#'   as outliers to reduce the impact on transmission dynamic estimates.
+#'   Modeling options:
+#'   `r component_functions_("outliers")`
+#' @param sample_effects Sample (batch) effects. The pathogen concentration in a
+#'   sample may be influenced by sampling-related external factors, for example
+#'   the time between sampling and shipping to the lab (age-of-sample effect),
+#'   or different sampling or storage methods. `EpiSewer` allows to estimate
+#'   such effects using covariates that describe differences between the
+#'   samples. Modeling options:
+#'   `r component_functions_("sample_effects")`
 #'
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `sampling` module.
 #' @export
 #' @family {module functions}
 model_sampling <- function(
-    sample_effects = sample_effects_none()) {
+    outliers = outliers_none(),
+    sample_effects = sample_effects_none()
+    ) {
+  verify_is_modeldata(outliers, "outliers")
   verify_is_modeldata(sample_effects, "sample_effects")
-  return(modeldata_combine(sample_effects))
+  return(modeldata_combine(outliers, sample_effects))
 }
 
 #' Do not model sample effects
@@ -171,6 +179,80 @@ sample_effects_estimate_matrix <- function(
 
   modeldata$.str$sampling[["sample_effects"]] <- list(
     sample_effects_estimate_matrix = c()
+  )
+
+  return(modeldata)
+}
+
+#' Do not model outliers
+#'
+#' @description This option does not model outliers in sampled concentrations.
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {outlier models}
+outliers_none <- function(modeldata = modeldata_init()) {
+  modeldata$outliers <- FALSE
+  modeldata$epsilon_prior <- numeric(0)
+  modeldata$.init$epsilon <- numeric(0)
+
+  modeldata$.str$sampling[["outliers"]] <- list(
+    outliers_none = c()
+  )
+
+  return(modeldata)
+}
+
+#' Model outliers via an extreme value distribution
+#'
+#' @description This option models outliers in sampled concentrations using a
+#'   generalized extreme value distribution.
+#'
+#' @param gev_prior_mu Prior (location) of the GEV distribution.
+#' @param gev_prior_sigma Prior (scale) of the GEV distribution.
+#' @param gev_prior_xi Prior (shape) of the GEV distribution.
+#'
+#' @details `EpiSewer` can automatically identify independent spikes in the
+#'   concentration time series and model them as outliers to reduce the impact
+#'   on transmission dynamic estimates. Moreover, when using this modeling
+#'   option, a summary of potential outlier observations will be produced after
+#'   model fitting (see `summary$outliers`).
+#'
+#' @details Naturally, the modeling of outliers works better retrospectively
+#'   than in real-time. `EpiSewer` will produce a warning if it thinks that the
+#'   most recent observations contain one or more outliers. In that case, it
+#'   might make sense to manually remove the outlier observation or to wait
+#'   until more data is available.
+#'
+#' @details Outliers are modeled as independent spikes in the load on a given
+#'   sampling day. The spikes follow a generalized extreme value distribution
+#'   (GEV) that is scaled by the average load per case. The default prior for
+#'   the GEV is chosen such that distribution of spikes is extremely
+#'   right-tailed, and the 95% quantile of spikes is below the load equivalent
+#'   of 1 case, i.e. has minimal impact on estimated infection dynamics. Note
+#'   that because of the properties of the GEV, the mean posterior estimates of
+#'   loads and concentrations will be theoretically infinite if this modeling
+#'   option is used. The median remains be well-behaved.
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {outlier models}
+outliers_estimate <- function(gev_prior_mu = 0.0025, gev_prior_sigma = 0.005,
+                              gev_prior_xi = 2, modeldata = modeldata_init()) {
+  modeldata$outliers <- TRUE
+  modeldata$epsilon_prior <- set_prior(
+    "epsilon", dist = "gev", mu = gev_prior_mu,
+    sigma = gev_prior_sigma, xi = gev_prior_xi
+    )
+  modeldata$.init$epsilon <- tbe(
+    rep(1e-4, modeldata$T + modeldata$D),
+    required = c("T", "D")
+  )
+
+  modeldata$.str$sampling[["outliers"]] <- list(
+    outliers_estimate = c()
   )
 
   return(modeldata)

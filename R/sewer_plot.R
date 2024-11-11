@@ -403,7 +403,9 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   not available, the forecasted concentrations will be based on the median
 #'   flow volume.
 #' @param mark_outliers If `TRUE`, outliers in the `measurements` are
-#'   highlighted in red. See also argument `outlier_col` below.
+#'   highlighted in red. See also argument `outlier_col` below. Currently, this
+#'   only works with manually labeled outliers. Outliers detected by the model
+#'   can be found in `summary$outliers`.
 #' @param concentration_col Name of the column in the measurements `data.frame`
 #'   which contains the measured concentration that should be plotted.
 #' @param date_col Name of the date column in the measurements `data.frame`.
@@ -420,7 +422,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #' @param obs_size Size of the observed concentration points. Default is 1.5.
 #' @param obs_shape Shape of the observed concentration points. Default is 4.
 #' @param obs_forecast_shape Shape of the observed concentration points for
-#'  forecasted values. Default is 8.
+#'   forecasted values. Default is 8.
 #' @inheritParams plot_infections
 #'
 #' @details When plotting a posterior predictive check (`type="pp_check"`), each

@@ -4,15 +4,27 @@
 \alias{model_sampling}
 \title{Model the sampling process}
 \usage{
-model_sampling(sample_effects = sample_effects_none())
+model_sampling(
+  outliers = outliers_none(),
+  sample_effects = sample_effects_none()
+)
 }
 \arguments{
-\item{sample_effects}{Sample (batch) effects. The pathogen concentration in
-a sample may be influenced by sampling-related external factors, for example
+\item{outliers}{Outliers in concentrations. \code{EpiSewer} can automatically
+identify independent spikes in the concentration time series and model them
+as outliers to reduce the impact on transmission dynamic estimates.
+Modeling options:
+\itemize{
+\item \code{\link[=outliers_none]{outliers_none()}}
+\item \code{\link[=outliers_estimate]{outliers_estimate()}}
+}}
+
+\item{sample_effects}{Sample (batch) effects. The pathogen concentration in a
+sample may be influenced by sampling-related external factors, for example
 the time between sampling and shipping to the lab (age-of-sample effect),
 or different sampling or storage methods. \code{EpiSewer} allows to estimate
-such effects using covariates that describe differences between the samples.
-Modeling options:
+such effects using covariates that describe differences between the
+samples. Modeling options:
 \itemize{
 \item \code{\link[=sample_effects_none]{sample_effects_none()}}
 \item \code{\link[=sample_effects_estimate_weekday]{sample_effects_estimate_weekday()}}

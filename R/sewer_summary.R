@@ -191,6 +191,28 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     intervals = intervals
   )
 
+  if (data$outliers) {
+    summary[["outliers"]] <- get_summary_1d_date(
+      fit, "epsilon",
+      T_shift = T_shift_load, .metainfo = .metainfo,
+      intervals = intervals
+    )[, c("date", "median")]
+    data.table::setnames(summary[["outliers"]], "median", "epsilon")
+    summary[["outliers"]][, is_outlier := summary[["outliers"]][, epsilon] > 25]
+    summary[["outliers"]] <- summary[["outliers"]][
+      date %in% .metainfo$measured_dates,
+      ]
+    if(any(tail(summary[["outliers"]]$is_outlier,7))) {
+      cli::cli_warn(paste(
+        "One or several of the most recent 7 measurements could be an outlier.",
+        "Real-time estimates may be influenced by these outliers.",
+        "Please inspect `summary$outliers` for details and consider removing",
+        "outliers manually before model fitting, or wait for more data before",
+        "interpreting results."
+        ))
+    }
+  }
+
   if (data$K > 0) {
     # here we exponentiate to get the multiplicative effect
     summary[["sample_effects"]] <- get_summary_vector_log(

@@ -41,7 +41,7 @@ get_summary_1d_date <- function(fit, var, T_shift, .metainfo,
     type = factor("estimate", levels = c("estimate", "forecast"))
   )
 
-  if (.metainfo$forecast_horizon > 0) {
+  if (.metainfo$forecast_horizon > 0 && !is.null(var_forecast)) {
     vars$var_forecast <- var_forecast
     date_mappings$date_mapping_forecast <- seq.Date(
       .metainfo$T_end_date + 1,
