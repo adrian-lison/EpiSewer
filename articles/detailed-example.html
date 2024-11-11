@@ -65,7 +65,7 @@
       <h1>Detailed example</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/main/vignettes/detailed-example.Rmd" class="external-link"><code>vignettes/detailed-example.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/develop/vignettes/detailed-example.Rmd" class="external-link"><code>vignettes/detailed-example.Rmd</code></a></small>
       <div class="d-none name"><code>detailed-example.Rmd</code></div>
     </div>
 
@@ -212,13 +212,16 @@ have to adapt the noise component accordingly.</p>
 sampling from the wastewater:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_sampling</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_sampling.html">model_sampling</a></span><span class="op">(</span></span>
+<span>  outliers <span class="op">=</span> <span class="fu"><a href="../reference/outliers_none.html">outliers_none</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  sample_effects <span class="op">=</span> <span class="fu"><a href="../reference/sample_effects_none.html">sample_effects_none</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The sampling module currently has only one component, which allows to
-model the effects of sample characteristics (like time from sampling
-until processing, which can lead to degradation) on the detectable
-pathogen concentrations. In this simple example, we do not model such
-effects.</p>
+<p>The sampling module currently has two component. The outlier
+component allows to automatically detect outlier observations during
+model fitting, making transmission dynamic estimates more robust. The
+sample effects component allows to model the effects of sample
+characteristics (like time from sampling until processing, which can
+lead to degradation) on the detectable pathogen concentrations. In this
+simple example, we do not model outliers or sampling effects.</p>
 </div>
 <div class="section level4">
 <h4 id="sewage">Sewage<a class="anchor" aria-label="anchor" href="#sewage"></a>
@@ -435,6 +438,7 @@ from the job object:</p>
 <span><span class="co">#&gt;  |- LOD_none</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; sampling</span></span>
+<span><span class="co">#&gt;  |- outliers_none</span></span>
 <span><span class="co">#&gt;  |- sample_effects_none</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; sewage</span></span>
@@ -476,6 +480,7 @@ documentation is your friend!</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ww_sampling</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_sampling.html">model_sampling</a></span><span class="op">(</span></span>
+<span>  outliers <span class="op">=</span> <span class="fu"><a href="../reference/outliers_none.html">outliers_none</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  sample_effects <span class="op">=</span> <span class="fu"><a href="../reference/sample_effects_none.html">sample_effects_none</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>

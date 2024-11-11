@@ -80,6 +80,7 @@
 ⭐ Accurate dPCR noise model<br>
 ⭐ Limit of detection (LOD) model</p>
 <p><strong>Sampling</strong><br>
+⭐ Integrated outlier detection<br>
 ⭐ Sample batch effects (e.g. weekday or age-of-sample effects)</p>
 <p><strong>Sewer</strong><br>
 ⭐ Flow normalization<br>
@@ -348,6 +349,7 @@
 <span><span class="co">#&gt;  |- LOD_none</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; sampling</span></span>
+<span><span class="co">#&gt;  |- outliers_none</span></span>
 <span><span class="co">#&gt;  |- sample_effects_none</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; sewage</span></span>
@@ -379,11 +381,11 @@
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">R</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95</span></span>
-<span><span class="co">#&gt; 1: 2021-12-03 1.042238 1.044795  0.7012397 0.9294330  1.157058   1.365061</span></span>
-<span><span class="co">#&gt; 2: 2021-12-04 1.043177 1.044975  0.7155260 0.9338175  1.155830   1.355124</span></span>
-<span><span class="co">#&gt; 3: 2021-12-05 1.044297 1.045450  0.7303710 0.9367903  1.154685   1.346828</span></span>
-<span><span class="co">#&gt; 4: 2021-12-06 1.045626 1.045795  0.7430955 0.9419335  1.152473   1.342926</span></span>
-<span><span class="co">#&gt; 5: 2021-12-07 1.047189 1.046505  0.7521539 0.9480593  1.147990   1.336999</span></span>
+<span><span class="co">#&gt; 1: 2021-12-03 1.036807 1.035745  0.6965128 0.9325218  1.135077   1.380163</span></span>
+<span><span class="co">#&gt; 2: 2021-12-04 1.037644 1.036200  0.7072554 0.9352365  1.131915   1.375141</span></span>
+<span><span class="co">#&gt; 3: 2021-12-05 1.038698 1.035635  0.7225687 0.9409083  1.130870   1.360814</span></span>
+<span><span class="co">#&gt; 4: 2021-12-06 1.039966 1.037090  0.7374740 0.9479347  1.126985   1.354385</span></span>
+<span><span class="co">#&gt; 5: 2021-12-07 1.041443 1.038955  0.7485678 0.9517000  1.126372   1.344230</span></span>
 <span><span class="co">#&gt;        type seeding</span></span>
 <span><span class="co">#&gt; 1: estimate    TRUE</span></span>
 <span><span class="co">#&gt; 2: estimate    TRUE</span></span>
@@ -400,15 +402,15 @@
 <span><span class="co">#&gt; [1] 0 0 0 0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $ebfmi</span></span>
-<span><span class="co">#&gt; [1] 0.9014503 0.9680378 0.9334176 0.9486877</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.9634045 0.9527539 1.0770535 1.0579167</span></span></code></pre></div>
 <p>Finally, the <code>checksums</code> attribute gives us several checksums that uniquely identify the job which was run. These can be used to check whether two job results used the same or different models, input data, fitting options, or inits. If all checksums are identical (and the seed is not <code>NULL</code>), then the results should also be identical.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_result</span><span class="op">$</span><span class="va">checksums</span></span>
 <span><span class="co">#&gt; $model</span></span>
-<span><span class="co">#&gt; [1] "6346549bd7c2ac9a9d200503d7356a29"</span></span>
+<span><span class="co">#&gt; [1] "9ab6b8f9db0836e27cf9e9ac6ab1ea02"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $input</span></span>
-<span><span class="co">#&gt; [1] "c6dad2f8ed2b6fdaf952926f3eb3e97d"</span></span>
+<span><span class="co">#&gt; [1] "c5d9acd8e8877d4ffbb24019996c07f9"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $fit_opts</span></span>
 <span><span class="co">#&gt; [1] "5309bbbc3cd1cc109eac60d2fc82de45"</span></span>
@@ -417,7 +419,7 @@
 <span><span class="co">#&gt; [1] "e92f83d0ca5d22b3bb5849d62c5412ee"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $init</span></span>
-<span><span class="co">#&gt; [1] "82126b86311c9716bda5d21c04c52142"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "4329118480e9cb86b22d61c739d8c77e"</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">

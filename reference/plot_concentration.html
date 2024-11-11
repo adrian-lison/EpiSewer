@@ -41,7 +41,7 @@ predicted concentrations are taken from a fitted EpiSewer model."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Plot predicted concentration</h1>
-      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/main/R/sewer_plot.R" class="external-link"><code>R/sewer_plot.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/develop/R/sewer_plot.R" class="external-link"><code>R/sewer_plot.R</code></a></small>
       <div class="d-none name"><code>plot_concentration.Rd</code></div>
     </div>
 
@@ -124,7 +124,9 @@ intervals? Default is <code>FALSE</code> to avoid over-interpretation of the med
 
 <dt id="arg-mark-outliers">mark_outliers<a class="anchor" aria-label="anchor" href="#arg-mark-outliers"></a></dt>
 <dd><p>If <code>TRUE</code>, outliers in the <code>measurements</code> are
-highlighted in red. See also argument <code>outlier_col</code> below.</p></dd>
+highlighted in red. See also argument <code>outlier_col</code> below. Currently, this
+only works with manually labeled outliers. Outliers detected by the model
+can be found in <code>summary$outliers</code>.</p></dd>
 
 
 <dt id="arg-forecast">forecast<a class="anchor" aria-label="anchor" href="#arg-forecast"></a></dt>

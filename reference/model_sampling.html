@@ -47,7 +47,7 @@ individual helper functions to adjust model priors and further settings."></head
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Model the sampling process</h1>
-      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/main/R/model_sampling.R" class="external-link"><code>R/model_sampling.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/develop/R/model_sampling.R" class="external-link"><code>R/model_sampling.R</code></a></small>
       <div class="d-none name"><code>model_sampling.Rd</code></div>
     </div>
 
@@ -61,20 +61,32 @@ individual helper functions to adjust model priors and further settings.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">model_sampling</span><span class="op">(</span>sample_effects <span class="op">=</span> <span class="fu"><a href="sample_effects_none.html">sample_effects_none</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">model_sampling</span><span class="op">(</span></span>
+<span>  outliers <span class="op">=</span> <span class="fu"><a href="outliers_none.html">outliers_none</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  sample_effects <span class="op">=</span> <span class="fu"><a href="sample_effects_none.html">sample_effects_none</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-sample-effects">sample_effects<a class="anchor" aria-label="anchor" href="#arg-sample-effects"></a></dt>
-<dd><p>Sample (batch) effects. The pathogen concentration in
-a sample may be influenced by sampling-related external factors, for example
+<dl><dt id="arg-outliers">outliers<a class="anchor" aria-label="anchor" href="#arg-outliers"></a></dt>
+<dd><p>Outliers in concentrations. <code>EpiSewer</code> can automatically
+identify independent spikes in the concentration time series and model them
+as outliers to reduce the impact on transmission dynamic estimates.
+Modeling options:</p><ul><li><p><code><a href="outliers_none.html">outliers_none()</a></code></p></li>
+<li><p><code><a href="outliers_estimate.html">outliers_estimate()</a></code></p></li>
+</ul></dd>
+
+
+<dt id="arg-sample-effects">sample_effects<a class="anchor" aria-label="anchor" href="#arg-sample-effects"></a></dt>
+<dd><p>Sample (batch) effects. The pathogen concentration in a
+sample may be influenced by sampling-related external factors, for example
 the time between sampling and shipping to the lab (age-of-sample effect),
 or different sampling or storage methods. <code>EpiSewer</code> allows to estimate
-such effects using covariates that describe differences between the samples.
-Modeling options:</p><ul><li><p><code><a href="sample_effects_none.html">sample_effects_none()</a></code></p></li>
+such effects using covariates that describe differences between the
+samples. Modeling options:</p><ul><li><p><code><a href="sample_effects_none.html">sample_effects_none()</a></code></p></li>
 <li><p><code><a href="sample_effects_estimate_weekday.html">sample_effects_estimate_weekday()</a></code></p></li>
 <li><p><code><a href="sample_effects_estimate_matrix.html">sample_effects_estimate_matrix()</a></code></p></li>
 </ul></dd>
