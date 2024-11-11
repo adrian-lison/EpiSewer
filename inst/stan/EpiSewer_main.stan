@@ -10,6 +10,7 @@ functions {
   #include functions/dist_loggamma.stan
   #include functions/dist_gamma_sum.stan
   #include functions/dist_beta.stan
+  #include functions/dist_gev.stan
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
 }
@@ -73,6 +74,10 @@ data {
   int<lower = 0> n_zeta_exact;
   array[load_vari ? n_zeta_normal_approx : 0] int<lower = 1, upper = S + D + T> zeta_normal_approx; // dates on which zeta can be approximated
   array[load_vari ? n_zeta_exact : 0] int<lower = 1, upper = S + D + T> zeta_exact; // dates on which zeta should not be approximated
+
+  // Outliers ----
+  int<lower=0, upper=1> outliers;
+  array[outliers ? 3 : 0] real<lower=0> epsilon_prior;
 
   // Incubation period ----
   int<lower=1> L; // maximum incubation period
@@ -263,6 +268,8 @@ parameters {
   array[(cv_type == 1) && total_partitions_observe!=1 && (nu_upsilon_b_cv_prior[2] > 0) ? 1 : 0] real<lower=0> nu_upsilon_b_cv;
   vector[(cv_type == 1) && total_partitions_observe!=1 ? n_measured : 0] nu_upsilon_b_noise_raw;
   array[(cv_type == 1) && nu_upsilon_c_prior[2] > 0 ? 1 : 0] real<lower=0> nu_upsilon_c;
+
+  vector<lower=0>[outliers ? D + T : 0] epsilon; // external noise at low concentrations;
 }
 transformed parameters {
   vector[L + S + D + T - G] R; // effective reproduction number
@@ -370,6 +377,10 @@ transformed parameters {
     pi_log = omega_log;
   }
 
+  if (outliers) {
+    pi_log = log_sum_exp(pi_log, log(load_mean) + log(epsilon)); // additive outlier component
+  }
+
   // calculation of concentrations at measurement site by day (expected)
   // --> adjusted for flow and for date of sample effects
   if (K > 0) {
@@ -459,6 +470,11 @@ model {
     target += normal_prior_lpdf(nu_zeta | nu_zeta_prior, 0); // truncated normal
     target += gamma3_sum_log_lpdf(zeta_log_exact | 1, param_or_fixed(nu_zeta, nu_zeta_prior), lambda[zeta_exact]); // gamma sum (exact)
     zeta_raw_approx ~ std_normal(); // non-centered noise for gamma sum (approx)
+  }
+
+  // Prior for additive outlier component
+  if (outliers) {
+    target += gev_lpdf(epsilon | epsilon_prior[1], epsilon_prior[2], epsilon_prior[3]); // generalized extreme value distribution
   }
 
   // Prior on sample date effects

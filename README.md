@@ -36,6 +36,7 @@ configurable modeling components.
 ⭐ Limit of detection (LOD) model
 
 **Sampling**  
+⭐ Integrated outlier detection  
 ⭐ Sample batch effects (e.g. weekday or age-of-sample effects)
 
 **Sewer**  
@@ -502,6 +503,7 @@ ww_result$job$model
 #>  |- LOD_none
 #> 
 #> sampling
+#>  |- outliers_none
 #>  |- sample_effects_none
 #> 
 #> sewage
@@ -547,11 +549,11 @@ number.
 ``` r
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 1.042238 1.044795  0.7012397 0.9294330  1.157058   1.365061
-#> 2: 2021-12-04 1.043177 1.044975  0.7155260 0.9338175  1.155830   1.355124
-#> 3: 2021-12-05 1.044297 1.045450  0.7303710 0.9367903  1.154685   1.346828
-#> 4: 2021-12-06 1.045626 1.045795  0.7430955 0.9419335  1.152473   1.342926
-#> 5: 2021-12-07 1.047189 1.046505  0.7521539 0.9480593  1.147990   1.336999
+#> 1: 2021-12-03 1.036807 1.035745  0.6965128 0.9325218  1.135077   1.380163
+#> 2: 2021-12-04 1.037644 1.036200  0.7072554 0.9352365  1.131915   1.375141
+#> 3: 2021-12-05 1.038698 1.035635  0.7225687 0.9409083  1.130870   1.360814
+#> 4: 2021-12-06 1.039966 1.037090  0.7374740 0.9479347  1.126985   1.354385
+#> 5: 2021-12-07 1.041443 1.038955  0.7485678 0.9517000  1.126372   1.344230
 #>        type seeding
 #> 1: estimate    TRUE
 #> 2: estimate    TRUE
@@ -575,7 +577,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.9014503 0.9680378 0.9334176 0.9486877
+#> [1] 0.9634045 0.9527539 1.0770535 1.0579167
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -587,10 +589,10 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "6346549bd7c2ac9a9d200503d7356a29"
+#> [1] "9ab6b8f9db0836e27cf9e9ac6ab1ea02"
 #> 
 #> $input
-#> [1] "c6dad2f8ed2b6fdaf952926f3eb3e97d"
+#> [1] "c5d9acd8e8877d4ffbb24019996c07f9"
 #> 
 #> $fit_opts
 #> [1] "5309bbbc3cd1cc109eac60d2fc82de45"
@@ -599,7 +601,7 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "82126b86311c9716bda5d21c04c52142"
+#> [1] "4329118480e9cb86b22d61c739d8c77e"
 ```
 
 ## Citing the package

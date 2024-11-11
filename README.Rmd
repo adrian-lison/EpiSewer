@@ -53,6 +53,7 @@ knitr::include_graphics("man/figures/weekly_zurich_animated.gif")
 `r emo::ji("star")` Limit of detection (LOD) model  
 
 **Sampling**  
+`r emo::ji("star")` Integrated outlier detection  
 `r emo::ji("star")` Sample batch effects (e.g. weekday or age-of-sample effects)  
 
 **Sewer**  

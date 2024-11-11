@@ -59,7 +59,9 @@ known during model fitting.}
 intervals? Default is \code{FALSE} to avoid over-interpretation of the median.}
 
 \item{mark_outliers}{If \code{TRUE}, outliers in the \code{measurements} are
-highlighted in red. See also argument \code{outlier_col} below.}
+highlighted in red. See also argument \code{outlier_col} below. Currently, this
+only works with manually labeled outliers. Outliers detected by the model
+can be found in \code{summary$outliers}.}
 
 \item{forecast}{Should forecasted concentrations be shown? Default is true.
 This requires that the model was fitted with a forecast horizon, see
