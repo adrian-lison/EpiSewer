@@ -42,6 +42,7 @@ reference:
   desc: Modeling functions for the sampling process
   contents:
   - model_sampling
+  - starts_with("outliers_")
   - starts_with("sample_effects_")
 - title: Sewage module
   desc: Modeling functions for the sewage process
