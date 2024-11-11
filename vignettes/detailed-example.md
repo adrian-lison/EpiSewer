@@ -155,15 +155,18 @@ the wastewater:
 
 ``` r
 ww_sampling <- model_sampling(
+  outliers = outliers_none(),
   sample_effects = sample_effects_none()
 )
 ```
 
-The sampling module currently has only one component, which allows to
-model the effects of sample characteristics (like time from sampling
-until processing, which can lead to degradation) on the detectable
-pathogen concentrations. In this simple example, we do not model such
-effects.
+The sampling module currently has two component. The outlier component
+allows to automatically detect outlier observations during model
+fitting, making transmission dynamic estimates more robust. The sample
+effects component allows to model the effects of sample characteristics
+(like time from sampling until processing, which can lead to
+degradation) on the detectable pathogen concentrations. In this simple
+example, we do not model outliers or sampling effects.
 
 #### Sewage
 
@@ -384,6 +387,7 @@ ww_result$job$model
 #>  |- LOD_none
 #> 
 #> sampling
+#>  |- outliers_none
 #>  |- sample_effects_none
 #> 
 #> sewage
@@ -427,6 +431,7 @@ ww_measurements <- model_measurements(
 )
 
 ww_sampling <- model_sampling(
+  outliers = outliers_none(),
   sample_effects = sample_effects_none()
 )
 
