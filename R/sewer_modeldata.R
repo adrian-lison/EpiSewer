@@ -8,6 +8,7 @@
 #'   something is missing in the modeldata object.
 #' @keywords internal
 modeldata_update_metainfo <- function(modeldata) {
+
   if (modeldata_check(modeldata,
     required = c("S", "D", "T"),
     throw_error = FALSE
@@ -20,13 +21,6 @@ modeldata_update_metainfo <- function(modeldata) {
     throw_error = FALSE
   )) {
     modeldata$.metainfo$length_I <- with(modeldata, L + S + D + T)
-  }
-
-  if (modeldata_check(modeldata,
-    required = c("L", "S", "D", "T", "G"),
-    throw_error = FALSE
-  )) {
-    modeldata$.metainfo$length_R <- with(modeldata, L + S + D + T - G)
   }
 
   if (modeldata_check(modeldata,
@@ -132,7 +126,7 @@ modeldata_update_metainfo <- function(modeldata) {
       "flow",
       ".metainfo$total_delay_dist",
       ".metainfo$length_I",
-      "T",
+      c("L", "S", "D", "T", "G"),
       ".metainfo$T_start_date",
       ".metainfo$LOD_expected_scale"
     ),
@@ -148,6 +142,46 @@ modeldata_update_metainfo <- function(modeldata) {
         interpolate = TRUE, loess_window = 56,
         plot_smoothed_curve = FALSE
     ))
+
+    # determine length of seeding phase
+    triplets <- modeldata$.metainfo$load_curve_crude[detect_next_n >= 3]
+    if (nrow(triplets) == 0) {
+      modeldata$.metainfo$date_triple_detect <- NA
+      seed_extension <- 0
+      if (is.null(modeldata[["se"]])) {
+        cli::cli_inform(c("!" = paste(
+          "The measurement time series contains a large percentage of",
+          "non-detects (zero concentration measurements).",
+          "EpiSewer will attempt to model the transmission dynamics,",
+          "but there could be sampling problems.",
+          "Please make sure to check the estimated infection time series",
+          "after model fitting, as infection incidence could be very low."
+        )))
+      }
+    } else {
+      modeldata$.metainfo$date_triple_detect <- triplets[, min(date)]
+      seed_length <- as.numeric(with(
+        modeldata$.metainfo, date_triple_detect - T_start_date
+      ))
+      if (seed_length > modeldata$G && modeldata$.metainfo$extend_seeding) {
+        seed_extension <- seed_length - modeldata$G
+      } else {
+        seed_extension <- 0
+      }
+    }
+
+    if (is.null(modeldata[["se"]]) && seed_extension > 0) {
+      cli::cli_inform(c("i" = paste(
+        "Due to non-detects at the start of the measurement time series,",
+        "the reproduction number will only be estimated from",
+        modeldata$.metainfo$date_triple_detect, "onwards.",
+        "Measurements before that date are nevertheless modeled."
+      )))
+    }
+
+    modeldata$se <- seed_extension
+    modeldata$.metainfo$length_seeding <- modeldata$G + seed_extension
+    modeldata$.metainfo$length_R <- with(modeldata, L + S + D + T - G) - seed_extension
   }
 
   if (modeldata_check(

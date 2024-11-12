@@ -45,6 +45,11 @@ get_load_curve_crude <- function(
 
   load_all_dates <- seq(min(loads$date, na.rm = T), max(loads$date, na.rm = T), 1)
 
+  # cumulative load count
+  setorderv(loads, "date")
+  loads[, load_cum := cumsum(load)]
+  loads[, detect := load > 0]
+
   # Impute zero measurements
   if (is.na(impute_zero)) {
     loads <- loads[concentration > 0]
@@ -71,15 +76,25 @@ get_load_curve_crude <- function(
   }
 
   # Compute daily average
-  loads <- loads[, .(load = mean(load, na.rm = TRUE)), by = date]
+  loads <- loads[, .(
+    load = mean(load, na.rm = TRUE),
+    load_cum = max(load_cum, na.rm = TRUE),
+    detect = max(detect, na.rm = TRUE)
+    ), by = date]
 
   # Log-linear interpolation of missing dates
   if (interpolate) {
+    detect_temp <- loads$detect
     loads <- data.table(
       date = load_all_dates,
-      interpolated = !load_all_dates %in% loads$dates,
-      load = exp(approx(loads$date, log(loads$load), xout = load_all_dates)$y)
+      interpolated = !load_all_dates %in% loads$date,
+      load = exp(approx(loads$date, log(loads$load), xout = load_all_dates)$y),
+      load_cum = exp(approx(
+        loads$date, log(loads$load_cum),
+        xout = load_all_dates, method = "constant"
+        )$y)
     )
+    loads[interpolated == FALSE, detect := detect_temp]
   } else {
     loads[,interpolated := FALSE]
   }
@@ -106,8 +121,21 @@ get_load_curve_crude <- function(
   loads_by_infection <- data.table(
     date_index = dates_predict - total_delay, # accounting for delay
     date = T_start_date - 1 + dates_predict - total_delay,
-    load = loads_smoothed
+    load = loads_smoothed,
+    load_cum_obs = c(rep(0,length(dates_predict)-nrow(loads)),loads$load_cum),
+    detect = c(rep(NA,length(dates_predict)-nrow(loads)),loads$detect)
     )
+
+  count_detect_runs <- function(detect){
+    sapply(1:length(detect), function(i) {
+      if (all(detect[i:length(detect)])) {
+        return(length(detect) - i + 1)
+      } else {
+        return(which.min(detect[i:length(detect)])[1] - 1)
+      }
+    })
+  }
+  loads_by_infection[!is.na(detect), detect_next_n := count_detect_runs(detect)]
 
   if (plot_smoothed_curve) {
     print(

@@ -39,7 +39,7 @@
 #' @export
 summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws = 50) {
   summary <- list()
-  T_shift_R <- with(data, L + S + D - G)
+  T_shift_R <- with(data, L + S + D - (G + se))
   T_shift_latent <- with(data, L + S + D)
   T_shift_onset <- with(data, S)
   T_shift_load <- with(data, 0)
@@ -76,7 +76,7 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     list(R_samples, expected_I_samples, I_samples)
     )
   min_date <- all_samples[, min(date)]
-  last_seeding <- min_date + (data$G * 2)
+  last_seeding <- min_date + (data$G * 2) + data$se # se is seeding extension
   all_samples[, seeding := date < last_seeding]
   setcolorder(all_samples, c(".draw", "date", "type", "seeding"))
   all_samples[, type := factor(type, levels = c("estimate", "forecast"))]

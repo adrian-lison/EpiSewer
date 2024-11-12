@@ -90,10 +90,11 @@ data {
   // --> probability for a delay of one comes first (zero excluded)
 
   // Seeding of infections ----
+  int<lower=0> se; // seeding extension (used when time series starts with many non-detects)
   int<lower=0, upper=1> seeding_model; // 0 for fixed, 1 for random walk seeding
   array[2] real iota_log_seed_intercept_prior;
   array[seeding_model == 1 ? 2 : 0] real iota_log_seed_sd_prior;
-  row_vector[G] iota_log_seed_trend_reg;
+  row_vector[(G+se)] iota_log_seed_trend_reg;
 
   // Infection noise ----
   int<lower=0, upper=1> I_sample; // Stochastic (=1) or deterministic (=0) renewal process?
@@ -101,13 +102,13 @@ data {
   array[I_overdispersion ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
 
   // Basis spline (bs) configuration for smoothing infections
-  // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-G)
+  // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-(G+se))
   int<lower=1> bs_n_basis; // number of B-splines
   vector[bs_n_basis - 1] bs_dists; // distances between knots
   int<lower=0> bs_n_w; // number of nonzero entries in bs matrix
   vector[bs_n_w] bs_w; // nonzero entries in bs matrix
   array[bs_n_w] int bs_v; // column indices of bs_w
-  array[L + S + D + T + 1 - G + h] int bs_u; // row starting indices for bs_w plus padding
+  array[L + S + D + T + 1 - (G+se) + h] int bs_u; // row starting indices for bs_w plus padding
   array[2] real inf_ar_sd_prior; // sd hyperprior for random walk on log bs coeffs
   real<lower=0, upper=1> inf_smooth;
   real<lower=0, upper=1> inf_trend_smooth;
@@ -224,7 +225,7 @@ parameters {
   // seeding
   real iota_log_seed_intercept;
   array[seeding_model == 1 ? 1 : 0] real<lower=0> iota_log_seed_sd;
-  vector<multiplier=(seeding_model == 1 ? iota_log_seed_sd[1] : 1)>[seeding_model == 1 ? G - 1 : 0] iota_log_ar_noise;
+  vector<multiplier=(seeding_model == 1 ? iota_log_seed_sd[1] : 1)>[seeding_model == 1 ? (G+se) - 1 : 0] iota_log_ar_noise;
 
   // realized infections
   array[I_overdispersion && (I_xi_prior[2] > 0) ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
@@ -266,28 +267,28 @@ transformed parameters {
 
   // seeding
   {
-    vector[G] iota_log_seed;
+    vector[(G+se)] iota_log_seed;
     if (seeding_model == 0) {
-      iota_log_seed = rep_vector(iota_log_seed_intercept, G);
+      iota_log_seed = rep_vector(iota_log_seed_intercept, (G+se));
     } else if (seeding_model == 1) {
       iota_log_seed = random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0);
     }
-    iota[1 : G] = exp(iota_log_seed);
+    iota[1 : (G+se)] = exp(iota_log_seed);
 
     // Spline smoothing of infections
     bs_coeff = holt_damped_process(
-      [iota_log_seed[G], iota_log_seed_trend_reg * iota_log_seed]',
+      [iota_log_seed[(G+se)], iota_log_seed_trend_reg * iota_log_seed]',
       inf_smooth,
       inf_trend_smooth,
       inf_trend_dampen,
       bs_coeff_noise_raw * inf_ar_sd, 0)[bs_select];
 
-    vector[L + S + D + T - G + h] iota_all = apply_link(csr_matrix_times_vector(
-      L + S + D + T - G + h, bs_n_basis, bs_w, bs_v, bs_u, bs_coeff
+    vector[L + S + D + T - (G+se) + h] iota_all = apply_link(csr_matrix_times_vector(
+      L + S + D + T - (G+se) + h, bs_n_basis, bs_w, bs_v, bs_u, bs_coeff
      ), rep_array(2, 1)); // log link
-    iota[(G+1) : (L + S + D + T)] = iota_all[1 : (L + S + D + T - G)];
+    iota[(G+se+1) : (L + S + D + T)] = iota_all[1 : (L + S + D + T - (G+se))];
     if (h > 0) {
-      iota_forecast = iota_all[(L + S + D + T - G + 1) : (L + S + D + T - G + h)];
+      iota_forecast = iota_all[(L + S + D + T - (G+se) + 1) : (L + S + D + T - (G+se) + h)];
     }
   }
 
@@ -298,9 +299,9 @@ transformed parameters {
     } else {
       I_noise = I_raw .* sqrt(iota); // approximates Poisson
     }
-    I_noise_correction[1:G] = rep_vector(0, G);
-    I_noise_correction[(G + 1):(L + S + D + T)] = renewal_noise_correction(
-      (L + S + D + T - G), G, gi_rev, I_noise
+    I_noise_correction[1:(G+se)] = rep_vector(0, (G+se));
+    I_noise_correction[((G+se) + 1):(L + S + D + T)] = renewal_noise_correction(
+      (L + S + D + T - (G+se)), G, se, gi_rev, I_noise
       );
     I[1 : (L + S + D + T)] = softplus(iota + I_noise_correction + I_noise, 10);
   } else {
@@ -526,7 +527,7 @@ model {
   }
 }
 generated quantities {
-  array[L + S + D + T - G] real R; // effective reproduction number
+  array[L + S + D + T - (G+se)] real R; // effective reproduction number
 
   // predicted measurements and forecasts
   // note that we here assume the same measurement variance as from composite samples,
@@ -545,18 +546,18 @@ generated quantities {
   // reproduction number
   {
     vector[L + S + D + T] infs;
-    vector[L + S + D + T - G] infness;
+    vector[L + S + D + T - (G+se)] infness;
     if (I_sample) {
       infs = I;
     } else {
       infs = iota;
     }
-    infness = infectiousness((L + S + D + T - G), G, gi_rev, infs);
+    infness = infectiousness((L + S + D + T - (G+se)), G, se, gi_rev, infs);
 
     vector[L + S + D + T] new_infs_w = softplus(iota + I_noise_correction, 10);
-    int max_t = L + S + D + T - G;
+    int max_t = L + S + D + T - (G+se);
     for (t in (R_w_half+1):(max_t-R_w_half)) {
-      R[t] = sum(new_infs_w[(G+t-R_w_half):(G+t+R_w_half)]) ./
+      R[t] = sum(new_infs_w[((G+se)+t-R_w_half):((G+se)+t+R_w_half)]) ./
       sum(infness[(t-R_w_half):(t+R_w_half)]);
     }
   }
@@ -590,7 +591,7 @@ generated quantities {
           I_noise[(G+1):(G+h)] = I_raw_forecast .* sqrt(iota_forecast); // approximates Poisson
         }
           I_noise_correction_forecast = renewal_noise_correction(
-          h, G, gi_rev, I_noise
+          h, G, 0, gi_rev, I_noise
           );
         I_forecast = softplus(iota_forecast + I_noise_correction_forecast + I_noise[(G+1):(G+h)], 10);
       } else {
@@ -600,7 +601,7 @@ generated quantities {
 
       // Forecasting of R (back-calculation)
       vector[G + R_w - 1 + h] infs = append_row(I[(L + S + D + T - G - (R_w - 1) + 1):(L + S + D + T)], I_forecast);
-      vector[R_w - 1 + h] infness = infectiousness(R_w - 1 + h, G, gi_rev, infs);
+      vector[R_w - 1 + h] infness = infectiousness(R_w - 1 + h, G, 0, gi_rev, infs);
       vector[G + R_w - 1 + h] new_infs_w = softplus(
           append_row(iota[(L + S + D + T - G - (R_w - 1) + 1):(L + S + D + T)], iota_forecast) +
           append_row(I_noise_correction[(L + S + D + T - G - (R_w - 1) + 1):(L + S + D + T)], I_noise_correction_forecast),

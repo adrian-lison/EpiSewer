@@ -76,7 +76,6 @@ generation_dist_assume <-
           "generation time distribution"
         )
         modeldata$generation_dist <- generation_dist
-        modeldata$.metainfo$length_seeding <- length(generation_dist)
       },
       required_assumptions = "generation_dist",
       modeldata = modeldata
@@ -894,6 +893,7 @@ add_R_variability <- function(length_R, h, length_seeding, length_partial,
 seeding_estimate_constant <- function(
     intercept_prior_q5 = NULL,
     intercept_prior_q95 = NULL,
+    extend = TRUE,
     modeldata = modeldata_init()) {
 
   modeldata$seeding_model <- 0
@@ -913,6 +913,8 @@ seeding_estimate_constant <- function(
     rep(0, modeldata$.metainfo$length_seeding),
     ".metainfo$length_seeding"
   )
+
+  modeldata$.metainfo$extend_seeding <- extend
 
   modeldata$.str$infections[["seeding"]] <- list(
     seeding_estimate_fixed = c()
@@ -946,6 +948,17 @@ seeding_estimate_constant <- function(
 #'   your prior mean. For example, if `rel_change_prior_mu = 0.05` and
 #'   `rel_change_prior_sigma = 0.025`, this means you expect the daily change
 #'   rate to be between 0 (0%) and 0.1 (10%).
+#' @param extend Should the seeding phase be extended when concentrations are
+#'   very low at the start of the measurement time series? If `TRUE`, then the
+#'   seeding phase will be extended to the first date with three consecutive
+#'   detects (i.e. non-zero measurements). The reproduction number will only be
+#'   modeled from that date onward. This option often makes sense, as infection
+#'   numbers are typically very low during a period with many non-detects, which
+#'   can lead to sampling problems when estimating Rt. If you nevertheless want
+#'   Rt estimates also for this period, you can use `extend = FALSE`. Note
+#'   though that estimated reproduction numbers are not necessarily meaningful
+#'   during periods with very low infection numbers, as transmission dynamics
+#'   may be dominated by chance events and importations.
 #'
 #' @details The seeding phase has the length of the maximum generation time
 #'   (during this time, the renewal model cannot be applied). Traditionally,
@@ -979,6 +992,7 @@ seeding_estimate_rw <- function(
     intercept_prior_q95 = NULL,
     rel_change_prior_mu = 0.05,
     rel_change_prior_sigma = 0.025,
+    extend = TRUE,
     modeldata = modeldata_init()) {
 
   modeldata$seeding_model <- 1
@@ -1007,10 +1021,12 @@ seeding_estimate_rw <- function(
   modeldata$iota_log_seed_trend_reg <- tbe(
     get_regression_linear_trend(
       1:modeldata$.metainfo$length_seeding,
-      weights = rev(modeldata$generation_dist)
+      weights = c(rep(0,modeldata$se), rev(modeldata$generation_dist))
       ),
     c(".metainfo$length_seeding", "generation_dist")
   )
+
+  modeldata$.metainfo$extend_seeding <- extend
 
   modeldata$.str$infections[["seeding"]] <- list(
     seeding_estimate_rw = c()
