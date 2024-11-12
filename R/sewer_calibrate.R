@@ -56,7 +56,7 @@ get_load_curve_crude <- function(
   } else if (impute_zero > 0) {
     if (impute_zero_runs) {
       n_run <- 0
-      for (t in 1:nrow(loads)) {
+      for (t in nrow(loads):1) { # backward in time
         if (loads[t, concentration] == 0) {
           n_run <- n_run + 1
           # if n zeros have been observed in a row, the posterior expectation
