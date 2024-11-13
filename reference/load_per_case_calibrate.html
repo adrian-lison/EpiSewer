@@ -49,7 +49,7 @@ Rt."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Calibrate the average load per case using case count data</h1>
-      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/main/R/model_shedding.R" class="external-link"><code>R/model_shedding.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/extended_seeding/R/model_shedding.R" class="external-link"><code>R/model_shedding.R</code></a></small>
       <div class="d-none name"><code>load_per_case_calibrate.Rd</code></div>
     </div>
 
@@ -89,7 +89,7 @@ day. Must have at least a column with dates and a column with case numbers.</p><
 <dt id="arg-min-cases">min_cases<a class="anchor" aria-label="anchor" href="#arg-min-cases"></a></dt>
 <dd><p>This is an alternative to supplying a <code>data.frame</code> of cases.
 If <code>min_cases</code> is specified, then <code>load_per_case</code> is calibrated based on
-the smallest observed load in the wastewater. EpiSewer uses <code>min_cases = 10</code> as a default if no case data is supplied (see <code><a href="sewer_assumptions.html">sewer_assumptions()</a></code>).</p></dd>
+the smallest detected load in the wastewater. EpiSewer uses <code>min_cases = 10</code> as a default if no case data is supplied (see <code><a href="sewer_assumptions.html">sewer_assumptions()</a></code>).</p></dd>
 
 
 <dt id="arg-ascertainment-prop">ascertainment_prop<a class="anchor" aria-label="anchor" href="#arg-ascertainment-prop"></a></dt>

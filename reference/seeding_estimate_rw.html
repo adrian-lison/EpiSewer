@@ -43,7 +43,7 @@ a geometric random walk to model these seeding infections."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Estimate seeding infections using a random walk model</h1>
-      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/main/R/model_infections.R" class="external-link"><code>R/model_infections.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/adrian-lison/EpiSewer/blob/extended_seeding/R/model_infections.R" class="external-link"><code>R/model_infections.R</code></a></small>
       <div class="d-none name"><code>seeding_estimate_rw.Rd</code></div>
     </div>
 
@@ -60,6 +60,7 @@ a geometric random walk to model these seeding infections.</p>
 <span>  intercept_prior_q95 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rel_change_prior_mu <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  rel_change_prior_sigma <span class="op">=</span> <span class="fl">0.025</span>,</span>
+<span>  extend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  modeldata <span class="op">=</span> <span class="fu"><a href="modeldata_init.html">modeldata_init</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -97,6 +98,20 @@ assumes that the daily change rate could be 5% points higher or lower than
 your prior mean. For example, if <code>rel_change_prior_mu = 0.05</code> and
 <code>rel_change_prior_sigma = 0.025</code>, this means you expect the daily change
 rate to be between 0 (0%) and 0.1 (10%).</p></dd>
+
+
+<dt id="arg-extend">extend<a class="anchor" aria-label="anchor" href="#arg-extend"></a></dt>
+<dd><p>Should the seeding phase be extended when concentrations are
+very low at the start of the measurement time series? If <code>TRUE</code>, then the
+seeding phase will be extended to the first date with three consecutive
+detects (i.e. non-zero measurements). The reproduction number will only be
+modeled from that date onward. This option often makes sense, as infection
+numbers are typically very low during a period with many non-detects, which
+can lead to sampling problems when estimating Rt. If you nevertheless want
+Rt estimates also for this period, you can use <code>extend = FALSE</code>. Note
+though that estimated reproduction numbers are not necessarily meaningful
+during periods with very low infection numbers, as transmission dynamics
+may be dominated by chance events and importations.</p></dd>
 
 
 <dt id="arg-modeldata">modeldata<a class="anchor" aria-label="anchor" href="#arg-modeldata"></a></dt>
