@@ -126,7 +126,7 @@ modeldata_update_metainfo <- function(modeldata) {
       "flow",
       ".metainfo$total_delay_dist",
       ".metainfo$length_I",
-      c("L", "S", "D", "T", "G"),
+      "T",
       ".metainfo$T_start_date",
       ".metainfo$LOD_expected_scale"
     ),
@@ -142,7 +142,72 @@ modeldata_update_metainfo <- function(modeldata) {
         interpolate = TRUE, loess_window = 56,
         plot_smoothed_curve = FALSE
     ))
+  }
 
+  if (modeldata_check(
+    modeldata,
+    required = c(
+      ".metainfo$load_curve_crude",
+      ".metainfo$load_per_case"
+    ),
+    throw_error = FALSE
+  )) {
+    icc <- with(
+      modeldata, get_infection_curve_crude(
+        .metainfo$load_curve_crude, .metainfo$load_per_case
+    ))
+    if (max(icc$infections, na.rm = T) < 1 &&
+        is.null(modeldata$.metainfo$infection_curve_crude)) {
+      cli::cli_abort(c("!" = paste(
+        "With the current data and model specification, the estimated number",
+        "of infections will be too low",
+        paste0(
+          "(maximum daily incidence: ",
+          round(max(icc$infections, na.rm = T), 4),
+          ")."
+          ),
+        "Please ensure that the volume units of the concentrations and flows",
+        "are identical (ideally in mL) and check the assumed `load_per_case`."
+      )))
+    } else if (max(icc$infections, na.rm = T) < 5 &&
+               is.null(modeldata$.metainfo$infection_curve_crude)) {
+      cli::cli_inform(c("!" = paste(
+        "With the current data and model specification, the estimated number",
+        "of infections will be quite low",
+        paste0(
+          "(maximum daily incidence: ",
+          round(max(icc$infections, na.rm = T), 4),
+          ")."
+        ),
+        "Please ensure that the volume units of the concentrations and flows",
+        "are identical (ideally in mL) and check the assumed `load_per_case`."
+      )))
+    } else if (median(icc$infections, na.rm = T) > 500000 &&
+               is.null(modeldata$.metainfo$infection_curve_crude)) {
+      cli::cli_inform(c("!" = paste(
+        "With the current data and model specification, the estimated number",
+        "of infections will be extremely high",
+        paste0(
+          "(median daily incidence: ",
+          round(median(icc$infections, na.rm = T), 0),
+          ")."
+        ),
+        "Please ensure that the volume units of the concentrations and flows",
+        "are identical (ideally in mL) and check the assumed `load_per_case`."
+      )))
+    }
+    modeldata$.metainfo$infection_curve_crude <- icc
+  }
+
+  if (modeldata_check(
+    modeldata,
+    required = c(
+      ".metainfo$load_curve_crude",
+      c("L", "S", "D", "T", "G"),
+      ".metainfo$T_start_date"
+    ),
+    throw_error = FALSE
+  )) {
     # determine length of seeding phase
     triplets <- modeldata$.metainfo$load_curve_crude[detect_next_n >= 3]
     if (nrow(triplets) == 0) {
@@ -182,20 +247,6 @@ modeldata_update_metainfo <- function(modeldata) {
     modeldata$se <- seed_extension
     modeldata$.metainfo$length_seeding <- modeldata$G + seed_extension
     modeldata$.metainfo$length_R <- with(modeldata, L + S + D + T - G) - seed_extension
-  }
-
-  if (modeldata_check(
-    modeldata,
-    required = c(
-      ".metainfo$load_curve_crude",
-      ".metainfo$load_per_case"
-    ),
-    throw_error = FALSE
-  )) {
-    modeldata$.metainfo$infection_curve_crude <- with(
-      modeldata, get_infection_curve_crude(
-        .metainfo$load_curve_crude, .metainfo$load_per_case
-    ))
   }
 
   return(modeldata)
