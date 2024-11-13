@@ -215,7 +215,7 @@ load_per_case_assume <-
 #'   day. Must have at least a column with dates and a column with case numbers.
 #' @param min_cases This is an alternative to supplying a `data.frame` of cases.
 #'   If `min_cases` is specified, then `load_per_case` is calibrated based on
-#'   the smallest observed load in the wastewater. EpiSewer uses `min_cases =
+#'   the smallest detected load in the wastewater. EpiSewer uses `min_cases =
 #'   10` as a default if no case data is supplied (see [sewer_assumptions()]).
 #' @param ascertainment_prop Proportion of all cases that get detected /
 #'   reported. Can be used to account for underreporting of infections. Default
@@ -332,9 +332,15 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
      else if (!is.null(min_cases)) {
        modeldata <- tbc("load_per_case_min_cases_calibrate", {
          max_shift <- modeldata$.metainfo$length_I - modeldata$T
-         lcc <- modeldata$.metainfo$load_curve_crude$load
-         lcc <- lcc[(max_shift + 1):length(lcc)]
-         min_load <- min(lcc, na.rm = TRUE)
+         lcc <- modeldata$.metainfo$load_curve_crude
+         lcc <- lcc[(max_shift + 1):nrow(lcc),]
+         if (!is.na(modeldata$.metainfo$date_triple_detect)) {
+           lcc <- lcc[
+             date >= modeldata$.metainfo$date_triple_detect,
+             ]
+         }
+         lcc <- lcc[detect == TRUE,]
+         min_load <- lcc[, min(load, na.rm = TRUE)]
          load_per_case <- min_load/min_cases
          load_per_case <- signif(load_per_case, signif_fig)
          modeldata$load_mean <- load_per_case
@@ -342,6 +348,7 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
        },
        required = c(
          ".metainfo$load_curve_crude",
+         ".metainfo$date_triple_detect",
          ".metainfo$length_I",
          "T"
          ),
