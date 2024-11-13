@@ -7,6 +7,7 @@
 seeding_estimate_constant(
   intercept_prior_q5 = NULL,
   intercept_prior_q95 = NULL,
+  extend = TRUE,
   modeldata = modeldata_init()
 )
 }
@@ -20,6 +21,18 @@ of cases (see details).}
 infections. Can be interpreted as an approximate upper bound. If NULL
 (default), this is computed from a crude empirical estimate of the number
 of cases (see details).}
+
+\item{extend}{Should the seeding phase be extended when concentrations are
+very low at the start of the measurement time series? If \code{TRUE}, then the
+seeding phase will be extended to the first date with three consecutive
+detects (i.e. non-zero measurements). The reproduction number will only be
+modeled from that date onward. This option often makes sense, as infection
+numbers are typically very low during a period with many non-detects, which
+can lead to sampling problems when estimating Rt. If you nevertheless want
+Rt estimates also for this period, you can use \code{extend = FALSE}. Note
+though that estimated reproduction numbers are not necessarily meaningful
+during periods with very low infection numbers, as transmission dynamics
+may be dominated by chance events and importations.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

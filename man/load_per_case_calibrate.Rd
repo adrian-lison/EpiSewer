@@ -22,7 +22,7 @@ day. Must have at least a column with dates and a column with case numbers.}
 
 \item{min_cases}{This is an alternative to supplying a \code{data.frame} of cases.
 If \code{min_cases} is specified, then \code{load_per_case} is calibrated based on
-the smallest observed load in the wastewater. EpiSewer uses \code{min_cases = 10} as a default if no case data is supplied (see \code{\link[=sewer_assumptions]{sewer_assumptions()}}).}
+the smallest detected load in the wastewater. EpiSewer uses \code{min_cases = 10} as a default if no case data is supplied (see \code{\link[=sewer_assumptions]{sewer_assumptions()}}).}
 
 \item{ascertainment_prop}{Proportion of all cases that get detected /
 reported. Can be used to account for underreporting of infections. Default

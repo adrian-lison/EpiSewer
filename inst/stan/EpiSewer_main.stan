@@ -93,6 +93,7 @@ data {
   int<lower=0, upper=1> seeding_model; // 0 for fixed, 1 for random walk seeding
   array[2] real iota_log_seed_intercept_prior;
   array[seeding_model == 1 ? 2 : 0] real iota_log_seed_sd_prior;
+  int<lower=0> se; // seeding extension (used when time series starts with many non-detects)
 
   // Infection noise ----
   int<lower=0, upper=1> I_sample; // Stochastic (=1) or deterministic (=0) renewal process?
@@ -113,12 +114,12 @@ data {
   array[R_model == 0 ? 2 : 0] real<lower=0> ets_phi_prior;
 
   // Basis spline (bs) configuration for spline smoothing of R
-  // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-G)
+  // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-(G+se))
   array[R_model == 1 ? 1 : 0] int<lower=1> bs_n_basis; // number of B-splines
   array[R_model == 1 ? 1 : 0] int<lower=0> bs_n_w; // number of nonzero entries in bs matrix
   vector[R_model == 1 ? bs_n_w[1] : 0] bs_w; // nonzero entries in bs matrix
   array[R_model == 1 ? bs_n_w[1] : 0] int bs_v; // column indices of bs_w
-  array[R_model == 1 ? (L + S + D + T - G + 1 + h) : 0] int bs_u; // row starting indices for bs_w plus padding
+  array[R_model == 1 ? (L + S + D + T - (G+se) + 1 + h) : 0] int bs_u; // row starting indices for bs_w plus padding
   array[R_model == 1 ? 2 : 0] real bs_coeff_ar_start_prior; // start hyperprior for random walk on log bs coeffs
   array[R_model == 1 ? 2 : 0] real bs_coeff_ar_sd_prior; // sd hyperprior for random walk on log bs coeffs
 
@@ -128,7 +129,7 @@ data {
   int<lower=0> R_vari_n_w; // number of nonzero entries in R_vari matrix
   vector[R_vari_n_w] R_vari_w; // nonzero entries in R_vari matrix
   array[R_vari_n_w] int R_vari_v; // column indices of R_vari_w
-  array[L + S + D + T - G + 1 + h] int R_vari_u; // row starting indices for R_vari_w plus padding
+  array[L + S + D + T - (G+se) + 1 + h] int R_vari_u; // row starting indices for R_vari_w plus padding
 
   // Selection matrix for R variability (needed for spline smoothing)
   array[R_model == 1 ? 1 : 0] int<lower=1> R_vari_sel_ncol; // number of columns
@@ -230,7 +231,7 @@ parameters {
   // Exponential smoothing (ets) time series prior for Rt
   array[R_model == 0 ? 1 : 0] real R_level_start; // starting value of the level
   array[R_model == 0 ? 1 : 0] real R_trend_start; // starting value of the trend
-  vector[R_model == 0 ? L + S + D + T - G - 1 : 0] R_noise; // additive errors
+  vector[R_model == 0 ? L + S + D + T - (G+se) - 1 : 0] R_noise; // additive errors
   real<lower=0> R_vari_baseline; // baseline R variability (mean of changepoints)
   array[R_model == 0 && ets_alpha_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_alpha; // smoothing parameter for the level
   array[R_model == 0 && ets_beta_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_beta; // smoothing parameter for the trend
@@ -246,7 +247,7 @@ parameters {
   // seeding
   real iota_log_seed_intercept;
   array[seeding_model == 1 ? 1 : 0] real<lower=0> iota_log_seed_sd;
-  vector<multiplier=(seeding_model == 1 ? iota_log_seed_sd[1] : 1)>[seeding_model == 1 ? G - 1 : 0] iota_log_ar_noise;
+  vector<multiplier=(seeding_model == 1 ? iota_log_seed_sd[1] : 1)>[seeding_model == 1 ? (G+se) - 1 : 0] iota_log_ar_noise;
 
   // realized infections
   array[I_overdispersion && (I_xi_prior[2] > 0) ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
@@ -272,10 +273,10 @@ parameters {
   vector<lower=0>[outliers ? D + T : 0] epsilon; // external noise at low concentrations;
 }
 transformed parameters {
-  vector[L + S + D + T - G] R; // effective reproduction number
+  vector[L + S + D + T - (G+se)] R; // effective reproduction number
   vector[R_model == 1 ? h : 0] R_forecast_spline; // spline-based forecast of R
-  vector<lower=0>[R_model == 0 ? L + S + D + T - G - 1 : 0] R_sd; // standard deviation of additive errors in R ets model
-  vector<lower=0>[R_model == 1 ? L + S + D + T - G + h : 0] bs_coeff_ar_sd; // sd for random walk on log bs coeffs
+  vector<lower=0>[R_model == 0 ? L + S + D + T - (G+se) - 1 : 0] R_sd; // standard deviation of additive errors in R ets model
+  vector<lower=0>[R_model == 1 ? L + S + D + T - (G+se) + h : 0] bs_coeff_ar_sd; // sd for random walk on log bs coeffs
   vector[L + S + D + T] iota; // expected number of infections
   vector[load_vari ? S + D + T : 0] zeta_log; // realized shedding load
   vector[S + D + T] lambda; // expected number of shedding onsets
@@ -288,24 +289,24 @@ transformed parameters {
 
   if (R_model == 0) {
     R_sd = csr_matrix_times_vector(
-      L + S + D + T - G + h, R_vari_n_basis, R_vari_w,
+      L + S + D + T - (G+se) + h, R_vari_n_basis, R_vari_w,
       R_vari_v, R_vari_u,
       R_vari_n_basis > 2 ? append_row3(
         [R_vari_baseline]', R_vari_changepoints, [R_vari_baseline]'
         ) : R_vari_changepoints
-      )[2:(L + S + D + T - G)];
+      )[2:(L + S + D + T - (G+se))];
     // Innovations state space process implementing exponential smoothing
     R = apply_link(holt_damped_process(
       [R_level_start[1], R_trend_start[1]]',
       param_or_fixed(ets_alpha, ets_alpha_prior),
       param_or_fixed(ets_beta, ets_beta_prior),
       param_or_fixed(ets_phi, ets_phi_prior),
-      R_noise .* (ets_noncentered[1] ? R_sd : rep_vector(1, L + S + D + T - G - 1)),
+      R_noise .* (ets_noncentered[1] ? R_sd : rep_vector(1, L + S + D + T - (G+se) - 1)),
       ets_diff[1]
     ), R_link);
   } else if (R_model == 1) {
     bs_coeff_ar_sd = csr_matrix_times_vector(
-      L + S + D + T - G + h, R_vari_n_basis, R_vari_w,
+      L + S + D + T - (G+se) + h, R_vari_n_basis, R_vari_w,
       R_vari_v, R_vari_u,
       R_vari_n_basis > 2 ? append_row3(
         [R_vari_baseline]', R_vari_changepoints, [R_vari_baseline]'
@@ -319,28 +320,28 @@ transformed parameters {
       ));
     // Basis spline smoothing
     vector[bs_n_basis[1]] bs_coeff = random_walk([bs_coeff_ar_start[1]]', bs_coeff_noise, 0); // Basis spline coefficients
-    vector[L + S + D + T - G + h] R_all = apply_link(csr_matrix_times_vector(
-      L + S + D + T - G + h, bs_n_basis[1], bs_w, bs_v, bs_u, bs_coeff
+    vector[L + S + D + T - (G+se) + h] R_all = apply_link(csr_matrix_times_vector(
+      L + S + D + T - (G+se) + h, bs_n_basis[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
-    R = R_all[1:(L + S + D + T - G)];
+    R = R_all[1:(L + S + D + T - (G+se))];
     if (h>0) {
-      R_forecast_spline = R_all[(L + S + D + T - G + 1):(L + S + D + T - G + h)];
+      R_forecast_spline = R_all[(L + S + D + T - (G+se) + 1):(L + S + D + T - (G+se) + h)];
     }
   }
 
   // seeding
   if (seeding_model == 0) {
-    iota[1 : G] = exp(rep_vector(iota_log_seed_intercept, G));
+    iota[1 : (G+se)] = exp(rep_vector(iota_log_seed_intercept, (G+se)));
   } else if (seeding_model == 1) {
-    iota[1 : G] = exp(random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0));
+    iota[1 : (G+se)] = exp(random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0));
   }
   // renewal process
   if (I_sample) {
-    iota[(G + 1) : (L + S + D + T)] = renewal_process_stochastic(
-      (L + S + D + T - G), R, G, gi_rev, I);
+    iota[(G + se + 1) : (L + S + D + T)] = renewal_process_stochastic(
+      (L + S + D + T - (G+se)), R, G, se, gi_rev, I);
   } else {
-    iota[(G + 1) : (L + S + D + T)] = renewal_process_deterministic(
-      (L + S + D + T - G), R, G, gi_rev, iota);
+    iota[(G + se + 1) : (L + S + D + T)] = renewal_process_deterministic(
+      (L + S + D + T - (G+se)), R, G, se, gi_rev, iota);
   }
 
   // convolution from infections to shedding onsets (expected)
@@ -617,22 +618,22 @@ generated quantities {
       if (R_model == 0) {
         // Innovations state space process implementing exponential smoothing
         vector[h] R_sd_forecast = csr_matrix_times_vector(
-          L + S + D + T - G + h, R_vari_n_basis, R_vari_w,
+          L + S + D + T - (G+se) + h, R_vari_n_basis, R_vari_w,
           R_vari_v, R_vari_u,
           R_vari_n_basis > 2 ? append_row3(
             [R_vari_baseline]', R_vari_changepoints, [R_vari_baseline]'
             ) : R_vari_changepoints
-        )[((L + S + D + T - G) + 1):((L + S + D + T - G) + h)];
+        )[((L + S + D + T - (G+se)) + 1):((L + S + D + T - (G+se)) + h)];
         R_forecast = apply_link(holt_damped_process(
           [R_level_start[1], R_trend_start[1]]',
           param_or_fixed(ets_alpha, ets_alpha_prior),
           param_or_fixed(ets_beta, ets_beta_prior),
           param_or_fixed(ets_phi, ets_phi_prior),
           append_row(
-            R_noise .* (ets_noncentered[1] ? R_sd : rep_vector(1, L + S + D + T - G - 1)),
+            R_noise .* (ets_noncentered[1] ? R_sd : rep_vector(1, L + S + D + T - (G+se) - 1)),
             to_vector(normal_rng(0, R_sd_forecast))),
           ets_diff[1]
-        ), R_link)[((L + S + D + T - G) + 1):((L + S + D + T - G) + h)];
+        ), R_link)[((L + S + D + T - (G+se)) + 1):((L + S + D + T - (G+se)) + h)];
       } else if (R_model == 1) {
          R_forecast = R_forecast_spline;
       }
@@ -641,7 +642,7 @@ generated quantities {
       if (I_sample) {
         array[2] vector[G+h] forecast_tmp;
         forecast_tmp = renewal_process_stochastic_sim_rng(
-          h, R_forecast, G, gi_rev,
+          h, R_forecast, G, 0, gi_rev,
           append_row(iota[((L + S + D + T)+1-G):(L + S + D + T)], rep_vector(0, h)),
           I_overdispersion ? param_or_fixed(I_xi, I_xi_prior) : 0
           );
@@ -649,7 +650,7 @@ generated quantities {
         I_forecast = forecast_tmp[2][(G+1):(G+h)];
       } else {
         iota_forecast = renewal_process_deterministic(
-          h, R_forecast, G, gi_rev, append_row(iota[((L + S + D + T)+1-G):(L + S + D + T)], rep_vector(0, h))
+          h, R_forecast, G, 0, gi_rev, append_row(iota[((L + S + D + T)+1-G):(L + S + D + T)], rep_vector(0, h))
           );
         I_forecast = iota_forecast;
       }
