@@ -125,6 +125,12 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     variable = "R", intervals = intervals, cols_end = c(2,3)
   )[!(is.na(median) & type == "estimate")]
 
+  summary[["R_diagnostics"]] <- get_diagnostics_1d_date(
+    fit, var = "R", var_forecast = "R_forecast",
+    T_shift = T_shift_R, .metainfo = .metainfo,
+    intervals = intervals
+  )
+
   summary[["expected_infections"]] <- summarize_samples_dt(
     all_samples, index_cols = index_cols,
     variable = "iota", intervals = intervals, cols_end = c(2,3)
