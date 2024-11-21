@@ -102,9 +102,9 @@ data {
 
   // Reproduction number ----
   int<lower=0, upper=1> R_model; // 0 for ets, 1 for spline smoothing
+  array[2] real R_intercept_prior; // prior for R at start of modeled time series
 
   // Exponential smoothing priors / configuration
-  array[R_model == 0 ? 2 : 0] real R_level_start_prior;
   array[R_model == 0 ? 2 : 0] real R_trend_start_prior;
   array[R_model == 0 ? 1 : 0] int<lower=0> ets_diff; // order of differencing
   array[R_model == 0 ? 1 : 0] int<lower=0, upper=1> ets_noncentered; // use non-centered parameterization?
@@ -120,7 +120,6 @@ data {
   vector[R_model == 1 ? bsg_n_w[1] : 0] bsg_w; // nonzero entries in bs matrix
   array[R_model == 1 ? bsg_n_w[1] : 0] int bsg_v; // column indices of bsg_w
   array[R_model == 1 ? (L + S + D + T - (G+se) + 1 + h) : 0] int bsg_u; // row starting indices for bsg_w plus padding
-  array[R_model == 1 ? 2 : 0] real bsg_coeff_ar_start_prior; // start hyperprior for random walk on log bs coeffs
   // Local
   array[R_model == 1 ? 1 : 0] int<lower=1> bsc_n_basis; // number of B-splines
   array[R_model == 1 ? 1 : 0] int<lower=0> bsc_n_w; // number of nonzero entries in bs matrix
@@ -240,8 +239,9 @@ transformed data {
   }
 }
 parameters {
+  real R_intercept; // starting value of the level
+
   // Exponential smoothing (ets) time series prior for Rt
-  array[R_model == 0 ? 1 : 0] real R_level_start; // starting value of the level
   array[R_model == 0 ? 1 : 0] real R_trend_start; // starting value of the trend
   vector[R_model == 0 ? L + S + D + T - (G+se) - 1 : 0] R_noise; // additive errors
   array[R_model == 0 && ets_alpha_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_alpha; // smoothing parameter for the level
@@ -249,7 +249,6 @@ parameters {
   array[R_model == 0 && ets_phi_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
 
   // Basis spline (bs) time series prior for Rt
-  array[R_model == 1 ? 1 : 0] real bsg_coeff_ar_start; // intercept for random walk on log bs coeffs
   vector[R_model == 1 ? (bsg_n_basis[1] - 1) : 0] bsg_coeff_noise_raw; // additive errors (non-centered)
   vector[R_model == 1 ? (bsc_n_basis[1] - 1) : 0] bsc_coeff_noise_raw; // additive errors (non-centered)
 
@@ -312,7 +311,7 @@ transformed parameters {
       )[2:(L + S + D + T - (G+se))];
     // Innovations state space process implementing exponential smoothing
     R = apply_link(holt_damped_process(
-      [R_level_start[1], R_trend_start[1]]',
+      [R_intercept, R_trend_start[1]]',
       param_or_fixed(ets_alpha, ets_alpha_prior),
       param_or_fixed(ets_beta, ets_beta_prior),
       param_or_fixed(ets_phi, ets_phi_prior),
@@ -320,6 +319,8 @@ transformed parameters {
       ets_diff[1]
     ), R_link);
   } else if (R_model == 1) {
+    // Basis spline smoothing
+    // global
     bsg_coeff_ar_sd = csr_matrix_times_vector(
       L + S + D + T - (G+se) + h, R_vari_n_basis, R_vari_w,
       R_vari_v, R_vari_u,
@@ -327,8 +328,6 @@ transformed parameters {
         [0]', R_sd_changepoints, [0]'
         ) : R_sd_changepoints)
       );
-    // Basis spline smoothing
-    // global
     vector[bsg_n_basis[1] - 1] bsg_coeff_noise = bsg_coeff_noise_raw .*
     sqrt(csr_matrix_times_vector(
       bsg_n_basis[1] - 1, R_vari_sel_ncol[1], R_vari_sel_w,
@@ -336,7 +335,7 @@ transformed parameters {
       bsg_coeff_ar_sd^2 // we add together variances --> square sd
       ));
     vector[bsg_n_basis[1]] bsg_coeff = random_walk([0]', bsg_coeff_noise, 0); // Basis spline coefficients
-    bsg_coeff[(bsg_n_basis[1]-3):bsg_n_basis[1]] = rep_vector(bsg_coeff[bsg_n_basis[1]-4],4);
+    bsg_coeff[(bsg_n_basis[1]-3):bsg_n_basis[1]] = rep_vector(bsg_coeff[bsg_n_basis[1]-4],4); // fix forecast at last value
     R_global = csr_matrix_times_vector(
       L + S + D + T - (G+se) + h, bsg_n_basis[1], bsg_w, bsg_v, bsg_u, bsg_coeff
       );
@@ -348,11 +347,14 @@ transformed parameters {
       rep_vector(R_sd_baseline^2, L + S + D + T - (G+se) + h) // we add together variances --> square sd
       ));
     vector[bsc_n_basis[1]] bsc_coeff = random_walk([0]', bsc_coeff_noise, 0); // Basis spline coefficients
-    bsc_coeff[(bsc_n_basis[1]-3):bsc_n_basis[1]] = rep_vector(bsc_coeff[bsc_n_basis[1]-4],4);
+    bsc_coeff[(bsc_n_basis[1]-3):bsc_n_basis[1]] = rep_vector(bsc_coeff[bsc_n_basis[1]-4],4); // fix forecast at last value
     R_local = csr_matrix_times_vector(
       L + S + D + T - (G+se) + h, bsc_n_basis[1], bsc_w, bsc_v, bsc_u, bsc_coeff
       );
-    vector[L + S + D + T - (G+se) + h] R_all = apply_link(bsg_coeff_ar_start[1] + R_global + R_local, R_link);
+    // intercept + global + local
+    vector[L + S + D + T - (G+se) + h] R_all = apply_link(
+      R_intercept + R_global + R_local, R_link
+      );
     R = R_all[1:(L + S + D + T - (G+se))];
     if (h>0) {
       R_forecast_spline = R_all[(L + S + D + T - (G+se) + 1):(L + S + D + T - (G+se) + h)];
@@ -454,6 +456,11 @@ transformed parameters {
 }
 model {
   // Priors
+  R_intercept ~ normal(R_intercept_prior[1], R_intercept_prior[2]); // prior for Rt at start of time series
+  R_sd_baseline ~ normal(0, R_sd_baseline_prior[1]) T[0, ]; // half normal, baseline
+  target += pareto_type_2_lpdf(
+    R_sd_changepoints | 0, R_sd_change_prior[2], R_sd_change_prior[1]
+    ); // Lomax distribution / exponential-gamma distribution
 
   if (R_model == 0) {
     // Innovations state space model
@@ -462,10 +469,7 @@ model {
       ets_beta, ets_beta_prior,
       ets_phi, ets_phi_prior
       );
-    R_level_start ~ normal(R_level_start_prior[1], R_level_start_prior[2]); // starting prior for level
     R_trend_start ~ normal(R_trend_start_prior[1], R_trend_start_prior[2]); // starting prior for trend
-    R_sd_baseline ~ normal(0, R_sd_baseline_prior[1]) T[0, ]; // half normal, baseline
-    target += pareto_type_2_lpdf(R_sd_changepoints | 0, R_sd_change_prior[2], R_sd_change_prior[1]); // Lomax distribution / exponential-gamma distribution
     if (ets_noncentered[1]) {
       R_noise ~ std_normal(); // Gaussian noise
     } else {
@@ -473,9 +477,6 @@ model {
     }
   } else if (R_model == 1) {
     // R spline smoothing
-    bsg_coeff_ar_start ~ normal(bsg_coeff_ar_start_prior[1], bsg_coeff_ar_start_prior[2]); // starting prior
-    R_sd_baseline ~ normal(0, R_sd_baseline_prior[1]) T[0, ]; // half normal, baseline
-    target += pareto_type_2_lpdf(R_sd_changepoints | 0, R_sd_change_prior[2], R_sd_change_prior[1]); // Lomax distribution / exponential-gamma distribution
     bsg_coeff_noise_raw ~ std_normal(); // Gaussian noise
     bsc_coeff_noise_raw ~ std_normal(); // Gaussian noise
   }
@@ -656,7 +657,7 @@ generated quantities {
             ) : R_sd_changepoints)
         )[((L + S + D + T - (G+se)) + 1):((L + S + D + T - (G+se)) + h)];
         R_forecast = apply_link(holt_damped_process(
-          [R_level_start[1], R_trend_start[1]]',
+          [R_intercept, R_trend_start[1]]',
           param_or_fixed(ets_alpha, ets_alpha_prior),
           param_or_fixed(ets_beta, ets_beta_prior),
           param_or_fixed(ets_phi, ets_phi_prior),

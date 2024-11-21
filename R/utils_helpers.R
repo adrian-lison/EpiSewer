@@ -53,44 +53,55 @@ rep_each_v <- function(x, each) {
 
 #' Places knots for fitting B-splines to a time series
 #'
-#' @param ts_length Length of the time series
+#' @param length_R Length of the Rt time series
+#' @param forecast_horizon Number of days to forecast
 #' @param knot_distance Normal distance between knots
 #' @param partial_window Window with only partial data towards the present in
 #'   which the knot distances will be shorter. This is to avoid erroneous
 #'   extrapolation of splines towards the present.
+#' @param partial_generation A certain quantile of the generation time
+#'   distribution. The first "fully informed" knot is placed at that distance
+#'   after the partial window. The reason for this is that while the number of
+#'   infections is already sufficiently informed after the partial window, the
+#'   trend in infections is typically very volatile, so we place the first
+#'   variable knot after approximately one generation.
+#'
+#' @details The splines are forced to a zero slope towards the present and for
+#'   forecasting.
 #'
 #' @return A vector with knot positions.
 #' @keywords internal
-place_knots <- function(ts_length, knot_distance, partial_window = 30) {
+place_knots <- function(length_R, forecast_horizon, knot_distance, partial_window, partial_generation) {
   if (!knot_distance>1) {
     cli::cli_abort("Knot distance must be larger than one.")
-  }
-  if (!ts_length>knot_distance) {
-    cli::cli_abort("The length of the time series must be larger than the knot distance.")
   }
   if (!partial_window>0) {
     cli::cli_abort("The `partial_window` must be larger than zero.")
   }
-  # define knot distances close to present, i.e. in window with partial data
-  last_dists <- 1+2^seq(1, ceiling(log2(knot_distance)))
-  last_dists <- last_dists[last_dists<=knot_distance]
-  last_dists <- c(
-    rep(3, max(ceiling((partial_window-sum(last_dists))/3),1)),
-    last_dists
-    )
-  last_dists <- last_dists[1:which(cumsum(last_dists)>=partial_window)[1]]
-  last_dists <- last_dists[cumsum(last_dists)<ts_length+1]
-  # define knot distances for remaining window (full data)
-  remaining_knots <- (ts_length+1-sum(last_dists)) %/% knot_distance
-  if (remaining_knots > 0) {
-    all_dists <- c(last_dists, rep(knot_distance, remaining_knots))
-  } else {
-    all_dists <- last_dists
+
+  partial_knots_dists <- place_knots_partial_window(partial_window, 3)
+  first_knot_informed <- length_R - partial_knots_dists[3] - partial_generation
+
+  if (first_knot_informed < 1) {
+    cli::cli_abort(c(
+      "The provided time series is too short for modeling.",
+       "i" = paste(
+         "If your are certain that you are modeling the start of an outbreak",
+         "and there are effectively no cases before, you can use a hack to",
+         "run EpiSewer nevertheless: By adding a single, very low or zero",
+         "concentration measurement at an earlier time point to your data,",
+         "you can artificially extend the time series."
+      )))
   }
-  # get knot positions
-  int_knots <- rev(ts_length+1-cumsum(all_dists))
-  int_knots <- c(min(int_knots) - diff(int_knots)[1], int_knots) # add one internal knot before t=0
-  bound_knots <- c(min(int_knots) - diff(int_knots)[1], ts_length + 1)
+
+  int_knots <- rev(c(
+      min(length_R + forecast_horizon, length_R + 3), # last forecast knot
+      seq(length_R + 2, length_R, by = -1), # internal forecast knots
+      length_R - partial_knots_dists, # knots during partial window
+      seq(first_knot_informed, 1, by = -knot_distance)
+    ))
+  bound_knots <- c(0, length_R + forecast_horizon + 1)
+
   return(list(interior = int_knots, boundary = bound_knots))
 }
 
