@@ -34,10 +34,10 @@ horizon.
 \details{
 Forecasts account for the estimated variation of transmission
 dynamics over time and therefore become more uncertain at longer forecast
-horizons. However, it is important to keep in mind that in expectation the
-model will project the current transmission dynamics to continue unchanged
-(with the exception of \code{R_estimate_ets}, which can project the current
-linear trend of Rt). This assumption can be violated by various factors
-such as depletion of susceptible individuals, changes in behavior, or
-public health interventions.
+horizons. However, it is important to keep in mind that the model will
+project the current transmission dynamics to continue unchanged (with the
+exception of \code{R_estimate_ets}, which can project the current linear trend
+of Rt). This assumption can be violated by various factors such as
+depletion of susceptible individuals, changes in behavior, or public health
+interventions.
 }
