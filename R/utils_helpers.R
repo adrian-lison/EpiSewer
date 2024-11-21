@@ -95,6 +95,21 @@ place_knots <- function(ts_length, knot_distance, partial_window = 30) {
 }
 
 
+place_knots_partial_window <- function(partial_window, n_knots = 3) {
+  # Ensure minimum distance is 4
+  partial_window <- max(partial_window, n_knots)
+
+  # Compute base spacing and remainder
+  base_spacing <- rep(floor(partial_window / n_knots),n_knots)
+  remainder <- partial_window %% n_knots
+  adjusted_spacing <- base_spacing + c(rep(0, n_knots - remainder), rep(1, remainder))
+
+  # Calculate knots with adjusted spacing
+  knots <- cumsum(adjusted_spacing)
+
+  return(knots)
+}
+
 #' Obtain regression vector to estimate a linear trend
 #'
 #' @description This function provides the solution vector from a (weighted)
