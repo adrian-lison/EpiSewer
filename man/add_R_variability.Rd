@@ -8,7 +8,8 @@ add_R_variability(
   length_R,
   h,
   length_seeding,
-  length_partial,
+  partial_window,
+  partial_generation,
   changepoint_dist,
   modeldata
 )

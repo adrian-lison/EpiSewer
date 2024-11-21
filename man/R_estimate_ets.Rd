@@ -5,14 +5,14 @@
 \title{Estimate Rt via exponential smoothing}
 \usage{
 R_estimate_ets(
-  level_prior_mu = 1,
-  level_prior_sigma = 0.8,
+  R_start_prior_mu = 1,
+  R_start_prior_sigma = 0.8,
   trend_prior_mu = 0,
   trend_prior_sigma = 0.1,
-  sd_prior_mu = 0,
-  sd_prior_sigma = 0.1,
-  sd_changepoint_dist = 7 * 26,
-  sd_changepoint_sd = 0.025,
+  sd_base_prior_sd = 0.025,
+  sd_change_prior_shape = 0.5,
+  sd_change_prior_rate = 1e-04,
+  sd_change_distance = 7 * 26,
   link = "inv_softplus",
   R_max = 6,
   smooth_prior_mu = 0.5,
@@ -27,39 +27,39 @@ R_estimate_ets(
 )
 }
 \arguments{
-\item{level_prior_mu}{Prior (mean) on the initial level of Rt.}
+\item{R_start_prior_mu}{Prior (mean) on the initial value of Rt (level).}
 
-\item{level_prior_sigma}{Prior (standard deviation) on the initial level of
-Rt.}
+\item{R_start_prior_sigma}{Prior (standard deviation) on the initial value of
+Rt (level).}
 
 \item{trend_prior_mu}{Prior (mean) on the initial trend of Rt.}
 
 \item{trend_prior_sigma}{Prior (standard deviation) on the initial trend of
 Rt.}
 
-\item{sd_prior_mu}{Prior (mean) on the standard deviation of the innovations.}
+\item{sd_base_prior_sd}{Prior (standard deviation) on the baseline standard
+deviation of the innovations. We here use a half-normal prior, i.e.
+\code{sd_base_prior_sd} is the only parameter to be specified for this prior.
+Please note that for consistency, the overall standard deviation of
+innovations will always be the baseline plus an additive component from
+\code{sd_change_prior} even if no changepoints are modeled (see below).}
 
-\item{sd_prior_sigma}{Prior (standard deviation) on the standard deviation of
-the innovations. Please note that for consistency the overall prior on the
-standard deviation of innovations will have a standard deviation of
-\code{sd_prior_sigma + sd_changepoint_sd} even if no changepoints are modeled
-(see below).}
+\item{sd_change_prior_shape}{Exponential-Gamma prior (shape) on standard
+deviation additional to baseline. This prior describes the distribution of
+the standard deviation of Rt over time. EpiSewer will estimate a baseline
+standard deviation (see \code{sd_base_prior_sd}), and model additional variation
+on top of the baseline using a changepoint model. Please see the details for
+more explanation.}
 
-\item{sd_changepoint_dist}{The variability of Rt can change over time, e.g.
-during the height of an epidemic wave, countermeasures may lead to much
-faster changes in Rt than observable at other times. This potential
-variability is accounted for using change points placed at regular
-intervals. The standard deviation of the state space model innovations then
-evolves linearly between the change points. The default change point
-distance is 26 weeks (182 days). Short changepoint distances (e.g. 4 weeks
-or less) must be chosen with care, as they can make the Rt time series too
-flexible. If set to zero, no change points are modeled.}
+\item{sd_change_prior_rate}{Exponential-Gamma prior (rate) on standard
+deviation additional to baseline. See \code{sd_change_prior_shape} and the
+details for more explanation.}
 
-\item{sd_changepoint_sd}{This parameter controls the variability of the change
-points. When change points are modeled, EpiSewer will estimate a baseline
-standard deviation (see \code{sd_prior_mu} and \code{sd_prior_sigma}), and model
-change point values as independently distributed with mean equal to this
-baseline and standard deviation \code{sd_changepoint_sd}.}
+\item{sd_change_distance}{Distance between changepoints used to model
+additional variation in Rt. The default change point distance is 4 weeks.
+Very short changepoint distances must be chosen with care, as they can make
+the Rt time series too flexible. If set to zero, no change points are
+modeled.}
 
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
@@ -156,11 +156,27 @@ have an influence on estimates close to the present / date of estimation,
 when limited data signal is available. Here, the standard deviation of the
 innovations influences how uncertain Rt estimates are close to the present.
 
+The variability of Rt can change over time. For example, during the
+height of an epidemic wave, countermeasures may lead to much faster changes
+in Rt than observable at other times (baseline). This potential additional
+variability is accounted for using change points placed at regular
+intervals. The additional standard deviation of the state space model
+innovations on top of the baseline then evolves linearly between the change
+points. The additional variation defined at the changepoints is modeled as
+independently distributed and following a Lomax distribution, also known as
+Exponential-Gamma (EG) distribution. This is an exponential distribution
+where the rate is Gamma distributed. The prior \code{sd_change_prior} defines the
+shape and rate of this Gamma distribution. The distribution has a
+strong peak towards zero and a long tail. This regularizes the estimated
+deviations from the baseline standard deviation - most deviations are small,
+but during special time periods, the deviation might also be larger.
+
 The priors of this component have the following functional form:
 \itemize{
 \item initial level of Rt: \code{Normal}
 \item initial trend of Rt: \code{Normal}
-\item standard deviation of innovations: \verb{Truncated normal}
+\item baseline standard deviation of innovations: \code{Half-normal}
+\item additional standard deviation at changepoints: \code{Exponential-Gamma}
 \item smoothing parameter: \code{Beta}
 \item trend smoothing parameter: \code{Beta}
 \item dampening parameter: \code{Beta}

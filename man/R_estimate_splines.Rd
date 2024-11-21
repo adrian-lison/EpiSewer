@@ -5,59 +5,67 @@
 \title{Estimate Rt via smoothing splines}
 \usage{
 R_estimate_splines(
-  knot_distance = 7,
-  spline_degree = 3,
-  coef_intercept_prior_mu = 1,
-  coef_intercept_prior_sigma = 0.8,
-  coef_sd_prior_mu = 0,
-  coef_sd_prior_sigma = 0.2,
-  coef_sd_changepoint_dist = 7 * 26,
-  coef_sd_changepoint_sd = 0.05,
+  knot_distance_global = 4 * 7,
+  knot_distance_local = 7,
+  R_start_prior_mu = 1,
+  R_start_prior_sigma = 0.8,
+  R_sd_local_prior_sd = 0.05,
+  R_sd_global_prior_shape = 1,
+  R_sd_global_prior_rate = 0.01,
+  R_sd_global_change_distance = knot_distance_global,
   link = "inv_softplus",
   R_max = 6,
   modeldata = modeldata_init()
 )
 }
 \arguments{
-\item{knot_distance}{Distance between spline breakpoints (knots) in days
-(default is 7, i.e. one knot each week). Placing knots further apart
-increases the smoothness of Rt estimates and can speed up model fitting. The
-Rt time series remains surprisingly flexible even at larger knot distances,
-but placing knots too far apart can lead to inaccurate estimates.}
+\item{knot_distance_global}{Distance between spline breakpoints (knots) for
+the \emph{global} spline in days. \code{EpiSewer} uses an ensemble of two splines to
+model Rt. The global spline models larger, long-term changes. Default is
+4*7, i.e. one knot every four week.}
 
-\item{spline_degree}{Degree of the spline polynomials (default is 3 for cubic
-splines).}
+\item{knot_distance_local}{Distance between spline breakpoints (knots) for the
+\emph{local} spline in days. \code{EpiSewer} uses an ensemble of two splines to model
+Rt. The local spline models smaller, short-term changes. Default is 7, i.e.
+one knot each week.}
 
-\item{coef_intercept_prior_mu}{Prior (mean) on the intercept of the random
-walk over spline coefficients.}
+\item{R_start_prior_mu}{Prior (mean) on the initial reproduction number
+(intercept).}
 
-\item{coef_intercept_prior_sigma}{Prior (standard deviation) on the intercept
-of the random walk over spline coefficients.}
+\item{R_start_prior_sigma}{Prior (standard deviation) on the initial
+reproduction number (intercept).}
 
-\item{coef_sd_prior_mu}{Prior (mean) on the daily standard deviation of the
-random walk over spline coefficients (see details).}
+\item{R_sd_local_prior_sd}{Half-normal prior (standard deviation) for the
+variation of the local (i.e. short-term) spline. This controls the standard
+deviation of a random walk over the coefficients of the local spline. The
+prior refers to the \emph{daily} standard deviation and is thus independent of
+the knot distance. We use a half-normal prior, i.e. \code{R_sd_local_prior_sd} is
+the only parameter to be specified for this prior.}
 
-\item{coef_sd_prior_sigma}{Prior (standard deviation) on the daily standard
-deviation of the random walk over spline coefficients. Please note that for
-consistency the overall prior on the daily standard deviation of the random
-walk will have a standard deviation of \code{coef_sd_prior_sigma + coef_sd_changepoint_sd} even if no changepoints are modeled (see below).}
+\item{R_sd_global_prior_shape}{Exponential-Gamma prior (shape) for the
+variation of the global (i.e. long-term) spline. This controls the standard
+deviation of a random walk over the coefficients of the global spline. The
+prior refers to the \emph{daily} standard deviation and is thus independent of
+the knot distance. The exponential-Gamma prior is sparse, i.e. it has a
+strong peak towards zero and a long tail. Smaller shape parameters will lead
+to more sparseness, i.e. a longer tail. Note that when adjusting the shape,
+you will likely also have to adjust the rate. The variation of the global
+splines follows a change point model to allow for adaptive changes, see
+details for more explanation.}
 
-\item{coef_sd_changepoint_dist}{The variability of Rt can change over time,
-e.g. during the height of an epidemic wave, countermeasures may lead to much
-faster changes in Rt than observable at other times. This potential
-variability is accounted for using change points placed at regular
-intervals. The standard deviation of the random walk over spline
-coefficients then evolves linearly between the change points. The default
-change point distance is 26 weeks (182 days). Short changepoint distances
-(e.g. 4 weeks or less) must be chosen with care, as they can make the Rt
-time series too flexible. If set to zero, no change points are modeled.}
+\item{R_sd_global_prior_rate}{Exponential-Gamma prior (rate) for the variation
+of the global (i.e. long-term) spline. Larger rates will lead to more
+variability. See \code{R_sd_global_prior_shape} and the details for more
+explanation about this prior.}
 
-\item{coef_sd_changepoint_sd}{This parameter controls the variability of the
-change points. When change points are modeled, EpiSewer will estimate a
-baseline standard deviation (see \code{coef_sd_prior_mu} and
-\code{coef_sd_prior_sigma}), and model change point values as independently
-distributed with mean equal to this baseline and standard deviation
-\code{coef_sd_changepoint_sd}.}
+\item{R_sd_global_change_distance}{Distance between changepoints used to model
+global variation in Rt. \code{EpiSewer} uses an adaptive model for the variation
+of the global spline, to model both time periods with stable and with
+volatile transmission dynamics. The default change point distance is equal
+to \code{knot_distance_global}. Making this smaller than the global knot distance
+will not have a large effect, however making this longer reduces the
+adaptability of the Rt variation. If set to zero, no change points are
+modeled, meaning zero adaptability.}
 
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
@@ -83,50 +91,71 @@ initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
-This option estimates the effective reproduction number using
-penalized B-splines.
+This option estimates the effective reproduction number Rt using
+penalized cubic basis splines.
 }
 \details{
-\code{EpiSewer} uses a random walk on the B-spline coefficients for
-regularization. This allows to use small knot distances without obtaining
-extremely wiggly Rt estimates.
+\code{EpiSewer} uses a combination of two splines (global, for
+larger/long-term changes and local, for smaller/short-term changes), with a
+random walk on the coefficients of each spline. This allows a highly
+adaptive yet regularized Rt model.
 \itemize{
-\item The prior on the random walk intercept should reflect
-your expectation of Rt at the beginning of the time series. If estimating
-from the start of an epidemic, you might want to use a prior with mean
-larger than 1 for the intercept.
-\item The prior on the daily standard deviation should be interpreted in terms
-of daily additive changes (this is at least true around Rt=1, and becomes
-less true as Rt approaches 0 or its upper bound as defined by the \code{link}
-function). For example, a prior with mean=0 and sd=0.2 allows a daily
-standard deviation between 0 and 0.4. A daily standard deviation of 0.4 in
-turn roughly allows the spline coefficients to change by ±0.8 (using the 2
-sigma rule) each day. The daily standard deviation is summed up over the
-days between two knots to get the actual standard deviation of the
-coefficients. This way, the prior is independent of the chosen
-\code{knot_distance}. For example, if \code{knot_distance} is 7 days, and a constant
-daily standard deviation of 0.4 is estimated, the coefficients of two
-adjacent splines can differ by up to \code{0.8*sqrt(knot_distance)}, i.e. ±2.1.
-Note however that this difference does not directly translate into a change
-of Rt by ±2.1, as Rt is always the weighted sum of several basis functions
-at any given point. It may therefore change much more gradually, depending
-on the distances between knots.
+\item The prior \code{R_start_prior} should reflect
+your expectation of Rt at the beginning of the time series. If your time
+series starts in the midst of an outbreak, you might want to use a prior
+with mean larger than 1 for the intercept.
+\item The prior \code{R_sd_local_prior} on the standard deviation of the local
+spline coefficients should be interpreted in terms of daily additive changes
+(this is accurate around Rt=1, and becomes less accurate as Rt approaches 0
+or its upper bound as defined by the \code{link} function). For example, a
+baseline half-normal prior with sd=0.05 allows a daily standard deviation
+between 0 and 0.1. A daily standard deviation of 0.1 in turn roughly allows
+the spline coefficients to change by ±0.2 (using the 2 sigma rule) each day.
+The daily standard deviation is summed up over the days between two knots to
+get the actual standard deviation of the coefficients. This way, the prior
+is independent of the chosen \code{knot_distance}. For example, if
+\code{knot_distance} is 7 days, and a constant daily standard deviation of 0.1 is
+estimated, the coefficients of two adjacent splines can differ by up to
+\code{0.2*sqrt(knot_distance)}, i.e. ±0.5. Note however that this does not
+directly translate into a change of Rt by ±0.5, as Rt is always the weighted
+sum of several basis functions at any given point. It will therefore change
+more gradually, depending on the distances between knots.
+\item The prior \code{R_sd_global_prior} on the standard deviation of the global
+spline coefficients is interpreted in the same way as the local spline, i.e.
+it describes daily additive changes. However, we us a \emph{sparse} prior for the
+global variation, combined with a changepoint model. This yields a global
+spline that expects small changes most of the time but allows for occasional
+large changes. For example, during the height of an epidemic wave,
+countermeasures may lead to much faster changes in Rt than observable at
+other times. These differences in variability are accounted for using change
+points placed at regular intervals, with the daily global standard deviation
+evolving linearly between the change points. The values at the changepoints
+are modeled as independently distributed and follow the Exponential-Gamma
+(EG) prior distribution defined by \code{R_sd_global_prior}. The EG distribution
+is also known as Lomax distribution and corresponds to an exponential
+distribution with a Gamma distributed rate parameter.
 }
 
-The smoothness of the Rt estimates is influenced both by the knot
-distance and by the daily standard deviation of the random walk on
-coefficients. The latter also influences the uncertainty of Rt estimates
-towards the present / date of estimation, when limited data signal is
-available. Absent sufficient data signal, Rt estimates will tend to stay at
-the current level (which corresponds to assuming unchanged transmission
-dynamics).
+The smoothness of the Rt estimates is influenced by a combination of
+the global and local knot distances and by the priors on the global and
+local standard deviation of the random walk on spline coefficients. Placing
+knots further apart increases the smoothness of Rt estimates and can speed
+up model fitting. The Rt time series remains surprisingly flexible even at
+larger knot distances, but placing knots too far apart can lead to
+inaccurate estimates. Note that the priors for the variation of the global
+and local random walk also influence the uncertainty of Rt estimates towards
+the present / date of estimation, when limited data signal is available.
+Absent sufficient data signal, Rt estimates will tend to stay at the current
+level (which corresponds to assuming unchanged transmission dynamics).
 
 The priors of this component have the following functional form:
 \itemize{
-\item intercept of the random walk over spline coefficients:
+\item initial Rt (intercept):
 \code{Normal}
-\item standard deviation of the random walk over spline coefficients:
-\verb{Truncated normal}
+\item daily standard deviation of the random walk over local spline coefficients:
+\code{Half-normal}
+\item daily standard deviation of the random walk over global spline coefficients:
+\code{Exponential-Gamma}
 }
 }
 \seealso{
