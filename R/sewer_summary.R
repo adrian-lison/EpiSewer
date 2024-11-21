@@ -130,6 +130,7 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     T_shift = T_shift_R, .metainfo = .metainfo,
     intervals = intervals
   )
+  summary[["R_diagnostics"]][, seeding := summary[["R"]][, "seeding"]]
 
   summary[["expected_infections"]] <- summarize_samples_dt(
     all_samples, index_cols = index_cols,
