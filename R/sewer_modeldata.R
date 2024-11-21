@@ -44,7 +44,16 @@ modeldata_update_metainfo <- function(modeldata) {
   )) {
     modeldata$.metainfo$partial_window <- which(
       cumsum(modeldata$.metainfo$total_delay_dist)>0.9
-      )[1]-1
+      )[1]-1 # delay dist is 0-indexed
+  }
+
+  if (modeldata_check(modeldata,
+                      required = c("generation_dist"),
+                      throw_error = FALSE
+  )) {
+    modeldata$.metainfo$partial_generation <- which(
+      cumsum(modeldata$generation_dist)>0.9
+    )[1] # generation dist is 1-indexed
   }
 
   # LOD expected scale
