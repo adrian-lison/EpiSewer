@@ -583,7 +583,8 @@ R_estimate_splines <- function(
         forecast_horizon = modeldata$.metainfo$forecast_horizon,
         knot_distance = knot_distance_global,
         partial_window = modeldata$.metainfo$partial_window,
-        partial_generation = modeldata$.metainfo$partial_generation
+        partial_generation = modeldata$.metainfo$partial_generation,
+        fix_forecast = TRUE
         )
       B_global <-
         splines::bs(
@@ -611,7 +612,8 @@ R_estimate_splines <- function(
         forecast_horizon = modeldata$.metainfo$forecast_horizon,
         knot_distance = knot_distance_local,
         partial_window = modeldata$.metainfo$partial_window,
-        partial_generation = modeldata$.metainfo$partial_generation
+        partial_generation = modeldata$.metainfo$partial_generation,
+        fix_forecast = FALSE
       )
       B_local <-
         splines::bs(
@@ -679,22 +681,17 @@ R_estimate_splines <- function(
           by = (knots_local$interior[1] - knots_local$boundary[1]),
           length.out = spline_degree
         )), knots_local$interior[-1], knots_local$boundary[2])
+      # this is currently not used because we have
+      # no changepoint model for the local spline
       R_vari_selection_local <- t(mapply(
         get_selection_vector,
         from = all_positions_local[-length(all_positions_local)] + 1,
         to = all_positions_local[-1],
         n = nrow(B_local)
       ))
-      partial_shift <- place_knots_partial_window(
-        modeldata$.metainfo$partial_window, 3
-        )[3] + modeldata$.metainfo$partial_generation
-      R_vari_scaling_local <- c(
-        rep(1, modeldata$.metainfo$length_R - partial_shift),
-        ((partial_shift - 1):0) / partial_shift,
-        rep(0, modeldata$.metainfo$forecast_horizon)
-        )
+
       # multiply each row with the scaling factor
-      R_vari_selection_local <- t(t(R_vari_selection_local) * R_vari_scaling_local)
+      R_vari_selection_local <- R_vari_selection_local
       modeldata$R_vari_sel_local_ncol <- ncol(R_vari_selection_local)
       R_vari_selection_local_sparse <- suppressMessages(
         rstan::extract_sparse_parts(R_vari_selection_local)

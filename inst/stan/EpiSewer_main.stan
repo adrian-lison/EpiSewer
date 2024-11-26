@@ -347,7 +347,6 @@ transformed parameters {
       rep_vector(R_sd_baseline^2, L + S + D + T - (G+se) + h) // we add together variances --> square sd
       ));
     vector[bsc_n_basis[1]] bsc_coeff = random_walk([0]', bsc_coeff_noise, 0); // Basis spline coefficients
-    bsc_coeff[(bsc_n_basis[1]-3):bsc_n_basis[1]] = rep_vector(bsc_coeff[bsc_n_basis[1]-4],4); // fix forecast at last value
     R_local = csr_matrix_times_vector(
       L + S + D + T - (G+se) + h, bsc_n_basis[1], bsc_w, bsc_v, bsc_u, bsc_coeff
       );

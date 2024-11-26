@@ -71,7 +71,7 @@ rep_each_v <- function(x, each) {
 #'
 #' @return A vector with knot positions.
 #' @keywords internal
-place_knots <- function(length_R, forecast_horizon, knot_distance, partial_window, partial_generation) {
+place_knots <- function(length_R, forecast_horizon, knot_distance, partial_window, partial_generation, fix_forecast = FALSE) {
   if (!knot_distance>1) {
     cli::cli_abort("Knot distance must be larger than one.")
   }
@@ -94,13 +94,23 @@ place_knots <- function(length_R, forecast_horizon, knot_distance, partial_windo
       )))
   }
 
+  if (fix_forecast) {
+    forecast_knots <- c(
+      max(length_R + forecast_horizon, length_R + 3), # last forecast knot
+      seq(length_R + 2, length_R, by = -1) # internal forecast knots
+    )
+  } else {
+    forecast_knots <- rev(
+      seq(length_R, length_R + forecast_horizon + 3, by = 3)
+    )
+  }
+
   int_knots <- rev(c(
-      min(length_R + forecast_horizon, length_R + 3), # last forecast knot
-      seq(length_R + 2, length_R, by = -1), # internal forecast knots
+      forecast_knots,
       length_R - partial_knots_dists, # knots during partial window
       seq(first_knot_informed, 1, by = -knot_distance)
     ))
-  bound_knots <- c(0, length_R + forecast_horizon + 1)
+  bound_knots <- c(0, max(forecast_knots) + 1)
 
   return(list(interior = int_knots, boundary = bound_knots))
 }
