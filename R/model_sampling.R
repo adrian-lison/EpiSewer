@@ -239,8 +239,8 @@ outliers_none <- function(modeldata = modeldata_init()) {
 #' @inherit modeldata_init return
 #' @export
 #' @family {outlier models}
-outliers_estimate <- function(gev_prior_mu = 0.0025, gev_prior_sigma = 0.005,
-                              gev_prior_xi = 2, modeldata = modeldata_init()) {
+outliers_estimate <- function(gev_prior_mu = 0, gev_prior_sigma = 2e-8,
+                              gev_prior_xi = 4, modeldata = modeldata_init()) {
   modeldata$outliers <- TRUE
   modeldata$epsilon_prior <- set_prior(
     "epsilon", dist = "gev", mu = gev_prior_mu,
