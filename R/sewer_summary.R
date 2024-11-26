@@ -205,7 +205,7 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
       intervals = intervals
     )[, c("date", "median")]
     data.table::setnames(summary[["outliers"]], "median", "epsilon")
-    summary[["outliers"]][, is_outlier := summary[["outliers"]][, epsilon] > 25]
+    summary[["outliers"]][, is_outlier := summary[["outliers"]][, epsilon] > 1]
     summary[["outliers"]] <- summary[["outliers"]][
       date %in% .metainfo$measured_dates,
       ]
