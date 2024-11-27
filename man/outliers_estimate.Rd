@@ -5,9 +5,9 @@
 \title{Model outliers via an extreme value distribution}
 \usage{
 outliers_estimate(
-  gev_prior_mu = 0.0025,
-  gev_prior_sigma = 0.005,
-  gev_prior_xi = 2,
+  gev_prior_mu = 0,
+  gev_prior_sigma = 2e-08,
+  gev_prior_xi = 4,
   modeldata = modeldata_init()
 )
 }

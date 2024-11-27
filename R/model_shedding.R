@@ -201,9 +201,6 @@ shedding_dist_assume <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#'
-#' @seealso Helpers to discretize continuous probability distributions:
-#'   [get_discrete_gamma()], [get_discrete_lognormal()]
 shedding_dist_estimate <-
   function(shedding_dist_mean_prior_mean = NULL,
            shedding_dist_mean_prior_sd = NULL,
