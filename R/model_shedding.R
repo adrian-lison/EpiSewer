@@ -136,6 +136,7 @@ shedding_dist_assume <-
     modeldata <- tbp("shedding_dist_assume",
       {
         modeldata$S <- length(shedding_dist) - 1
+        modeldata$shedding_dist_type <- 0 # 0 = fixed, discrete/non-parametric
         shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
         modeldata$shedding_dist <- shedding_dist
         if (!shedding_reference %in% c("infection", "symptom_onset")) {
@@ -145,6 +146,15 @@ shedding_dist_assume <-
           ))
         }
         modeldata$.metainfo$shedding_reference <- shedding_reference
+
+
+        modeldata <- add_dummy_data(modeldata, c(
+          "shedding_dist_mean_prior", "shedding_dist_cv_prior"
+        ))
+
+        modeldata <- add_dummy_inits(modeldata, c(
+          "shedding_dist_mean", "shedding_dist_cv"
+        ))
 
         modeldata$.str$shedding[["shedding_dist"]] <- list(
           shedding_dist_assume = c(shedding_reference = shedding_reference)
@@ -158,6 +168,171 @@ shedding_dist_assume <-
 
     modeldata$.str$shedding[["shedding_dist"]] <- list(
       shedding_dist_assume = c()
+    )
+
+    return(modeldata)
+  }
+
+#' Estimate an uncertain shedding load distribution
+#'
+#' @description This option models a parametric shedding load distribution. It
+#'   is useful for representing uncertainty about the mean and variation of the
+#'   shedding profile.
+#'
+#' @param shedding_dist_mean_prior_mean Prior (mean) for the mean of the
+#'   shedding load distribution.
+#' @param shedding_dist_mean_prior_sd Prior (standard deviation) for the mean of
+#'   the shedding load distribution.
+#' @param shedding_dist_cv_prior_mean Prior (mean) for the coefficient of
+#'   variation (i.e. standard deviation relative to the mean) of the shedding
+#'   load distribution.
+#' @param shedding_dist_cv_prior_sd Prior (standard deviation) for the
+#'   coefficient of variation of the shedding load distribution.
+#' @param shedding_dist_type The parametric distribution that should be modeled.
+#'   Supported are "gamma", "exponential", and "lognormal".
+#' @param shedding_reference Is the shedding load distribution relative to the
+#'   day of `"infection"` or the day of `"symptom_onset"`? This is important
+#'   because shedding load distributions provided in the literature are
+#'   sometimes by days since infection and sometimes by days since symptom
+#'   onset. If `shedding_reference="symptom_onset"`, EpiSewer also needs
+#'   information about the incubation period distribution (see
+#'   [incubation_dist_assume()]).
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#'
+#' @seealso Helpers to discretize continuous probability distributions:
+#'   [get_discrete_gamma()], [get_discrete_lognormal()]
+shedding_dist_estimate <-
+  function(shedding_dist_mean_prior_mean = NULL,
+           shedding_dist_mean_prior_sd = NULL,
+           shedding_dist_cv_prior_mean = NULL,
+           shedding_dist_cv_prior_sd = NULL,
+           shedding_dist_type = "gamma",
+           shedding_reference = NULL,
+           modeldata = modeldata_init()) {
+    modeldata <- tbp("shedding_dist_estimate",
+     {
+       # shedding distribution type
+       shedding_dist_type <- stringr::str_to_lower(shedding_dist_type)
+       supported_dists <- c("gamma", "exponential", "lognormal", "log-normal")
+       if (!shedding_dist_type %in% supported_dists) {
+         cli::cli_abort(paste(
+           "The provided `shedding_dist_type` argument is invalid.",
+           'Must be one of "gamma", "exponential", or "lognormal".'
+         ))
+       }
+       if (shedding_dist_type %in% c("exponential")) {
+         modeldata$shedding_dist_type <- 1
+       }
+       if (shedding_dist_type %in% c("gamma")) {
+         modeldata$shedding_dist_type <- 2
+       }
+       if (shedding_dist_type %in% c("lognormal", "log-normal")) {
+         modeldata$shedding_dist_type <- 3
+       }
+
+       # approximate upper bounds for parameters
+       # samples_mean <- 1/extraDistr::rtnorm(
+       #   10000,
+       #   shedding_dist_inv_mean_prior_mean,
+       #   shedding_dist_inv_mean_prior_sd,
+       #   a = 0
+       #   )
+       # shedding_dist_mean_upper <- quantile(samples_mean, 0.95)
+       # shedding_dist_mean_lower <- quantile(samples_mean, 0.05)
+       # shedding_dist_mean_median <- median(samples_mean)
+       shedding_dist_mean_upper <- shedding_dist_mean_prior_mean +
+         2 * shedding_dist_mean_prior_sd
+
+       shedding_dist_cv_upper <- shedding_dist_cv_prior_mean +
+         2 * shedding_dist_cv_prior_sd
+       shedding_dist_cv_lower <- max(shedding_dist_cv_prior_mean -
+         2 * shedding_dist_cv_prior_sd, 0.1)
+
+
+       # compute discretized distribution based on mean of parameter priors
+       if (modeldata$shedding_dist_type == 1) {
+         modeldata$S <- length(get_discrete_exponential(
+           exponential_mean = shedding_dist_mean_prior_mean
+         )) - 1
+         modeldata$shedding_dist <- get_discrete_exponential(
+           exponential_mean = shedding_dist_mean_prior_mean,
+           maxX = modeldata$S
+           )
+       } else if (modeldata$shedding_dist_type == 2) {
+         modeldata$S <- length(get_discrete_gamma(
+           gamma_mean = shedding_dist_mean_prior_mean,
+           gamma_cv = shedding_dist_cv_prior_mean
+         )) - 1
+         modeldata$shedding_dist <- get_discrete_gamma(
+           gamma_mean = shedding_dist_mean_prior_mean,
+           gamma_cv = shedding_dist_cv_prior_mean,
+           maxX = modeldata$S
+         )
+       } else if (modeldata$shedding_dist_type == 3) {
+         modeldata$S <- length(get_discrete_lognormal(
+           unit_mean = shedding_dist_mean_prior_mean,
+           unit_cv = shedding_dist_cv_prior_mean
+         )) - 1
+         modeldata$shedding_dist <- get_discrete_lognormal(
+           unit_mean = shedding_dist_mean_median,
+           unit_cv = shedding_dist_cv_prior_mean,
+           maxX = modeldata$S
+         )
+       }
+
+       if (!shedding_reference %in% c("infection", "symptom_onset")) {
+         cli::cli_abort(paste(
+           "The provided `shedding_reference` argument is invalid.",
+           'Must be either "infection" or "symptom_onset".'
+         ))
+       }
+       modeldata$.metainfo$shedding_reference <- shedding_reference
+
+       modeldata$shedding_dist_mean_prior <- set_prior(
+         "shedding_dist_mean", dist = "truncated normal",
+         mu = shedding_dist_mean_prior_mean,
+         sigma = shedding_dist_mean_prior_sd
+       )
+       modeldata$.init$shedding_dist_mean <- init_from_location_scale_prior(
+         modeldata$shedding_dist_mean_prior
+       )
+
+       if (modeldata$shedding_dist_type > 1) {
+         modeldata$shedding_dist_cv_prior <- set_prior(
+           "shedding_dist_cv", dist = "truncated normal",
+           mu = shedding_dist_cv_prior_mean,
+           sigma = shedding_dist_cv_prior_sd
+         )
+         modeldata$.init$shedding_dist_cv <- init_from_location_scale_prior(
+           modeldata$shedding_dist_cv_prior
+         )
+       } else {
+         modeldata$shedding_dist_cv_prior <- numeric(0)
+         modeldata$.init$shedding_dist_cv <- numeric(0)
+       }
+
+       modeldata$.str$shedding[["shedding_dist"]] <- list(
+         shedding_dist_estimate = c(shedding_reference = shedding_reference)
+       )
+
+       return(modeldata)
+     },
+     required_assumptions = c(
+       "shedding_dist_mean_prior_mean",
+       "shedding_dist_mean_prior_sd",
+       "shedding_dist_cv_prior_mean",
+       "shedding_dist_cv_prior_sd",
+       "shedding_dist_type",
+       "shedding_reference"
+       ),
+     modeldata = modeldata
+    )
+
+    modeldata$.str$shedding[["shedding_dist"]] <- list(
+      shedding_dist_estimate = c()
     )
 
     return(modeldata)

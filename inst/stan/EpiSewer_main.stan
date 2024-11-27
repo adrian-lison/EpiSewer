@@ -11,6 +11,7 @@ functions {
   #include functions/dist_gamma_sum.stan
   #include functions/dist_beta.stan
   #include functions/dist_gev.stan
+  #include functions/discretize.stan
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
 }
@@ -64,10 +65,14 @@ data {
   // --> probability for residence of zero days (same day arrival at sampling site) comes first
 
   // Shedding ----
-  real<lower=0> load_mean; // mean load shed per person
   int<lower=1> S; // maximum number of days with shedding
-  vector[S + 1] shedding_dist; // shedding load distribution
+  int<lower=0, upper=3> shedding_dist_type; // 0 for fixed, non-parametric, 1 for exponential, 2 for gamma, 3 for log-normal
+  vector[S + 1] shedding_dist; // Non-parametric shedding load distribution. If shedding_dist_type is parametric and estimated, this is the discretized mean of the prior.
   // --> probability for shedding today comes first
+  array[shedding_dist_type > 0 ? 2 : 0] real shedding_dist_mean_prior; // prior for mean of shedding distribution
+  array[shedding_dist_type > 1 ? 2 : 0] real shedding_dist_cv_prior; // prior for cv of shedding distribution
+
+  real<lower=0> load_mean; // mean load shed per person
   int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads?
   array[load_vari ? 2 : 0] real nu_zeta_prior; // prior on coefficient of variation of individual-level load
   int<lower = 0> n_zeta_normal_approx;
@@ -265,6 +270,10 @@ parameters {
   array[I_overdispersion && (I_xi_prior[2] > 0) ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
 
+  // paramaters of shedding load distribution
+  array[shedding_dist_type > 0 ? 1 : 0] real<lower=0> shedding_dist_mean;
+  array[shedding_dist_type > 1 ? 1 : 0] real<lower=0> shedding_dist_cv;
+
   // individual-level shedding load variation
   array[load_vari && nu_zeta_prior[2] > 0 ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
   vector[load_vari ? n_zeta_exact : 0] zeta_log_exact; // realized shedding load
@@ -292,6 +301,7 @@ transformed parameters {
   vector<lower=0>[R_model == 0 ? L + S + D + T - (G+se) - 1 : 0] R_sd; // standard deviation of additive errors in R ets model
   vector<lower=0>[R_model == 1 ? L + S + D + T - (G+se) + h : 0] bsg_coeff_ar_sd; // sd for random walk on log bs coeffs
   vector[L + S + D + T] iota; // expected number of infections
+  vector[shedding_dist_type > 0 ? S + 1 : 0] shed_rev_log_sample; // shedding load distribution
   vector[load_vari ? S + D + T : 0] zeta_log; // realized shedding load
   vector[S + D + T] lambda; // expected number of shedding onsets
   vector[D + T] omega_log; // log expected daily loads in catchment
@@ -379,6 +389,18 @@ transformed parameters {
   // convolution from infections to shedding onsets (expected)
   lambda = convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + D + T)];
 
+  // sampled shedding distribution
+  if (shedding_dist_type > 0) {
+    shed_rev_log_sample = reverse(
+      discretise_dist_log(
+        shedding_dist_type,
+        shedding_dist_mean[1],
+        shedding_dist_type > 1 ? shedding_dist_cv[1] : 0,
+        S
+      )
+    );
+  }
+
   // calculation of total loads shed each day (expected)
   if (load_vari) {
     // Shedding load variation
@@ -388,14 +410,13 @@ transformed parameters {
       lambda[zeta_normal_approx],
       zeta_raw_approx
     );
-
     omega_log = log_convolve(
-        shed_rev_log, // shedding load distribution
+        shedding_dist_type == 0 ? shed_rev_log : shed_rev_log_sample, // shedding load distribution
         log(load_mean) + zeta_log // total load shed
         )[(S + 1) : (S + D + T)];
   } else {
     omega_log = log_convolve(
-        shed_rev_log, // shedding load distribution
+        shedding_dist_type == 0 ? shed_rev_log : shed_rev_log_sample, // shedding load distribution
         log(load_mean) + log(lambda) // total load shed
         )[(S + 1) : (S + D + T)];
   }
@@ -495,6 +516,14 @@ model {
       I[1 : (L + S + D + T)] ~ normal(iota, iota .* soft_upper(sqrt(iota .* (1 + iota * (param_or_fixed(I_xi, I_xi_prior) ^ 2)))./iota, 0.5, 10)) T[0, ]; // approximates negative binomial
     } else {
       I[1 : (L + S + D + T)] ~ normal(iota, iota .* soft_upper(sqrt(iota)./iota, 0.5, 10)) T[0, ]; // approximates Poisson
+    }
+  }
+
+  // Parameters of shedding load distribution
+  if (shedding_dist_type > 0) {
+    shedding_dist_mean[1] ~ normal(shedding_dist_mean_prior[1], shedding_dist_mean_prior[2]) T[0, ]; // truncated normal
+    if (shedding_dist_type > 1) {
+      shedding_dist_cv[1] ~ normal(shedding_dist_cv_prior[1], shedding_dist_cv_prior[2]) T[0, ]; // truncated normal
     }
   }
 
@@ -699,12 +728,12 @@ generated quantities {
           1/param_or_fixed(nu_zeta, nu_zeta_prior)^2
           )));
         omega_log_forecast = log_convolve(
-            shed_rev_log, // shedding load distribution
+            shedding_dist_type == 0 ? shed_rev_log : shed_rev_log_sample, // shedding load distribution
             log(load_mean) + append_row(zeta_log[((S + D + T)+1-S):(S + D + T)], zeta_log_forecast) // total load shed
             )[(S+1):(S+h)];
       } else {
         omega_log_forecast = log_convolve(
-            shed_rev_log, // shedding load distribution
+            shedding_dist_type == 0 ? shed_rev_log : shed_rev_log_sample, // shedding load distribution
             log(load_mean) + log(append_row(lambda[((S + D + T)+1-S):(S + D + T)], lambda_forecast)) // total load shed
             )[(S+1):(S+h)];
       }
