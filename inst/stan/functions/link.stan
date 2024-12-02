@@ -31,6 +31,20 @@ Helper for link functions
   }
 
   /**
+  * Soft lower limit using the softplus function
+  */
+  real soft_lower(real x, real l, real k) {
+    return(l + softplus(x - l, k));
+  }
+
+  /**
+  * Soft lower limit using the softplus function
+  */
+  vector soft_lower(vector x, real l, real k) {
+    return(l + softplus(x - l, k));
+  }
+
+  /**
   * Logistic
   */
   real logistic(real x, real c, real a, real k) {

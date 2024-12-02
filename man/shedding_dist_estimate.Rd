@@ -11,22 +11,30 @@ shedding_dist_estimate(
   shedding_dist_cv_prior_sd = NULL,
   shedding_dist_type = "gamma",
   shedding_reference = NULL,
+  prior_weights = NULL,
+  weight_alpha = 1,
   modeldata = modeldata_init()
 )
 }
 \arguments{
 \item{shedding_dist_mean_prior_mean}{Prior (mean) for the mean of the
-shedding load distribution.}
+shedding load distribution. Can also be a vector to represent several
+priors, that will be mixed using a Dirichlet prior. This is useful when
+combining several shedding load distributions from different studies or
+sensitivity analyses.}
 
 \item{shedding_dist_mean_prior_sd}{Prior (standard deviation) for the mean of
-the shedding load distribution.}
+the shedding load distribution. Can also be a vector, see
+\code{shedding_dist_mean_prior_mean}.}
 
 \item{shedding_dist_cv_prior_mean}{Prior (mean) for the coefficient of
 variation (i.e. standard deviation relative to the mean) of the shedding
-load distribution.}
+load distribution. Can also be a vector, see
+\code{shedding_dist_mean_prior_mean}.}
 
 \item{shedding_dist_cv_prior_sd}{Prior (standard deviation) for the
-coefficient of variation of the shedding load distribution.}
+coefficient of variation of the shedding load distribution. Can also be a
+vector, see \code{shedding_dist_mean_prior_mean}.}
 
 \item{shedding_dist_type}{The parametric distribution that should be modeled.
 Supported are "gamma", "exponential", and "lognormal".}
@@ -38,6 +46,19 @@ sometimes by days since infection and sometimes by days since symptom
 onset. If \code{shedding_reference="symptom_onset"}, EpiSewer also needs
 information about the incubation period distribution (see
 \code{\link[=incubation_dist_assume]{incubation_dist_assume()}}).}
+
+\item{prior_weights}{A numeric vector of the same length as the priors for
+the mean and cv, with weights for the different priors. If \code{NULL}, the
+priors are given equal weight. Will be normalized to sum to the number of
+distributions.}
+
+\item{weight_alpha}{Concentration parameter of the Dirichlet prior for the
+mixture probabilities. The default is \code{weight_alpha=1}, i.e. a uniform
+distribution over all combinations of weights. This will sample various
+mixtures of the mean and cv prior distributions provided. If a smaller
+\code{weight_alpha} is chosen, the prior distributions are rather considered
+separately, i.e. in each posterior sample, one of the prior distributions
+is given almost all the weight.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

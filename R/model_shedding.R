@@ -149,12 +149,15 @@ shedding_dist_assume <-
 
 
         modeldata <- add_dummy_data(modeldata, c(
-          "shedding_dist_mean_prior", "shedding_dist_cv_prior"
+          "shedding_dist_mean_prior", "shedding_dist_cv_prior",
+          "shedding_dist_weights_prior"
         ))
+        modeldata$shedding_dist_n <- 1
 
         modeldata <- add_dummy_inits(modeldata, c(
           "shedding_dist_mean", "shedding_dist_cv"
         ))
+        modeldata$.init$shedding_dist_weights <- 1
 
         modeldata$.str$shedding[["shedding_dist"]] <- list(
           shedding_dist_assume = c(shedding_reference = shedding_reference)
@@ -180,14 +183,20 @@ shedding_dist_assume <-
 #'   shedding profile.
 #'
 #' @param shedding_dist_mean_prior_mean Prior (mean) for the mean of the
-#'   shedding load distribution.
+#'   shedding load distribution. Can also be a vector to represent several
+#'   priors, that will be mixed using a Dirichlet prior. This is useful when
+#'   combining several shedding load distributions from different studies or
+#'   sensitivity analyses.
 #' @param shedding_dist_mean_prior_sd Prior (standard deviation) for the mean of
-#'   the shedding load distribution.
+#'   the shedding load distribution. Can also be a vector, see
+#'   `shedding_dist_mean_prior_mean`.
 #' @param shedding_dist_cv_prior_mean Prior (mean) for the coefficient of
 #'   variation (i.e. standard deviation relative to the mean) of the shedding
-#'   load distribution.
+#'   load distribution. Can also be a vector, see
+#'   `shedding_dist_mean_prior_mean`.
 #' @param shedding_dist_cv_prior_sd Prior (standard deviation) for the
-#'   coefficient of variation of the shedding load distribution.
+#'   coefficient of variation of the shedding load distribution. Can also be a
+#'   vector, see `shedding_dist_mean_prior_mean`.
 #' @param shedding_dist_type The parametric distribution that should be modeled.
 #'   Supported are "gamma", "exponential", and "lognormal".
 #' @param shedding_reference Is the shedding load distribution relative to the
@@ -197,6 +206,17 @@ shedding_dist_assume <-
 #'   onset. If `shedding_reference="symptom_onset"`, EpiSewer also needs
 #'   information about the incubation period distribution (see
 #'   [incubation_dist_assume()]).
+#' @param prior_weights A numeric vector of the same length as the priors for
+#'   the mean and cv, with weights for the different priors. If `NULL`, the
+#'   priors are given equal weight. Will be normalized to sum to the number of
+#'   distributions.
+#' @param weight_alpha Concentration parameter of the Dirichlet prior for the
+#'   mixture probabilities. The default is `weight_alpha=1`, i.e. a uniform
+#'   distribution over all combinations of weights. This will sample various
+#'   mixtures of the mean and cv prior distributions provided. If a smaller
+#'   `weight_alpha` is chosen, the prior distributions are rather considered
+#'   separately, i.e. in each posterior sample, one of the prior distributions
+#'   is given almost all the weight.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -208,6 +228,8 @@ shedding_dist_estimate <-
            shedding_dist_cv_prior_sd = NULL,
            shedding_dist_type = "gamma",
            shedding_reference = NULL,
+           prior_weights = NULL,
+           weight_alpha = 1,
            modeldata = modeldata_init()) {
     modeldata <- tbp("shedding_dist_estimate",
      {
@@ -230,52 +252,48 @@ shedding_dist_estimate <-
          modeldata$shedding_dist_type <- 3
        }
 
-       # approximate upper bounds for parameters
-       # samples_mean <- 1/extraDistr::rtnorm(
-       #   10000,
-       #   shedding_dist_inv_mean_prior_mean,
-       #   shedding_dist_inv_mean_prior_sd,
-       #   a = 0
-       #   )
-       # shedding_dist_mean_upper <- quantile(samples_mean, 0.95)
-       # shedding_dist_mean_lower <- quantile(samples_mean, 0.05)
-       # shedding_dist_mean_median <- median(samples_mean)
-       shedding_dist_mean_upper <- shedding_dist_mean_prior_mean +
-         2 * shedding_dist_mean_prior_sd
+       prior_lengths <- c(
+         length(shedding_dist_mean_prior_mean),
+         length(shedding_dist_mean_prior_sd),
+         length(shedding_dist_cv_prior_mean),
+         length(shedding_dist_cv_prior_sd)
+         )
+       if (min(prior_lengths) != max(prior_lengths)) {
+         cli::cli_abort(
+           "The lengths of the provided priors for the mean and cv must be equal."
+         )
+       }
 
-       shedding_dist_cv_upper <- shedding_dist_cv_prior_mean +
-         2 * shedding_dist_cv_prior_sd
-       shedding_dist_cv_lower <- max(shedding_dist_cv_prior_mean -
-         2 * shedding_dist_cv_prior_sd, 0.1)
-
+       default_mean <- mean(shedding_dist_mean_prior_mean)
+       default_cv <- mean(shedding_dist_cv_prior_mean)
 
        # compute discretized distribution based on mean of parameter priors
        if (modeldata$shedding_dist_type == 1) {
          modeldata$S <- length(get_discrete_exponential(
-           exponential_mean = shedding_dist_mean_prior_mean
+           exponential_mean = default_mean
          )) - 1
          modeldata$shedding_dist <- get_discrete_exponential(
-           exponential_mean = shedding_dist_mean_prior_mean,
+           exponential_mean = default_mean,
            maxX = modeldata$S
            )
        } else if (modeldata$shedding_dist_type == 2) {
          modeldata$S <- length(get_discrete_gamma(
-           gamma_mean = shedding_dist_mean_prior_mean,
-           gamma_cv = shedding_dist_cv_prior_mean
+           gamma_mean = default_mean,
+           gamma_cv = default_cv
          )) - 1
          modeldata$shedding_dist <- get_discrete_gamma(
-           gamma_mean = shedding_dist_mean_prior_mean,
-           gamma_cv = shedding_dist_cv_prior_mean,
+           gamma_mean = default_mean,
+           gamma_cv = default_cv,
            maxX = modeldata$S
          )
        } else if (modeldata$shedding_dist_type == 3) {
          modeldata$S <- length(get_discrete_lognormal(
-           unit_mean = shedding_dist_mean_prior_mean,
-           unit_cv = shedding_dist_cv_prior_mean
+           unit_mean = default_mean,
+           unit_cv = default_cv
          )) - 1
          modeldata$shedding_dist <- get_discrete_lognormal(
-           unit_mean = shedding_dist_mean_median,
-           unit_cv = shedding_dist_cv_prior_mean,
+           unit_mean = default_mean,
+           unit_cv = default_cv,
            maxX = modeldata$S
          )
        }
@@ -288,24 +306,50 @@ shedding_dist_estimate <-
        }
        modeldata$.metainfo$shedding_reference <- shedding_reference
 
-       modeldata$shedding_dist_mean_prior <- set_prior(
-         "shedding_dist_mean", dist = "truncated normal",
-         mu = shedding_dist_mean_prior_mean,
-         sigma = shedding_dist_mean_prior_sd
-       )
-       modeldata$.init$shedding_dist_mean <- init_from_location_scale_prior(
-         modeldata$shedding_dist_mean_prior
+       modeldata$shedding_dist_n <- length(shedding_dist_mean_prior_mean)
+
+       # prior weights
+       if (is.null(prior_weights)) {
+         prior_weights <- rep(1, modeldata$shedding_dist_n)
+       }
+       if (length(prior_weights) != modeldata$shedding_dist_n) {
+         cli::cli_abort(paste(
+           "The `prior_weights` argument must have the same length as",
+           "the provided priors for the mean and cv."
+         ))
+       }
+       prior_weights <- prior_weights / sum(prior_weights) * length(prior_weights)
+
+
+       if (modeldata$shedding_dist_n > 1) {
+         modeldata$shedding_dist_weights_prior <- weight_alpha * prior_weights
+         modeldata$.init$shedding_dist_weights <- rep(
+           1/length(prior_weights), length(prior_weights)
+         )
+       } else {
+         modeldata$shedding_dist_weights_prior <- numeric(0)
+         modeldata$.init$shedding_dist_weights <- 1
+       }
+
+       modeldata$shedding_dist_mean_prior <- list(
+         shedding_dist_mean_prior_text = "param = shedding_dist_mean, dist = truncated normal",
+         shedding_dist_mean_prior = matrix(
+           c(shedding_dist_mean_prior_mean, shedding_dist_mean_prior_sd),
+           ncol = 2, byrow = FALSE
+         )
        )
 
+       modeldata$.init$shedding_dist_mean <- shedding_dist_mean_prior_mean + 0.1
+
        if (modeldata$shedding_dist_type > 1) {
-         modeldata$shedding_dist_cv_prior <- set_prior(
-           "shedding_dist_cv", dist = "truncated normal",
-           mu = shedding_dist_cv_prior_mean,
-           sigma = shedding_dist_cv_prior_sd
+         modeldata$shedding_dist_cv_prior <- list(
+           shedding_dist_cv_prior_text = "param = shedding_dist_cv, dist = truncated normal",
+           shedding_dist_cv_prior = matrix(
+             c(shedding_dist_cv_prior_mean, shedding_dist_cv_prior_sd),
+             ncol = 2, byrow = FALSE
+           )
          )
-         modeldata$.init$shedding_dist_cv <- init_from_location_scale_prior(
-           modeldata$shedding_dist_cv_prior
-         )
+         modeldata$.init$shedding_dist_cv <- shedding_dist_cv_prior_mean + 0.1
        } else {
          modeldata$shedding_dist_cv_prior <- numeric(0)
          modeldata$.init$shedding_dist_cv <- numeric(0)

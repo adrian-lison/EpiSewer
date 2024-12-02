@@ -67,10 +67,12 @@ data {
   // Shedding ----
   int<lower=1> S; // maximum number of days with shedding
   int<lower=0, upper=3> shedding_dist_type; // 0 for fixed, non-parametric, 1 for exponential, 2 for gamma, 3 for log-normal
+  int<lower=1> shedding_dist_n; // number of shedding load priors
   vector[S + 1] shedding_dist; // Non-parametric shedding load distribution. If shedding_dist_type is parametric and estimated, this is the discretized mean of the prior.
   // --> probability for shedding today comes first
-  array[shedding_dist_type > 0 ? 2 : 0] real shedding_dist_mean_prior; // prior for mean of shedding distribution
-  array[shedding_dist_type > 1 ? 2 : 0] real shedding_dist_cv_prior; // prior for cv of shedding distribution
+  vector[(shedding_dist_type > 0 && shedding_dist_n > 1) ? shedding_dist_n : 0] shedding_dist_weights_prior; // weights prior for shedding distribution priors
+  array[shedding_dist_type > 0 ? shedding_dist_n : 0, shedding_dist_type > 0 ? 2 : 0] real shedding_dist_mean_prior; // priors for mean of shedding distribution
+  array[shedding_dist_type > 1 ? shedding_dist_n : 0, shedding_dist_type > 1 ? 2 : 0] real shedding_dist_cv_prior; // priors for cv of shedding distribution
 
   real<lower=0> load_mean; // mean load shed per person
   int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads?
@@ -165,6 +167,8 @@ transformed data {
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T+h] flow_log = log(flow);
+
+  real flow_median_log = log(quantile(flow, 0.5));
 
   // number of averaged technical replicates per date
   real n_averaged_median = quantile(n_averaged, 0.5);
@@ -271,8 +275,9 @@ parameters {
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
 
   // paramaters of shedding load distribution
-  array[shedding_dist_type > 0 ? 1 : 0] real<lower=0> shedding_dist_mean;
-  array[shedding_dist_type > 1 ? 1 : 0] real<lower=0> shedding_dist_cv;
+  simplex[shedding_dist_n > 1 ? shedding_dist_n : 1] shedding_dist_weights;
+  vector<lower=0>[shedding_dist_type > 0 ? shedding_dist_n : 0] shedding_dist_mean;
+  vector<lower=0>[shedding_dist_type > 1 ? shedding_dist_n : 0] shedding_dist_cv;
 
   // individual-level shedding load variation
   array[load_vari && nu_zeta_prior[2] > 0 ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
@@ -394,8 +399,8 @@ transformed parameters {
     shed_rev_log_sample = reverse(
       discretise_dist_log(
         shedding_dist_type,
-        shedding_dist_mean[1],
-        shedding_dist_type > 1 ? shedding_dist_cv[1] : 0,
+        shedding_dist_n > 1 ? dot_product(shedding_dist_weights, shedding_dist_mean) : shedding_dist_mean[1],
+        shedding_dist_type > 1 ?  (shedding_dist_n > 1 ? dot_product(shedding_dist_weights, shedding_dist_cv) : shedding_dist_cv[1]) : 0,
         S
       )
     );
@@ -431,16 +436,16 @@ transformed parameters {
     pi_log = omega_log;
   }
 
-  if (outliers) {
-    pi_log = log_sum_exp(pi_log, log(load_mean) + log(epsilon)); // additive outlier component
-  }
-
   // calculation of concentrations at measurement site by day (expected)
   // --> adjusted for flow and for date of sample effects
   if (K > 0) {
     kappa_log = pi_log - flow_log[1:T] + X[1:T] * eta;
   } else {
     kappa_log = pi_log - flow_log[1:T];
+  }
+
+  if (outliers) {
+    kappa_log = log_sum_exp(kappa_log, log(load_mean) + log(epsilon) - flow_median_log); // additive outlier component
   }
 
   // concentrations in (composite) samples
@@ -521,9 +526,14 @@ model {
 
   // Parameters of shedding load distribution
   if (shedding_dist_type > 0) {
-    shedding_dist_mean[1] ~ normal(shedding_dist_mean_prior[1], shedding_dist_mean_prior[2]) T[0, ]; // truncated normal
-    if (shedding_dist_type > 1) {
-      shedding_dist_cv[1] ~ normal(shedding_dist_cv_prior[1], shedding_dist_cv_prior[2]) T[0, ]; // truncated normal
+    if (shedding_dist_n > 1) {
+    shedding_dist_weights ~ dirichlet(shedding_dist_weights_prior);
+    }
+    for (i in 1:shedding_dist_n) {
+      shedding_dist_mean[i] ~ normal(shedding_dist_mean_prior[i,1], shedding_dist_mean_prior[i,2]) T[0, ]; // truncated normal
+      if (shedding_dist_type > 1) {
+        shedding_dist_cv[i] ~ normal(shedding_dist_cv_prior[i,1], shedding_dist_cv_prior[i,2]) T[0, ]; // truncated normal
+      }
     }
   }
 
