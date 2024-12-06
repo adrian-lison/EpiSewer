@@ -44,8 +44,8 @@ configurable modeling components.
 ⭐ Sewer residence time distributions
 
 **Shedding**  
-⭐ Incubation period and shedding load distributions  
-⭐ Individual-level shedding load variation
+⭐ Shedding load distributions with uncertainty ⭐ Individual-level
+shedding load variation
 
 **Infections**  
 ⭐ Stochastic infection model with overdispersion  
