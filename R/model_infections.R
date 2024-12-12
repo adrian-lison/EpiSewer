@@ -1348,18 +1348,12 @@ infection_noise_estimate <-
 
     modeldata$I_sample <- TRUE
     modeldata$.init$I <- tbe(
-      rep(
-        modeldata$.metainfo$initial_cases_crude,
-        modeldata$.metainfo$length_I
-      ),
-      c(".metainfo$initial_cases_crude", ".metainfo$length_I")
+      modeldata$.metainfo$infection_curve_crude$infections,
+      ".metainfo$infection_curve_crude"
     )
     modeldata$.init$I_log <- tbe(
-      rep(
-        log(modeldata$.metainfo$initial_cases_crude),
-        modeldata$.metainfo$length_I
-      ),
-      c(".metainfo$initial_cases_crude", ".metainfo$length_I")
+      log(modeldata$.metainfo$infection_curve_crude$infections),
+      ".metainfo$infection_curve_crude"
     )
     modeldata$.init$I_raw <- tbe(
       rep(
