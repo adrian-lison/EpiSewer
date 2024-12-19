@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/adrian-lison/EpiSewer,15,8
+/adrian-lison/EpiSewer/blob/main/vignettes/model-specification.md,2,2
+/adrian-lison/EpiSewer/tree/main,2,2
+/adrian-lison/EpiSewer/activity,2,1
+/adrian-lison/EpiSewer/blob/main/man/EpiSewerJob.Rd,2,1
+/adrian-lison/EpiSewer/blob/1eecafeeafa9570ea2dcc0b761296948bd1927dc/R/sewer_summary.R,1,1
+/adrian-lison/EpiSewer/blob/main/inst/stan/EpiSewer_main.stan,1,1
+/adrian-lison/EpiSewer/blob/main/man/EpiSewer.Rd,1,1
+/adrian-lison/EpiSewer/blob/main/man/print.EpiSewerJob.Rd,1,1
+/adrian-lison/EpiSewer/blob/main/man/sample_effects_estimate_matrix.Rd,1,1
