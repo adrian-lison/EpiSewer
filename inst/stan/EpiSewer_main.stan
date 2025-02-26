@@ -674,7 +674,7 @@ generated quantities {
     vector[T+h] concentration_log;
     vector[T+h] concentration;
     vector[T+h] cv_all;
-    vector[T+h] above_LOD; // will be a vector of 0s and 1s
+    vector[T+h] isnonzero; // will be a vector of 0s and 1s
 
     // Prediction for days until present
     if (pr_noise) {
@@ -816,10 +816,10 @@ generated quantities {
         1-1e-5, // trim to almost 1
         1.01 // throw error when significantly above 1
       );
-      above_LOD = to_vector(bernoulli_rng(1-p_zero_all));
+      isnonzero = to_vector(bernoulli_rng(1-p_zero_all));
     } else {
       p_zero_all = rep_vector(0, T+h);
-      above_LOD = rep_vector(1, T+h);
+      isnonzero = rep_vector(1, T+h);
     }
 
     if (cv_type == 0) {
@@ -863,10 +863,10 @@ generated quantities {
     } else {
       reject("Distribution not supported.");
     }
-    predicted_concentration = above_LOD[1:T] .* meas_conc[1:T];
+    predicted_concentration = isnonzero[1:T] .* meas_conc[1:T];
     predicted_concentration_norm = predicted_concentration .* flow[1:T];
     if (h>0) {
-      predicted_concentration_forecast = above_LOD[(T+1):(T+h)] .* meas_conc[(T+1):(T+h)];
+      predicted_concentration_forecast = isnonzero[(T+1):(T+h)] .* meas_conc[(T+1):(T+h)];
       predicted_concentration_forecast_norm = predicted_concentration_forecast .* flow[(T+1):(T+h)];
     }
   }
