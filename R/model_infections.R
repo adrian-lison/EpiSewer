@@ -321,12 +321,17 @@ R_estimate_ets <- function(
     "R_vari_sel_v", "R_vari_sel_u",
     "R_vari_sel_local_n_w", "R_vari_sel_local_w",
     "R_vari_sel_local_v", "R_vari_sel_local_u",
-    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw"
+    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw",
+    "scp_n_knots", "scp_break_dist", "scp_min_dist",
+    "scp_length_intercept", "scp_k", "scp_alpha",
+    "scp_skip_tolerance", "scp_skip_tolerance_k"
   ))
 
   modeldata <- add_dummy_inits(modeldata, c(
-    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw"
+    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw",
+    "scp_R_noise", "scp_R_sd"
   ))
+  modeldata$.init$scp_break_delays <- list(numeric(0))
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_ets = c()
@@ -932,6 +937,110 @@ R_estimate_approx <- function(
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_approx = c()
+  )
+
+  return(modeldata)
+}
+
+#' Estimate Rt via a soft changepoint model
+#'
+#'
+#'@inheritParams template_model_helpers
+#'@inherit modeldata_init return
+#'@export
+#'@family {Rt models}
+R_estimate_changepoint <- function(
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
+    order = 1,
+    distance = 4*7,
+    min_distance = 4*7,
+    min_distance_tolerance = 0.1,
+    sd_change_prior_shape = 0.5,
+    sd_change_prior_rate = 1e-4,
+    link = "inv_softplus",
+    R_max = 6,
+    strictness_k = 10,
+    strictness_tol_k = 10,
+    strictness_alpha = 1,
+    modeldata = modeldata_init()
+    ) {
+  modeldata$.metainfo$R_estimate_approach <- "changepoint"
+  modeldata$R_model <- 2
+
+  modeldata$R_intercept_prior <- set_prior(
+    "R_intercept", "normal",
+    mu = R_start_prior_mu, sigma = R_start_prior_sigma
+  )
+
+  modeldata$R_sd_change_prior <- set_prior("R_sd_change",
+    "lomax",
+    shape = sd_change_prior_shape,
+    rate = sd_change_prior_rate
+  )
+
+  modeldata$.init$R_intercept <-
+    modeldata$R_intercept_prior$R_intercept_prior[1]
+
+  modeldata$scp_break_dist <- distance
+  modeldata$scp_min_dist <- min_distance
+  modeldata$scp_k <- strictness_k
+  modeldata$scp_alpha <- strictness_alpha
+  modeldata$scp_skip_tolerance <- min_distance_tolerance
+  modeldata$scp_skip_tolerance_k <- strictness_tol_k
+
+  modeldata <- tbc(
+    "R_soft_changepoint",
+    {
+      knots <- rev(seq(
+        with(modeldata$.metainfo, length_R - partial_window) - modeldata$scp_break_dist,
+        1, by = -modeldata$scp_break_dist
+        ))
+      modeldata$.metainfo$R_knots <- knots
+      modeldata$scp_n_knots <- length(knots)
+      modeldata$scp_length_intercept <- knots[1] - 1
+
+      modeldata$.init$scp_R_noise <- rep(0, modeldata$scp_n_knots)
+      modeldata$.init$scp_break_delays <- lapply(1:modeldata$scp_n_knots,function(x) rep(1/modeldata$scp_break_dist,modeldata$scp_break_dist))
+      modeldata$.init$scp_R_sd <- rep(1e-4, modeldata$scp_n_knots)
+    },
+    required = c(
+      ".metainfo$length_R",
+      ".metainfo$partial_window",
+      ".metainfo$partial_generation"
+    ),
+    modeldata = modeldata
+  )
+
+  modeldata <- add_link_function(link, R_max, modeldata)
+
+  modeldata <- add_dummy_data(modeldata, c(
+    "R_trend_start_prior",
+    "ets_diff", "ets_noncentered",
+    "ets_alpha_prior",
+    "ets_beta_prior",
+    "ets_phi_prior",
+    "bsg_n_basis", "bsg_n_w", "bsg_w", "bsg_v", "bsg_u",
+    "bsc_n_basis", "bsc_n_w", "bsc_w", "bsc_v", "bsc_u",
+    "R_vari_sel_ncol", "R_vari_sel_local_ncol",
+    "R_vari_sel_n_w", "R_vari_sel_w",
+    "R_vari_sel_v", "R_vari_sel_u",
+    "R_vari_sel_local_n_w", "R_vari_sel_local_w",
+    "R_vari_sel_local_v", "R_vari_sel_local_u",
+    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw",
+    "R_sd_baseline_prior", "R_vari_n_basis", "R_vari_n_w",
+    "R_vari_w", "R_vari_v", "R_vari_u"
+  ))
+
+  modeldata <- add_dummy_inits(modeldata, c(
+    "R_trend_start", "R_noise",
+    "ets_alpha", "ets_beta", "ets_phi",
+    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw",
+    "R_sd_baseline", "R_sd_changepoints"
+  ))
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_changepoint = c()
   )
 
   return(modeldata)
