@@ -227,8 +227,13 @@ R_estimate_ets <- function(
     differenced = FALSE,
     noncentered = TRUE,
     modeldata = modeldata_init()) {
+
   modeldata$.metainfo$R_estimate_approach <- "ets"
   modeldata$R_model <- 0
+  modeldata$R_use_ets <- TRUE
+  modeldata$R_use_bs <- FALSE
+  modeldata$R_use_bs2 <- FALSE
+  modeldata$R_use_scp <- FALSE
 
   modeldata$R_intercept_prior <- set_prior(
     "R_intercept", "normal",
@@ -257,6 +262,7 @@ R_estimate_ets <- function(
   modeldata <- tbc(
     "R_ets_noise",
     {
+      modeldata$R_ets_length <- modeldata$.metainfo$length_R
       modeldata$.init$R_noise <- rep(0, modeldata$.metainfo$length_R - 1)
       modeldata <- add_R_variability(
         length_R = modeldata$.metainfo$length_R,
@@ -327,11 +333,13 @@ R_estimate_ets <- function(
     "scp_skip_tolerance", "scp_skip_tolerance_k"
   ))
 
+  modeldata$R_bs_length <- 0
+
   modeldata <- add_dummy_inits(modeldata, c(
     "bsg_coeff_noise_raw", "bsc_coeff_noise_raw",
     "scp_R_noise", "scp_R_sd"
   ))
-  modeldata$.init$scp_break_delays <- list(numeric(0))
+  modeldata$.init$scp_break_delays <- matrix(1)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_ets = c()
@@ -575,13 +583,19 @@ R_estimate_splines <- function(
     link = "inv_softplus",
     R_max = 6,
     modeldata = modeldata_init()) {
+
   modeldata$.metainfo$R_estimate_approach <- "splines"
   modeldata$R_model <- 1
+  modeldata$R_use_ets <- FALSE
+  modeldata$R_use_bs <- TRUE
+  modeldata$R_use_bs2 <- TRUE
+  modeldata$R_use_scp <- FALSE
   spline_degree <- 3 # fixed to cubic splines
 
   modeldata <- tbc(
     "spline_definition",
     {
+      modeldata$R_bs_length <- with(modeldata$.metainfo, 1:(length_R + forecast_horizon))
       # Global spline model for Rt
       knots_global <- place_knots(
         length_R = modeldata$.metainfo$length_R,
@@ -740,6 +754,8 @@ R_estimate_splines <- function(
     "ets_beta_prior",
     "ets_phi_prior"
     ))
+
+  modeldata$R_ets_length <- 0
 
   modeldata <- add_dummy_inits(modeldata, c(
     "R_trend_start", "R_noise",
@@ -967,6 +983,10 @@ R_estimate_changepoint <- function(
     ) {
   modeldata$.metainfo$R_estimate_approach <- "changepoint"
   modeldata$R_model <- 2
+  modeldata$R_use_ets <- FALSE
+  modeldata$R_use_bs <- FALSE
+  modeldata$R_use_bs2 <- FALSE
+  modeldata$R_use_scp <- TRUE
 
   modeldata$R_intercept_prior <- set_prior(
     "R_intercept", "normal",
@@ -1031,6 +1051,9 @@ R_estimate_changepoint <- function(
     "R_sd_baseline_prior", "R_vari_n_basis", "R_vari_n_w",
     "R_vari_w", "R_vari_v", "R_vari_u"
   ))
+
+  modeldata$R_ets_length <- 0
+  modeldata$R_bs_length <- 0
 
   modeldata <- add_dummy_inits(modeldata, c(
     "R_trend_start", "R_noise",
