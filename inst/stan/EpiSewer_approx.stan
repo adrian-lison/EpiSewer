@@ -102,9 +102,9 @@ data {
   array[I_overdispersion ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
 
   // Basis spline (bs) configuration for smoothing infections
-  // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-(G+se))
-  int<lower=1> bs_n_basis; // number of B-splines
-  vector[bs_n_basis - 1] bs_dists; // distances between knots
+  // Sparse bs matrix: columns = bases (bs_ncol), rows = time points (L+S+T-(G+se))
+  int<lower=1> bs_ncol; // number of B-splines
+  vector[bs_ncol - 1] bs_dists; // distances between knots
   int<lower=0> bs_n_w; // number of nonzero entries in bs matrix
   vector[bs_n_w] bs_w; // nonzero entries in bs matrix
   array[bs_n_w] int bs_v; // column indices of bs_w
@@ -146,7 +146,7 @@ transformed data {
 
   // Number of steps between spline coefficients
   int bs_n = to_int(sum(bs_dists));
-  array[bs_n_basis] int bs_select = to_int(to_array_1d(
+  array[bs_ncol] int bs_select = to_int(to_array_1d(
     cumulative_sum(append_row(1, bs_dists))
     ));
 
@@ -251,7 +251,7 @@ parameters {
   vector<lower=0>[outliers ? D + T : 0] epsilon; // external noise at low concentrations;
 }
 transformed parameters {
-  vector[bs_n_basis] bs_coeff; // Basis spline coefficients
+  vector[bs_ncol] bs_coeff; // Basis spline coefficients
   vector[L + S + D + T] iota; // expected number of infections
   vector[h] iota_forecast; // spline-based forecast of expected infections
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
@@ -284,7 +284,7 @@ transformed parameters {
       bs_coeff_noise_raw * inf_ar_sd, 0)[bs_select];
 
     vector[L + S + D + T - (G+se) + h] iota_all = apply_link(csr_matrix_times_vector(
-      L + S + D + T - (G+se) + h, bs_n_basis, bs_w, bs_v, bs_u, bs_coeff
+      L + S + D + T - (G+se) + h, bs_ncol, bs_w, bs_v, bs_u, bs_coeff
      ), rep_array(2, 1)); // log link
     iota[(G+se+1) : (L + S + D + T)] = iota_all[1 : (L + S + D + T - (G+se))];
     if (h > 0) {

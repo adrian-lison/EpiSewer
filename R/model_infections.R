@@ -228,20 +228,23 @@ R_estimate_ets <- function(
     noncentered = TRUE,
     modeldata = modeldata_init()) {
 
-  modeldata$.metainfo$R_estimate_approach <- "ets"
-  modeldata$R_model <- 0
-  modeldata$R_use_ets <- TRUE
-  modeldata$R_use_bs <- FALSE
-  modeldata$R_use_bs2 <- FALSE
-  modeldata$R_use_scp <- FALSE
+  modeldata <- configure_R_model(
+    name_approach = "ets",
+    model_id = 0,
+    use_ets = TRUE,
+    use_bs = FALSE,
+    use_bs2 = FALSE,
+    use_scp = FALSE,
+    modeldata = modeldata
+  )
 
   modeldata$R_intercept_prior <- set_prior(
     "R_intercept", "normal",
     mu = R_start_prior_mu, sigma = R_start_prior_sigma
   )
 
-  modeldata$R_trend_start_prior <- set_prior(
-    "R_trend_start", "normal",
+  modeldata$ets_trend_start_prior <- set_prior(
+    "ets_trend_start", "normal",
     mu = trend_prior_mu, sigma = trend_prior_sigma
   )
 
@@ -257,13 +260,13 @@ R_estimate_ets <- function(
 
   modeldata$.init$R_intercept <-
     modeldata$R_intercept_prior$R_intercept_prior[1]
-  modeldata$.init$R_trend_start <- 1e-4
+  modeldata$.init$ets_trend_start <- 1e-4
 
   modeldata <- tbc(
     "R_ets_noise",
     {
-      modeldata$R_ets_length <- modeldata$.metainfo$length_R
-      modeldata$.init$R_noise <- rep(0, modeldata$.metainfo$length_R - 1)
+      modeldata$ets_length <- modeldata$.metainfo$length_R
+      modeldata$.init$ets_noise <- rep(0, modeldata$.metainfo$length_R - 1)
       modeldata <- add_R_variability(
         length_R = modeldata$.metainfo$length_R,
         length_seeding = modeldata$.metainfo$length_seeding,
@@ -274,10 +277,10 @@ R_estimate_ets <- function(
         modeldata = modeldata
       )
       modeldata$.init$R_sd_baseline <- 1e-2
-      if (modeldata$R_vari_n_basis > 2) {
-        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_n_basis - 2)
+      if (modeldata$R_vari_ncol > 2) {
+        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_ncol - 2)
       } else {
-        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_n_basis)
+        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_ncol)
       }
     },
     required = c(
@@ -319,27 +322,11 @@ R_estimate_ets <- function(
   modeldata$ets_diff <- differenced
   modeldata$ets_noncentered <- noncentered
 
-  modeldata <- add_dummy_data(modeldata, c(
-    "bsg_n_basis", "bsg_n_w", "bsg_w", "bsg_v", "bsg_u",
-    "bsc_n_basis", "bsc_n_w", "bsc_w", "bsc_v", "bsc_u",
-    "R_vari_sel_ncol", "R_vari_sel_local_ncol",
-    "R_vari_sel_n_w", "R_vari_sel_w",
-    "R_vari_sel_v", "R_vari_sel_u",
-    "R_vari_sel_local_n_w", "R_vari_sel_local_w",
-    "R_vari_sel_local_v", "R_vari_sel_local_u",
-    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw",
-    "scp_n_knots", "scp_break_dist", "scp_min_dist",
-    "scp_length_intercept", "scp_k", "scp_alpha",
-    "scp_skip_tolerance", "scp_skip_tolerance_k"
-  ))
-
-  modeldata$R_bs_length <- 0
-
-  modeldata <- add_dummy_inits(modeldata, c(
-    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw",
-    "scp_R_noise", "scp_R_sd"
-  ))
-  modeldata$.init$scp_break_delays <- matrix(1)
+  # dummies
+  modeldata <- add_dummies_basis_splines(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_soft_changepoints(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_ets = c()
@@ -584,18 +571,23 @@ R_estimate_splines <- function(
     R_max = 6,
     modeldata = modeldata_init()) {
 
-  modeldata$.metainfo$R_estimate_approach <- "splines"
-  modeldata$R_model <- 1
-  modeldata$R_use_ets <- FALSE
-  modeldata$R_use_bs <- TRUE
-  modeldata$R_use_bs2 <- TRUE
-  modeldata$R_use_scp <- FALSE
+  modeldata <- configure_R_model(
+    name_approach = "splines",
+    model_id = 1,
+    use_ets = FALSE,
+    use_bs = TRUE,
+    use_bs2 = TRUE,
+    use_scp = FALSE,
+    modeldata = modeldata
+  )
+
   spline_degree <- 3 # fixed to cubic splines
 
   modeldata <- tbc(
     "spline_definition",
     {
-      modeldata$R_bs_length <- with(modeldata$.metainfo, 1:(length_R + forecast_horizon))
+      modeldata$.init$R_intercept <- 1
+
       # Global spline model for Rt
       knots_global <- place_knots(
         length_R = modeldata$.metainfo$length_R,
@@ -605,25 +597,13 @@ R_estimate_splines <- function(
         partial_generation = modeldata$.metainfo$partial_generation,
         fix_forecast = TRUE
         )
-      B_global <-
-        splines::bs(
-          with(modeldata$.metainfo, 1:(length_R + forecast_horizon)),
-          knots = knots_global$interior,
-          degree = spline_degree,
-          intercept = FALSE,
-          Boundary.knots = knots_global$boundary
-        )
       modeldata$.metainfo$R_knots_global <- knots_global
-      modeldata$.metainfo$B_global <- B_global
-      modeldata$bsg_n_basis <- ncol(B_global)
-      B_sparse_global <- suppressMessages(rstan::extract_sparse_parts(B_global))
-      modeldata$bsg_n_w <- length(B_sparse_global$w)
-      modeldata$bsg_w <- B_sparse_global$w
-      modeldata$bsg_v <- B_sparse_global$v
-      modeldata$bsg_u <- B_sparse_global$u
-
-      modeldata$.init$R_intercept <- 1
-      modeldata$.init$bsg_coeff_noise_raw <- rep(0, modeldata$bsg_n_basis - 1)
+      modeldata <- use_basis_splines(
+        spline_length = with(modeldata$.metainfo, length_R + forecast_horizon),
+        knots = knots_global,
+        degree = spline_degree,
+        modeldata = modeldata
+        )
 
       # Local spline model for Rt
       knots_local <- place_knots(
@@ -634,24 +614,13 @@ R_estimate_splines <- function(
         partial_generation = modeldata$.metainfo$partial_generation,
         fix_forecast = FALSE
       )
-      B_local <-
-        splines::bs(
-          with(modeldata$.metainfo, 1:(length_R + forecast_horizon)),
-          knots = knots_local$interior,
-          degree = spline_degree,
-          intercept = FALSE,
-          Boundary.knots = knots_local$boundary
-        )
       modeldata$.metainfo$R_knots_local <- knots_local
-      modeldata$.metainfo$B_local <- B_local
-      modeldata$bsc_n_basis <- ncol(B_local)
-      B_sparse_local <- suppressMessages(rstan::extract_sparse_parts(B_local))
-      modeldata$bsc_n_w <- length(B_sparse_local$w)
-      modeldata$bsc_w <- B_sparse_local$w
-      modeldata$bsc_v <- B_sparse_local$v
-      modeldata$bsc_u <- B_sparse_local$u
-
-      modeldata$.init$bsc_coeff_noise_raw <- rep(0, modeldata$bsc_n_basis - 1)
+      modeldata <- use_basis_splines2(
+        spline_length = with(modeldata$.metainfo, length_R + forecast_horizon),
+        knots = knots_local,
+        degree = spline_degree,
+        modeldata = modeldata
+      )
 
       # Changepoint model for variability of Rt
       modeldata <- add_R_variability(
@@ -664,10 +633,10 @@ R_estimate_splines <- function(
         modeldata = modeldata
         )
       modeldata$.init$R_sd_baseline <- 1e-2
-      if (modeldata$R_vari_n_basis > 2) {
-        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_n_basis - 2)
+      if (modeldata$R_vari_ncol > 2) {
+        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_ncol - 2)
       } else {
-        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_n_basis)
+        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_ncol)
       }
 
       # build sparse matrix that represents which days need to be summed up
@@ -683,16 +652,11 @@ R_estimate_splines <- function(
         get_selection_vector,
         from = all_positions[-length(all_positions)] + 1,
         to = all_positions[-1],
-        n = nrow(B_global)
+        n = modeldata$bs_length
       ))
-      modeldata$R_vari_sel_ncol <- ncol(R_vari_selection)
-      R_vari_selection_sparse <- suppressMessages(
-        rstan::extract_sparse_parts(R_vari_selection)
+      modeldata <- add_sparse_matrix(
+        R_vari_selection, "R_vari_sel", modeldata
         )
-      modeldata$R_vari_sel_n_w <- length(R_vari_selection_sparse$w)
-      modeldata$R_vari_sel_w <- R_vari_selection_sparse$w
-      modeldata$R_vari_sel_v <- R_vari_selection_sparse$v
-      modeldata$R_vari_sel_u <- R_vari_selection_sparse$u
 
       all_positions_local <- c(
         rev(knots_local$interior[1] - seq(
@@ -706,19 +670,12 @@ R_estimate_splines <- function(
         get_selection_vector,
         from = all_positions_local[-length(all_positions_local)] + 1,
         to = all_positions_local[-1],
-        n = nrow(B_local)
+        n = modeldata$bs2_length
       ))
+      modeldata <- add_sparse_matrix(
+        R_vari_selection_local, "R_vari_sel_local", modeldata
+        )
 
-      # multiply each row with the scaling factor
-      R_vari_selection_local <- R_vari_selection_local
-      modeldata$R_vari_sel_local_ncol <- ncol(R_vari_selection_local)
-      R_vari_selection_local_sparse <- suppressMessages(
-        rstan::extract_sparse_parts(R_vari_selection_local)
-      )
-      modeldata$R_vari_sel_local_n_w <- length(R_vari_selection_local_sparse$w)
-      modeldata$R_vari_sel_local_w <- R_vari_selection_local_sparse$w
-      modeldata$R_vari_sel_local_v <- R_vari_selection_local_sparse$v
-      modeldata$R_vari_sel_local_u <- R_vari_selection_local_sparse$u
     },
     required = c(
       ".metainfo$length_R",
@@ -747,20 +704,9 @@ R_estimate_splines <- function(
 
   modeldata <- add_link_function(link, R_max, modeldata)
 
-  modeldata <- add_dummy_data(modeldata, c(
-    "R_trend_start_prior",
-    "ets_diff", "ets_noncentered",
-    "ets_alpha_prior",
-    "ets_beta_prior",
-    "ets_phi_prior"
-    ))
-
-  modeldata$R_ets_length <- 0
-
-  modeldata <- add_dummy_inits(modeldata, c(
-    "R_trend_start", "R_noise",
-    "ets_alpha", "ets_beta", "ets_phi"
-    ))
+  # dummies
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_soft_changepoints(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_splines = c()
@@ -891,21 +837,13 @@ R_estimate_approx <- function(
     "spline_definition",
     {
       knots <- place_knots(
-        ts_length = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
+        length_R = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
+        forecast_horizon = 0,
         knot_distance = knot_distance,
+        partial_generation = 0,
         partial_window = with(modeldata$.metainfo, partial_window + forecast_horizon)
       )
-      B <-
-        splines::bs(
-          1:with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
-          knots = knots$interior,
-          degree = spline_degree,
-          intercept = FALSE,
-          Boundary.knots = knots$boundary
-        )
       modeldata$.metainfo$R_knots <- knots
-      modeldata$.metainfo$B <- B
-      modeldata$bs_n_basis <- ncol(B)
       modeldata$bs_dists <- c(
         rep( # left boundary basis functions
           knots$interior[1]-knots$boundary[1], spline_degree - 1
@@ -918,12 +856,12 @@ R_estimate_approx <- function(
         )
       )
 
-      B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
-      modeldata$bs_n_w <- length(B_sparse$w)
-      modeldata$bs_w <- B_sparse$w
-      modeldata$bs_v <- B_sparse$v
-      modeldata$bs_u <- B_sparse$u
-
+      modeldata <- use_basis_splines(
+        spline_length = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
+        knots = knots,
+        degree = spline_degree,
+        modeldata = modeldata
+      )
       modeldata$.init$bs_coeff_noise_raw <- rep(0, sum(modeldata$bs_dists))
     },
     required = c(
@@ -965,33 +903,37 @@ R_estimate_approx <- function(
 #'@inherit modeldata_init return
 #'@export
 #'@family {Rt models}
-R_estimate_changepoint <- function(
+R_estimate_piecewise <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
-    order = 1,
-    distance = 4*7,
-    min_distance = 4*7,
-    min_distance_tolerance = 0.1,
+    changepoint_min_distance = 3*7,
+    change_tolerance = 0.05,
     sd_change_prior_shape = 0.5,
     sd_change_prior_rate = 1e-4,
     link = "inv_softplus",
     R_max = 6,
-    strictness_k = 10,
-    strictness_tol_k = 10,
+    strictness_k = 20,
     strictness_alpha = 1,
+    strictness_tol_k = 4,
     modeldata = modeldata_init()
     ) {
-  modeldata$.metainfo$R_estimate_approach <- "changepoint"
-  modeldata$R_model <- 2
-  modeldata$R_use_ets <- FALSE
-  modeldata$R_use_bs <- FALSE
-  modeldata$R_use_bs2 <- FALSE
-  modeldata$R_use_scp <- TRUE
+
+  modeldata <-  configure_R_model(
+    name_approach = "piecewise",
+    model_id = 2,
+    use_ets = FALSE,
+    use_bs = FALSE,
+    use_bs2 = FALSE,
+    use_scp = TRUE,
+    modeldata = modeldata
+  )
 
   modeldata$R_intercept_prior <- set_prior(
     "R_intercept", "normal",
     mu = R_start_prior_mu, sigma = R_start_prior_sigma
   )
+  modeldata$.init$R_intercept <-
+    modeldata$R_intercept_prior$R_intercept_prior[1]
 
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
     "lomax",
@@ -999,30 +941,26 @@ R_estimate_changepoint <- function(
     rate = sd_change_prior_rate
   )
 
-  modeldata$.init$R_intercept <-
-    modeldata$R_intercept_prior$R_intercept_prior[1]
-
-  modeldata$scp_break_dist <- distance
-  modeldata$scp_min_dist <- min_distance
-  modeldata$scp_k <- strictness_k
-  modeldata$scp_alpha <- strictness_alpha
-  modeldata$scp_skip_tolerance <- min_distance_tolerance
-  modeldata$scp_skip_tolerance_k <- strictness_tol_k
-
   modeldata <- tbc(
-    "R_soft_changepoint",
+    "R_piecewise",
     {
+      distance = changepoint_min_distance
       knots <- rev(seq(
-        with(modeldata$.metainfo, length_R - partial_window) - modeldata$scp_break_dist,
-        1, by = -modeldata$scp_break_dist
-        ))
+        with(modeldata$.metainfo, length_R - partial_window) - distance,
+        1, by = -distance
+      ))
       modeldata$.metainfo$R_knots <- knots
-      modeldata$scp_n_knots <- length(knots)
-      modeldata$scp_length_intercept <- knots[1] - 1
-
-      modeldata$.init$scp_R_noise <- rep(0, modeldata$scp_n_knots)
-      modeldata$.init$scp_break_delays <- lapply(1:modeldata$scp_n_knots,function(x) rep(1/modeldata$scp_break_dist,modeldata$scp_break_dist))
-      modeldata$.init$scp_R_sd <- rep(1e-4, modeldata$scp_n_knots)
+      modeldata <- use_soft_changepoints(
+        scp_length = modeldata$.metainfo$length_R,
+        knots = knots,
+        distance = distance,
+        min_distance = changepoint_min_distance,
+        min_distance_tolerance = change_tolerance,
+        strictness_tol_k = strictness_tol_k,
+        strictness_k = strictness_k,
+        strictness_alpha = strictness_alpha,
+        modeldata
+        )
     },
     required = c(
       ".metainfo$length_R",
@@ -1034,41 +972,133 @@ R_estimate_changepoint <- function(
 
   modeldata <- add_link_function(link, R_max, modeldata)
 
-  modeldata <- add_dummy_data(modeldata, c(
-    "R_trend_start_prior",
-    "ets_diff", "ets_noncentered",
-    "ets_alpha_prior",
-    "ets_beta_prior",
-    "ets_phi_prior",
-    "bsg_n_basis", "bsg_n_w", "bsg_w", "bsg_v", "bsg_u",
-    "bsc_n_basis", "bsc_n_w", "bsc_w", "bsc_v", "bsc_u",
-    "R_vari_sel_ncol", "R_vari_sel_local_ncol",
-    "R_vari_sel_n_w", "R_vari_sel_w",
-    "R_vari_sel_v", "R_vari_sel_u",
-    "R_vari_sel_local_n_w", "R_vari_sel_local_w",
-    "R_vari_sel_local_v", "R_vari_sel_local_u",
-    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw",
-    "R_sd_baseline_prior", "R_vari_n_basis", "R_vari_n_w",
-    "R_vari_w", "R_vari_v", "R_vari_u"
-  ))
-
-  modeldata$R_ets_length <- 0
-  modeldata$R_bs_length <- 0
-
-  modeldata <- add_dummy_inits(modeldata, c(
-    "R_trend_start", "R_noise",
-    "ets_alpha", "ets_beta", "ets_phi",
-    "bsg_coeff_noise_raw", "bsc_coeff_noise_raw",
-    "R_sd_baseline", "R_sd_changepoints"
-  ))
+  # dummy data
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_basis_splines(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_R_vari(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
-    R_estimate_changepoint = c()
+    R_estimate_piecewise = c()
   )
 
   return(modeldata)
 }
 
+#' Estimate Rt via a changepoint spline model
+#'
+#'
+#'@inheritParams template_model_helpers
+#'@inherit modeldata_init return
+#'@export
+#'@family {Rt models}
+R_estimate_changepoint_splines <- function(
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
+    changepoint_min_distance = 2*7,
+    trend_tolerance = 0.005,
+    sd_change_prior_shape = 20,
+    sd_change_prior_rate = 5e-1,
+    spline_knot_distance = 3,
+    link = "inv_softplus",
+    R_max = 6,
+    strictness_k = 20,
+    strictness_alpha = 1,
+    strictness_tol_k = 4,
+    modeldata = modeldata_init()
+) {
+
+  modeldata <-  configure_R_model(
+    name_approach = "changepoint_splines",
+    model_id = 3,
+    use_ets = FALSE,
+    use_bs = TRUE,
+    use_bs2 = FALSE,
+    use_scp = TRUE,
+    modeldata = modeldata
+  )
+
+  modeldata$R_intercept_prior <- set_prior(
+    "R_intercept", "normal",
+    mu = R_start_prior_mu, sigma = R_start_prior_sigma
+  )
+  modeldata$.init$R_intercept <-
+    modeldata$R_intercept_prior$R_intercept_prior[1]
+
+  modeldata$R_sd_change_prior <- set_prior("R_sd_change",
+                                           "lomax",
+                                           shape = sd_change_prior_shape,
+                                           rate = sd_change_prior_rate
+  )
+
+  modeldata <- tbc(
+    "R_changepoint_splines",
+    {
+      # Changepoint model
+      distance = changepoint_min_distance
+      knots <- rev(seq(
+        with(modeldata$.metainfo, length_R - partial_window) - distance,
+        1, by = -distance
+      ))
+      modeldata$.metainfo$R_knots <- knots
+      modeldata <- use_soft_changepoints(
+        scp_length = modeldata$.metainfo$length_R,
+        knots = knots,
+        distance = distance,
+        min_distance = changepoint_min_distance,
+        min_distance_tolerance = trend_tolerance,
+        strictness_tol_k = strictness_tol_k,
+        strictness_k = strictness_k,
+        strictness_alpha = strictness_alpha,
+        modeldata
+      )
+
+      # Spline model
+      knots <- list(
+        interior = rev(seq(
+          modeldata$.metainfo$length_R - spline_knot_distance,
+          1, by = -spline_knot_distance
+        )),
+        boundary = c(-spline_knot_distance, modeldata$.metainfo$length_R)
+      )
+      modeldata$.metainfo$R_knots <- knots
+      modeldata <- use_basis_splines(
+        spline_length = modeldata$.metainfo$length_R,
+        knots = knots,
+        degree = 3,
+        modeldata = modeldata
+      )
+      B <- modeldata$.metainfo$bs_matrix
+      # XtX <- t(B) %*% B  # X^T * X
+      # XtX_inv <- solve(XtX + 0.5 * diag(ncol(B)))  # Regularized inverse
+      # modeldata$bs_coef_hat <- XtX_inv %*% t(B)
+      modeldata$bs_coef_hat <- solve(t(B) %*% B) %*% t(B)
+      #modeldata$bs_coef_hat[abs(modeldata$bs_coef_hat)<1e-4] <- 0
+    },
+    required = c(
+      ".metainfo$length_R",
+      ".metainfo$length_seeding",
+      ".metainfo$partial_window",
+      ".metainfo$partial_generation"
+    ),
+    modeldata = modeldata
+  )
+
+  modeldata <- add_link_function(link, R_max, modeldata)
+
+  # dummy data
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_R_vari(modeldata)
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_changepoint_splines = c()
+  )
+
+  return(modeldata)
+}
 
 #' Add change point model for the variability of Rt
 #'
@@ -1113,7 +1143,7 @@ add_R_variability <- function(length_R, h, length_seeding, partial_window,
       B <- B[,-ncol(B)]
     }
   }
-  modeldata$R_vari_n_basis <- ncol(B)
+  modeldata$R_vari_ncol <- ncol(B)
   B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
   modeldata$R_vari_n_w <- length(B_sparse$w)
   modeldata$R_vari_w <- B_sparse$w

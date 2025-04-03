@@ -102,7 +102,7 @@ data {
   array[I_overdispersion ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
 
   // Effective reproduction number ----
-  int<lower=0, upper=2> R_model; // 0 for exponential smoothing (ets), 1 for spline smoothing (bs), 2 for soft changepoints (scp)
+  int<lower=0, upper=3> R_model; // 0 for exponential smoothing (ets), 1 for spline smoothing (bs), 2 for soft changepoints (scp)
   int<lower=0, upper=1> R_use_ets;
   int<lower=0, upper=1> R_use_bs;
   int<lower=0, upper=1> R_use_bs2;
@@ -110,32 +110,34 @@ data {
 
   array[2] real R_intercept_prior; // prior for R at start of modeled time series
 
-  // R model No. 0: random walk / exponential smoothing (ets)
-  int<lower=0> R_ets_length; // L + S + D + T - (G+se)
-  array[R_use_ets ? 2 : 0] real R_trend_start_prior;
+  // exponential smoothing (ets), random walk is just a special case of ets
+  int<lower=0> ets_length; // L + S + D + T - (G+se)
+  array[R_use_ets ? 2 : 0] real ets_trend_start_prior;
   array[R_use_ets ? 1 : 0] int<lower=0> ets_diff; // order of differencing
   array[R_use_ets ? 1 : 0] int<lower=0, upper=1> ets_noncentered; // use non-centered parameterization?
   array[R_use_ets ? 2 : 0] real<lower=0> ets_alpha_prior;
   array[R_use_ets ? 2 : 0] real<lower=0> ets_beta_prior;
   array[R_use_ets ? 2 : 0] real<lower=0> ets_phi_prior;
 
-  // R model No. 1: basis splines (bs)
-  // Sparse bs matrix: columns = bases (bs_n_basis), rows = time points (L+S+T-(G+se))
-  int<lower=0> R_bs_length; // (L + S + D + T - (G+se) + h)
+  // basis splines (bs)
+  // Sparse bs matrix: columns = bases (bs_ncol), rows = time points (L+S+T-(G+se))
   // Global
-  array[R_use_bs ? 1 : 0] int<lower=1> bsg_n_basis; // number of B-splines
-  array[R_use_bs ? 1 : 0] int<lower=0> bsg_n_w; // number of nonzero entries in bs matrix
-  vector[R_use_bs ? bsg_n_w[1] : 0] bsg_w; // nonzero entries in bs matrix
-  array[R_use_bs ? bsg_n_w[1] : 0] int bsg_v; // column indices of bsg_w
-  array[R_use_bs ? (R_bs_length + 1) : 0] int bsg_u; // row starting indices for bsg_w plus padding
+  int<lower=0> bs_length; // (L + S + D + T - (G+se) + h)
+  array[R_use_bs ? 1 : 0] int<lower=1> bs_ncol; // number of B-splines
+  array[R_use_bs ? 1 : 0] int<lower=0> bs_n_w; // number of nonzero entries in bs matrix
+  vector[R_use_bs ? bs_n_w[1] : 0] bs_w; // nonzero entries in bs matrix
+  array[R_use_bs ? bs_n_w[1] : 0] int bs_v; // column indices of bs_w
+  array[R_use_bs ? (bs_length + 1) : 0] int bs_u; // row starting indices for bs_w plus padding
   // Local
-  array[R_use_bs2 ? 1 : 0] int<lower=1> bsc_n_basis; // number of B-splines
-  array[R_use_bs2 ? 1 : 0] int<lower=0> bsc_n_w; // number of nonzero entries in bs matrix
-  vector[R_use_bs2 ? bsc_n_w[1] : 0] bsc_w; // nonzero entries in bs matrix
-  array[R_use_bs2 ? bsc_n_w[1] : 0] int bsc_v; // column indices of bsc_w
-  array[R_use_bs2 ? (R_bs_length + 1) : 0] int bsc_u; // row starting indices for bsc_w plus padding
+  int<lower=0> bs2_length; // (L + S + D + T - (G+se) + h)
+  array[R_use_bs2 ? 1 : 0] int<lower=1> bs2_ncol; // number of B-splines
+  array[R_use_bs2 ? 1 : 0] int<lower=0> bs2_n_w; // number of nonzero entries in bs matrix
+  vector[R_use_bs2 ? bs2_n_w[1] : 0] bs2_w; // nonzero entries in bs matrix
+  array[R_use_bs2 ? bs2_n_w[1] : 0] int bs2_v; // column indices of bs2_w
+  array[R_use_bs2 ? (bs2_length + 1) : 0] int bs2_u; // row starting indices for bs2_w plus padding
 
-  // R model No. 2: soft changepoints (scp)
+  // soft changepoints (scp)
+  int<lower=0> scp_length; // L + S + D + T - (G+se)
   array[R_use_scp ? 1 : 0] int<lower=1> scp_n_knots;
   array[R_use_scp ? 1 : 0] int<lower=1> scp_break_dist;
   array[R_use_scp ? 1 : 0] int<lower=1> scp_min_dist;
@@ -146,9 +148,9 @@ data {
   array[R_use_scp ? 1 : 0] real<lower=0> scp_alpha; // concentration parameter for changepoint model
 
   // Change point model for R variability
-  array[2] real R_sd_change_prior; // shape and rate of lomax prior (exponential with gamma distributed rate) on additive R variability at changepoints
   array[(R_model == 0 || R_model == 1) ? 1 : 0] real R_sd_baseline_prior; // sd of half-normal prior on baseline R variability
-  array[(R_model == 0 || R_model == 1) ? 1 : 0] int<lower=1> R_vari_n_basis; // number of B-splines (degree 1) for change points
+  array[2] real R_sd_change_prior; // shape and rate of lomax prior (exponential with gamma distributed rate) on additive R variability at changepoints
+  array[(R_model == 0 || R_model == 1) ? 1 : 0] int<lower=1> R_vari_ncol; // number of B-splines (degree 1) for change points
   array[(R_model == 0 || R_model == 1) ? 1 : 0] int<lower=0> R_vari_n_w; // number of nonzero entries in R_vari matrix
   vector[(R_model == 0 || R_model == 1) ? R_vari_n_w[1] : 0] R_vari_w; // nonzero entries in R_vari matrix
   array[(R_model == 0 || R_model == 1) ? R_vari_n_w[1] : 0] int R_vari_v; // column indices of R_vari_w
@@ -159,13 +161,16 @@ data {
   array[R_model == 1 ? 1 : 0] int<lower=0> R_vari_sel_n_w; // number of nonzero entries in R_vari_sel matrix
   vector[R_model == 1 ? R_vari_sel_n_w[1] : 0] R_vari_sel_w; // nonzero entries in R_vari_sel matrix
   array[R_model == 1 ? R_vari_sel_n_w[1]: 0] int R_vari_sel_v; // column indices of R_vari_sel_w
-  array[R_model == 1 ? bsg_n_basis[1] : 0] int R_vari_sel_u; // row starting indices for R_vari_sel_w plus padding
+  array[R_model == 1 ? bs_ncol[1] : 0] int R_vari_sel_u; // row starting indices for R_vari_sel_w plus padding
   // for local
   array[R_model == 1 ? 1 : 0] int<lower=1> R_vari_sel_local_ncol; // number of columns
   array[R_model == 1 ? 1 : 0] int<lower=0> R_vari_sel_local_n_w; // number of nonzero entries in R_vari_sel_local matrix
   vector[R_model == 1 ? R_vari_sel_local_n_w[1] : 0] R_vari_sel_local_w; // nonzero entries in R_vari_sel_local matrix
   array[R_model == 1 ? R_vari_sel_local_n_w[1]: 0] int R_vari_sel_local_v; // column indices of R_vari_sel_local_w
-  array[R_model == 1 ? bsc_n_basis[1] : 0] int R_vari_sel_local_u; // row starting indices for R_vari_sel_local_w plus padding
+  array[R_model == 1 ? bs2_ncol[1] : 0] int R_vari_sel_local_u; // row starting indices for R_vari_sel_local_w plus padding
+
+  // Selection for changepoint_splines
+  matrix[R_model == 3 ? bs_ncol[1] : 0, R_model == 3 ? bs_length : 0] bs_coef_hat;
 
   // Link function and corresponding hyperparameters ----
   // first element: 0 = inv_softplus, 1 = scaled_logit
@@ -259,23 +264,26 @@ transformed data {
 parameters {
   // Effective reproduction number parameters ----
   real R_intercept; // starting value of R
-  // R model No. 0: random walk / exponential smoothing (ets)
-  array[R_use_ets ? 1 : 0] real R_trend_start; // starting value of the trend
-  vector[R_use_ets ? R_ets_length - 1 : 0] R_noise; // additive errors
+
+  // random walk / exponential smoothing (ets)
+  array[R_use_ets ? 1 : 0] real ets_trend_start; // starting value of the trend
+  vector[R_use_ets ? ets_length - 1 : 0] ets_noise; // additive errors
   array[R_use_ets && ets_alpha_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_alpha; // smoothing parameter for the level
   array[R_use_ets && ets_beta_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_beta; // smoothing parameter for the trend
   array[R_use_ets && ets_phi_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
-  // R model No. 1: basis splines (bs)
-  vector[R_use_bs ? (bsg_n_basis[1] - 1) : 0] bsg_coeff_noise_raw; // additive errors (non-centered)
-  vector[R_use_bs2 ? (bsc_n_basis[1] - 1) : 0] bsc_coeff_noise_raw; // additive errors (non-centered)
-  // R model No. 2: soft changepoints (scp)
+
+  // basis splines (bs)
+  vector[R_use_bs ? (bs_ncol[1] - 1) : 0] bs_coeff_noise_raw; // additive errors (non-centered)
+  vector[R_use_bs2 ? (bs2_ncol[1] - 1) : 0] bs2_coeff_noise_raw; // additive errors (non-centered)
+
+  // soft changepoints (scp)
   array[R_use_scp ? scp_n_knots[1] : 1] simplex[R_use_scp ? scp_break_dist[1] : 1] scp_break_delays;
-  vector[R_use_scp ? scp_n_knots[1] : 0] scp_R_noise; // additive errors
+  vector[R_use_scp ? scp_n_knots[1] : 0] scp_noise; // additive errors
+  vector<lower=0>[R_use_scp ? scp_n_knots[1] : 0] scp_sd; // R variability for soft changepoint model
 
   // Change point model for Rt variability
   array[(R_model == 0 || R_model == 1) ? 1 : 0] real<lower=0> R_sd_baseline; // baseline R variability
-  vector<lower=0>[(R_model == 0 || R_model == 1) ? (R_vari_n_basis[1] > 2 ? R_vari_n_basis[1] - 2 : R_vari_n_basis[1]) : 0] R_sd_changepoints; // additive R variability at changepoints
-  vector<lower=0>[R_model == 2 ? scp_n_knots[1] : 0] scp_R_sd; // R variability for soft changepoint model
+  vector<lower=0>[(R_model == 0 || R_model == 1) ? (R_vari_ncol[1] > 2 ? R_vari_ncol[1] - 2 : R_vari_ncol[1]) : 0] R_sd_changepoints; // additive R variability at changepoints
 
   // seeding
   real iota_log_seed_intercept;
@@ -308,15 +316,14 @@ parameters {
 transformed parameters {
   // Effective reproduction number parameters ----
   vector[L + S + D + T - (G+se)] R;
-  // R model No. 0: random walk / exponential smoothing (ets)
-  vector<lower=0>[R_use_ets ? R_ets_length - 1 : 0] R_sd; // standard deviation of additive errors in R ets model
-  // R model No. 1: basis splines (bs)
-  vector[R_use_bs ? R_bs_length : 0] R_global;
-  vector[R_use_bs2 ? R_bs_length : 0] R_local;
-  vector[R_use_bs ? h : 0] R_forecast_spline; // spline-based forecast of R
-  vector<lower=0>[R_model == 1 ? R_bs_length : 0] bsg_coeff_ar_sd; // sd for random walk on log bs coeffs
-  // R model No. 2: soft changepoints (scp)
+  // random walk / exponential smoothing (ets)
+  vector<lower=0>[R_use_ets ? ets_length - 1 : 0] ets_sd; // standard deviation of additive errors in R ets model
+  // soft changepoints (scp)
   vector[R_use_scp ? scp_n_knots[1] : 0] scp_knot_values;
+
+  // parameters for specific R models
+  vector[R_model == 1 ? h : 0] R_forecast_spline; // spline-based forecast of R
+  vector<lower=0>[R_model == 1 ? bs_length : 0] bs_coeff_ar_sd; // sd for random walk on log bs coeffs
 
   // other time series parameters ----
   vector[L + S + D + T] iota; // expected number of infections
@@ -334,53 +341,55 @@ transformed parameters {
   array[LOD_model > 0 ? 1 : 0] vector<lower=0>[n_measured] LOD_hurdle_scale;
 
   if (R_model == 0) {
-    R_sd = csr_matrix_times_vector(
-      L + S + D + T - (G+se) + h, R_vari_n_basis[1], R_vari_w,
+    ets_sd = csr_matrix_times_vector(
+      L + S + D + T - (G+se) + h, R_vari_ncol[1], R_vari_w,
       R_vari_v, R_vari_u,
-      R_sd_baseline[1] + (R_vari_n_basis[1] > 2 ? append_row3(
+      R_sd_baseline[1] + (R_vari_ncol[1] > 2 ? append_row3(
         [0]', R_sd_changepoints, [0]'
         ) : R_sd_changepoints)
       )[2:(L + S + D + T - (G+se))];
     // Innovations state space process implementing exponential smoothing
     R = apply_link(holt_damped_process(
-      [R_intercept, R_trend_start[1]]',
+      [R_intercept, ets_trend_start[1]]',
       param_or_fixed(ets_alpha, ets_alpha_prior),
       param_or_fixed(ets_beta, ets_beta_prior),
       param_or_fixed(ets_phi, ets_phi_prior),
-      R_noise .* (ets_noncentered[1] ? R_sd : rep_vector(1, L + S + D + T - (G+se) - 1)),
+      ets_noise .* (ets_noncentered[1] ? ets_sd : rep_vector(1, ets_length - 1)),
       ets_diff[1]
     ), R_link);
   } else if (R_model == 1) {
     // Basis spline smoothing
     // global
-    bsg_coeff_ar_sd = csr_matrix_times_vector(
-      L + S + D + T - (G+se) + h, R_vari_n_basis[1], R_vari_w,
+    vector[bs_length] R_global;
+    bs_coeff_ar_sd = csr_matrix_times_vector(
+      bs_length, R_vari_ncol[1], R_vari_w,
       R_vari_v, R_vari_u,
-      (R_vari_n_basis[1] > 2 ? append_row3(
+      (R_vari_ncol[1] > 2 ? append_row3(
         [0]', R_sd_changepoints, [0]'
         ) : R_sd_changepoints)
       );
-    vector[bsg_n_basis[1] - 1] bsg_coeff_noise = bsg_coeff_noise_raw .*
+    vector[bs_ncol[1] - 1] bs_coeff_noise = bs_coeff_noise_raw .*
     sqrt(csr_matrix_times_vector(
-      bsg_n_basis[1] - 1, R_vari_sel_ncol[1], R_vari_sel_w,
+      bs_ncol[1] - 1, R_vari_sel_ncol[1], R_vari_sel_w,
       R_vari_sel_v, R_vari_sel_u,
-      bsg_coeff_ar_sd^2 // we add together variances --> square sd
+      bs_coeff_ar_sd^2 // we add together variances --> square sd
       ));
-    vector[bsg_n_basis[1]] bsg_coeff = random_walk([0]', bsg_coeff_noise, 0); // Basis spline coefficients
-    bsg_coeff[(bsg_n_basis[1]-3):bsg_n_basis[1]] = rep_vector(bsg_coeff[bsg_n_basis[1]-4],4); // fix forecast at last value
+    vector[bs_ncol[1]] bs_coeff = random_walk([0]', bs_coeff_noise, 0); // Basis spline coefficients
+    bs_coeff[(bs_ncol[1]-3):bs_ncol[1]] = rep_vector(bs_coeff[bs_ncol[1]-4],4); // fix forecast at last value
     R_global = csr_matrix_times_vector(
-      L + S + D + T - (G+se) + h, bsg_n_basis[1], bsg_w, bsg_v, bsg_u, bsg_coeff
+      bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       );
     // local
-    vector[bsc_n_basis[1] - 1] bsc_coeff_noise = bsc_coeff_noise_raw .*
+    vector[bs2_length] R_local;
+    vector[bs2_ncol[1] - 1] bs2_coeff_noise = bs2_coeff_noise_raw .*
     sqrt(csr_matrix_times_vector(
-      bsc_n_basis[1] - 1, R_vari_sel_local_ncol[1], R_vari_sel_local_w,
+      bs2_ncol[1] - 1, R_vari_sel_local_ncol[1], R_vari_sel_local_w,
       R_vari_sel_local_v, R_vari_sel_local_u,
-      rep_vector(R_sd_baseline[1]^2, L + S + D + T - (G+se) + h) // we add together variances --> square sd
+      rep_vector(R_sd_baseline[1]^2, bs2_length) // we add together variances --> square sd
       ));
-    vector[bsc_n_basis[1]] bsc_coeff = random_walk([0]', bsc_coeff_noise, 0); // Basis spline coefficients
+    vector[bs2_ncol[1]] bs2_coeff = random_walk([0]', bs2_coeff_noise, 0); // Basis spline coefficients
     R_local = csr_matrix_times_vector(
-      L + S + D + T - (G+se) + h, bsc_n_basis[1], bsc_w, bsc_v, bsc_u, bsc_coeff
+      bs2_length, bs2_ncol[1], bs2_w, bs2_v, bs2_u, bs2_coeff
       );
     // intercept + global + local
     vector[L + S + D + T - (G+se) + h] R_all = apply_link(
@@ -391,22 +400,25 @@ transformed parameters {
       R_forecast_spline = R_all[(L + S + D + T - (G+se) + 1):(L + S + D + T - (G+se) + h)];
     }
   } else if (R_model == 2) {
-    // scp_knot_values = random_walk(
-    //   [R_intercept]', scp_R_noise .* scp_R_sd, 0
-    //   )[2:(scp_n_knots[1]+1)]; // do not keep intercept here
-    // R = apply_link(soft_changepoint(
-    //   R_intercept, scp_knot_values, scp_length_intercept[1],
-    //   L + S + D + T - (G+se),
-    //   scp_break_dist[1], scp_min_dist[1], scp_break_delays, scp_k[1]
-    //   ), R_link);
-    scp_knot_values = scp_R_noise .* scp_R_sd;
-
-    R = apply_link(R_intercept + cumulative_sum(soft_changepoint(
-      0, scp_knot_values, scp_length_intercept[1],
-      L + S + D + T - (G+se),
+    scp_knot_values = random_walk(
+      [R_intercept]', scp_noise .* scp_sd, 0
+      )[2:(scp_n_knots[1]+1)]; // do not keep intercept here
+    R = apply_link(soft_changepoint(
+      R_intercept, scp_knot_values, scp_length_intercept[1], scp_length,
       scp_break_dist[1], scp_min_dist[1], scp_break_delays,
       scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
-      )), R_link);
+      ), R_link);
+  } else if (R_model == 3) {
+    scp_knot_values = scp_noise .* scp_sd;
+    vector[scp_length] scp_values = cumulative_sum(soft_changepoint(
+      0, scp_knot_values, scp_length_intercept[1], scp_length,
+      scp_break_dist[1], scp_min_dist[1], scp_break_delays,
+      scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
+      ));
+    vector[bs_ncol[1]] bs_coeff = bs_coef_hat * scp_values;
+    R = apply_link(R_intercept + csr_matrix_times_vector(
+      bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
+      ), R_link);
   }
 
   // seeding
@@ -510,31 +522,34 @@ model {
     target += pareto_type_2_lpdf(
       R_sd_changepoints | 0, R_sd_change_prior[2], R_sd_change_prior[1]
       ); // Lomax distribution / exponential-gamma distribution
-  } else if (R_model == 2) {
+  } else if (R_model == 2 || R_model == 3) {
     target += pareto_type_2_lpdf(
-      scp_R_sd | 0, R_sd_change_prior[2], R_sd_change_prior[1]
+      scp_sd | 0, R_sd_change_prior[2], R_sd_change_prior[1]
     );
-    scp_R_noise ~ std_normal();
+    scp_noise ~ std_normal();
   }
 
-  if (R_model == 0) {
+  if (R_use_ets) {
     // Innovations state space model
     target += ets_coefficient_priors_lp(
       ets_alpha, ets_alpha_prior,
       ets_beta, ets_beta_prior,
       ets_phi, ets_phi_prior
       );
-    R_trend_start ~ normal(R_trend_start_prior[1], R_trend_start_prior[2]); // starting prior for trend
+    ets_trend_start ~ normal(ets_trend_start_prior[1], ets_trend_start_prior[2]); // starting prior for trend
     if (ets_noncentered[1]) {
-      R_noise ~ std_normal(); // Gaussian noise
+      ets_noise ~ std_normal(); // Gaussian noise
     } else {
-      R_noise ~ normal(0, R_sd); // Gaussian noise
+      ets_noise ~ normal(0, ets_sd); // Gaussian noise
     }
-  } else if (R_model == 1) {
-    // R spline smoothing
-    bsg_coeff_noise_raw ~ std_normal(); // Gaussian noise
-    bsc_coeff_noise_raw ~ std_normal(); // Gaussian noise
-  } else if (R_model == 2) {
+  }
+  if (R_use_bs) {
+    bs_coeff_noise_raw ~ std_normal(); // Gaussian noise
+  }
+  if (R_use_bs2) {
+    bs2_coeff_noise_raw ~ std_normal(); // Gaussian noise
+  }
+  if (R_use_scp) {
     for (i in 1:scp_n_knots[1]) {
       scp_break_delays[i] ~ dirichlet(rep_vector(scp_alpha[1], scp_break_dist[1]));
     }
@@ -708,28 +723,30 @@ generated quantities {
       // Forecasting of R
       if (R_model == 0) {
         // Innovations state space process implementing exponential smoothing
-        vector[h] R_sd_forecast = csr_matrix_times_vector(
-          L + S + D + T - (G+se) + h, R_vari_n_basis[1], R_vari_w,
+        vector[h] ets_sd_forecast = csr_matrix_times_vector(
+          L + S + D + T - (G+se) + h, R_vari_ncol[1], R_vari_w,
           R_vari_v, R_vari_u,
-          R_sd_baseline[1] + (R_vari_n_basis[1] > 2 ? append_row3(
+          R_sd_baseline[1] + (R_vari_ncol[1] > 2 ? append_row3(
             [0]', R_sd_changepoints, [0]'
             ) : R_sd_changepoints)
         )[((L + S + D + T - (G+se)) + 1):((L + S + D + T - (G+se)) + h)];
         R_forecast = apply_link(holt_damped_process(
-          [R_intercept, R_trend_start[1]]',
+          [R_intercept, ets_trend_start[1]]',
           param_or_fixed(ets_alpha, ets_alpha_prior),
           param_or_fixed(ets_beta, ets_beta_prior),
           param_or_fixed(ets_phi, ets_phi_prior),
           append_row(
-            R_noise .* (ets_noncentered[1] ? R_sd : rep_vector(1, L + S + D + T - (G+se) - 1)),
-            to_vector(normal_rng(0, R_sd_forecast))
+            ets_noise .* (ets_noncentered[1] ? ets_sd : rep_vector(1, L + S + D + T - (G+se) - 1)),
+            to_vector(normal_rng(0, ets_sd_forecast))
             ),
           ets_diff[1]
         ), R_link)[((L + S + D + T - (G+se)) + 1):((L + S + D + T - (G+se)) + h)];
       } else if (R_model == 1) {
          R_forecast = R_forecast_spline;
       } else if (R_model == 2) {
-        R_forecast = rep_vector(scp_knot_values[scp_n_knots[1]], h);
+        R_forecast = rep_vector(R[L + S + D + T - (G+se)], h);
+      } else if (R_model == 3) {
+        R_forecast = rep_vector(R[L + S + D + T - (G+se)], h);
       }
 
       // Forecasting of infections
