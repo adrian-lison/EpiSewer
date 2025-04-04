@@ -169,6 +169,9 @@ data {
   array[R_model == 1 ? R_vari_sel_local_n_w[1]: 0] int R_vari_sel_local_v; // column indices of R_vari_sel_local_w
   array[R_model == 1 ? bs2_ncol[1] : 0] int R_vari_sel_local_u; // row starting indices for R_vari_sel_local_w plus padding
 
+  // changepoint splines
+  array[R_model == 3 ? 1 : 0] real<lower=0> coef_sd_from_scp; // additional noise for spline coefficients
+
   // Link function and corresponding hyperparameters ----
   // first element: 0 = inv_softplus, 1 = scaled_logit
   // other elements: hyperparameters for the respective link function
@@ -282,6 +285,8 @@ parameters {
   array[(R_model == 0 || R_model == 1) ? 1 : 0] real<lower=0> R_sd_baseline; // baseline R variability
   vector<lower=0>[(R_model == 0 || R_model == 1) ? (R_vari_ncol[1] > 2 ? R_vari_ncol[1] - 2 : R_vari_ncol[1]) : 0] R_sd_changepoints; // additive R variability at changepoints
 
+  vector[R_model == 3 ? scp_length : 0] coef_sd_from_scp_raw;
+
   // seeding
   real iota_log_seed_intercept;
   array[seeding_model == 1 ? 1 : 0] real<lower=0> iota_log_seed_sd;
@@ -317,6 +322,7 @@ transformed parameters {
   vector<lower=0>[R_use_ets ? ets_length - 1 : 0] ets_sd; // standard deviation of additive errors in R ets model
   // soft changepoints (scp)
   vector[R_use_scp ? scp_n_knots[1] : 0] scp_knot_values;
+  vector[R_model == 3 ? scp_length : 0] scp_values;
 
   // parameters for specific R models
   vector[R_model == 1 ? h : 0] R_forecast_spline; // spline-based forecast of R
@@ -406,12 +412,19 @@ transformed parameters {
       scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
       ), R_link);
   } else if (R_model == 3) {
-    scp_knot_values = scp_noise .* scp_sd;
-    vector[scp_length] scp_values = cumulative_sum(soft_changepoint(
+    // scp_knot_values = scp_noise .* scp_sd;
+    // vector[scp_length] scp_values = cumulative_sum(soft_changepoint(
+    //   0, scp_knot_values, scp_length_intercept[1], scp_length,
+    //   scp_break_dist[1], scp_min_dist[1], scp_break_delays,
+    //   scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
+    //   ));
+    scp_knot_values = random_walk([0]', scp_noise .* scp_sd, 0)[2:(scp_n_knots[1]+1)]; // do not keep intercept here
+    scp_values = soft_changepoint(
       0, scp_knot_values, scp_length_intercept[1], scp_length,
       scp_break_dist[1], scp_min_dist[1], scp_break_delays,
       scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
-      ));
+      );
+      scp_values = scp_values + coef_sd_from_scp_raw * coef_sd_from_scp[1];
     vector[bs_ncol[1]] bs_coeff = append_row3([scp_values[1]]', scp_values,[scp_values[scp_length], scp_values[scp_length]]');
     R = apply_link(R_intercept + csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
@@ -524,6 +537,9 @@ model {
       scp_sd | 0, R_sd_change_prior[2], R_sd_change_prior[1]
     );
     scp_noise ~ std_normal();
+  }
+  if (R_model == 3) {
+    coef_sd_from_scp_raw ~ std_normal();
   }
 
   if (R_use_ets) {

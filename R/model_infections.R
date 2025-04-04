@@ -996,8 +996,10 @@ R_estimate_piecewise <- function(
 R_estimate_changepoint_splines <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
+    changepoint_max_distance = 4*7,
     changepoint_min_distance = 2*7,
     trend_tolerance = 0.005,
+    coef_sd_from_scp = 0.01,
     sd_change_prior_shape = 20,
     sd_change_prior_rate = 5e-1,
     spline_knot_distance = 3,
@@ -1053,12 +1055,14 @@ R_estimate_changepoint_splines <- function(
       modeldata$bs_coeff_select <- c(1, spline_knots$interior, spline_knots$boundary[2], spline_knots$boundary[2])
 
       # Changepoint model
-      distance = as.integer(floor(changepoint_min_distance/spline_knot_distance))
-      if (distance < 2) {
+      distance = as.integer(floor(changepoint_max_distance/spline_knot_distance))
+      changepoint_min_distance = as.integer(ceiling(changepoint_min_distance/spline_knot_distance))
+      if (distance < 2 || changepoint_min_distance < 1) {
         cli::cli_abort(paste(
-          "The combination of `changepoint_min_distance` and",
-          "`spline_knot_distance` is not valid. Please choose a larger",
-          "`changepoint_min_distance` or a smaller `spline_knot_distance`."
+          "The choosen `spline_knot_distance` is too long for the changepoint",
+          "min and max distances. Please either choose a larger",
+          "`changepoint_min_distance`/'changepoint_max_distance`",
+          "or a smaller `spline_knot_distance`."
         ))
       }
       last_change <- with(modeldata$.metainfo, length_R - partial_window)
@@ -1067,13 +1071,15 @@ R_estimate_changepoint_splines <- function(
         scp_length = length(spline_knots$interior),
         last_knot = last_scp_knot,
         distance = distance,
-        min_distance = distance,
+        min_distance = changepoint_min_distance,
         min_distance_tolerance = trend_tolerance,
         strictness_tol_k = strictness_tol_k,
         strictness_k = strictness_k,
         strictness_alpha = strictness_alpha,
         modeldata
       )
+      modeldata$coef_sd_from_scp <- coef_sd_from_scp
+      modeldata$.init$coef_sd_from_scp_raw <- rep(0, length(spline_knots$interior))
     },
     required = c(
       ".metainfo$length_R",
