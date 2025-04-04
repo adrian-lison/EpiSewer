@@ -1041,7 +1041,7 @@ R_estimate_changepoint_splines <- function(
         with(modeldata$.metainfo, length_R - partial_window) - distance,
         1, by = -distance
       ))
-      modeldata$.metainfo$R_knots <- knots
+      modeldata$.metainfo$R_changepoint_knots <- knots
       modeldata <- use_soft_changepoints(
         scp_length = modeldata$.metainfo$length_R,
         knots = knots,
@@ -1060,7 +1060,7 @@ R_estimate_changepoint_splines <- function(
           modeldata$.metainfo$length_R - spline_knot_distance,
           1, by = -spline_knot_distance
         )),
-        boundary = c(-spline_knot_distance, modeldata$.metainfo$length_R)
+        boundary = c(-3, modeldata$.metainfo$length_R)
       )
       modeldata$.metainfo$R_knots <- knots
       modeldata <- use_basis_splines(
@@ -1069,12 +1069,7 @@ R_estimate_changepoint_splines <- function(
         degree = 3,
         modeldata = modeldata
       )
-      B <- modeldata$.metainfo$bs_matrix
-      # XtX <- t(B) %*% B  # X^T * X
-      # XtX_inv <- solve(XtX + 0.5 * diag(ncol(B)))  # Regularized inverse
-      # modeldata$bs_coef_hat <- XtX_inv %*% t(B)
-      modeldata$bs_coef_hat <- solve(t(B) %*% B) %*% t(B)
-      #modeldata$bs_coef_hat[abs(modeldata$bs_coef_hat)<1e-4] <- 0
+      modeldata$bs_coeff_select <- c(1, knots$interior, knots$boundary[2], knots$boundary[2])
     },
     required = c(
       ".metainfo$length_R",

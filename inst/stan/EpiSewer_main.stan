@@ -170,7 +170,7 @@ data {
   array[R_model == 1 ? bs2_ncol[1] : 0] int R_vari_sel_local_u; // row starting indices for R_vari_sel_local_w plus padding
 
   // Selection for changepoint_splines
-  matrix[R_model == 3 ? bs_ncol[1] : 0, R_model == 3 ? bs_length : 0] bs_coef_hat;
+  array[R_model == 3 ? bs_ncol[1] : 0] int bs_coeff_select;
 
   // Link function and corresponding hyperparameters ----
   // first element: 0 = inv_softplus, 1 = scaled_logit
@@ -415,7 +415,7 @@ transformed parameters {
       scp_break_dist[1], scp_min_dist[1], scp_break_delays,
       scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
       ));
-    vector[bs_ncol[1]] bs_coeff = bs_coef_hat * scp_values;
+    vector[bs_ncol[1]] bs_coeff = scp_values[bs_coeff_select];
     R = apply_link(R_intercept + csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
