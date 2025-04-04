@@ -1035,41 +1035,45 @@ R_estimate_changepoint_splines <- function(
   modeldata <- tbc(
     "R_changepoint_splines",
     {
-      # Changepoint model
-      distance = changepoint_min_distance
-      knots <- rev(seq(
-        with(modeldata$.metainfo, length_R - partial_window) - distance,
-        1, by = -distance
-      ))
-      modeldata$.metainfo$R_changepoint_knots <- knots
-      modeldata <- use_soft_changepoints(
-        scp_length = modeldata$.metainfo$length_R,
-        knots = knots,
-        distance = distance,
-        min_distance = changepoint_min_distance,
-        min_distance_tolerance = trend_tolerance,
-        strictness_tol_k = strictness_tol_k,
-        strictness_k = strictness_k,
-        strictness_alpha = strictness_alpha,
-        modeldata
-      )
-
       # Spline model
-      knots <- list(
+      spline_knots <- list(
         interior = rev(seq(
           modeldata$.metainfo$length_R - spline_knot_distance,
           1, by = -spline_knot_distance
         )),
         boundary = c(-3, modeldata$.metainfo$length_R)
       )
-      modeldata$.metainfo$R_knots <- knots
+      modeldata$.metainfo$R_knots <- spline_knots
       modeldata <- use_basis_splines(
         spline_length = modeldata$.metainfo$length_R,
-        knots = knots,
+        knots = spline_knots,
         degree = 3,
         modeldata = modeldata
       )
-      modeldata$bs_coeff_select <- c(1, knots$interior, knots$boundary[2], knots$boundary[2])
+      modeldata$bs_coeff_select <- c(1, spline_knots$interior, spline_knots$boundary[2], spline_knots$boundary[2])
+
+      # Changepoint model
+      distance = as.integer(floor(changepoint_min_distance/spline_knot_distance))
+      if (distance < 2) {
+        cli::cli_abort(paste(
+          "The combination of `changepoint_min_distance` and",
+          "`spline_knot_distance` is not valid. Please choose a larger",
+          "`changepoint_min_distance` or a smaller `spline_knot_distance`."
+        ))
+      }
+      last_change <- with(modeldata$.metainfo, length_R - partial_window)
+      last_scp_knot <- sum(spline_knots$interior <= last_change)
+      modeldata <- use_soft_changepoints(
+        scp_length = length(spline_knots$interior),
+        last_knot = last_scp_knot,
+        distance = distance,
+        min_distance = distance,
+        min_distance_tolerance = trend_tolerance,
+        strictness_tol_k = strictness_tol_k,
+        strictness_k = strictness_k,
+        strictness_alpha = strictness_alpha,
+        modeldata
+      )
     },
     required = c(
       ".metainfo$length_R",
