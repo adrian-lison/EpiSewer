@@ -206,7 +206,7 @@ get_latent_trajectories <- function(fit, var, T_shift, .metainfo,
     by = "1 day"
   )
   fit_draws[, date := date_mapping[as.integer(date)]]
-  fit_draws[, c(".chain", ".iteration", "variable") := NULL]
+  fit_draws[, c(".iteration", "variable") := NULL]
   fit_draws[, type := "estimate"]
 
   if (.metainfo$forecast_horizon > 0) {
@@ -220,7 +220,7 @@ get_latent_trajectories <- function(fit, var, T_shift, .metainfo,
       by = "1 day"
     )
     fit_draws_forecast[, date := date_mapping_forecast[as.integer(date)]]
-    fit_draws_forecast[, c(".chain", ".iteration", "variable") := NULL]
+    fit_draws_forecast[, c(".iteration", "variable") := NULL]
     fit_draws_forecast[, type := "forecast"]
   } else {
     fit_draws_forecast <- NULL
@@ -304,7 +304,7 @@ combine_samples <- function(
     result_list, variable_name, draws = FALSE, ndraws = NULL) {
   summary_list <- lapply(result_list, function(x) {
     res <- x$summary$samples[
-      , .SD, .SDcols = c("date", "type", "seeding", ".draw", variable_name)
+      , .SD, .SDcols = c("date", "type", "seeding", ".draw", ".chain", variable_name)
       ]
     if (!is.null(ndraws)) {
       draw_ids <- unique(res$.draw)
