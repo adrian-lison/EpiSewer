@@ -412,19 +412,19 @@ transformed parameters {
       scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
       ), R_link);
   } else if (R_model == 3) {
-    // scp_knot_values = scp_noise .* scp_sd;
-    // vector[scp_length] scp_values = cumulative_sum(soft_changepoint(
-    //   0, scp_knot_values, scp_length_intercept[1], scp_length,
-    //   scp_break_dist[1], scp_min_dist[1], scp_break_delays,
-    //   scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
-    //   ));
-    scp_knot_values = random_walk([0]', scp_noise .* scp_sd, 0)[2:(scp_n_knots[1]+1)]; // do not keep intercept here
-    scp_values = soft_changepoint(
+    scp_knot_values = scp_noise .* scp_sd;
+    scp_values = cumulative_sum(soft_changepoint(
       0, scp_knot_values, scp_length_intercept[1], scp_length,
       scp_break_dist[1], scp_min_dist[1], scp_break_delays,
       scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
-      );
-      scp_values = scp_values + coef_sd_from_scp_raw * coef_sd_from_scp[1];
+      ));
+    //scp_knot_values = random_walk([0]', scp_noise .* scp_sd, 0)[2:(scp_n_knots[1]+1)]; // do not keep intercept here
+    // scp_values = soft_changepoint(
+    //   0, scp_knot_values, scp_length_intercept[1], scp_length,
+    //   scp_break_dist[1], scp_min_dist[1], scp_break_delays,
+    //   scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
+    //   );
+    scp_values = scp_values + coef_sd_from_scp_raw * coef_sd_from_scp[1];
     vector[bs_ncol[1]] bs_coeff = append_row3([scp_values[1]]', scp_values,[scp_values[scp_length], scp_values[scp_length]]');
     R = apply_link(R_intercept + csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
