@@ -1055,6 +1055,7 @@ R_estimate_changepoint_splines <- function(
       modeldata$bs_coeff_select <- c(1, spline_knots$interior, spline_knots$boundary[2], spline_knots$boundary[2])
 
       # Changepoint model
+      last_change <- with(modeldata$.metainfo, length_R - changepoint_min_distance)
       distance = as.integer(floor(changepoint_max_distance/spline_knot_distance))
       changepoint_min_distance = as.integer(ceiling(changepoint_min_distance/spline_knot_distance))
       if (distance < 2 || changepoint_min_distance < 1) {
@@ -1065,7 +1066,6 @@ R_estimate_changepoint_splines <- function(
           "or a smaller `spline_knot_distance`."
         ))
       }
-      last_change <- with(modeldata$.metainfo, length_R - partial_window)
       last_scp_knot <- sum(spline_knots$interior <= last_change)
       modeldata <- use_soft_changepoints(
         scp_length = length(spline_knots$interior),
@@ -1080,10 +1080,7 @@ R_estimate_changepoint_splines <- function(
       )
     },
     required = c(
-      ".metainfo$length_R",
-      ".metainfo$length_seeding",
-      ".metainfo$partial_window",
-      ".metainfo$partial_generation"
+      ".metainfo$length_R"
     ),
     modeldata = modeldata
   )
