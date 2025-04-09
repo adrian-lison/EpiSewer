@@ -123,6 +123,7 @@ data {
   // Sparse bs matrix: columns = bases (bs_ncol), rows = time points (L+S+T-(G+se))
   // Global
   int<lower=0> bs_length; // (L + S + D + T - (G+se) + h)
+  int<lower=0> bs_dist; // standard distance between knots
   array[R_use_bs ? 1 : 0] int<lower=1> bs_ncol; // number of B-splines
   array[R_use_bs ? 1 : 0] int<lower=0> bs_n_w; // number of nonzero entries in bs matrix
   vector[R_use_bs ? bs_n_w[1] : 0] bs_w; // nonzero entries in bs matrix
@@ -130,6 +131,7 @@ data {
   array[R_use_bs ? (bs_length + 1) : 0] int bs_u; // row starting indices for bs_w plus padding
   // Local
   int<lower=0> bs2_length; // (L + S + D + T - (G+se) + h)
+  int<lower=0> bs2_dist; // standard distance between knots
   array[R_use_bs2 ? 1 : 0] int<lower=1> bs2_ncol; // number of B-splines
   array[R_use_bs2 ? 1 : 0] int<lower=0> bs2_n_w; // number of nonzero entries in bs matrix
   vector[R_use_bs2 ? bs2_n_w[1] : 0] bs2_w; // nonzero entries in bs matrix
@@ -173,6 +175,9 @@ data {
   // first element: 0 = inv_softplus, 1 = scaled_logit
   // other elements: hyperparameters for the respective link function
   array[4] real R_link;
+
+  // forecast dampening
+  real<lower=0, upper=1> forecast_dampening; // dampening of forecasted R
 }
 transformed data {
   vector[G] gi_rev = reverse(generation_dist);
@@ -413,7 +418,15 @@ transformed parameters {
       scp_break_dist[1], scp_min_dist[1], scp_break_delays,
       scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
       ));
-    vector[bs_ncol[1]] bs_coeff = append_row3([scp_values[1]]', scp_values,[scp_values[scp_length], scp_values[scp_length]]');
+    real last_diff = scp_knot_values[scp_n_knots[1]];
+    vector[bs_ncol[1]] bs_coeff = append_row3(
+      [scp_values[1]]',
+      scp_values,
+      [
+      scp_values[scp_length] + last_diff * (1 - 1/3.0),
+      scp_values[scp_length] + last_diff
+      ]'
+      );
     R = apply_link(R_intercept + csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
@@ -744,8 +757,14 @@ generated quantities {
       } else if (R_model == 2) {
         R_forecast = rep_vector(R[L + S + D + T - (G+se)], h);
       } else if (R_model == 3) {
-        R_forecast = rep_vector(R[L + S + D + T - (G+se)], h);
+        real last_R = R[L + S + D + T - (G+se)];
+        real slope = scp_knot_values[scp_n_knots[1]] / (1.0*bs_dist);
+        R_forecast = last_R + cumulative_sum(rep_vector(slope, h));
       }
+
+      R_forecast = dampen_trend(
+        R[L + S + D + T - (G+se)], R_forecast, forecast_dampening
+        );
 
       // Forecasting of infections
       if (I_sample) {

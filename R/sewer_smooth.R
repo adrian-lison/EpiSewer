@@ -24,6 +24,7 @@ add_sparse_matrix <- function(M, name, modeldata){
 #' @keywords internal
 use_basis_splines <- function(spline_length, knots, degree, modeldata) {
   modeldata$bs_length <- spline_length
+  modeldata$bs_dist <- median(diff(knots$interior))
   B <- splines::bs(
       1:spline_length,
       knots = knots$interior,
@@ -45,12 +46,14 @@ add_dummies_basis_splines <- function(modeldata) {
     "bs_coeff_noise_raw"
   ))
   modeldata$bs_length <- 0
+  modeldata$bs_dist <- 0
   return(modeldata)
 }
 
 #' @keywords internal
 use_basis_splines2 <- function(spline_length, knots, degree, modeldata) {
   modeldata$bs2_length <- spline_length
+  modeldata$bs2_dist <- median(diff(knots$interior))
   B <- splines::bs(
     1:spline_length,
     knots = knots$interior,
@@ -73,6 +76,7 @@ add_dummies_basis_splines2 <- function(modeldata) {
     "bs2_coeff_noise_raw"
   ))
   modeldata$bs2_length <- 0
+  modeldata$bs2_dist <- 0
   return(modeldata)
 }
 

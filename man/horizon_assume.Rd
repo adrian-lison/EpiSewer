@@ -22,7 +22,7 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
@@ -33,11 +33,13 @@ horizon.
 }
 \details{
 Forecasts account for the estimated variation of transmission
-dynamics over time and therefore become more uncertain at longer forecast
-horizons. However, it is important to keep in mind that the model will
-project the current transmission dynamics to continue unchanged (with the
-exception of \code{R_estimate_ets}, which can project the current linear trend
-of Rt). This assumption can be violated by various factors such as
-depletion of susceptible individuals, changes in behavior, or public health
+dynamics over time and therefore tend to become more uncertain at longer
+forecast horizons. However, it is important to keep in mind that depending
+on the Rt model used, EpiSewer will project the current transmission
+dynamics to continue unchanged (\code{\link[=R_estimate_rw]{R_estimate_rw()}}, \code{\link[=R_estimate_splines]{R_estimate_splines()}},
+\code{\link[=R_estimate_piecewise]{R_estimate_piecewise()}}) or according to a (dampened) linear trend
+(\code{\link[=R_estimate_ets]{R_estimate_ets()}} and \code{\link[=R_estimate_changepoint_splines]{R_estimate_changepoint_splines()}}). This
+assumption can be violated by various factors such as depletion of
+susceptible individuals, changes in behavior, or public health
 interventions.
 }
