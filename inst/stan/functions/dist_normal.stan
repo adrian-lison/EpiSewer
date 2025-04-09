@@ -1,3 +1,7 @@
+// --------------------------------------------------------
+// normal: mean, sd
+// --------------------------------------------------------
+
 /**
   * Generate truncated normal variate given mean and sd
   * and lower truncation
@@ -60,6 +64,20 @@ vector normal_lb_rng(vector mean, vector sd, real lb) {
   return mean + sd .* inv_Phi(u);
 }
 
+/**
+  * Generate n standard normal variates
+  *
+  * @param n Number of i.i.d. samples
+  *
+  * @return Vector of standard normal variates
+  */
+vector std_normal_n_rng(int n) {
+  return(to_vector(normal_rng(rep_vector(0, n), 1)));
+}
+
+// --------------------------------------------------------
+// normal2: mean, cv
+// --------------------------------------------------------
 
 /**
   * The log of a normal density given mean and coefficient of variation (cv)
@@ -144,6 +162,10 @@ vector normal2_rng(vector mean, vector cv, real lb) {
   vector[n] u = to_vector(uniform_rng(p, 1));
   return mean + sigma .* inv_Phi(u);
 }
+
+// --------------------------------------------------------
+// normal prior: mean, sd
+// --------------------------------------------------------
 
 /**
   * Normal prior on a parameter, with the option to fix the parameter
@@ -230,8 +252,4 @@ real normal_prior_lpdf(array[] real y, array[] real prior) {
   */
 real normal_prior_lpdf(array[] real y, array[] real prior, real lb) {
   return (normal_prior_lpdf(y | prior[1], prior[2], lb));
-}
-
-vector std_normal_n_rng(int n) {
-  return(to_vector(normal_rng(rep_vector(0, n), 1)));
 }
