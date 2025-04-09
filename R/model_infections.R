@@ -1078,8 +1078,6 @@ R_estimate_changepoint_splines <- function(
         strictness_alpha = strictness_alpha,
         modeldata
       )
-      modeldata$coef_sd_from_scp <- coef_sd_from_scp
-      modeldata$.init$coef_sd_from_scp_raw <- rep(0, length(spline_knots$interior))
     },
     required = c(
       ".metainfo$length_R",
