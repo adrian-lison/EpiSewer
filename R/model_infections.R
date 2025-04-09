@@ -996,17 +996,16 @@ R_estimate_piecewise <- function(
 R_estimate_changepoint_splines <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
-    changepoint_max_distance = 4*7,
-    changepoint_min_distance = 2*7,
-    trend_tolerance = 0.005,
-    coef_sd_from_scp = 0.01,
-    sd_change_prior_shape = 20,
-    sd_change_prior_rate = 5e-1,
+    changepoint_max_distance = 3*5,
+    changepoint_min_distance = 3*2,
+    trend_tolerance = 0.01,
+    sd_change_prior_shape = 10,
+    sd_change_prior_rate = 2e-1,
     spline_knot_distance = 3,
     link = "inv_softplus",
     R_max = 6,
     strictness_k = 20,
-    strictness_alpha = 1,
+    strictness_alpha = 0.5,
     strictness_tol_k = 4,
     modeldata = modeldata_init()
 ) {
