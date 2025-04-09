@@ -9,7 +9,8 @@ place_knots(
   forecast_horizon,
   knot_distance,
   partial_window,
-  partial_generation
+  partial_generation,
+  fix_forecast = FALSE
 )
 }
 \arguments{
