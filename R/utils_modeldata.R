@@ -20,7 +20,7 @@ template_model_helpers <- function(modeldata) { }
 #'   add further data and model specifications.
 #'
 #' @return The `modeldata` object also includes information about parameter
-#'   initialization (`init`), meta data (`.metainfo`), and checks to be
+#'   initialization (`.init`), meta data (`.metainfo`), and checks to be
 #'   performed before model fitting (`.checks`).
 #' @export
 modeldata_init <- function() {
