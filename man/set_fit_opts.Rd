@@ -13,11 +13,6 @@ Currently, only \code{\link[=sampler_stan_mcmc]{sampler_stan_mcmc()}} is support
 \item{model}{Details about the model file to be used, see
 \code{\link[=model_stan_opts]{model_stan_opts()}}. This also makes it possible for users to supply
 customized models.}
-
-\item{results}{Details about the results to be returned, see
-\code{\link[=set_results_opts]{set_results_opts()}}. For example, what credible intervals to use for
-summarizing posterior distributions or whether to return the fitted model
-object.}
 }
 \value{
 A \code{list} with the model fitting options.
@@ -39,16 +34,9 @@ ww_fit_opts <- set_fit_opts(
   )
 )
 
-ww_results_opts <- set_results_opts(
-  fitted = TRUE, # return full model fit
-  summary_intervals = c(0.5, 0.8, 0.95),
-  samples_ndraws = 100
-)
-
 \dontrun{ww_result <- EpiSewer(
   data = ww_data,
   assumptions = ww_assumptions,
-  fit_opts = ww_fit_opts,
-  results_opts = ww_results_opts
+  fit_opts = ww_fit_opts
 )}
 }
