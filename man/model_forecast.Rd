@@ -44,12 +44,12 @@ Forecasts account for the estimated variation of transmission
 dynamics over time and therefore tend to become more uncertain at longer
 forecast horizons. However, it is important to keep in mind that depending
 on the Rt model used, EpiSewer will project the current transmission
-dynamics to continue unchanged (\code{\link[=R_estimate_rw]{R_estimate_rw()}}, \code{\link[=R_estimate_splines]{R_estimate_splines()}},
-\code{\link[=R_estimate_piecewise]{R_estimate_piecewise()}}) or according to a (dampened) linear trend
-(\code{\link[=R_estimate_ets]{R_estimate_ets()}} and \code{\link[=R_estimate_changepoint_splines]{R_estimate_changepoint_splines()}}). This
-assumption can be violated by various factors such as depletion of
-susceptible individuals, changes in behavior, or public health
-interventions.
+dynamics to continue unchanged (when using \code{\link[=R_estimate_rw]{R_estimate_rw()}},
+\code{\link[=R_estimate_splines]{R_estimate_splines()}}, \code{\link[=R_estimate_piecewise]{R_estimate_piecewise()}}) or according to a
+(dampened) linear trend (when using \code{\link[=R_estimate_ets]{R_estimate_ets()}} and
+\code{\link[=R_estimate_changepoint_splines]{R_estimate_changepoint_splines()}}). This assumption can be violated by
+various factors such as depletion of susceptible individuals, changes in
+behavior, or public health interventions.
 }
 \seealso{
 Other {module functions}: 

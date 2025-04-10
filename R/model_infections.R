@@ -896,25 +896,88 @@ R_estimate_approx <- function(
   return(modeldata)
 }
 
-#' Estimate Rt via a soft changepoint model
+#' Estimate Rt via piecewise constant changepoint model
 #'
+#' @description This option models the effective reproduction number Rt over
+#'   time as a piecewise constant function. The changepoints of the constant
+#'   pieces are estimated from the data using an approximate changepoint model.
+#'   This option is suitable when Rt follows a step-like trajectory with
+#'   occasional large jumps, e.g. due to strong interventions. It is less
+#'   suitable for modeling gradual changes in Rt over time.
+#' @param changepoint_max_distance Maximum distance between changepoints in
+#'   days. This setting guarantees that two consecutive changes in Rt can be
+#'   captured if they are `changepoint_max_distance` days or more apart. Faster
+#'   changes are not guaranteed to be captured.
+#' @param changepoint_min_distance Minimum distance between changepoints in
+#'   days. This setting guarantees that two consecutive changes in Rt are at
+#'   least `changepoint_min_distance` days apart. This avoids Rt trajectories
+#'   that are unrealistically volatile. For example, a minimum distance of 7
+#'   implies that you don't expect Rt to make more than one large jump within a
+#'   week.
+#' @param change_prior_shape Exponential-Gamma (EG) prior (shape) for the
+#'   strength of changes between the pieces. At each estimated changepoint, the
+#'   change in Rt is sampled from a normal distribution with standard deviation
+#'   given by the EG prior. This prior has a strong peak towards zero and a long
+#'   tail. In other words, while most changes are expected to be small, the
+#'   prior allows for occasional large jumps in Rt. Smaller shape parameters
+#'   will lead to more sparseness, i.e. a longer tail. Note that when adjusting
+#'   the shape, you will likely also have to adjust the rate. See details for
+#'   more advice on choosing a suitable prior.
+#' @param change_prior_rate Exponential-Gamma (EG) prior (rate) for the strength
+#'   of changes between the pieces. See `change_prior_shape` above for an
+#'   explanation. Larger rates will lead to more variability: a doubling of the
+#'   rate roughly corresponds to a doubling of all quantiles of the prior.
+#' @param change_tolerance Tolerance for "negligible" changes in Rt. Changes
+#'   smaller than `change_tolerance` are ignored by `changepoint_min_distance`,
+#'   i.e. they can also occur closer to each other. This tolerance gives the
+#'   model more flexibility in placing changepoints with large jumps.
+#' @param strictness_k The k parameter of the logistic function used to
+#'   approximate a discrete changepoint model. Larger values make the changes
+#'   between the constant pieces more strict, i.e. more like discrete steps.
+#'   Note that choosing large values of k can slow down sampling.
+#' @param strictness_alpha The concentration parameter of the Dirichlet prior
+#'   for the changepoint positions. Choosing smaller values of
+#'   `strictness_alpha` will lead to more discrete changepoints. Note that
+#'   choosing small values of `strictness_alpha` can impede MCMC sampling and
+#'   lead to divergent transitions.
 #'
-#'@inheritParams template_model_helpers
-#'@inherit modeldata_init return
-#'@export
-#'@family {Rt models}
+#' @details The Exponential-Gamma (EG) prior on the strength of changes is
+#'   parameterized via the arguments `change_prior_shape` and
+#'   `change_prior_rate`. It has a long tail to support large changes while
+#'   keeping the variation low most of the time. The default configuration
+#'   should work well in most contexts except for really extreme changes in Rt
+#'   over a short time window. To check the quantiles of your prior, you can use
+#'   the function [qexpgamma()] with corresponding shape and rate parameters.
+#'
+#' @details If you need to adjust the overall variation, you can adjust the
+#'   `change_prior_rate` parameter. A doubling of the rate roughly corresponds
+#'   to a doubling of the quantiles. For example, when the 95% quantile is 0.2
+#'   for a given rate and you double that rate, the 95% quantile will be at 0.4.
+#'
+#' @details If you need to support more extreme changes, you can decrease the
+#'   `change_prior_shape` parameter, which will emphasize the long-tail behavior
+#'   of the prior. Note however that this will substantially increase all
+#'   quantiles of the prior, so you will also have to decrease the rate
+#'   parameter to achieve a similar level of day-to-day variation.
+#'
+#' @inheritParams R_estimate_splines
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {Rt models}
 R_estimate_piecewise <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
-    changepoint_min_distance = 3*7,
+    changepoint_max_distance = 14,
+    changepoint_min_distance = 7,
+    change_prior_shape = 0.5,
+    change_prior_rate = 1e-4,
     change_tolerance = 0.05,
-    sd_change_prior_shape = 0.5,
-    sd_change_prior_rate = 1e-4,
     link = "inv_softplus",
     R_max = 6,
     strictness_k = 20,
     strictness_alpha = 1,
-    strictness_tol_k = 4,
     modeldata = modeldata_init()
     ) {
 
@@ -928,6 +991,13 @@ R_estimate_piecewise <- function(
     modeldata = modeldata
   )
 
+  # settings currently hidden from the user:
+  # @parameter strictness_tol_k The k parameter of the logistic function used to
+  #   soft-constrain the change tolerance bound. A minimum value of 4 is
+  #   recommended, higher values are likely not necessary and can impede
+  #   sampling.
+  strictness_tol_k <- 4
+
   modeldata$R_intercept_prior <- set_prior(
     "R_intercept", "normal",
     mu = R_start_prior_mu, sigma = R_start_prior_sigma
@@ -937,23 +1007,18 @@ R_estimate_piecewise <- function(
 
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
     "lomax",
-    shape = sd_change_prior_shape,
-    rate = sd_change_prior_rate
+    shape = change_prior_shape,
+    rate = change_prior_rate
   )
 
   modeldata <- tbc(
     "R_piecewise",
     {
-      distance = changepoint_min_distance
-      knots <- rev(seq(
-        with(modeldata$.metainfo, length_R - partial_window) - distance,
-        1, by = -distance
-      ))
       modeldata$.metainfo$R_knots <- knots
       modeldata <- use_soft_changepoints(
         scp_length = modeldata$.metainfo$length_R,
-        knots = knots,
-        distance = distance,
+        last_knot = modeldata$.metainfo$length_R - changepoint_min_distance,
+        distance = changepoint_max_distance,
         min_distance = changepoint_min_distance,
         min_distance_tolerance = change_tolerance,
         strictness_tol_k = strictness_tol_k,
@@ -988,25 +1053,89 @@ R_estimate_piecewise <- function(
 
 #' Estimate Rt via a changepoint spline model
 #'
+#' @description This option models the effective reproduction number Rt over
+#'   time using cubic splines that are regularized via a linear changepoint
+#'   model. The Rt trajectory will thus follow a smoothed linear trend, with
+#'   time points of trend changes estimated from the data using an approximate
+#'   changepoint model. This approach offers high flexibility of the Rt
+#'   trajectory while avoiding overfitting on noise.
+#' @param changepoint_max_distance Maximum distance (in days) between changes of
+#'   the Rt trend. This setting guarantees that two consecutive changes in the
+#'   Rt trend can be captured if they are `changepoint_max_distance` days or
+#'   more apart. Faster changes are not guaranteed to be captured.
+#' @param changepoint_min_distance Minimum distance (in days) between changes of
+#'   the Rt trend. This setting guarantees that two consecutive changes in the
+#'   Rt trend are at least `changepoint_min_distance` days apart. This avoids Rt
+#'   trajectories that are unrealistically volatile. For example, a minimum
+#'   distance of 7 implies that you don't expect Rt to significantly change its
+#'   trend more than once within a week.
+#' @param trend_change_prior_shape Exponential-Gamma (EG) prior (shape) for the
+#'   strength of trend changes. At each estimated changepoint, the change in Rt
+#'   trend is sampled from a normal distribution with standard deviation given
+#'   by the EG prior. This prior has a strong peak towards zero and a long tail.
+#'   In other words, while we expect the trend to change only slightly most of
+#'   the time, this prior also allows for occasional large trend changes.
+#'   Smaller shape parameters will lead to a longer tail, hence more extreme
+#'   changes are supported. Note that when adjusting the shape, you will likely
+#'   also have to adjust the rate. See details for more advice on choosing a
+#'   suitable prior.
+#' @param trend_change_prior_rate Exponential-Gamma (EG) prior (rate) for the
+#'   strength of trend changes. See `change_prior_shape` above for an
+#'   explanation. Larger rates will lead to more variability: a doubling of the
+#'   rate roughly corresponds to a doubling of all quantiles of the prior.
+#' @param trend_change_tolerance Tolerance for "negligible" trend changes.
+#'   Differences in the trend that are smaller than `change_tolerance` are
+#'   ignored by `changepoint_min_distance`, i.e. they can also occur closer to
+#'   each other. This tolerance gives the model more flexibility in placing
+#'   changepoints with large trend changes.
+#' @param strictness_k The k parameter of the logistic function used to
+#'   approximate a discrete changepoint model. Larger values make the changes
+#'   between in trends more strict, i.e. more like sharp turns. Note that
+#'   choosing large values of k can slow down sampling.
+#' @param strictness_alpha The concentration parameter of the Dirichlet prior
+#'   for the changepoint positions. Choosing smaller values of
+#'   `strictness_alpha` will lead to more strict changepoints. Note that
+#'   choosing small values of `strictness_alpha` can impede MCMC sampling and
+#'   lead to divergent transitions.
 #'
-#'@inheritParams template_model_helpers
-#'@inherit modeldata_init return
-#'@export
-#'@family {Rt models}
+#' @details The Exponential-Gamma (EG) prior on the strength of trend changes is
+#'   parameterized via the arguments `change_prior_shape` and
+#'   `change_prior_rate`. It has a long tail to support large trend changes
+#'   while keeping the variation low most of the time. The default configuration
+#'   should work well in most contexts except for really extreme changes in Rt
+#'   over a short time window. To check the quantiles of your prior, you can use
+#'   the function [qexpgamma()] with corresponding shape and rate parameters.
+#'
+#' @details If you need to adjust the overall variation, you can adjust the
+#'   `change_prior_rate` parameter. A doubling of the rate roughly corresponds
+#'   to a doubling of the quantiles. For example, when the 95% quantile is 0.2
+#'   for a given rate and you double that rate, the 95% quantile will be at 0.4.
+#'
+#' @details If you need to support more extreme changes, you can decrease the
+#'   `change_prior_shape` parameter, which will emphasize the long-tail behavior
+#'   of the prior. Note however that this will substantially increase all
+#'   quantiles of the prior, so you will also have to decrease the rate
+#'   parameter to achieve a similar level of day-to-day variation.
+#'
+#' @inheritParams R_estimate_splines
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {Rt models}
 R_estimate_changepoint_splines <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
     changepoint_max_distance = 3*5,
     changepoint_min_distance = 3*2,
-    trend_tolerance = 0.01,
-    sd_change_prior_shape = 10,
-    sd_change_prior_rate = 2e-1,
+    trend_change_prior_shape = 10,
+    trend_change_prior_rate = 2e-1,
+    trend_change_tolerance = 0.01,
     spline_knot_distance = 3,
     link = "inv_softplus",
     R_max = 6,
     strictness_k = 20,
     strictness_alpha = 0.5,
-    strictness_tol_k = 4,
     modeldata = modeldata_init()
 ) {
 
@@ -1020,6 +1149,13 @@ R_estimate_changepoint_splines <- function(
     modeldata = modeldata
   )
 
+  # settings currently hidden from the user:
+  # @parameter strictness_tol_k The k parameter of the logistic function used to
+  #   soft-constrain the change tolerance bound. A minimum value of 4 is
+  #   recommended, higher values are likely not necessary and can impede
+  #   sampling.
+  strictness_tol_k <- 4
+
   modeldata$R_intercept_prior <- set_prior(
     "R_intercept", "normal",
     mu = R_start_prior_mu, sigma = R_start_prior_sigma
@@ -1029,8 +1165,8 @@ R_estimate_changepoint_splines <- function(
 
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
                                            "lomax",
-                                           shape = sd_change_prior_shape,
-                                           rate = sd_change_prior_rate
+                                           shape = trend_change_prior_shape,
+                                           rate = trend_change_prior_rate
   )
 
   modeldata <- tbc(
@@ -1071,7 +1207,7 @@ R_estimate_changepoint_splines <- function(
         last_knot = last_scp_knot,
         distance = distance,
         min_distance = changepoint_min_distance,
-        min_distance_tolerance = trend_tolerance,
+        min_distance_tolerance = trend_change_tolerance,
         strictness_tol_k = strictness_tol_k,
         strictness_k = strictness_k,
         strictness_alpha = strictness_alpha,
