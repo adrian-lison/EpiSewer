@@ -125,6 +125,7 @@ EpiSewerJob <- function(job_name,
 
 #' @export
 setClass("EpiSewerJob")
+
 #' Fit an EpiSewer model.
 #'
 #' @description This function allows to (re-)run the model fitting from an
