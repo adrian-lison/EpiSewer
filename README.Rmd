@@ -61,7 +61,7 @@ knitr::include_graphics("man/figures/weekly_zurich_animated.gif")
 `r emo::ji("star")` Sewer residence time distributions  
 
 **Shedding**  
-`r emo::ji("star")` Shedding load distributions with uncertainty
+`r emo::ji("star")` Shedding load distributions (with uncertainty)  
 `r emo::ji("star")` Individual-level shedding load variation
 
 **Infections**  
