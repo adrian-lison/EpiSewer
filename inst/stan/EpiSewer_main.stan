@@ -11,6 +11,7 @@ functions {
   #include functions/dist_gamma_sum.stan
   #include functions/dist_beta.stan
   #include functions/dist_gev.stan
+  #include functions/discretize.stan
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
   #include functions/soft_changepoints.stan
@@ -65,10 +66,16 @@ data {
   // --> probability for residence of zero days (same day arrival at sampling site) comes first
 
   // Shedding ----
-  real<lower=0> load_mean; // mean load shed per person
   int<lower=1> S; // maximum number of days with shedding
-  vector[S + 1] shedding_dist; // shedding load distribution
+  int<lower=0, upper=3> shedding_dist_type; // 0 for fixed, non-parametric, 1 for exponential, 2 for gamma, 3 for log-normal
+  int<lower=1> shedding_dist_n; // number of shedding load priors
+  vector[S + 1] shedding_dist; // Non-parametric shedding load distribution. If shedding_dist_type is parametric and estimated, this is the discretized mean of the prior.
   // --> probability for shedding today comes first
+  vector[(shedding_dist_type > 0 && shedding_dist_n > 1) ? shedding_dist_n : 0] shedding_dist_weights_prior; // weights prior for shedding distribution priors
+  array[shedding_dist_type > 0 ? shedding_dist_n : 0, shedding_dist_type > 0 ? 2 : 0] real shedding_dist_mean_prior; // priors for mean of shedding distribution
+  array[shedding_dist_type > 1 ? shedding_dist_n : 0, shedding_dist_type > 1 ? 2 : 0] real shedding_dist_cv_prior; // priors for cv of shedding distribution
+
+  real<lower=0> load_mean; // mean load shed per person
   int<lower=0, upper=1> load_vari; // model individual-level variation in shedding loads?
   array[load_vari ? 2 : 0] real nu_zeta_prior; // prior on coefficient of variation of individual-level load
   int<lower = 0> n_zeta_normal_approx;
@@ -186,6 +193,8 @@ transformed data {
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T+h] flow_log = log(flow);
 
+  real flow_median_log = log(quantile(flow, 0.5));
+
   // number of averaged technical replicates per date
   real n_averaged_median = quantile(n_averaged, 0.5);
   vector[T+h] n_averaged_all = rep_vector(n_averaged_median, T+h);
@@ -296,6 +305,11 @@ parameters {
   array[I_overdispersion && (I_xi_prior[2] > 0) ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
   vector<lower=0>[I_sample ? L + S + D + T : 0] I; // realized number of infections
 
+  // paramaters of shedding load distribution
+  simplex[shedding_dist_n > 1 ? shedding_dist_n : 1] shedding_dist_weights;
+  vector<lower=0>[shedding_dist_type > 0 ? shedding_dist_n : 0] shedding_dist_mean;
+  vector<lower=0>[shedding_dist_type > 1 ? shedding_dist_n : 0] shedding_dist_cv;
+
   // individual-level shedding load variation
   array[load_vari && nu_zeta_prior[2] > 0 ? 1 : 0] real<lower=0> nu_zeta; // coefficient of variation of individual-level load
   vector[load_vari ? n_zeta_exact : 0] zeta_log_exact; // realized shedding load
@@ -337,6 +351,7 @@ transformed parameters {
   vector[n_samples] rho_log; // log expected concentrations in (composite) samples
 
   // shedding-related parameters ----
+  vector[shedding_dist_type > 0 ? S + 1 : 0] shed_rev_log_sample; // shedding load distribution
   vector[load_vari ? S + D + T : 0] zeta_log; // realized shedding load
 
   // dPCR model ----
@@ -450,6 +465,18 @@ transformed parameters {
   // convolution from infections to shedding onsets (expected)
   lambda = convolve(inc_rev, I_sample ? I : iota)[(L + 1) : (L + S + D + T)];
 
+  // sampled shedding distribution
+  if (shedding_dist_type > 0) {
+    shed_rev_log_sample = reverse(
+      discretise_dist_log(
+        shedding_dist_type,
+        shedding_dist_n > 1 ? dot_product(shedding_dist_weights, shedding_dist_mean) : shedding_dist_mean[1],
+        shedding_dist_type > 1 ?  (shedding_dist_n > 1 ? dot_product(shedding_dist_weights, shedding_dist_cv) : shedding_dist_cv[1]) : 0,
+        S
+      )
+    );
+  }
+
   // calculation of total loads shed each day (expected)
   if (load_vari) {
     // Shedding load variation
@@ -459,14 +486,13 @@ transformed parameters {
       lambda[zeta_normal_approx],
       zeta_raw_approx
     );
-
     omega_log = log_convolve(
-        shed_rev_log, // shedding load distribution
+        shedding_dist_type == 0 ? shed_rev_log : shed_rev_log_sample, // shedding load distribution
         log(load_mean) + zeta_log // total load shed
         )[(S + 1) : (S + D + T)];
   } else {
     omega_log = log_convolve(
-        shed_rev_log, // shedding load distribution
+        shedding_dist_type == 0 ? shed_rev_log : shed_rev_log_sample, // shedding load distribution
         log(load_mean) + log(lambda) // total load shed
         )[(S + 1) : (S + D + T)];
   }
@@ -481,16 +507,16 @@ transformed parameters {
     pi_log = omega_log;
   }
 
-  if (outliers) {
-    pi_log = log_sum_exp(pi_log, log(load_mean) + log(epsilon)); // additive outlier component
-  }
-
   // calculation of concentrations at measurement site by day (expected)
   // --> adjusted for flow and for date of sample effects
   if (K > 0) {
     kappa_log = pi_log - flow_log[1:T] + X[1:T] * eta;
   } else {
     kappa_log = pi_log - flow_log[1:T];
+  }
+
+  if (outliers) {
+    kappa_log = log_sum_exp(kappa_log, log(load_mean) + log(epsilon) - flow_median_log); // additive outlier component
   }
 
   // concentrations in (composite) samples
@@ -580,6 +606,19 @@ model {
       I[1 : (L + S + D + T)] ~ normal(iota, iota .* soft_upper(sqrt(iota .* (1 + iota * (param_or_fixed(I_xi, I_xi_prior) ^ 2)))./iota, 0.5, 10)) T[0, ]; // approximates negative binomial
     } else {
       I[1 : (L + S + D + T)] ~ normal(iota, iota .* soft_upper(sqrt(iota)./iota, 0.5, 10)) T[0, ]; // approximates Poisson
+    }
+  }
+
+  // Parameters of shedding load distribution
+  if (shedding_dist_type > 0) {
+    if (shedding_dist_n > 1) {
+    shedding_dist_weights ~ dirichlet(shedding_dist_weights_prior);
+    }
+    for (i in 1:shedding_dist_n) {
+      shedding_dist_mean[i] ~ normal(shedding_dist_mean_prior[i,1], shedding_dist_mean_prior[i,2]) T[0, ]; // truncated normal
+      if (shedding_dist_type > 1) {
+        shedding_dist_cv[i] ~ normal(shedding_dist_cv_prior[i,1], shedding_dist_cv_prior[i,2]) T[0, ]; // truncated normal
+      }
     }
   }
 
@@ -720,7 +759,7 @@ generated quantities {
     vector[T+h] concentration_log;
     vector[T+h] concentration;
     vector[T+h] cv_all;
-    vector[T+h] above_LOD; // will be a vector of 0s and 1s
+    vector[T+h] isnonzero; // will be a vector of 0s and 1s
 
     // Prediction for days until present
     if (pr_noise) {
@@ -795,12 +834,12 @@ generated quantities {
           1/param_or_fixed(nu_zeta, nu_zeta_prior)^2
           )));
         omega_log_forecast = log_convolve(
-            shed_rev_log, // shedding load distribution
+            shedding_dist_type == 0 ? shed_rev_log : shed_rev_log_sample, // shedding load distribution
             log(load_mean) + append_row(zeta_log[((S + D + T)+1-S):(S + D + T)], zeta_log_forecast) // total load shed
             )[(S+1):(S+h)];
       } else {
         omega_log_forecast = log_convolve(
-            shed_rev_log, // shedding load distribution
+            shedding_dist_type == 0 ? shed_rev_log : shed_rev_log_sample, // shedding load distribution
             log(load_mean) + log(append_row(lambda[((S + D + T)+1-S):(S + D + T)], lambda_forecast)) // total load shed
             )[(S+1):(S+h)];
       }
@@ -873,10 +912,10 @@ generated quantities {
         1-1e-5, // trim to almost 1
         1.01 // throw error when significantly above 1
       );
-      above_LOD = to_vector(bernoulli_rng(1-p_zero_all));
+      isnonzero = to_vector(bernoulli_rng(1-p_zero_all));
     } else {
       p_zero_all = rep_vector(0, T+h);
-      above_LOD = rep_vector(1, T+h);
+      isnonzero = rep_vector(1, T+h);
     }
 
     if (cv_type == 0) {
@@ -920,10 +959,10 @@ generated quantities {
     } else {
       reject("Distribution not supported.");
     }
-    predicted_concentration = above_LOD[1:T] .* meas_conc[1:T];
+    predicted_concentration = isnonzero[1:T] .* meas_conc[1:T];
     predicted_concentration_norm = predicted_concentration .* flow[1:T];
     if (h>0) {
-      predicted_concentration_forecast = above_LOD[(T+1):(T+h)] .* meas_conc[(T+1):(T+h)];
+      predicted_concentration_forecast = isnonzero[(T+1):(T+h)] .* meas_conc[(T+1):(T+h)];
       predicted_concentration_forecast_norm = predicted_concentration_forecast .* flow[(T+1):(T+h)];
     }
   }

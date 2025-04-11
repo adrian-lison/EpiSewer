@@ -1,3 +1,38 @@
+# Exponential ----
+## Discretized ----
+get_discrete_exponential <- function(exponential_mean, maxX = NULL) {
+  lambda <- 1 / exponential_mean
+
+  # determine maxX
+  if (is.null(maxX)) {
+    maxX <- which(sapply(1:100, function(maxX) {
+      (1 - pexp(maxX, rate = lambda)) < 0.005
+    }))[1]
+    if (is.na(maxX)) {
+      maxX <- 100
+      cli::cli_inform(c(
+        "!" = paste0("Maximum length of distribution was set to 100. ",
+                     "The last bin covers ",
+                     100 * round(
+                       (1 - pexp(maxX, rate = lambda)),
+                       2
+                     ),
+                     "% of the probability mass."
+        )
+      ))
+    }
+  }
+
+  # compute discrete distribution
+  longest <- (1 - extraDistr::pdgamma(maxX, shape = 1, rate = lambda))
+  probs <- c(
+    # all except longest (discrete)
+    extraDistr::ddgamma(0:(maxX - 1), shape = 1, rate = lambda),
+    longest
+  )
+  return(probs)
+}
+
 # Gamma ----
 
 ## Parameterization ----
@@ -107,9 +142,9 @@ get_discrete_gamma <- function(gamma_shape,
       cli::cli_inform(c(
         "!" = paste0("Maximum length of distribution was set to 100. ",
                     "The last bin covers ",
-                    round(
+                    100 * round(
                       (1 - pgamma(maxX, shape = gamma_shape, rate = gamma_rate)),
-                      4
+                      2
                       ),
                     "% of the probability mass."
         )
@@ -322,11 +357,11 @@ get_discrete_lognormal <- function(
       cli::cli_inform(c(
         "!" = paste0("Maximum length of distribution was set to 100. ",
                     "The last bin covers ",
-                    round(
+                    100 * round(
                       (1 - plnorm(maxX, meanlog = meanlog, sdlog = sdlog)),
-                      4
+                      2
                     ),
-                    "of the probability mass."
+                    "% of the probability mass."
                     )
         ))
     }
