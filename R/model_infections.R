@@ -34,7 +34,7 @@
 #' @family {module functions}
 model_infections <- function(
     generation_dist = generation_dist_assume(),
-    R = R_estimate_splines(),
+    R = R_estimate_changepoint_splines(),
     seeding = seeding_estimate_rw(),
     infection_noise = infection_noise_estimate()) {
   verify_is_modeldata(generation_dist, "generation_dist")
@@ -95,32 +95,32 @@ generation_dist_assume <-
 #'  dampening through an innovations state space model with a level, trend, and
 #'  dampening component.
 #'
-#'@param level_prior_mu Prior (mean) on the initial level of Rt.
-#'@param level_prior_sigma Prior (standard deviation) on the initial level of
-#'  Rt.
+#'@param R_start_prior_mu Prior (mean) on the initial value of Rt (level).
+#'@param R_start_prior_sigma Prior (standard deviation) on the initial value of
+#'  Rt (level).
 #'@param trend_prior_mu Prior (mean) on the initial trend of Rt.
 #'@param trend_prior_sigma Prior (standard deviation) on the initial trend of
 #'  Rt.
-#'@param sd_prior_mu Prior (mean) on the standard deviation of the innovations.
-#'@param sd_prior_sigma Prior (standard deviation) on the standard deviation of
-#'  the innovations. Please note that for consistency the overall prior on the
-#'  standard deviation of innovations will have a standard deviation of
-#'  `sd_prior_sigma + sd_changepoint_sd` even if no changepoints are modeled
-#'  (see below).
-#'@param sd_changepoint_dist The variability of Rt can change over time, e.g.
-#'  during the height of an epidemic wave, countermeasures may lead to much
-#'  faster changes in Rt than observable at other times. This potential
-#'  variability is accounted for using change points placed at regular
-#'  intervals. The standard deviation of the state space model innovations then
-#'  evolves linearly between the change points. The default change point
-#'  distance is 26 weeks (182 days). Short changepoint distances (e.g. 4 weeks
-#'  or less) must be chosen with care, as they can make the Rt time series too
-#'  flexible. If set to zero, no change points are modeled.
-#'@param sd_changepoint_sd This parameter controls the variability of the change
-#'  points. When change points are modeled, EpiSewer will estimate a baseline
-#'  standard deviation (see `sd_prior_mu` and `sd_prior_sigma`), and model
-#'  change point values as independently distributed with mean equal to this
-#'  baseline and standard deviation `sd_changepoint_sd`.
+#'@param sd_base_prior_sd Prior (standard deviation) on the baseline standard
+#'  deviation of the innovations. We here use a half-normal prior, i.e.
+#'  `sd_base_prior_sd` is the only parameter to be specified for this prior.
+#'  Please note that for consistency, the overall standard deviation of
+#'  innovations will always be the baseline plus an additive component from
+#'  `sd_change_prior` even if no changepoints are modeled (see below).
+#'@param sd_change_distance Distance between changepoints used to model
+#'  additional variation in Rt. The default change point distance is 4 weeks.
+#'  Very short changepoint distances must be chosen with care, as they can make
+#'  the Rt time series too flexible. If set to zero, no change points are
+#'  modeled.
+#'@param sd_change_prior_shape Exponential-Gamma prior (shape) on standard
+#'  deviation additional to baseline. This prior describes the distribution of
+#'  the standard deviation of Rt over time. EpiSewer will estimate a baseline
+#'  standard deviation (see `sd_base_prior_sd`), and model additional variation
+#'  on top of the baseline using a changepoint model. Please see the details for
+#'  more explanation.
+#'@param sd_change_prior_rate Exponential-Gamma prior (rate) on standard
+#'  deviation additional to baseline. See `sd_change_prior_shape` and the
+#'  details for more explanation.
 #'@param smooth_prior_mu Prior (mean) on the smoothing parameter. Must be
 #'  between 0 and 1.
 #'@param smooth_prior_sigma Prior (standard deviation) on the smoothing
@@ -179,10 +179,26 @@ generation_dist_assume <-
 #'  when limited data signal is available. Here, the standard deviation of the
 #'  innovations influences how uncertain Rt estimates are close to the present.
 #'
+#'@details The variability of Rt can change over time. For example, during the
+#'  height of an epidemic wave, countermeasures may lead to much faster changes
+#'  in Rt than observable at other times (baseline). This potential additional
+#'  variability is accounted for using change points placed at regular
+#'  intervals. The additional standard deviation of the state space model
+#'  innovations on top of the baseline then evolves linearly between the change
+#'  points. The additional variation defined at the changepoints is modeled as
+#'  independently distributed and following a Lomax distribution, also known as
+#'  Exponential-Gamma (EG) distribution. This is an exponential distribution
+#'  where the rate is Gamma distributed. The prior `sd_change_prior` defines the
+#'  shape and rate of this Gamma distribution. The distribution has a
+#'  strong peak towards zero and a long tail. This regularizes the estimated
+#'  deviations from the baseline standard deviation - most deviations are small,
+#'  but during special time periods, the deviation might also be larger.
+#'
 #'@details The priors of this component have the following functional form:
 #' - initial level of Rt: `Normal`
 #' - initial trend of Rt: `Normal`
-#' - standard deviation of innovations: `Truncated normal`
+#' - baseline standard deviation of innovations: `Half-normal`
+#' - additional standard deviation at changepoints: `Exponential-Gamma`
 #' - smoothing parameter: `Beta`
 #' - trend smoothing parameter: `Beta`
 #' - dampening parameter: `Beta`
@@ -192,14 +208,14 @@ generation_dist_assume <-
 #'@export
 #'@family {Rt models}
 R_estimate_ets <- function(
-    level_prior_mu = 1,
-    level_prior_sigma = 0.8,
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
     trend_prior_mu = 0,
     trend_prior_sigma = 0.1,
-    sd_prior_mu = 0,
-    sd_prior_sigma = 0.1,
-    sd_changepoint_dist = 7*26,
-    sd_changepoint_sd = 0.025,
+    sd_base_prior_sd = 0.025,
+    sd_change_prior_shape = 0.5,
+    sd_change_prior_rate = 1e-4,
+    sd_change_distance = 7*26,
     link = "inv_softplus",
     R_max = 6,
     smooth_prior_mu = 0.5,
@@ -211,54 +227,67 @@ R_estimate_ets <- function(
     differenced = FALSE,
     noncentered = TRUE,
     modeldata = modeldata_init()) {
-  modeldata$.metainfo$R_estimate_approach <- "ets"
-  modeldata$R_model <- 0
 
-  modeldata$R_level_start_prior <- set_prior(
-    "R_level_start", "normal",
-    mu = level_prior_mu, sigma = level_prior_sigma
+  modeldata <- configure_R_model(
+    name_approach = "ets",
+    model_id = 0,
+    use_ets = TRUE,
+    use_bs = FALSE,
+    use_bs2 = FALSE,
+    use_scp = FALSE,
+    modeldata = modeldata
   )
 
-  modeldata$R_trend_start_prior <- set_prior(
-    "R_trend_start", "normal",
+  modeldata$R_intercept_prior <- set_prior(
+    "R_intercept", "normal",
+    mu = R_start_prior_mu, sigma = R_start_prior_sigma
+  )
+
+  modeldata$ets_trend_start_prior <- set_prior(
+    "ets_trend_start", "normal",
     mu = trend_prior_mu, sigma = trend_prior_sigma
   )
 
-  modeldata$R_sd_prior <- set_prior(
-    "R_sd", "truncated normal",
-    mu = sd_prior_mu, sigma = sd_prior_sigma
+  modeldata$R_sd_baseline_prior <- set_prior("R_sd_baseline",
+    "half-normal",
+    sigma = sd_base_prior_sd
   )
-  modeldata$R_vari_sd <- sd_changepoint_sd
+  modeldata$R_sd_change_prior <- set_prior("R_sd_change",
+    "lomax",
+    shape = sd_change_prior_shape,
+    rate = sd_change_prior_rate
+  )
 
-  modeldata$.init$R_level_start <-
-    modeldata$R_level_start_prior$R_level_start_prior[1]
-  modeldata$.init$R_trend_start <- 1e-4
+  modeldata$.init$R_intercept <-
+    modeldata$R_intercept_prior$R_intercept_prior[1]
+  modeldata$.init$ets_trend_start <- 1e-4
 
   modeldata <- tbc(
     "R_ets_noise",
     {
-      modeldata$.init$R_noise <- rep(0, modeldata$.metainfo$length_R - 1)
+      modeldata$ets_length <- modeldata$.metainfo$length_R
+      modeldata$.init$ets_noise <- rep(0, modeldata$.metainfo$length_R - 1)
       modeldata <- add_R_variability(
         length_R = modeldata$.metainfo$length_R,
         length_seeding = modeldata$.metainfo$length_seeding,
-        length_partial = modeldata$.metainfo$partial_window,
+        partial_window = modeldata$.metainfo$partial_window,
+        partial_generation = modeldata$.metainfo$partial_generation,
         h = modeldata$.metainfo$forecast_horizon,
-        changepoint_dist = sd_changepoint_dist,
+        changepoint_dist = sd_change_distance,
         modeldata = modeldata
       )
-      modeldata$.init$R_vari_baseline <- max(
-        modeldata$R_sd_prior$R_sd_prior[1], 1e-2
-        )
-      if (modeldata$R_vari_n_basis > 2) {
-        modeldata$.init$R_vari_changepoints <- rep(1e-2, modeldata$R_vari_n_basis - 2)
+      modeldata$.init$R_sd_baseline <- 1e-2
+      if (modeldata$R_vari_ncol > 2) {
+        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_ncol - 2)
       } else {
-        modeldata$.init$R_vari_changepoints <- rep(1e-2, modeldata$R_vari_n_basis)
+        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_ncol)
       }
     },
     required = c(
       ".metainfo$length_R",
       ".metainfo$length_seeding",
       ".metainfo$partial_window",
+      ".metainfo$partial_generation",
       ".metainfo$forecast_horizon"
     ),
     modeldata = modeldata
@@ -293,16 +322,11 @@ R_estimate_ets <- function(
   modeldata$ets_diff <- differenced
   modeldata$ets_noncentered <- noncentered
 
-  modeldata <- add_dummy_data(modeldata, c(
-    "bs_n_basis", "bs_n_w", "bs_w", "bs_v", "bs_u",
-    "bs_coeff_ar_start_prior", "bs_coeff_ar_sd_prior",
-    "R_vari_sel_ncol", "R_vari_sel_n_w", "R_vari_sel_w", "R_vari_sel_v",
-    "R_vari_sel_u"
-  ))
-
-  modeldata <- add_dummy_inits(modeldata, c(
-    "bs_coeff_ar_start", "bs_coeff_ar_sd", "bs_coeff_noise_raw"
-  ))
+  # dummies
+  modeldata <- add_dummies_basis_splines(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_soft_changepoints(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_ets = c()
@@ -311,74 +335,93 @@ R_estimate_ets <- function(
   return(modeldata)
 }
 
-#' Estimate Rt via a random walk
+#'Estimate Rt via a random walk
 #'
-#' @description This option estimates the effective reproduction number over
-#'   time using a random walk.
+#'@description This option estimates the effective reproduction number over time
+#'  using a random walk.
 #'
-#' @param intercept_prior_mu Prior (mean) on the intercept of the random walk.
-#' @param intercept_prior_sigma Prior (standard deviation) on the intercept of
-#'   the random walk.
-#' @param sd_prior_mu Prior (mean) on the standard deviation of the random walk.
-#' @param sd_prior_sigma Prior (standard deviation) on the standard deviation of
-#'   the random walk.
-#' @param sd_changepoint_dist The variability of Rt can change over time, e.g.
-#'   during the height of an epidemic wave, countermeasures may lead to much
-#'   faster changes in Rt than observable at other times. This potential
-#'   variability is accounted for using change points placed at regular
-#'   intervals. The standard deviation of the random walk then evolves linearly
-#'   between the change points. The default change point distance is 26 weeks
-#'   (182 days). Short changepoint distances (e.g. 4 weeks or less) must be
-#'   chosen with care, as they can make the Rt time series too flexible. If set
-#'   to zero, no change points are modeled.
-#' @param sd_changepoint_sd This parameter controls the variability of the
-#'   change points. When change points are modeled, EpiSewer will estimate a
-#'   baseline standard deviation (see `sd_prior_mu` and `sd_prior_sigma`), and
-#'   model change point values as independently distributed with mean equal to
-#'   this baseline and standard deviation `sd_changepoint_sd`.
-#' @param differenced If `FALSE` (default), the random walk is applied to the
-#'   absolute Rt time series. If `TRUE`, it is instead applied to the
-#'   differenced time series, i.e. now the trend is modeled as a random walk.
-#' @param noncentered If `TRUE` (default), a non-centered parameterization is
-#'   used to model the innovations of the random walk (for better sampling
-#'   efficiency).
-#' @inheritParams R_estimate_ets
+#'@param R_start_prior_mu Prior (mean) on the initial value of Rt.
+#'@param R_start_prior_sigma Prior (standard deviation) on the initial value of
+#'  Rt.
+#'@param sd_base_prior_sd Prior (standard deviation) on the baseline standard
+#'  deviation of the innovations. We here use a half-normal prior, i.e.
+#'  `sd_base_prior_sd` is the only parameter to be specified for this prior.
+#'  Please note that for consistency, the overall standard deviation of
+#'  innovations will always be the baseline plus an additive component from
+#'  `sd_change_prior` even if no changepoints are modeled (see below).
+#'@param sd_change_distance Distance between changepoints used to model
+#'  additional variation in Rt. The default change point distance is 4 weeks.
+#'  Very short changepoint distances must be chosen with care, as they can make
+#'  the Rt time series too flexible. If set to zero, no change points are
+#'  modeled.
+#'@param sd_change_prior_shape Exponential-Gamma prior (shape) on standard
+#'  deviation additional to baseline. This prior describes the distribution of
+#'  the standard deviation of Rt over time. EpiSewer will estimate a baseline
+#'  standard deviation (see `sd_base_prior_sd`), and model additional variation
+#'  on top of the baseline using a changepoint model. Please see the details for
+#'  more explanation.
+#'@param sd_change_prior_rate Exponential-Gamma prior (rate) on standard
+#'  deviation additional to baseline. See `sd_change_prior_shape` and the
+#'  details for more explanation.
+#'@param differenced If `FALSE` (default), the random walk is applied to the
+#'  absolute Rt time series. If `TRUE`, it is instead applied to the differenced
+#'  time series, i.e. now the trend is modeled as a random walk.
+#'@param noncentered If `TRUE` (default), a non-centered parameterization is
+#'  used to model the innovations of the random walk (for better sampling
+#'  efficiency).
+#'@inheritParams R_estimate_ets
 #'
-#' @details The smoothness of Rt estimates is influenced by the prior on the
-#'   standard deviation of the random walk. It also influences the uncertainty
-#'   of Rt estimates towards the present / date of estimation, when limited data
-#'   signal is available. The prior on the intercept of the random walk should
-#'   reflect your expectation of Rt at the beginning of the time series. If
-#'   estimating from the start of an epidemic, you might want to use a prior
-#'   with mean > 1 for the intercept.
+#'@details The smoothness of Rt estimates is influenced by the prior on the
+#'  standard deviation of the random walk. It also influences the uncertainty of
+#'  Rt estimates towards the present / date of estimation, when limited data
+#'  signal is available. The prior on the intercept of the random walk should
+#'  reflect your expectation of Rt at the beginning of the time series. If
+#'  estimating from the start of an epidemic, you might want to use a prior with
+#'  mean > 1 for the intercept.
 #'
-#' @details The priors of this component have the following functional form:
+#'@details The variability of Rt can change over time. For example, during the
+#'  height of an epidemic wave, countermeasures may lead to much faster changes
+#'  in Rt than observable at other times (baseline). This potential additional
+#'  variability is accounted for using change points placed at regular
+#'  intervals. The additional standard deviation of the state space model
+#'  innovations on top of the baseline then evolves linearly between the change
+#'  points. The additional variation defined at the changepoints is modeled as
+#'  independently distributed and following a Lomax distribution, also known as
+#'  Exponential-Gamma (EG) distribution. This is an exponential distribution
+#'  where the rate is Gamma distributed. The prior `sd_change_prior` defines the
+#'  shape and rate of this Gamma distribution. The distribution has a strong
+#'  peak towards zero and a long tail. This regularizes the estimated deviations
+#'  from the baseline standard deviation - most deviations are small, but during
+#'  special time periods, the deviation might also be larger.
+#'
+#'@details The priors of this component have the following functional form:
 #' - intercept of the random walk: `Normal`
-#' - standard deviation of the random walk: `Truncated normal`
+#' - baseline standard deviation of the random walk: `Half-normal`
+#' - additional standard deviation at changepoints: `Exponential-Gamma`
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
-#' @export
-#' @family {Rt models}
+#'@inheritParams template_model_helpers
+#'@inherit modeldata_init return
+#'@export
+#'@family {Rt models}
 R_estimate_rw <- function(
-    intercept_prior_mu = 1,
-    intercept_prior_sigma = 0.8,
-    sd_prior_mu = 0,
-    sd_prior_sigma = 0.1,
-    sd_changepoint_dist = 7*26,
-    sd_changepoint_sd = 0.025,
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
+    sd_base_prior_sd = 0.025,
+    sd_change_prior_shape = 0.5,
+    sd_change_prior_rate = 1e-4,
+    sd_change_distance = 7*26,
     link = "inv_softplus",
     R_max = 6,
     differenced = FALSE,
     noncentered = TRUE,
     modeldata = modeldata_init()) {
   modeldata <- R_estimate_ets(
-    level_prior_mu = intercept_prior_mu,
-    level_prior_sigma = intercept_prior_sigma,
-    sd_prior_mu = sd_prior_mu,
-    sd_prior_sigma = sd_prior_sigma,
-    sd_changepoint_dist = sd_changepoint_dist,
-    sd_changepoint_sd = sd_changepoint_sd,
+    R_start_prior_mu = R_start_prior_mu,
+    R_start_prior_sigma = R_start_prior_sigma,
+    sd_base_prior_sd = sd_base_prior_sd,
+    sd_change_prior_shape = sd_change_prior_shape,
+    sd_change_prior_rate = sd_change_prior_rate,
+    sd_change_distance = sd_change_distance,
     link = link,
     R_max = R_max,
     smooth_prior_mu = 1,
@@ -401,42 +444,49 @@ R_estimate_rw <- function(
 
 #'Estimate Rt via smoothing splines
 #'
-#'@description This option estimates the effective reproduction number using
-#'  penalized B-splines.
+#'@description This option estimates the effective reproduction number Rt using
+#'  penalized cubic basis splines.
 #'
-#'@param knot_distance Distance between spline breakpoints (knots) in days
-#'  (default is 7, i.e. one knot each week). Placing knots further apart
-#'  increases the smoothness of Rt estimates and can speed up model fitting. The
-#'  Rt time series remains surprisingly flexible even at larger knot distances,
-#'  but placing knots too far apart can lead to inaccurate estimates.
-#'@param spline_degree Degree of the spline polynomials (default is 3 for cubic
-#'  splines).
-#'@param coef_intercept_prior_mu Prior (mean) on the intercept of the random
-#'  walk over spline coefficients.
-#'@param coef_intercept_prior_sigma Prior (standard deviation) on the intercept
-#'  of the random walk over spline coefficients.
-#'@param coef_sd_prior_mu Prior (mean) on the daily standard deviation of the
-#'  random walk over spline coefficients (see details).
-#'@param coef_sd_prior_sigma Prior (standard deviation) on the daily standard
-#'  deviation of the random walk over spline coefficients. Please note that for
-#'  consistency the overall prior on the daily standard deviation of the random
-#'  walk will have a standard deviation of `coef_sd_prior_sigma +
-#'  coef_sd_changepoint_sd` even if no changepoints are modeled (see below).
-#'@param coef_sd_changepoint_dist The variability of Rt can change over time,
-#'  e.g. during the height of an epidemic wave, countermeasures may lead to much
-#'  faster changes in Rt than observable at other times. This potential
-#'  variability is accounted for using change points placed at regular
-#'  intervals. The standard deviation of the random walk over spline
-#'  coefficients then evolves linearly between the change points. The default
-#'  change point distance is 26 weeks (182 days). Short changepoint distances
-#'  (e.g. 4 weeks or less) must be chosen with care, as they can make the Rt
-#'  time series too flexible. If set to zero, no change points are modeled.
-#'@param coef_sd_changepoint_sd This parameter controls the variability of the
-#'  change points. When change points are modeled, EpiSewer will estimate a
-#'  baseline standard deviation (see `coef_sd_prior_mu` and
-#'  `coef_sd_prior_sigma`), and model change point values as independently
-#'  distributed with mean equal to this baseline and standard deviation
-#'  `coef_sd_changepoint_sd`.
+#'@param knot_distance_global Distance between spline breakpoints (knots) for
+#'  the *global* spline in days. `EpiSewer` uses an ensemble of two splines to
+#'  model Rt. The global spline models larger, long-term changes. Default is
+#'  4*7, i.e. one knot every four week.
+#'@param knot_distance_local Distance between spline breakpoints (knots) for the
+#'  *local* spline in days. `EpiSewer` uses an ensemble of two splines to model
+#'  Rt. The local spline models smaller, short-term changes. Default is 7, i.e.
+#'  one knot each week.
+#'@param R_start_prior_mu Prior (mean) on the initial reproduction number
+#'  (intercept).
+#'@param R_start_prior_sigma Prior (standard deviation) on the initial
+#'  reproduction number (intercept).
+#'@param R_sd_local_prior_sd Half-normal prior (standard deviation) for the
+#'  variation of the local (i.e. short-term) spline. This controls the standard
+#'  deviation of a random walk over the coefficients of the local spline. The
+#'  prior refers to the *daily* standard deviation and is thus independent of
+#'  the knot distance. We use a half-normal prior, i.e. `R_sd_local_prior_sd` is
+#'  the only parameter to be specified for this prior.
+#'@param R_sd_global_prior_shape Exponential-Gamma prior (shape) for the
+#'  variation of the global (i.e. long-term) spline. This controls the standard
+#'  deviation of a random walk over the coefficients of the global spline. The
+#'  prior refers to the *daily* standard deviation and is thus independent of
+#'  the knot distance. The exponential-Gamma prior is sparse, i.e. it has a
+#'  strong peak towards zero and a long tail. Smaller shape parameters will lead
+#'  to more sparseness, i.e. a longer tail. Note that when adjusting the shape,
+#'  you will likely also have to adjust the rate. The variation of the global
+#'  splines follows a change point model to allow for adaptive changes, see
+#'  details for more explanation.
+#'@param R_sd_global_prior_rate Exponential-Gamma prior (rate) for the variation
+#'  of the global (i.e. long-term) spline. Larger rates will lead to more
+#'  variability. See `R_sd_global_prior_shape` and the details for more
+#'  explanation about this prior.
+#'@param R_sd_global_change_distance Distance between changepoints used to model
+#'  global variation in Rt. `EpiSewer` uses an adaptive model for the variation
+#'  of the global spline, to model both time periods with stable and with
+#'  volatile transmission dynamics. The default change point distance is equal
+#'  to `knot_distance_global`. Making this smaller than the global knot distance
+#'  will not have a large effect, however making this longer reduces the
+#'  adaptability of the Rt variation. If set to zero, no change points are
+#'  modeled, meaning zero adaptability.
 #'@param link Link function. Currently supported are `inv_softplus` (default)
 #'  and `scaled_logit`. Both of these links are configured to behave
 #'  approximately like the identity function around R=1, but become increasingly
@@ -445,169 +495,218 @@ R_estimate_rw <- function(
 #'  must be assumed. This should be higher than any realistic R value for the
 #'  modeled pathogen. Default is 6.
 #'
-#'@details `EpiSewer` uses a random walk on the B-spline coefficients for
-#'  regularization. This allows to use small knot distances without obtaining
-#'  extremely wiggly Rt estimates.
-#'   - The prior on the random walk intercept should reflect
-#'  your expectation of Rt at the beginning of the time series. If estimating
-#'  from the start of an epidemic, you might want to use a prior with mean
-#'  larger than 1 for the intercept.
-#'   - The prior on the daily standard deviation should be interpreted in terms
-#'  of daily additive changes (this is at least true around Rt=1, and becomes
-#'  less true as Rt approaches 0 or its upper bound as defined by the `link`
-#'  function). For example, a prior with mean=0 and sd=0.2 allows a daily
-#'  standard deviation between 0 and 0.4. A daily standard deviation of 0.4 in
-#'  turn roughly allows the spline coefficients to change by ±0.8 (using the 2
-#'  sigma rule) each day. The daily standard deviation is summed up over the
-#'  days between two knots to get the actual standard deviation of the
-#'  coefficients. This way, the prior is independent of the chosen
-#'  `knot_distance`. For example, if `knot_distance` is 7 days, and a constant
-#'  daily standard deviation of 0.4 is estimated, the coefficients of two
-#'  adjacent splines can differ by up to `0.8*sqrt(knot_distance)`, i.e. ±2.1.
-#'  Note however that this difference does not directly translate into a change
-#'  of Rt by ±2.1, as Rt is always the weighted sum of several basis functions
-#'  at any given point. It may therefore change much more gradually, depending
-#'  on the distances between knots.
+#'@details `EpiSewer` uses a combination of two splines (global, for
+#'  larger/long-term changes and local, for smaller/short-term changes), with a
+#'  random walk on the coefficients of each spline. This allows a highly
+#'  adaptive yet regularized Rt model.
+#'   - The prior `R_start_prior` should reflect
+#'  your expectation of Rt at the beginning of the time series. If your time
+#'  series starts in the midst of an outbreak, you might want to use a prior
+#'  with mean larger than 1 for the intercept.
+#'   - The prior `R_sd_local_prior` on the standard deviation of the local
+#'  spline coefficients should be interpreted in terms of daily additive changes
+#'  (this is accurate around Rt=1, and becomes less accurate as Rt approaches 0
+#'  or its upper bound as defined by the `link` function). For example, a
+#'  baseline half-normal prior with sd=0.05 allows a daily standard deviation
+#'  between 0 and 0.1. A daily standard deviation of 0.1 in turn roughly allows
+#'  the spline coefficients to change by ±0.2 (using the 2 sigma rule) each day.
+#'  The daily standard deviation is summed up over the days between two knots to
+#'  get the actual standard deviation of the coefficients. This way, the prior
+#'  is independent of the chosen `knot_distance`. For example, if
+#'  `knot_distance` is 7 days, and a constant daily standard deviation of 0.1 is
+#'  estimated, the coefficients of two adjacent splines can differ by up to
+#'  `0.2*sqrt(knot_distance)`, i.e. ±0.5. Note however that this does not
+#'  directly translate into a change of Rt by ±0.5, as Rt is always the weighted
+#'  sum of several basis functions at any given point. It will therefore change
+#'  more gradually, depending on the distances between knots.
+#'  - The prior `R_sd_global_prior` on the standard deviation of the global
+#'  spline coefficients is interpreted in the same way as the local spline, i.e.
+#'  it describes daily additive changes. However, we us a *sparse* prior for the
+#'  global variation, combined with a changepoint model. This yields a global
+#'  spline that expects small changes most of the time but allows for occasional
+#'  large changes. For example, during the height of an epidemic wave,
+#'  countermeasures may lead to much faster changes in Rt than observable at
+#'  other times. These differences in variability are accounted for using change
+#'  points placed at regular intervals, with the daily global standard deviation
+#'  evolving linearly between the change points. The values at the changepoints
+#'  are modeled as independently distributed and follow the Exponential-Gamma
+#'  (EG) prior distribution defined by `R_sd_global_prior`. The EG distribution
+#'  is also known as Lomax distribution and corresponds to an exponential
+#'  distribution with a Gamma distributed rate parameter.
 #'
-#'@details The smoothness of the Rt estimates is influenced both by the knot
-#'  distance and by the daily standard deviation of the random walk on
-#'  coefficients. The latter also influences the uncertainty of Rt estimates
-#'  towards the present / date of estimation, when limited data signal is
-#'  available. Absent sufficient data signal, Rt estimates will tend to stay at
-#'  the current level (which corresponds to assuming unchanged transmission
-#'  dynamics).
+#'@details The smoothness of the Rt estimates is influenced by a combination of
+#'  the global and local knot distances and by the priors on the global and
+#'  local standard deviation of the random walk on spline coefficients. Placing
+#'  knots further apart increases the smoothness of Rt estimates and can speed
+#'  up model fitting. The Rt time series remains surprisingly flexible even at
+#'  larger knot distances, but placing knots too far apart can lead to
+#'  inaccurate estimates. Note that the priors for the variation of the global
+#'  and local random walk also influence the uncertainty of Rt estimates towards
+#'  the present / date of estimation, when limited data signal is available.
+#'  Absent sufficient data signal, Rt estimates will tend to stay at the current
+#'  level (which corresponds to assuming unchanged transmission dynamics).
 #'
 #'@details The priors of this component have the following functional form:
-#' - intercept of the random walk over spline coefficients:
+#' - initial Rt (intercept):
 #'  `Normal`
-#' - standard deviation of the random walk over spline coefficients:
-#'  `Truncated normal`
+#' - daily standard deviation of the random walk over local spline coefficients:
+#'  `Half-normal`
+#'- daily standard deviation of the random walk over global spline coefficients:
+#'  `Exponential-Gamma`
 #'
 #'@inheritParams template_model_helpers
 #'@inherit modeldata_init return
 #'@export
 #'@family {Rt models}
 R_estimate_splines <- function(
-    knot_distance = 7,
-    spline_degree = 3,
-    coef_intercept_prior_mu = 1,
-    coef_intercept_prior_sigma = 0.8,
-    coef_sd_prior_mu = 0,
-    coef_sd_prior_sigma = 0.2,
-    coef_sd_changepoint_dist = 7*26,
-    coef_sd_changepoint_sd = 0.05,
+    knot_distance_global = 4*7,
+    knot_distance_local = 7,
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
+    R_sd_local_prior_sd = 0.05,
+    R_sd_global_prior_shape = 1,
+    R_sd_global_prior_rate = 1e-2,
+    R_sd_global_change_distance = knot_distance_global,
     link = "inv_softplus",
     R_max = 6,
     modeldata = modeldata_init()) {
-  modeldata$.metainfo$R_estimate_approach <- "splines"
-  modeldata$R_model <- 1
+
+  modeldata <- configure_R_model(
+    name_approach = "splines",
+    model_id = 1,
+    use_ets = FALSE,
+    use_bs = TRUE,
+    use_bs2 = TRUE,
+    use_scp = FALSE,
+    modeldata = modeldata
+  )
+
+  spline_degree <- 3 # fixed to cubic splines
 
   modeldata <- tbc(
     "spline_definition",
     {
-      knots <- place_knots(
-        ts_length = with(
-          modeldata$.metainfo, length_R + forecast_horizon
-        ),
-        knot_distance = knot_distance,
-        partial_window = with(
-          modeldata$.metainfo, partial_window + forecast_horizon
-          )
-      )
-      B <-
-        splines::bs(
-          with(modeldata$.metainfo, 1:(length_R + forecast_horizon)),
-          knots = knots$interior,
-          degree = spline_degree,
-          intercept = FALSE,
-          Boundary.knots = knots$boundary
+      modeldata$.init$R_intercept <- 1
+
+      # Global spline model for Rt
+      knots_global <- place_knots(
+        length_R = modeldata$.metainfo$length_R,
+        forecast_horizon = modeldata$.metainfo$forecast_horizon,
+        knot_distance = knot_distance_global,
+        partial_window = modeldata$.metainfo$partial_window,
+        partial_generation = modeldata$.metainfo$partial_generation,
+        fix_forecast = TRUE
         )
-      modeldata$.metainfo$R_knots <- knots
-      modeldata$.metainfo$B <- B
-      modeldata$bs_n_basis <- ncol(B)
-      B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
-      modeldata$bs_n_w <- length(B_sparse$w)
-      modeldata$bs_w <- B_sparse$w
-      modeldata$bs_v <- B_sparse$v
-      modeldata$bs_u <- B_sparse$u
+      modeldata$.metainfo$R_knots_global <- knots_global
+      modeldata <- use_basis_splines(
+        spline_length = with(modeldata$.metainfo, length_R + forecast_horizon),
+        knots = knots_global,
+        degree = spline_degree,
+        modeldata = modeldata
+        )
 
-      modeldata$.init$bs_coeff_ar_start <- 0
-      modeldata$.init$bs_coeff_noise_raw <- rep(0, modeldata$bs_n_basis - 1)
+      # Local spline model for Rt
+      knots_local <- place_knots(
+        length_R = modeldata$.metainfo$length_R,
+        forecast_horizon = modeldata$.metainfo$forecast_horizon,
+        knot_distance = knot_distance_local,
+        partial_window = modeldata$.metainfo$partial_window,
+        partial_generation = modeldata$.metainfo$partial_generation,
+        fix_forecast = FALSE
+      )
+      modeldata$.metainfo$R_knots_local <- knots_local
+      modeldata <- use_basis_splines2(
+        spline_length = with(modeldata$.metainfo, length_R + forecast_horizon),
+        knots = knots_local,
+        degree = spline_degree,
+        modeldata = modeldata
+      )
 
+      # Changepoint model for variability of Rt
       modeldata <- add_R_variability(
         length_R = modeldata$.metainfo$length_R,
         length_seeding = modeldata$.metainfo$length_seeding,
-        length_partial = modeldata$.metainfo$partial_window,
+        partial_window = modeldata$.metainfo$partial_window,
+        partial_generation = modeldata$.metainfo$partial_generation,
         h = modeldata$.metainfo$forecast_horizon,
-        changepoint_dist = coef_sd_changepoint_dist,
+        changepoint_dist = R_sd_global_change_distance,
         modeldata = modeldata
         )
-      modeldata$.init$R_vari_baseline <- 1e-2
-      if (modeldata$R_vari_n_basis > 2) {
-        modeldata$.init$R_vari_changepoints <- rep(1e-2, modeldata$R_vari_n_basis - 2)
+      modeldata$.init$R_sd_baseline <- 1e-2
+      if (modeldata$R_vari_ncol > 2) {
+        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_ncol - 2)
       } else {
-        modeldata$.init$R_vari_changepoints <- rep(1e-2, modeldata$R_vari_n_basis)
+        modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_ncol)
       }
 
       # build sparse matrix that represents which days need to be summed up
       # to compute the variance between two knots
       all_positions <- c(
-        rev(knots$interior[1] - seq(
+        rev(knots_global$interior[1] - seq(
           0,
-          by = (knots$interior[1] - knots$boundary[1]),
+          by = (knots_global$interior[1] - knots_global$boundary[1]),
           length.out = spline_degree
-          )), knots$interior[-1], knots$boundary[2])
+          )), knots_global$interior[-1], knots_global$boundary[2])
+      #all_positions <- c(knots_global$interior, knots_global$boundary[2])
       R_vari_selection <- t(mapply(
         get_selection_vector,
         from = all_positions[-length(all_positions)] + 1,
         to = all_positions[-1],
-        n = nrow(B)
+        n = modeldata$bs_length
       ))
-      modeldata$R_vari_sel_ncol <- ncol(R_vari_selection)
-      R_vari_selection_sparse <- suppressMessages(
-        rstan::extract_sparse_parts(R_vari_selection)
+      modeldata <- add_sparse_matrix(
+        R_vari_selection, "R_vari_sel", modeldata
         )
-      modeldata$R_vari_sel_n_w <- length(R_vari_selection_sparse$w)
-      modeldata$R_vari_sel_w <- R_vari_selection_sparse$w
-      modeldata$R_vari_sel_v <- R_vari_selection_sparse$v
-      modeldata$R_vari_sel_u <- R_vari_selection_sparse$u
+
+      all_positions_local <- c(
+        rev(knots_local$interior[1] - seq(
+          0,
+          by = (knots_local$interior[1] - knots_local$boundary[1]),
+          length.out = spline_degree
+        )), knots_local$interior[-1], knots_local$boundary[2])
+      # this is currently not used because we have
+      # no changepoint model for the local spline
+      R_vari_selection_local <- t(mapply(
+        get_selection_vector,
+        from = all_positions_local[-length(all_positions_local)] + 1,
+        to = all_positions_local[-1],
+        n = modeldata$bs2_length
+      ))
+      modeldata <- add_sparse_matrix(
+        R_vari_selection_local, "R_vari_sel_local", modeldata
+        )
 
     },
     required = c(
       ".metainfo$length_R",
       ".metainfo$length_seeding",
       ".metainfo$partial_window",
+      ".metainfo$partial_generation",
       ".metainfo$forecast_horizon"
       ),
     modeldata = modeldata
   )
 
-  modeldata$bs_coeff_ar_start_prior <- set_prior("bs_coeff_ar_start",
+  modeldata$R_intercept_prior <- set_prior("R_intercept",
     "normal",
-    mu = coef_intercept_prior_mu,
-    sigma = coef_intercept_prior_sigma
+    mu = R_start_prior_mu,
+    sigma = R_start_prior_sigma
   )
-  modeldata$bs_coeff_ar_sd_prior <- set_prior("bs_coeff_ar_sd",
-    "truncated normal",
-    mu = coef_sd_prior_mu,
-    sigma = coef_sd_prior_sigma
+  modeldata$R_sd_baseline_prior <- set_prior("R_sd_baseline",
+    "half-normal",
+    sigma = R_sd_local_prior_sd
+    )
+  modeldata$R_sd_change_prior <- set_prior("R_sd_change",
+    "lomax",
+    shape = R_sd_global_prior_shape,
+    rate = R_sd_global_prior_rate
   )
-  modeldata$R_vari_sd <- coef_sd_changepoint_sd
 
   modeldata <- add_link_function(link, R_max, modeldata)
 
-  modeldata <- add_dummy_data(modeldata, c(
-    "R_level_start_prior", "R_trend_start_prior", "R_sd_prior",
-    "ets_diff", "ets_noncentered",
-    "ets_alpha_prior",
-    "ets_beta_prior",
-    "ets_phi_prior"
-    ))
-
-  modeldata <- add_dummy_inits(modeldata, c(
-    "R_level_start", "R_trend_start", "R_noise",
-    "ets_alpha", "ets_beta", "ets_phi"
-    ))
+  # dummies
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_soft_changepoints(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_splines = c()
@@ -738,21 +837,13 @@ R_estimate_approx <- function(
     "spline_definition",
     {
       knots <- place_knots(
-        ts_length = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
+        length_R = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
+        forecast_horizon = 0,
         knot_distance = knot_distance,
+        partial_generation = 0,
         partial_window = with(modeldata$.metainfo, partial_window + forecast_horizon)
       )
-      B <-
-        splines::bs(
-          1:with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
-          knots = knots$interior,
-          degree = spline_degree,
-          intercept = FALSE,
-          Boundary.knots = knots$boundary
-        )
       modeldata$.metainfo$R_knots <- knots
-      modeldata$.metainfo$B <- B
-      modeldata$bs_n_basis <- ncol(B)
       modeldata$bs_dists <- c(
         rep( # left boundary basis functions
           knots$interior[1]-knots$boundary[1], spline_degree - 1
@@ -765,12 +856,12 @@ R_estimate_approx <- function(
         )
       )
 
-      B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
-      modeldata$bs_n_w <- length(B_sparse$w)
-      modeldata$bs_w <- B_sparse$w
-      modeldata$bs_v <- B_sparse$v
-      modeldata$bs_u <- B_sparse$u
-
+      modeldata <- use_basis_splines(
+        spline_length = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
+        knots = knots,
+        degree = spline_degree,
+        modeldata = modeldata
+      )
       modeldata$.init$bs_coeff_noise_raw <- rep(0, sum(modeldata$bs_dists))
     },
     required = c(
@@ -805,6 +896,344 @@ R_estimate_approx <- function(
   return(modeldata)
 }
 
+#' Estimate Rt via piecewise constant changepoint model
+#'
+#' @description This option models the effective reproduction number Rt over
+#'   time as a piecewise constant function. The changepoints of the constant
+#'   pieces are estimated from the data using an approximate changepoint model.
+#'   This option is suitable when Rt follows a step-like trajectory with
+#'   occasional large jumps, e.g. due to strong interventions. It is less
+#'   suitable for modeling gradual changes in Rt over time.
+#' @param changepoint_max_distance Maximum distance between changepoints in
+#'   days. This setting guarantees that two consecutive changes in Rt can be
+#'   captured if they are `changepoint_max_distance` days or more apart. Faster
+#'   changes are not guaranteed to be captured.
+#' @param changepoint_min_distance Minimum distance between changepoints in
+#'   days. This setting guarantees that two consecutive changes in Rt are at
+#'   least `changepoint_min_distance` days apart. This avoids Rt trajectories
+#'   that are unrealistically volatile. For example, a minimum distance of 7
+#'   implies that you don't expect Rt to make more than one large jump within a
+#'   week.
+#' @param change_prior_shape Exponential-Gamma (EG) prior (shape) for the
+#'   strength of changes between the pieces. At each estimated changepoint, the
+#'   change in Rt is sampled from a normal distribution with standard deviation
+#'   given by the EG prior. This prior has a strong peak towards zero and a long
+#'   tail. In other words, while most changes are expected to be small, the
+#'   prior allows for occasional large jumps in Rt. Smaller shape parameters
+#'   will lead to more sparseness, i.e. a longer tail. Note that when adjusting
+#'   the shape, you will likely also have to adjust the rate. See details for
+#'   more advice on choosing a suitable prior.
+#' @param change_prior_rate Exponential-Gamma (EG) prior (rate) for the strength
+#'   of changes between the pieces. See `change_prior_shape` above for an
+#'   explanation. Larger rates will lead to more variability: a doubling of the
+#'   rate roughly corresponds to a doubling of all quantiles of the prior.
+#' @param change_tolerance Tolerance for "negligible" changes in Rt. Changes
+#'   smaller than `change_tolerance` are ignored by `changepoint_min_distance`,
+#'   i.e. they can also occur closer to each other. This tolerance gives the
+#'   model more flexibility in placing changepoints with large jumps.
+#' @param strictness_k The k parameter of the logistic function used to
+#'   approximate a discrete changepoint model. Larger values make the changes
+#'   between the constant pieces more strict, i.e. more like discrete steps.
+#'   Note that choosing large values of k can slow down sampling.
+#' @param strictness_alpha The concentration parameter of the Dirichlet prior
+#'   for the changepoint positions. Choosing smaller values of
+#'   `strictness_alpha` will lead to more discrete changepoints. Note that
+#'   choosing small values of `strictness_alpha` can impede MCMC sampling and
+#'   lead to divergent transitions.
+#'
+#' @details The Exponential-Gamma (EG) prior on the strength of changes is
+#'   parameterized via the arguments `change_prior_shape` and
+#'   `change_prior_rate`. It has a long tail to support large changes while
+#'   keeping the variation low most of the time. The default configuration
+#'   should work well in most contexts except for really extreme changes in Rt
+#'   over a short time window. To check the quantiles of your prior, you can use
+#'   the function [qexpgamma()] with corresponding shape and rate parameters.
+#'
+#' @details If you need to adjust the overall variation, you can adjust the
+#'   `change_prior_rate` parameter. A doubling of the rate roughly corresponds
+#'   to a doubling of the quantiles. For example, when the 95% quantile is 0.2
+#'   for a given rate and you double that rate, the 95% quantile will be at 0.4.
+#'
+#' @details If you need to support more extreme changes, you can decrease the
+#'   `change_prior_shape` parameter, which will emphasize the long-tail behavior
+#'   of the prior. Note however that this will substantially increase all
+#'   quantiles of the prior, so you will also have to decrease the rate
+#'   parameter to achieve a similar level of day-to-day variation.
+#'
+#' @inheritParams R_estimate_splines
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {Rt models}
+R_estimate_piecewise <- function(
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
+    changepoint_max_distance = 14,
+    changepoint_min_distance = 7,
+    change_prior_shape = 0.5,
+    change_prior_rate = 1e-4,
+    change_tolerance = 0.05,
+    link = "inv_softplus",
+    R_max = 6,
+    strictness_k = 20,
+    strictness_alpha = 1,
+    modeldata = modeldata_init()
+    ) {
+
+  modeldata <-  configure_R_model(
+    name_approach = "piecewise",
+    model_id = 2,
+    use_ets = FALSE,
+    use_bs = FALSE,
+    use_bs2 = FALSE,
+    use_scp = TRUE,
+    modeldata = modeldata
+  )
+
+  # settings currently hidden from the user:
+  # @parameter strictness_tol_k The k parameter of the logistic function used to
+  #   soft-constrain the change tolerance bound. A minimum value of 4 is
+  #   recommended, higher values are likely not necessary and can impede
+  #   sampling.
+  strictness_tol_k <- 4
+
+  modeldata$R_intercept_prior <- set_prior(
+    "R_intercept", "normal",
+    mu = R_start_prior_mu, sigma = R_start_prior_sigma
+  )
+  modeldata$.init$R_intercept <-
+    modeldata$R_intercept_prior$R_intercept_prior[1]
+
+  modeldata$R_sd_change_prior <- set_prior("R_sd_change",
+    "lomax",
+    shape = change_prior_shape,
+    rate = change_prior_rate
+  )
+
+  modeldata <- tbc(
+    "R_piecewise",
+    {
+      modeldata$.metainfo$R_knots <- knots
+      modeldata <- use_soft_changepoints(
+        scp_length = modeldata$.metainfo$length_R,
+        last_knot = modeldata$.metainfo$length_R - changepoint_min_distance,
+        distance = changepoint_max_distance,
+        min_distance = changepoint_min_distance,
+        min_distance_tolerance = change_tolerance,
+        strictness_tol_k = strictness_tol_k,
+        strictness_k = strictness_k,
+        strictness_alpha = strictness_alpha,
+        modeldata
+        )
+    },
+    required = c(
+      ".metainfo$length_R",
+      ".metainfo$partial_window",
+      ".metainfo$partial_generation"
+    ),
+    modeldata = modeldata
+  )
+
+  modeldata <- add_link_function(link, R_max, modeldata)
+
+  # dummy data
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_basis_splines(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_R_vari(modeldata)
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_piecewise = c()
+  )
+
+  return(modeldata)
+}
+
+#' Estimate Rt via a changepoint spline model
+#'
+#' @description This option models the effective reproduction number Rt over
+#'   time using cubic splines that are regularized via a linear changepoint
+#'   model. The Rt trajectory will thus follow a smoothed linear trend, with
+#'   time points of trend changes estimated from the data using an approximate
+#'   changepoint model. This approach offers high flexibility of the Rt
+#'   trajectory while avoiding overfitting on noise.
+#' @param changepoint_max_distance Maximum distance (in days) between changes of
+#'   the Rt trend. This setting guarantees that two consecutive changes in the
+#'   Rt trend can be captured if they are `changepoint_max_distance` days or
+#'   more apart. Faster changes are not guaranteed to be captured.
+#' @param changepoint_min_distance Minimum distance (in days) between changes of
+#'   the Rt trend. This setting guarantees that two consecutive changes in the
+#'   Rt trend are at least `changepoint_min_distance` days apart. This avoids Rt
+#'   trajectories that are unrealistically volatile. For example, a minimum
+#'   distance of 7 implies that you don't expect Rt to significantly change its
+#'   trend more than once within a week.
+#' @param trend_change_prior_shape Exponential-Gamma (EG) prior (shape) for the
+#'   strength of trend changes. At each estimated changepoint, the change in Rt
+#'   trend is sampled from a normal distribution with standard deviation given
+#'   by the EG prior. This prior has a strong peak towards zero and a long tail.
+#'   In other words, while we expect the trend to change only slightly most of
+#'   the time, this prior also allows for occasional large trend changes.
+#'   Smaller shape parameters will lead to a longer tail, hence more extreme
+#'   changes are supported. Note that when adjusting the shape, you will likely
+#'   also have to adjust the rate. See details for more advice on choosing a
+#'   suitable prior.
+#' @param trend_change_prior_rate Exponential-Gamma (EG) prior (rate) for the
+#'   strength of trend changes. See `change_prior_shape` above for an
+#'   explanation. Larger rates will lead to more variability: a doubling of the
+#'   rate roughly corresponds to a doubling of all quantiles of the prior.
+#' @param trend_change_tolerance Tolerance for "negligible" trend changes.
+#'   Differences in the trend that are smaller than `change_tolerance` are
+#'   ignored by `changepoint_min_distance`, i.e. they can also occur closer to
+#'   each other. This tolerance gives the model more flexibility in placing
+#'   changepoints with large trend changes.
+#' @param strictness_k The k parameter of the logistic function used to
+#'   approximate a discrete changepoint model. Larger values make the changes
+#'   between in trends more strict, i.e. more like sharp turns. Note that
+#'   choosing large values of k can slow down sampling.
+#' @param strictness_alpha The concentration parameter of the Dirichlet prior
+#'   for the changepoint positions. Choosing smaller values of
+#'   `strictness_alpha` will lead to more strict changepoints. Note that
+#'   choosing small values of `strictness_alpha` can impede MCMC sampling and
+#'   lead to divergent transitions.
+#'
+#' @details The Exponential-Gamma (EG) prior on the strength of trend changes is
+#'   parameterized via the arguments `change_prior_shape` and
+#'   `change_prior_rate`. It has a long tail to support large trend changes
+#'   while keeping the variation low most of the time. The default configuration
+#'   should work well in most contexts except for really extreme changes in Rt
+#'   over a short time window. To check the quantiles of your prior, you can use
+#'   the function [qexpgamma()] with corresponding shape and rate parameters.
+#'
+#' @details If you need to adjust the overall variation, you can adjust the
+#'   `change_prior_rate` parameter. A doubling of the rate roughly corresponds
+#'   to a doubling of the quantiles. For example, when the 95% quantile is 0.2
+#'   for a given rate and you double that rate, the 95% quantile will be at 0.4.
+#'
+#' @details If you need to support more extreme changes, you can decrease the
+#'   `change_prior_shape` parameter, which will emphasize the long-tail behavior
+#'   of the prior. Note however that this will substantially increase all
+#'   quantiles of the prior, so you will also have to decrease the rate
+#'   parameter to achieve a similar level of day-to-day variation.
+#'
+#' @inheritParams R_estimate_splines
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {Rt models}
+R_estimate_changepoint_splines <- function(
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
+    changepoint_max_distance = 3*5,
+    changepoint_min_distance = 3*2,
+    trend_change_prior_shape = 5e1,
+    trend_change_prior_rate = 10e-1,
+    trend_change_tolerance = 0.01,
+    spline_knot_distance = 3,
+    link = "inv_softplus",
+    R_max = 6,
+    strictness_k = 20,
+    strictness_alpha = 0.5,
+    modeldata = modeldata_init()
+) {
+
+  modeldata <-  configure_R_model(
+    name_approach = "changepoint_splines",
+    model_id = 3,
+    use_ets = FALSE,
+    use_bs = TRUE,
+    use_bs2 = FALSE,
+    use_scp = TRUE,
+    modeldata = modeldata
+  )
+
+  # settings currently hidden from the user:
+  # @parameter strictness_tol_k The k parameter of the logistic function used to
+  #   soft-constrain the change tolerance bound. A minimum value of 4 is
+  #   recommended, higher values are likely not necessary and can impede
+  #   sampling.
+  strictness_tol_k <- 4
+
+  modeldata$R_intercept_prior <- set_prior(
+    "R_intercept", "normal",
+    mu = R_start_prior_mu, sigma = R_start_prior_sigma
+  )
+  modeldata$.init$R_intercept <-
+    modeldata$R_intercept_prior$R_intercept_prior[1]
+
+  modeldata$R_sd_change_prior <- set_prior("R_sd_change",
+                                           "lomax",
+                                           shape = trend_change_prior_shape,
+                                           rate = trend_change_prior_rate
+  )
+
+  modeldata <- tbc(
+    "R_changepoint_splines",
+    {
+      # Spline model
+      spline_knots <- list(
+        interior = rev(seq(
+          modeldata$.metainfo$length_R - spline_knot_distance,
+          1, by = -spline_knot_distance
+        )),
+        boundary = c(-3, modeldata$.metainfo$length_R)
+      )
+      modeldata$.metainfo$R_knots <- spline_knots
+      modeldata <- use_basis_splines(
+        spline_length = modeldata$.metainfo$length_R,
+        knots = spline_knots,
+        degree = 3,
+        modeldata = modeldata
+      )
+      modeldata$bs_coeff_select <- c(1, spline_knots$interior, spline_knots$boundary[2], spline_knots$boundary[2])
+
+      # Changepoint model
+      last_change <- with(modeldata$.metainfo, length_R - changepoint_min_distance)
+      distance = as.integer(floor(changepoint_max_distance/spline_knot_distance))
+      changepoint_min_distance = as.integer(ceiling(changepoint_min_distance/spline_knot_distance))
+      if (distance < 2 || changepoint_min_distance < 1) {
+        cli::cli_abort(paste(
+          "The choosen `spline_knot_distance` is too long for the changepoint",
+          "min and max distances. Please either choose a larger",
+          "`changepoint_min_distance`/'changepoint_max_distance`",
+          "or a smaller `spline_knot_distance`."
+        ))
+      }
+      last_scp_knot <- sum(spline_knots$interior <= last_change)
+      modeldata <- use_soft_changepoints(
+        scp_length = length(spline_knots$interior),
+        last_knot = last_scp_knot,
+        distance = distance,
+        min_distance = changepoint_min_distance,
+        min_distance_tolerance = trend_change_tolerance,
+        strictness_tol_k = strictness_tol_k,
+        strictness_k = strictness_k,
+        strictness_alpha = strictness_alpha,
+        modeldata
+      )
+    },
+    required = c(
+      ".metainfo$length_R"
+    ),
+    modeldata = modeldata
+  )
+
+  modeldata <- add_link_function(link, R_max, modeldata)
+
+  # dummy data
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_R_vari(modeldata)
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_changepoint_splines = c()
+  )
+
+  return(modeldata)
+}
 
 #' Add change point model for the variability of Rt
 #'
@@ -821,12 +1250,13 @@ R_estimate_approx <- function(
 #'
 #' @inherit modeldata_init return
 #' @keywords internal
-add_R_variability <- function(length_R, h, length_seeding, length_partial,
+add_R_variability <- function(length_R, h, length_seeding, partial_window,
+                              partial_generation,
                               changepoint_dist, modeldata) {
   if (changepoint_dist == 0) {
     # no changepoints
     B <- matrix(rep(1,length_R+h), ncol = 1)
-  } else if (length_R - length_partial - changepoint_dist <= length_seeding) {
+  } else if (length_R - partial_window - partial_generation - changepoint_dist <= length_seeding) {
     B <- matrix(rep(1,length_R+h), ncol = 1)
   } else {
     # we here suppress extrapolation warnings if h > changepoint_dist, as we fix
@@ -834,7 +1264,7 @@ add_R_variability <- function(length_R, h, length_seeding, length_partial,
     B <- suppressWarnings(splines::bs(
       1:(length_R+h),
       knots = rev(c(seq(
-        length_R - length_partial,
+        length_R - partial_window - partial_generation,
         length_seeding + changepoint_dist/2,
         by = -changepoint_dist),
         length_seeding
@@ -848,7 +1278,7 @@ add_R_variability <- function(length_R, h, length_seeding, length_partial,
       B <- B[,-ncol(B)]
     }
   }
-  modeldata$R_vari_n_basis <- ncol(B)
+  modeldata$R_vari_ncol <- ncol(B)
   B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
   modeldata$R_vari_n_w <- length(B_sparse$w)
   modeldata$R_vari_w <- B_sparse$w

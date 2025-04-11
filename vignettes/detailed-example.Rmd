@@ -47,7 +47,7 @@ head(measurements_sparse, 10)
 
 ### Modeling
 
-In the [README](../index.html), we used a shortcut to collect all observation data via `sewer_data()` and all assumptions via `sewer_assumptions()`. These are convenience functions to make the `EpiSewer` command more concise. In this example however, we will explicitly supply the data and assumptions to the relevant modules and components (see the `vignette("model-specification")` vignette).
+In the [README](../index.html), we used a shortcut to collect all observation data via `sewer_data()` and all assumptions via `sewer_assumptions()`. These are convenience functions to make the `EpiSewer` command more concise. In this example, we will explicitly supply the data and assumptions to the relevant modules and components (see the `vignette("model-specification")` vignette).
 
 #### Measurements
 
@@ -175,7 +175,7 @@ The `infections` module describes the underlying process leading to infected ind
 ```{r}
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
-  R = R_estimate_splines(),
+  R = R_estimate_changepoint_splines(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
 )
@@ -184,9 +184,15 @@ ww_infections <- model_infections(
 The module has the following epidemiological components:
 
 - `generation_dist`: We use the same generation time distribution as before.
-- `R`: This the effective reproduction number, our main parameter of interest. We here estimate it via smoothing B-splines (`R_estimate_splines()`), but there are other smoothing approaches available (see `component_functions("R")`).
-- `seeding`: The renewal model used by `EpiSewer` requires a seeding phase during which the reproduction number cannot be modeled. We thus let the initial infections be estimated using a simple geometric random walk model.
-- `infection_noise`: We also model noise in the infection process, meaning that `EpiSewer` will fit a stochastic infection model. This makes sense in most cases.
+- `R`: This the effective reproduction number, our main parameter of interest. 
+We here estimate it using a combination of a changepoint model and smoothing 
+B-splines (`R_estimate_changepoint_splines()`), but there are other smoothing 
+approaches available (see `component_functions("R")`).
+- `seeding`: The renewal model used by `EpiSewer` requires a seeding phase 
+during which the reproduction number cannot be modeled. We thus let the initial 
+infections be estimated using a simple geometric random walk model.
+- `infection_noise`: We also model noise in the infection process, meaning that
+`EpiSewer` will fit a stochastic infection model. This makes sense in most cases.
 
 #### Forecast
 
@@ -201,11 +207,12 @@ If we want to produce forecasts, we can define the forecast horizon (e.g. 7 days
 
 ```{r}
 ww_forecast2 <- model_forecast(
-  horizon = horizon_assume(horizon = 7)
+  horizon = horizon_assume(horizon = 7),
+  dampening = dampening_assume(0.8)
 )
 ```
 
-The forecast module currently only has a single component to define the forecast horizon. In the future, this may be extended to allow users to customize how forecasts are obtained.
+The `dampening` component allows to dampen the forecast of Rt so that trends in transmission will level off after some time. This prevents unrealistic extrapolation of transmission dynamics. The default is `0.8`, meaning that the trend is reduced by 20% each day until the Rt forecast is essentially constant.
 
 #### Side notes
 
@@ -242,12 +249,12 @@ ww_fit_opts <- set_fit_opts(
 
 The `results_opts` argument specifies what results to return after model
 fitting. We specify `fitted=TRUE`, which means that the whole fitted model
-object will be stored. Setting this to `fitted=FALSE` saves memory  - but certain
-things like detailed diagnostics or extracting draws of additional parameters
-will not be possible. We also specify that parameters of interest should be
-summarized with 50% and 95% credible intervals (in addition to the mean and
-median). Moreover, we want to explicitly store 50 posterior samples for the Rt
-and infections time series (useful for spaghetti plots etc.).
+object will be stored. Setting this to `fitted=FALSE` saves memory  - but
+certain things like detailed diagnostics or extracting draws of additional
+parameters will not be possible. We also specify that parameters of interest
+should be summarized with 50% and 95% credible intervals (in addition to the
+mean and median). Moreover, we want to explicitly store 50 posterior samples for
+the Rt and infections time series (useful for spaghetti plots etc.).
 
 ```{r}
 ww_results_opts <- set_results_opts(
@@ -334,13 +341,14 @@ ww_shedding <- model_shedding(
 
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
-  R = R_estimate_splines(),
+  R = R_estimate_changepoint_splines(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
 )
 
 ww_forecast <- model_forecast(
-  horizon = horizon_none()
+  horizon = horizon_none(),
+  dampening = dampening_assume(0.8)
 )
 
 ww_fit_opts <- set_fit_opts(

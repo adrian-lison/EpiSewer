@@ -33,6 +33,10 @@
 #' @param model_levels A `character` vector with the names of the models to be
 #'   included. The colors and legend will be ordered according to the order in
 #'   `model_levels`.
+#' @param color_by_chain If `TRUE`, and `draws=TRUE`, individual samples are
+#'   colored by chain. This is useful for checking mixing of the chains with
+#'   respect to the estimated trajectories. Only available when plotting a
+#'   single model.
 #'
 #' @return A ggplot object showing the time series of estimated infections,
 #'   either with credible intervals or as "spaghetti plot". Can be further
@@ -46,7 +50,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
                             date_margin_left = 0, date_margin_right = 0,
                             facet_models = FALSE, facet_direction = "rows",
                             base_model = "", model_levels = NULL,
-                            intervals = c(0.5, 0.95)) {
+                            intervals = c(0.5, 0.95), color_by_chain = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -115,6 +119,14 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
     ]
 
   if (draws) {
+    if (color_by_chain) {
+      if (length(unique(data_to_plot$model)) > 1) {
+        cli::cli_abort(paste0(
+          'Coloring samples by chain is only available when plotting a single model.'
+        ))
+      }
+      data_to_plot[, model := factor(.chain)]
+    }
     plot <- plot +
       { if (base_model!="") {
         geom_line(
@@ -214,7 +226,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
                    date_margin_left = 0, date_margin_right = 0,
                    facet_models = FALSE, facet_direction = "rows",
                    base_model = "", model_levels = NULL,
-                   intervals = c(0.5, 0.95)) {
+                   intervals = c(0.5, 0.95), color_by_chain = FALSE) {
   if ("summary" %in% names(results)) {
     results <- list(results) # only one result object passed, wrap in list
   }
@@ -296,6 +308,14 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
     ]
 
   if (draws) {
+    if (color_by_chain) {
+      if (length(unique(data_to_plot$model)) > 1) {
+        cli::cli_abort(paste0(
+          'Coloring samples by chain is only available when plotting a single model.'
+        ))
+      }
+      data_to_plot[, model := factor(.chain)]
+    }
     plot <- plot +
       { if (base_model!="") {
         geom_line(

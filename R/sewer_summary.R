@@ -72,14 +72,15 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
   }
 
   all_samples <- Reduce(
-    function(...) merge(..., all = TRUE, by = c(".draw", "date", "type")),
+    function(...) merge(..., all = TRUE, by = c(".chain", ".draw", "date", "type")),
     list(R_samples, expected_I_samples, I_samples)
     )
   min_date <- all_samples[, min(date)]
   last_seeding <- min_date + (data$G * 2) + data$se # se is seeding extension
   all_samples[, seeding := date < last_seeding]
-  setcolorder(all_samples, c(".draw", "date", "type", "seeding"))
+  setcolorder(all_samples, c(".draw", ".chain", "date", "type", "seeding"))
   all_samples[, type := factor(type, levels = c("estimate", "forecast"))]
+  all_samples[, .chain := factor(.chain)]
 
   gen_dist <- data$generation_dist
 
@@ -124,6 +125,13 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
     all_samples, index_cols = index_cols,
     variable = "R", intervals = intervals, cols_end = c(2,3)
   )[!(is.na(median) & type == "estimate")]
+
+  summary[["R_diagnostics"]] <- get_diagnostics_1d_date(
+    fit, var = "R", var_forecast = "R_forecast",
+    T_shift = T_shift_R, .metainfo = .metainfo,
+    intervals = intervals
+  )
+  summary[["R_diagnostics"]][, seeding := summary[["R"]][, "seeding"]]
 
   summary[["expected_infections"]] <- summarize_samples_dt(
     all_samples, index_cols = index_cols,
@@ -198,7 +206,7 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
       intervals = intervals
     )[, c("date", "median")]
     data.table::setnames(summary[["outliers"]], "median", "epsilon")
-    summary[["outliers"]][, is_outlier := summary[["outliers"]][, epsilon] > 25]
+    summary[["outliers"]][, is_outlier := summary[["outliers"]][, epsilon] > 1]
     summary[["outliers"]] <- summary[["outliers"]][
       date %in% .metainfo$measured_dates,
       ]

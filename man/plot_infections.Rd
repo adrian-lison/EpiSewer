@@ -18,7 +18,8 @@ plot_infections(
   facet_direction = "rows",
   base_model = "",
   model_levels = NULL,
-  intervals = c(0.5, 0.95)
+  intervals = c(0.5, 0.95),
+  color_by_chain = FALSE
 )
 }
 \arguments{
@@ -64,6 +65,11 @@ plotted in black and will not be part of the legend.}
 \item{model_levels}{A \code{character} vector with the names of the models to be
 included. The colors and legend will be ordered according to the order in
 \code{model_levels}.}
+
+\item{color_by_chain}{If \code{TRUE}, and \code{draws=TRUE}, individual samples are
+colored by chain. This is useful for checking mixing of the chains with
+respect to the estimated trajectories. Only available when plotting a
+single model.}
 }
 \value{
 A ggplot object showing the time series of estimated infections,

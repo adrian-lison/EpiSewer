@@ -5,12 +5,12 @@
 \title{Estimate Rt via a random walk}
 \usage{
 R_estimate_rw(
-  intercept_prior_mu = 1,
-  intercept_prior_sigma = 0.8,
-  sd_prior_mu = 0,
-  sd_prior_sigma = 0.1,
-  sd_changepoint_dist = 7 * 26,
-  sd_changepoint_sd = 0.025,
+  R_start_prior_mu = 1,
+  R_start_prior_sigma = 0.8,
+  sd_base_prior_sd = 0.025,
+  sd_change_prior_shape = 0.5,
+  sd_change_prior_rate = 1e-04,
+  sd_change_distance = 7 * 26,
   link = "inv_softplus",
   R_max = 6,
   differenced = FALSE,
@@ -19,31 +19,34 @@ R_estimate_rw(
 )
 }
 \arguments{
-\item{intercept_prior_mu}{Prior (mean) on the intercept of the random walk.}
+\item{R_start_prior_mu}{Prior (mean) on the initial value of Rt.}
 
-\item{intercept_prior_sigma}{Prior (standard deviation) on the intercept of
-the random walk.}
+\item{R_start_prior_sigma}{Prior (standard deviation) on the initial value of
+Rt.}
 
-\item{sd_prior_mu}{Prior (mean) on the standard deviation of the random walk.}
+\item{sd_base_prior_sd}{Prior (standard deviation) on the baseline standard
+deviation of the innovations. We here use a half-normal prior, i.e.
+\code{sd_base_prior_sd} is the only parameter to be specified for this prior.
+Please note that for consistency, the overall standard deviation of
+innovations will always be the baseline plus an additive component from
+\code{sd_change_prior} even if no changepoints are modeled (see below).}
 
-\item{sd_prior_sigma}{Prior (standard deviation) on the standard deviation of
-the random walk.}
+\item{sd_change_prior_shape}{Exponential-Gamma prior (shape) on standard
+deviation additional to baseline. This prior describes the distribution of
+the standard deviation of Rt over time. EpiSewer will estimate a baseline
+standard deviation (see \code{sd_base_prior_sd}), and model additional variation
+on top of the baseline using a changepoint model. Please see the details for
+more explanation.}
 
-\item{sd_changepoint_dist}{The variability of Rt can change over time, e.g.
-during the height of an epidemic wave, countermeasures may lead to much
-faster changes in Rt than observable at other times. This potential
-variability is accounted for using change points placed at regular
-intervals. The standard deviation of the random walk then evolves linearly
-between the change points. The default change point distance is 26 weeks
-(182 days). Short changepoint distances (e.g. 4 weeks or less) must be
-chosen with care, as they can make the Rt time series too flexible. If set
-to zero, no change points are modeled.}
+\item{sd_change_prior_rate}{Exponential-Gamma prior (rate) on standard
+deviation additional to baseline. See \code{sd_change_prior_shape} and the
+details for more explanation.}
 
-\item{sd_changepoint_sd}{This parameter controls the variability of the
-change points. When change points are modeled, EpiSewer will estimate a
-baseline standard deviation (see \code{sd_prior_mu} and \code{sd_prior_sigma}), and
-model change point values as independently distributed with mean equal to
-this baseline and standard deviation \code{sd_changepoint_sd}.}
+\item{sd_change_distance}{Distance between changepoints used to model
+additional variation in Rt. The default change point distance is 4 weeks.
+Very short changepoint distances must be chosen with care, as they can make
+the Rt time series too flexible. If set to zero, no change points are
+modeled.}
 
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
@@ -55,8 +58,8 @@ must be assumed. This should be higher than any realistic R value for the
 modeled pathogen. Default is 6.}
 
 \item{differenced}{If \code{FALSE} (default), the random walk is applied to the
-absolute Rt time series. If \code{TRUE}, it is instead applied to the
-differenced time series, i.e. now the trend is modeled as a random walk.}
+absolute Rt time series. If \code{TRUE}, it is instead applied to the differenced
+time series, i.e. now the trend is modeled as a random walk.}
 
 \item{noncentered}{If \code{TRUE} (default), a non-centered parameterization is
 used to model the innovations of the random walk (for better sampling
@@ -73,32 +76,50 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
-This option estimates the effective reproduction number over
-time using a random walk.
+This option estimates the effective reproduction number over time
+using a random walk.
 }
 \details{
 The smoothness of Rt estimates is influenced by the prior on the
-standard deviation of the random walk. It also influences the uncertainty
-of Rt estimates towards the present / date of estimation, when limited data
+standard deviation of the random walk. It also influences the uncertainty of
+Rt estimates towards the present / date of estimation, when limited data
 signal is available. The prior on the intercept of the random walk should
 reflect your expectation of Rt at the beginning of the time series. If
-estimating from the start of an epidemic, you might want to use a prior
-with mean > 1 for the intercept.
+estimating from the start of an epidemic, you might want to use a prior with
+mean > 1 for the intercept.
+
+The variability of Rt can change over time. For example, during the
+height of an epidemic wave, countermeasures may lead to much faster changes
+in Rt than observable at other times (baseline). This potential additional
+variability is accounted for using change points placed at regular
+intervals. The additional standard deviation of the state space model
+innovations on top of the baseline then evolves linearly between the change
+points. The additional variation defined at the changepoints is modeled as
+independently distributed and following a Lomax distribution, also known as
+Exponential-Gamma (EG) distribution. This is an exponential distribution
+where the rate is Gamma distributed. The prior \code{sd_change_prior} defines the
+shape and rate of this Gamma distribution. The distribution has a strong
+peak towards zero and a long tail. This regularizes the estimated deviations
+from the baseline standard deviation - most deviations are small, but during
+special time periods, the deviation might also be larger.
 
 The priors of this component have the following functional form:
 \itemize{
 \item intercept of the random walk: \code{Normal}
-\item standard deviation of the random walk: \verb{Truncated normal}
+\item baseline standard deviation of the random walk: \code{Half-normal}
+\item additional standard deviation at changepoints: \code{Exponential-Gamma}
 }
 }
 \seealso{
 Other {Rt models}: 
 \code{\link{R_estimate_approx}()},
+\code{\link{R_estimate_changepoint_splines}()},
 \code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_splines}()}
 }
 \concept{{Rt models}}

@@ -8,7 +8,8 @@ add_R_variability(
   length_R,
   h,
   length_seeding,
-  length_partial,
+  partial_window,
+  partial_generation,
   changepoint_dist,
   modeldata
 )
@@ -30,7 +31,7 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
