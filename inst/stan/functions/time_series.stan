@@ -107,3 +107,24 @@ Time series process functions
     tar += beta2_prior_lpdf(ets_phi | ets_phi_prior); // dampening needs a tight prior, roughly between 0.8 and 0.98
     return(tar);
   }
+
+  /**
+  * Dampen the trend of a time series
+  *
+  * @param start The start value of the time series. This is used to compute
+  *   the trend of the first value.
+  * @param values The actual values of the time series that should be dampened.
+  * @param dampening The exponential dampening parameter to apply. A value
+  *   of 1 means no dampening, a value of 0 means no trend (flat time series).
+  *
+  * @return A vector of the dampened time series, same length as `values`.
+  */
+  vector dampen_trend(real start, vector values, real dampening) {
+    int n = num_elements(values);
+    vector[n] dampened_trend;
+    dampened_trend[1] = dampening * (values[1] - start);
+    for (i in 2:n) {
+      dampened_trend[i] = dampening^i * (values[i]-values[i-1]);
+    }
+    return(start + cumulative_sum(dampened_trend));
+  }

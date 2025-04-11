@@ -36,8 +36,8 @@ model_measurements <- function(
 #'
 #' @description This option fits the `EpiSewer` model to pathogen concentrations
 #'   measured in wastewater samples. It is suitable for different quantification
-#'   methods such as qPCR or dPCR. The measured concentrations are modeled via a
-#'   Log-Normal likelihood.
+#'   methods such as qPCR or dPCR. The measured concentrations are by default
+#'   modeled via a gamma likelihood.
 #'
 #' @param measurements A `data.frame` with each row representing one
 #'   measurement. Must have at least a column with dates and a column with
@@ -61,7 +61,7 @@ model_measurements <- function(
 #' @param n_averaged The number of replicates over which the measurements have
 #'   been averaged. This is typically used as an alternative to providing
 #'   several replicates per sample (i.e. the concentration provided in the
-#'   `measurements` `data.frame` is the arithmetic mean of several replicates).
+#'   `measurements` `data.frame` is the average of several replicates).
 #'   Can be either a single number (it is then assumed that the number of
 #'   averaged replicates is the same for each observation) or a vector (one
 #'   value for each observation).
@@ -313,11 +313,12 @@ partitions_observe <-
 #'   provided, `EpiSewer` can also explicitly model variation before the
 #'   replication stage.
 #'
-#' @description This helper function is called from [noise_estimate()] and
-#'   [noise_estimate_dPCR()]. [noise_estimate()] is a constant coefficient of
-#'   variation model, [noise_estimate_dPCR()] is a noise model specialized for
-#'   digital PCR (`cv_type = "dPCR"`), which may however also work with other
-#'   quantification methods such as qPCR.
+#' @description This helper function is called from other noise modeling
+#'   functions. [noise_estimate()] is a constant coefficient of variation model,
+#'   [noise_estimate_dPCR()] is a noise model specialized for digital PCR
+#'   (`cv_type = "dPCR"`), which may however also work with other quantification
+#'   methods such as qPCR, and [noise_estimate_constant_var()] is a constant
+#'   variance model.
 #'
 #' @param replicates Should replicates be used to explicitly model variation
 #'   before the replication stage?
@@ -351,8 +352,8 @@ partitions_observe <-
 #'   between PCR runs, and is modeled as log-normal distributed in EpiSewer.
 #' @param partition_variation_prior_sigma Prior (standard deviation) on the
 #'   coefficient of variation of the total number of partitions in the dPCR
-#'   reaction. If this is set to zero, the partition variation will
-#'   be fixed to the prior mean and not estimated.
+#'   reaction. If this is set to zero, the partition variation will be fixed to
+#'   the prior mean and not estimated.
 #' @param volume_scaled_prior_mu Prior (mean) on the conversion factor
 #'   (partition volume scaled by the dilution of wastewater in the assay) for
 #'   the dPCR reaction. See details for further explanation.
@@ -712,7 +713,7 @@ noise_estimate_dPCR <-
 #'
 #' @details Note that although this model keeps the variance constant, the prior
 #'   for the measurement noise is still in terms of the (average) coefficient of
-#'   variation (CV). This makes prior specification easier since it the CV is
+#'   variation (CV). This makes prior specification easier since the CV is
 #'   unitless.
 #'
 #' @details The priors of this component have the following functional form:

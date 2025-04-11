@@ -72,14 +72,15 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
   }
 
   all_samples <- Reduce(
-    function(...) merge(..., all = TRUE, by = c(".draw", "date", "type")),
+    function(...) merge(..., all = TRUE, by = c(".chain", ".draw", "date", "type")),
     list(R_samples, expected_I_samples, I_samples)
     )
   min_date <- all_samples[, min(date)]
   last_seeding <- min_date + (data$G * 2) + data$se # se is seeding extension
   all_samples[, seeding := date < last_seeding]
-  setcolorder(all_samples, c(".draw", "date", "type", "seeding"))
+  setcolorder(all_samples, c(".draw", ".chain", "date", "type", "seeding"))
   all_samples[, type := factor(type, levels = c("estimate", "forecast"))]
+  all_samples[, .chain := factor(.chain)]
 
   gen_dist <- data$generation_dist
 

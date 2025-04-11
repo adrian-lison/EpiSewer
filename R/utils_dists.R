@@ -427,6 +427,19 @@ check_beta_alternative <- function(beta_mean, beta_sd) {
   }
 }
 
+#' Exponential-Gamma distribution
+#'
+#' The Exponential-Gamma (EG) distribution is also known as the Lomax
+#' distribution and has a characteristic long tail.
+#'
+#' @param p Vector of probabilities.
+#' @param shape Shape of the Exponential-Gamma distribution.
+#' @param rate Rate of the Exponential-Gamma distribution.
+qexpgamma <- function(p, shape, rate) {
+  names(p) <- paste0(100*p,"%")
+  round(sapply(p, extraDistr::qlomax, kappa = shape, lambda = 1/rate),3)
+}
+
 # Distribution validation ----
 
 check_dist <- function(dist, name = "probability distribution") {

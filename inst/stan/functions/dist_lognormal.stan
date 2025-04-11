@@ -228,6 +228,10 @@ vector lognormal5_rng(vector mean, vector cv) {
   return to_vector(lognormal_rng(mu, sqrt(sigma2)));
 }
 
+// --------------------------------------------------------
+// lognormal6: mean, sd
+// --------------------------------------------------------
+
 /**
   * The log of the lognormal density given mean and sd on unit scale
   *
@@ -245,6 +249,10 @@ real lognormal6_lpdf(vector y, vector mean, vector sd) {
   vector[n] mu = log(mean) - sigma2/2;
   return lognormal_lpdf(y | mu, sqrt(sigma2));
 }
+
+// --------------------------------------------------------
+// lognormal7: median, cv
+// --------------------------------------------------------
 
 /**
   * The log of the lognormal density given median and cv on unit scale

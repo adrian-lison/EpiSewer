@@ -46,7 +46,7 @@ date was made.}
 \item{n_averaged}{The number of replicates over which the measurements have
 been averaged. This is typically used as an alternative to providing
 several replicates per sample (i.e. the concentration provided in the
-\code{measurements} \code{data.frame} is the arithmetic mean of several replicates).
+\code{measurements} \code{data.frame} is the average of several replicates).
 Can be either a single number (it is then assumed that the number of
 averaged replicates is the same for each observation) or a vector (one
 value for each observation).}
@@ -74,14 +74,14 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
 This option fits the \code{EpiSewer} model to pathogen concentrations
 measured in wastewater samples. It is suitable for different quantification
-methods such as qPCR or dPCR. The measured concentrations are modeled via a
-Log-Normal likelihood.
+methods such as qPCR or dPCR. The measured concentrations are by default
+modeled via a gamma likelihood.
 }
 \seealso{
 Other {observation types}: 

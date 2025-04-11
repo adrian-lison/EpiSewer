@@ -4,15 +4,27 @@
 \alias{model_forecast}
 \title{Forecasting module}
 \usage{
-model_forecast(horizon = horizon_none())
+model_forecast(
+  horizon = horizon_none(),
+  dampening = dampening_assume(dampening = 0.8)
+)
 }
 \arguments{
 \item{horizon}{The forecast horizon. How many days into the future should
 EpiSewer forecast? Note that this functionality is intended for short-term
 forecasts. Projections over longer horizons can be highly inaccurate.
-Available options: - \code{\link[=horizon_none]{horizon_none()}}
+Available options:
 \itemize{
+\item \code{\link[=horizon_none]{horizon_none()}}
 \item \code{\link[=horizon_assume]{horizon_assume()}}
+}}
+
+\item{dampening}{EpiSewer dampens the forecast of Rt so that trends in
+transmission will level off after some time. This prevents unrealistic
+extrapolation of transmission dynamics. Available options:
+\itemize{
+\item \code{\link[=dampening_none]{dampening_none()}}
+\item \code{\link[=dampening_assume]{dampening_assume()}}
 }}
 }
 \value{
@@ -29,13 +41,15 @@ individual helper functions to adjust various settings.
 }
 \details{
 Forecasts account for the estimated variation of transmission
-dynamics over time and therefore become more uncertain at longer forecast
-horizons. However, it is important to keep in mind that the model will
-project the current transmission dynamics to continue unchanged (with the
-exception of \code{R_estimate_ets}, which can project the current linear trend
-of Rt). This assumption can be violated by various factors such as
-depletion of susceptible individuals, changes in behavior, or public health
-interventions.
+dynamics over time and therefore tend to become more uncertain at longer
+forecast horizons. However, it is important to keep in mind that depending
+on the Rt model used, EpiSewer will project the current transmission
+dynamics to continue unchanged (when using \code{\link[=R_estimate_rw]{R_estimate_rw()}},
+\code{\link[=R_estimate_splines]{R_estimate_splines()}}, \code{\link[=R_estimate_piecewise]{R_estimate_piecewise()}}) or according to a
+(dampened) linear trend (when using \code{\link[=R_estimate_ets]{R_estimate_ets()}} and
+\code{\link[=R_estimate_changepoint_splines]{R_estimate_changepoint_splines()}}). This assumption can be violated by
+various factors such as depletion of susceptible individuals, changes in
+behavior, or public health interventions.
 }
 \seealso{
 Other {module functions}: 

@@ -50,7 +50,7 @@ shedding load variation
 **Infections**  
 ⭐ Stochastic infection model with overdispersion  
 ⭐ Flexible $R_t$ smoothing (random walk, exponential smoothing,
-splines)  
+splines, changepoint models)  
 ⭐ Transmission indicators: $R_t$, growth rate, doubling time, and more
 
 **Forecast**  
@@ -299,8 +299,8 @@ Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
 data, the complexity of the model used, and how well the model actually
-fits the data. On a MacBook Pro (2 GHz Quad-Core Intel Core i5) the
-example below takes about 5 minutes to run.
+fits the data. On a modern laptop the example below should take about 5
+minutes to run.
 
 ``` r
 options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
@@ -518,7 +518,7 @@ ww_result$job$model
 #> 
 #> infections
 #>  |- generation_dist_assume
-#>  |- R_estimate_splines
+#>  |- R_estimate_changepoint_splines
 #>  |- seeding_estimate_rw
 #>  |- infection_noise_estimate (overdispersion = TRUE)
 ```
@@ -536,11 +536,11 @@ parameters from the model.
 ``` r
 names(ww_result$summary)
 #>  [1] "samples"                  "R"                       
-#>  [3] "expected_infections"      "infections"              
-#>  [5] "growth_rate"              "doubling_time"           
-#>  [7] "days_growing"             "expected_load"           
-#>  [9] "expected_concentration"   "concentration"           
-#> [11] "normalized_concentration"
+#>  [3] "R_diagnostics"            "expected_infections"     
+#>  [5] "infections"               "growth_rate"             
+#>  [7] "doubling_time"            "days_growing"            
+#>  [9] "expected_load"            "expected_concentration"  
+#> [11] "concentration"            "normalized_concentration"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -549,11 +549,11 @@ number.
 ``` r
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 1.036807 1.035745  0.6965128 0.9325218  1.135077   1.380163
-#> 2: 2021-12-04 1.037644 1.036200  0.7072554 0.9352365  1.131915   1.375141
-#> 3: 2021-12-05 1.038698 1.035635  0.7225687 0.9409083  1.130870   1.360814
-#> 4: 2021-12-06 1.039966 1.037090  0.7374740 0.9479347  1.126985   1.354385
-#> 5: 2021-12-07 1.041443 1.038955  0.7485678 0.9517000  1.126372   1.344230
+#> 1: 2021-12-03 1.055381 1.048665  0.8799468  1.000064  1.104198   1.260969
+#> 2: 2021-12-04 1.055389 1.048665  0.8799478  1.000064  1.104195   1.260969
+#> 3: 2021-12-05 1.055402 1.048735  0.8799507  1.000117  1.104193   1.260969
+#> 4: 2021-12-06 1.055421 1.048835  0.8803259  1.000117  1.104255   1.260904
+#> 5: 2021-12-07 1.055453 1.048840  0.8805724  1.000188  1.104162   1.258138
 #>        type seeding
 #> 1: estimate    TRUE
 #> 2: estimate    TRUE
@@ -577,7 +577,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.9634045 0.9527539 1.0770535 1.0579167
+#> [1] 0.9574684 0.9342793 1.0592704 1.0218015
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -589,10 +589,10 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "9ab6b8f9db0836e27cf9e9ac6ab1ea02"
+#> [1] "f4b5aa9be59d90f0dc58acc306eb70cd"
 #> 
 #> $input
-#> [1] "c5d9acd8e8877d4ffbb24019996c07f9"
+#> [1] "6c415f5e21cf6547f2a7a470face2ac7"
 #> 
 #> $fit_opts
 #> [1] "5309bbbc3cd1cc109eac60d2fc82de45"
@@ -601,7 +601,7 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "4329118480e9cb86b22d61c739d8c77e"
+#> [1] "b57d01341d896ab30df96cc3cd66461f"
 ```
 
 ## Citing the package

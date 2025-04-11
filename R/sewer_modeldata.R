@@ -326,7 +326,8 @@ all_components <- function() {
     "outliers",
     "sample_effects",
     "noise",
-    "horizon"
+    "horizon",
+    "dampening"
   )
   return(components)
 }

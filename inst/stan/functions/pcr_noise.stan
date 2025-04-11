@@ -176,6 +176,19 @@ vector log_E_exp_lnorm(vector lambda, real nu_pre, real t) {
   return(log_E_exp_lnorm(lambda, nu_pre, rep_vector(t, num_elements(lambda))));
 }
 
+/**
+  * Draw number of total valid partitions in dPCR run, assuming
+  * lognormally distributed partition loss, and assuming that
+  * the maximum number of partitions is 3 standard deviations above the mean
+  *
+  * @param mu_m Expected number of partitions
+  *
+  * @param m_cv Coefficient of variation of number of partitions
+  *
+  * @param noise_raw Standard normal noise for non-centered parameterization
+  *
+  * @return A vector of total partition numbers, same length as noise_raw
+  */
 vector total_partitions_noncentered(real m_mu, real m_cv, vector noise_raw) {
   int N = num_elements(noise_raw);
   if (m_cv == 0) {
