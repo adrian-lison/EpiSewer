@@ -1069,42 +1069,41 @@ R_estimate_piecewise <- function(
 #'   trajectories that are unrealistically volatile. For example, a minimum
 #'   distance of 7 implies that you don't expect Rt to significantly change its
 #'   trend more than once within a week.
-#' @param trend_change_prior_shape Exponential-Gamma (EG) prior (shape) for the
-#'   strength of trend changes. At each estimated changepoint, the change in Rt
-#'   trend is sampled from a normal distribution with standard deviation given
-#'   by the EG prior. This prior has a strong peak towards zero and a long tail.
-#'   In other words, while we expect the trend to change only slightly most of
-#'   the time, this prior also allows for occasional large trend changes.
-#'   Smaller shape parameters will lead to a longer tail, hence more extreme
-#'   changes are supported. Note that when adjusting the shape, you will likely
-#'   also have to adjust the rate. See details for more advice on choosing a
-#'   suitable prior.
-#' @param trend_change_prior_rate Exponential-Gamma (EG) prior (rate) for the
-#'   strength of trend changes. See `change_prior_shape` above for an
-#'   explanation. Larger rates will lead to more variability: a doubling of the
-#'   rate roughly corresponds to a doubling of all quantiles of the prior.
+#' @param trend_prior_shape Exponential-Gamma (EG) prior (shape) for the trend
+#'   in Rt. At each estimated changepoint, the Rt trend is sampled from a normal
+#'   distribution with standard deviation given by the EG prior. This prior has
+#'   a strong peak towards zero and a long tail. In other words, while we expect
+#'   Rt to remain stable most of the time, this prior also allows for occasional
+#'   strong trends. Smaller shape parameters will lead to a longer tail, hence
+#'   more extreme trends are supported. Note that when adjusting the shape, you
+#'   will likely also have to adjust the rate. See details for more advice on
+#'   choosing a suitable prior.
+#' @param trend_prior_rate Exponential-Gamma (EG) prior (rate) for the trend in
+#'   Rt. See `change_prior_shape` above for an explanation. Larger rates will
+#'   lead to more variability: a doubling of the rate roughly corresponds to a
+#'   doubling of all quantiles of the prior.
 #' @param trend_change_tolerance Tolerance for "negligible" trend changes.
 #'   Differences in the trend that are smaller than `change_tolerance` are
 #'   ignored by `changepoint_min_distance`, i.e. they can also occur closer to
 #'   each other. This tolerance gives the model more flexibility in placing
 #'   changepoints with large trend changes.
 #' @param strictness_k The k parameter of the logistic function used to
-#'   approximate a discrete changepoint model. Larger values make the changes
-#'   between in trends more strict, i.e. more like sharp turns. Note that
-#'   choosing large values of k can slow down sampling.
+#'   approximate a discrete changepoint model. Larger values make the changes of
+#'   trends more strict, i.e. more like sharp turns. Note that choosing large
+#'   values of k can slow down sampling.
 #' @param strictness_alpha The concentration parameter of the Dirichlet prior
 #'   for the changepoint positions. Choosing smaller values of
 #'   `strictness_alpha` will lead to more strict changepoints. Note that
 #'   choosing small values of `strictness_alpha` can impede MCMC sampling and
 #'   lead to divergent transitions.
 #'
-#' @details The Exponential-Gamma (EG) prior on the strength of trend changes is
-#'   parameterized via the arguments `change_prior_shape` and
-#'   `change_prior_rate`. It has a long tail to support large trend changes
-#'   while keeping the variation low most of the time. The default configuration
-#'   should work well in most contexts except for really extreme changes in Rt
-#'   over a short time window. To check the quantiles of your prior, you can use
-#'   the function [qexpgamma()] with corresponding shape and rate parameters.
+#' @details The Exponential-Gamma (EG) prior on the Rt trend is parameterized
+#'   via the arguments `change_prior_shape` and `change_prior_rate`. It has a
+#'   long tail to support large trends while keeping the Rt variation low most
+#'   of the time. The default configuration should work well in most contexts
+#'   except for really extreme changes in Rt over a short time window. To check
+#'   the quantiles of your prior, you can use the function [qexpgamma()] with
+#'   corresponding shape and rate parameters.
 #'
 #' @details If you need to adjust the overall variation, you can adjust the
 #'   `change_prior_rate` parameter. A doubling of the rate roughly corresponds
@@ -1128,8 +1127,8 @@ R_estimate_changepoint_splines <- function(
     R_start_prior_sigma = 0.8,
     changepoint_max_distance = 3*5,
     changepoint_min_distance = 3*2,
-    trend_change_prior_shape = 5e1,
-    trend_change_prior_rate = 10e-1,
+    trend_prior_shape = 5e1,
+    trend_prior_rate = 10e-1,
     trend_change_tolerance = 0.01,
     spline_knot_distance = 3,
     link = "inv_softplus",
@@ -1165,8 +1164,8 @@ R_estimate_changepoint_splines <- function(
 
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
                                            "lomax",
-                                           shape = trend_change_prior_shape,
-                                           rate = trend_change_prior_rate
+                                           shape = trend_prior_shape,
+                                           rate = trend_prior_rate
   )
 
   modeldata <- tbc(
