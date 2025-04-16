@@ -17,6 +17,7 @@ sampler_stan_mcmc(
   refresh = 200,
   show_messages = TRUE,
   show_exceptions = FALSE,
+  init_pathfinder = FALSE,
   ...
 )
 }
@@ -83,6 +84,9 @@ recommended unless you are very confident that the model is correct up to
 numerical error. If the messages are silenced then the
 \code{\link[cmdstanr:fit-method-output]{$output()}} method of the resulting fit object can be
 used to display the silenced messages.}
+
+\item{init_pathfinder}{Should stan's pathfinder algorihtm be used to
+initialize the MCMC chains?}
 
 \item{...}{Further arguments to pass to \link{cmdstanr}.}
 }
