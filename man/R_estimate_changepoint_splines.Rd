@@ -9,8 +9,8 @@ R_estimate_changepoint_splines(
   R_start_prior_sigma = 0.8,
   changepoint_max_distance = 3 * 5,
   changepoint_min_distance = 3 * 2,
-  trend_change_prior_shape = 10,
-  trend_change_prior_rate = 0.2,
+  trend_prior_shape = 50,
+  trend_prior_rate = 1,
   trend_change_tolerance = 0.01,
   spline_knot_distance = 3,
   link = "inv_softplus",
@@ -39,21 +39,20 @@ trajectories that are unrealistically volatile. For example, a minimum
 distance of 7 implies that you don't expect Rt to significantly change its
 trend more than once within a week.}
 
-\item{trend_change_prior_shape}{Exponential-Gamma (EG) prior (shape) for the
-strength of trend changes. At each estimated changepoint, the change in Rt
-trend is sampled from a normal distribution with standard deviation given
-by the EG prior. This prior has a strong peak towards zero and a long tail.
-In other words, while we expect the trend to change only slightly most of
-the time, this prior also allows for occasional large trend changes.
-Smaller shape parameters will lead to a longer tail, hence more extreme
-changes are supported. Note that when adjusting the shape, you will likely
-also have to adjust the rate. See details for more advice on choosing a
-suitable prior.}
+\item{trend_prior_shape}{Exponential-Gamma (EG) prior (shape) for the trend
+in Rt. At each estimated changepoint, the Rt trend is sampled from a normal
+distribution with standard deviation given by the EG prior. This prior has
+a strong peak towards zero and a long tail. In other words, while we expect
+Rt to remain stable most of the time, this prior also allows for occasional
+strong trends. Smaller shape parameters will lead to a longer tail, hence
+more extreme trends are supported. Note that when adjusting the shape, you
+will likely also have to adjust the rate. See details for more advice on
+choosing a suitable prior.}
 
-\item{trend_change_prior_rate}{Exponential-Gamma (EG) prior (rate) for the
-strength of trend changes. See \code{change_prior_shape} above for an
-explanation. Larger rates will lead to more variability: a doubling of the
-rate roughly corresponds to a doubling of all quantiles of the prior.}
+\item{trend_prior_rate}{Exponential-Gamma (EG) prior (rate) for the trend in
+Rt. See \code{change_prior_shape} above for an explanation. Larger rates will
+lead to more variability: a doubling of the rate roughly corresponds to a
+doubling of all quantiles of the prior.}
 
 \item{trend_change_tolerance}{Tolerance for "negligible" trend changes.
 Differences in the trend that are smaller than \code{change_tolerance} are
@@ -71,9 +70,9 @@ must be assumed. This should be higher than any realistic R value for the
 modeled pathogen. Default is 6.}
 
 \item{strictness_k}{The k parameter of the logistic function used to
-approximate a discrete changepoint model. Larger values make the changes
-between in trends more strict, i.e. more like sharp turns. Note that
-choosing large values of k can slow down sampling.}
+approximate a discrete changepoint model. Larger values make the changes of
+trends more strict, i.e. more like sharp turns. Note that choosing large
+values of k can slow down sampling.}
 
 \item{strictness_alpha}{The concentration parameter of the Dirichlet prior
 for the changepoint positions. Choosing smaller values of
@@ -104,13 +103,13 @@ changepoint model. This approach offers high flexibility of the Rt
 trajectory while avoiding overfitting on noise.
 }
 \details{
-The Exponential-Gamma (EG) prior on the strength of trend changes is
-parameterized via the arguments \code{change_prior_shape} and
-\code{change_prior_rate}. It has a long tail to support large trend changes
-while keeping the variation low most of the time. The default configuration
-should work well in most contexts except for really extreme changes in Rt
-over a short time window. To check the quantiles of your prior, you can use
-the function \code{\link[=qexpgamma]{qexpgamma()}} with corresponding shape and rate parameters.
+The Exponential-Gamma (EG) prior on the Rt trend is parameterized
+via the arguments \code{change_prior_shape} and \code{change_prior_rate}. It has a
+long tail to support large trends while keeping the Rt variation low most
+of the time. The default configuration should work well in most contexts
+except for really extreme changes in Rt over a short time window. To check
+the quantiles of your prior, you can use the function \code{\link[=qexpgamma]{qexpgamma()}} with
+corresponding shape and rate parameters.
 
 If you need to adjust the overall variation, you can adjust the
 \code{change_prior_rate} parameter. A doubling of the rate roughly corresponds
