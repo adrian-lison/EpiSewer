@@ -291,7 +291,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
       date_labels = "%b\n%Y"
     ) +
     xlab("Date") +
-    ylab("Effective reproduction number") +
+    ylab(expression(R[t])) +
     theme(legend.title = element_blank()) +
     geom_hline(yintercept = 1, linetype = "dashed") +
     coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
@@ -783,7 +783,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         date_breaks = "1 month", date_labels = "%b\n%Y"
       ) +
       xlab("Date") +
-      ylab(ifelse(normalized,"Normalized concentration [gc / mL]","Concentration [gc / mL]")) +
+      ylab(ifelse(normalized,"Normalized concentration","Concentration")) +
       coord_cartesian(xlim = as.Date(c(first_date, last_date)))
   }
 
@@ -851,7 +851,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         axis.text.x = element_blank()
         ) +
       xlab("Observations (ordered by concentration)") +
-      ylab(ifelse(normalized,"Normalized concentration [gc / mL]","Concentration [gc / mL]"))
+      ylab(ifelse(normalized,"Normalized concentration","Concentration"))
   }
 
   if (is.null(concentration_pred) || length(unique(concentration_pred$model)) == 1) {
@@ -914,7 +914,7 @@ plot_load <- function(results, median = FALSE,
   plot_time_series(
     results,
     variable = "expected_load",
-    variable_name = "Load [gene copies / day]",
+    variable_name = "Load",
     yintercept = NULL,
     median = median,
     seeding = FALSE,
