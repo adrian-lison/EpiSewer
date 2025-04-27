@@ -137,12 +137,12 @@ setClass("EpiSewerJob")
 #' @param job An EpiSewerJob object as returned by [EpiSewer()].
 #'
 #' @export
-run <- function(job) {
+run <- function(job, ...) {
   UseMethod("run")
 }
 
 #' @export
-run.EpiSewerJob <- function(job) {
+run.EpiSewerJob <- function(job, run_silent = FALSE) {
   result <- list()
   result$job <- job
 
@@ -164,12 +164,20 @@ run.EpiSewerJob <- function(job) {
     job$fit_opts$sampler
   )
 
+  if (run_silent) {
+    sink(tempfile(), type = "out")
+    on.exit(sink())
+  }
+
   # pathfinder initialization for mcmc
   if (class(job$fit_opts$sampler) == "mcmc" && job$fit_opts$sampler$init_pathfinder) {
     tryCatch(
       {
         cat("Initializing chains via pathfinder...\n")
-        pathfind_init <- get_pathfinder_inits(stanmodel_instance, job)
+        pathfind_init <- get_pathfinder_inits(
+          stanmodel_instance, job,
+          max_iters = job$fit_opts$sampler$init_pathfinder_max_lbfgs_iters
+          )
         stopifnot(!"errors" %in% names(pathfind_init))
         options(cmdstanr_warn_inits = FALSE)
         arguments$init <- pathfind_init
@@ -183,6 +191,7 @@ run.EpiSewerJob <- function(job) {
     )
   }
   arguments[["init_pathfinder"]] <- NULL
+  arguments[["init_pathfinder_max_lbfgs_iters"]] <- NULL
 
   fit_res <- fit_stan(stanmodel_instance, arguments, fit_method = class(job$fit_opts$sampler))
   options(cmdstanr_warn_inits = TRUE)
@@ -218,8 +227,8 @@ run.EpiSewerJob <- function(job) {
 }
 
 #' @export
-run.EpiSewerJobResult <- function(job) {
-  return(run(job$job))
+run.EpiSewerJobResult <- function(job, run_silent = FALSE) {
+  return(run(job$job, run_silent = run_silent))
 }
 
 #' @export
@@ -229,13 +238,25 @@ test_run <- function(job) {
 
 #' @export
 test_run.EpiSewerJob <- function(job) {
-  job$fit_opts$sampler$iter_warmup <- 5
-  job$fit_opts$sampler$iter_sampling <- 5
-  job$fit_opts$sampler$show_messages <- FALSE
-  job$fit_opts$sampler$show_exceptions <- FALSE
+  if (class(job$fit_opts$sampler) == "mcmc") {
+    job$fit_opts$sampler$iter_warmup <- 5
+    job$fit_opts$sampler$iter_sampling <- 5
+    job$fit_opts$sampler$show_messages <- FALSE
+    job$fit_opts$sampler$show_exceptions <- FALSE
+    job$fit_opts$sampler$init_pathfinder_max_lbfgs_iters <- 10
+  } else if (class(job$fit_opts$sampler) == "pathfinder") {
+    job$fit_opts$sampler$num_paths <- 1
+    job$fit_opts$sampler$draws <- 10
+    job$fit_opts$sampler$max_lbfgs_iters <- 10
+  } else {
+    cli::cli_abort(paste(
+      "The test_run function is not implemented for the sampler class",
+      "{.cls {class(job$fit_opts$sampler)}}."
+    ))
+  }
   job$fit_opts$sampler$output_dir <- withr::local_tempdir()
   job$results_opts$samples_ndraws <- 2
-  return(run(job))
+  return(run(job, run_silent = TRUE))
 }
 
 #' @export
