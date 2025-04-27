@@ -40,14 +40,14 @@ rate to be between 0 (0\%) and 0.1 (10\%).}
 \item{extend}{Should the seeding phase be extended when concentrations are
 very low at the start of the measurement time series? If \code{TRUE}, then the
 seeding phase will be extended to the first date with three consecutive
-detects (i.e. non-zero measurements). The reproduction number will only be
-modeled from that date onward. This option often makes sense, as infection
-numbers are typically very low during a period with many non-detects, which
-can lead to sampling problems when estimating Rt. If you nevertheless want
-Rt estimates also for this period, you can use \code{extend = FALSE}. Note
-though that estimated reproduction numbers are not necessarily meaningful
-during periods with very low infection numbers, as transmission dynamics
-may be dominated by chance events and importations.}
+detects (i.e. non-zero measurements). Before that date, the reproduction
+number will be retrospectively computed based on the seeded infections.
+Explicit modeling of the Rt time series will only begin after the seeding
+phase. This option avoids sampling problems when estimating Rt from very
+low infection numbers during a period with many non-detects. Note that
+estimated reproduction numbers are not necessarily meaningful during
+periods with very low infection numbers, as transmission dynamics may be
+dominated by chance events and importations.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can

@@ -245,17 +245,20 @@ modeldata_update_metainfo <- function(modeldata) {
     }
 
     if (is.null(modeldata[["se"]]) && seed_extension > 0) {
-      cli::cli_inform(c("i" = paste(
-        "Due to non-detects at the start of the measurement time series,",
-        "the reproduction number will only be estimated from",
-        modeldata$.metainfo$date_triple_detect, "onwards.",
-        "Measurements before that date are nevertheless modeled."
+      cli::cli_inform(c("i" = paste0(
+        "Due to non-detects at the start of the measurement time series, ",
+        "Rt can only be accurately estimated from ",
+        modeldata$.metainfo$date_triple_detect, " onwards. ",
+        "Measurements and Rt before that date are modeled ",
+        "using a simple seeding process (see ",
+        cli_help("model_infections"), ")."
       )))
     }
 
     modeldata$se <- seed_extension
     modeldata$.metainfo$length_seeding <- modeldata$G + seed_extension
-    modeldata$.metainfo$length_R <- with(modeldata, L + S + D + T - G) - seed_extension
+    modeldata$.metainfo$length_R <- with(modeldata, L + S + D + T - G)
+    modeldata$.metainfo$length_R_modeled <- modeldata$.metainfo$length_R - seed_extension
   }
 
   return(modeldata)
@@ -270,7 +273,9 @@ modeldata_descriptions <- function() {
     ".metainfo$length_I" =
       "number of days over which infections are modeled",
     ".metainfo$length_R" =
-      "number of days over which Rt is modeled",
+      "number of days over which Rt is estimated (including extended seeding)",
+    ".metainfo$length_R_modeled" =
+      "number of days over which Rt is explicitly modeled",
     ".metainfo$load_per_case" =
       "assumed overall load shed per individual",
     ".metainfo$initial_cases_crude" =

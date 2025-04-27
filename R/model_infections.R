@@ -265,10 +265,10 @@ R_estimate_ets <- function(
   modeldata <- tbc(
     "R_ets_noise",
     {
-      modeldata$ets_length <- modeldata$.metainfo$length_R
-      modeldata$.init$ets_noise <- rep(0, modeldata$.metainfo$length_R - 1)
+      modeldata$ets_length <- modeldata$.metainfo$length_R_modeled
+      modeldata$.init$ets_noise <- rep(0, modeldata$.metainfo$length_R_modeled - 1)
       modeldata <- add_R_variability(
-        length_R = modeldata$.metainfo$length_R,
+        length_R = modeldata$.metainfo$length_R_modeled,
         length_seeding = modeldata$.metainfo$length_seeding,
         partial_window = modeldata$.metainfo$partial_window,
         partial_generation = modeldata$.metainfo$partial_generation,
@@ -284,7 +284,7 @@ R_estimate_ets <- function(
       }
     },
     required = c(
-      ".metainfo$length_R",
+      ".metainfo$length_R_modeled",
       ".metainfo$length_seeding",
       ".metainfo$partial_window",
       ".metainfo$partial_generation",
@@ -590,7 +590,7 @@ R_estimate_splines <- function(
 
       # Global spline model for Rt
       knots_global <- place_knots(
-        length_R = modeldata$.metainfo$length_R,
+        length_R = modeldata$.metainfo$length_R_modeled,
         forecast_horizon = modeldata$.metainfo$forecast_horizon,
         knot_distance = knot_distance_global,
         partial_window = modeldata$.metainfo$partial_window,
@@ -599,7 +599,7 @@ R_estimate_splines <- function(
         )
       modeldata$.metainfo$R_knots_global <- knots_global
       modeldata <- use_basis_splines(
-        spline_length = with(modeldata$.metainfo, length_R + forecast_horizon),
+        spline_length = with(modeldata$.metainfo, length_R_modeled + forecast_horizon),
         knots = knots_global,
         degree = spline_degree,
         modeldata = modeldata
@@ -607,7 +607,7 @@ R_estimate_splines <- function(
 
       # Local spline model for Rt
       knots_local <- place_knots(
-        length_R = modeldata$.metainfo$length_R,
+        length_R = modeldata$.metainfo$length_R_modeled,
         forecast_horizon = modeldata$.metainfo$forecast_horizon,
         knot_distance = knot_distance_local,
         partial_window = modeldata$.metainfo$partial_window,
@@ -616,7 +616,7 @@ R_estimate_splines <- function(
       )
       modeldata$.metainfo$R_knots_local <- knots_local
       modeldata <- use_basis_splines2(
-        spline_length = with(modeldata$.metainfo, length_R + forecast_horizon),
+        spline_length = with(modeldata$.metainfo, length_R_modeled + forecast_horizon),
         knots = knots_local,
         degree = spline_degree,
         modeldata = modeldata
@@ -624,7 +624,7 @@ R_estimate_splines <- function(
 
       # Changepoint model for variability of Rt
       modeldata <- add_R_variability(
-        length_R = modeldata$.metainfo$length_R,
+        length_R = modeldata$.metainfo$length_R_modeled,
         length_seeding = modeldata$.metainfo$length_seeding,
         partial_window = modeldata$.metainfo$partial_window,
         partial_generation = modeldata$.metainfo$partial_generation,
@@ -678,7 +678,7 @@ R_estimate_splines <- function(
 
     },
     required = c(
-      ".metainfo$length_R",
+      ".metainfo$length_R_modeled",
       ".metainfo$length_seeding",
       ".metainfo$partial_window",
       ".metainfo$partial_generation",
@@ -1016,8 +1016,8 @@ R_estimate_piecewise <- function(
     {
       modeldata$.metainfo$R_knots <- knots
       modeldata <- use_soft_changepoints(
-        scp_length = modeldata$.metainfo$length_R,
-        last_knot = modeldata$.metainfo$length_R - changepoint_min_distance,
+        scp_length = modeldata$.metainfo$length_R_modeled,
+        last_knot = modeldata$.metainfo$length_R_modeled - changepoint_min_distance,
         distance = changepoint_max_distance,
         min_distance = changepoint_min_distance,
         min_distance_tolerance = change_tolerance,
@@ -1028,7 +1028,7 @@ R_estimate_piecewise <- function(
         )
     },
     required = c(
-      ".metainfo$length_R",
+      ".metainfo$length_R_modeled",
       ".metainfo$partial_window",
       ".metainfo$partial_generation"
     ),
@@ -1174,14 +1174,14 @@ R_estimate_changepoint_splines <- function(
       # Spline model
       spline_knots <- list(
         interior = rev(seq(
-          modeldata$.metainfo$length_R - spline_knot_distance,
+          modeldata$.metainfo$length_R_modeled - spline_knot_distance,
           1, by = -spline_knot_distance
         )),
-        boundary = c(-3, modeldata$.metainfo$length_R)
+        boundary = c(-3, modeldata$.metainfo$length_R_modeled)
       )
       modeldata$.metainfo$R_knots <- spline_knots
       modeldata <- use_basis_splines(
-        spline_length = modeldata$.metainfo$length_R,
+        spline_length = modeldata$.metainfo$length_R_modeled,
         knots = spline_knots,
         degree = 3,
         modeldata = modeldata
@@ -1189,7 +1189,7 @@ R_estimate_changepoint_splines <- function(
       modeldata$bs_coeff_select <- c(1, spline_knots$interior, spline_knots$boundary[2], spline_knots$boundary[2])
 
       # Changepoint model
-      last_change <- with(modeldata$.metainfo, length_R - changepoint_min_distance)
+      last_change <- with(modeldata$.metainfo, length_R_modeled - changepoint_min_distance)
       distance = as.integer(floor(changepoint_max_distance/spline_knot_distance))
       changepoint_min_distance = as.integer(ceiling(changepoint_min_distance/spline_knot_distance))
       if (distance < 2 || changepoint_min_distance < 1) {
@@ -1214,7 +1214,7 @@ R_estimate_changepoint_splines <- function(
       )
     },
     required = c(
-      ".metainfo$length_R"
+      ".metainfo$length_R_modeled"
     ),
     modeldata = modeldata
   )
@@ -1380,14 +1380,14 @@ seeding_estimate_constant <- function(
 #' @param extend Should the seeding phase be extended when concentrations are
 #'   very low at the start of the measurement time series? If `TRUE`, then the
 #'   seeding phase will be extended to the first date with three consecutive
-#'   detects (i.e. non-zero measurements). The reproduction number will only be
-#'   modeled from that date onward. This option often makes sense, as infection
-#'   numbers are typically very low during a period with many non-detects, which
-#'   can lead to sampling problems when estimating Rt. If you nevertheless want
-#'   Rt estimates also for this period, you can use `extend = FALSE`. Note
-#'   though that estimated reproduction numbers are not necessarily meaningful
-#'   during periods with very low infection numbers, as transmission dynamics
-#'   may be dominated by chance events and importations.
+#'   detects (i.e. non-zero measurements). Before that date, the reproduction
+#'   number will be retrospectively computed based on the seeded infections.
+#'   Explicit modeling of the Rt time series will only begin after the seeding
+#'   phase. This option avoids sampling problems when estimating Rt from very
+#'   low infection numbers during a period with many non-detects. Note that
+#'   estimated reproduction numbers are not necessarily meaningful during
+#'   periods with very low infection numbers, as transmission dynamics may be
+#'   dominated by chance events and importations.
 #'
 #' @details The seeding phase has the length of the maximum generation time
 #'   (during this time, the renewal model cannot be applied). Traditionally,

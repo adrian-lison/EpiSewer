@@ -331,7 +331,7 @@ parameters {
 }
 transformed parameters {
   // Effective reproduction number parameters ----
-  vector[L + S + D + T - (G+se)] R;
+  vector[L + S + D + T - G] R;
   // random walk / exponential smoothing (ets)
   vector<lower=0>[R_use_ets ? ets_length - 1 : 0] ets_sd; // standard deviation of additive errors in R ets model
   // soft changepoints (scp)
@@ -358,6 +358,26 @@ transformed parameters {
   vector<lower=0>[(cv_type == 1) && total_partitions_observe!=1 ? n_measured : 0] nu_upsilon_b; // total partitions per measurement
   array[LOD_model > 0 ? 1 : 0] vector<lower=0>[n_measured] LOD_hurdle_scale;
 
+  // seeding
+  if (seeding_model == 0) {
+    iota[1 : (G+se)] = exp(rep_vector(iota_log_seed_intercept, (G+se)));
+  } else if (seeding_model == 1) {
+    iota[1 : (G+se)] = exp(random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0));
+  }
+
+  // compute Rt for extended seeding phase
+  if (se > 0) {
+    vector[L + S + D + T] infs;
+    vector[L + S + D + T - G] infness;
+    if (I_sample) {
+      infs = I;
+    } else {
+      infs = iota;
+    }
+    infness = infectiousness(L + S + D + T - G, G, 0, gi_rev, infs);
+    R[1:se] = iota[(G+1):(G+se)] ./ infness[1:se];
+  }
+
   if (R_model == 0) {
     ets_sd = csr_matrix_times_vector(
       L + S + D + T - (G+se) + h, R_vari_ncol[1], R_vari_w,
@@ -367,7 +387,7 @@ transformed parameters {
         ) : R_sd_changepoints)
       )[2:(L + S + D + T - (G+se))];
     // Innovations state space process implementing exponential smoothing
-    R = apply_link(holt_damped_process(
+    R[(se+1):(L + S + D + T - G)] = apply_link(holt_damped_process(
       [R_intercept, ets_trend_start[1]]',
       param_or_fixed(ets_alpha, ets_alpha_prior),
       param_or_fixed(ets_beta, ets_beta_prior),
@@ -413,7 +433,7 @@ transformed parameters {
     vector[L + S + D + T - (G+se) + h] R_all = apply_link(
       R_intercept + R_global + R_local, R_link
       );
-    R = R_all[1:(L + S + D + T - (G+se))];
+    R[(se+1):(L + S + D + T - G)] = R_all[1:(L + S + D + T - (G+se))];
     if (h>0) {
       R_forecast_spline = R_all[(L + S + D + T - (G+se) + 1):(L + S + D + T - (G+se) + h)];
     }
@@ -421,7 +441,7 @@ transformed parameters {
     scp_knot_values = random_walk(
       [R_intercept]', scp_noise .* scp_sd, 0
       )[2:(scp_n_knots[1]+1)]; // do not keep intercept here
-    R = apply_link(soft_changepoint(
+    R[(se+1):(L + S + D + T - G)] = apply_link(soft_changepoint(
       R_intercept, scp_knot_values, scp_length_intercept[1], scp_length,
       scp_break_dist[1], scp_min_dist[1], scp_break_delays,
       scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
@@ -442,24 +462,18 @@ transformed parameters {
       scp_values[scp_length] + last_diff
       ]'
       );
-    R = apply_link(R_intercept + csr_matrix_times_vector(
+    R[(se+1):(L + S + D + T - G)] = apply_link(R_intercept + csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
   }
 
-  // seeding
-  if (seeding_model == 0) {
-    iota[1 : (G+se)] = exp(rep_vector(iota_log_seed_intercept, (G+se)));
-  } else if (seeding_model == 1) {
-    iota[1 : (G+se)] = exp(random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0));
-  }
   // renewal process
   if (I_sample) {
     iota[(G + se + 1) : (L + S + D + T)] = renewal_process_stochastic(
-      (L + S + D + T - (G+se)), R, G, se, gi_rev, I);
+      (L + S + D + T - (G+se)), R[(se+1):(L + S + D + T - G)], G, se, gi_rev, I);
   } else {
     iota[(G + se + 1) : (L + S + D + T)] = renewal_process_deterministic(
-      (L + S + D + T - (G+se)), R, G, se, gi_rev, iota);
+      (L + S + D + T - (G+se)), R[(se+1):(L + S + D + T - G)], G, se, gi_rev, iota);
   }
 
   // convolution from infections to shedding onsets (expected)
@@ -792,17 +806,17 @@ generated quantities {
           ets_diff[1]
         ), R_link)[((L + S + D + T - (G+se)) + 1):((L + S + D + T - (G+se)) + h)];
       } else if (R_model == 1) {
-         R_forecast = R_forecast_spline;
+        R_forecast = R_forecast_spline;
       } else if (R_model == 2) {
-        R_forecast = rep_vector(R[L + S + D + T - (G+se)], h);
+        R_forecast = rep_vector(R[L + S + D + T - G], h);
       } else if (R_model == 3) {
-        real last_R = R[L + S + D + T - (G+se)];
+        real last_R = R[L + S + D + T - G];
         real slope = scp_knot_values[scp_n_knots[1]] / (1.0*bs_dist);
         R_forecast = last_R + cumulative_sum(rep_vector(slope, h));
       }
 
       R_forecast = dampen_trend(
-        R[L + S + D + T - (G+se)], R_forecast, forecast_dampening
+        R[L + S + D + T - G], R_forecast, forecast_dampening
         );
 
       // Forecasting of infections
