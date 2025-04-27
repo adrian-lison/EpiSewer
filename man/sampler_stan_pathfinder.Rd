@@ -72,7 +72,7 @@ used to display the silenced messages.}
 A \code{list} with settings for the pathfinder sampler.
 }
 \description{
-This option will use stan's pathfinder algorithm via \link{cmdstanr}
+This option uses stan's pathfinder algorithm via \link{cmdstanr}
 for variational inference. Sampling is fast but yields potentially
 inaccurate results with unreliable uncertainty information. Currently, this
 sampler is recommended only for preview purposes, not for real-world

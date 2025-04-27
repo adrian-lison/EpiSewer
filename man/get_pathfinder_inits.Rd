@@ -4,7 +4,7 @@
 \alias{get_pathfinder_inits}
 \title{Run stan's pathfinder algorithm to obtain improved inits.}
 \usage{
-get_pathfinder_inits(stanmodel_instance, job)
+get_pathfinder_inits(stanmodel_instance, job, max_iters = NULL)
 }
 \arguments{
 \item{stanmodel_instance}{A CmdStanModel object of the EpiSewer model

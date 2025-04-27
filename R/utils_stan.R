@@ -80,7 +80,10 @@ get_stan_model <- function(
 #' @description Sets model fitting options in `EpiSewer`.
 #'
 #' @param sampler Which type of sampler should be used for model fitting?
-#'   Currently, only [sampler_stan_mcmc()] is supported.
+#'   Currently supported are
+#'    - [sampler_stan_mcmc()]: default, recommended for inference
+#'    - [sampler_stan_pathfinder()]: potentially inaccurate, recommended for
+#'    preview only
 #' @param model Details about the model file to be used, see
 #'   [model_stan_opts()]. This also makes it possible for users to supply
 #'   customized models.
@@ -114,11 +117,13 @@ set_fit_opts <- function(sampler = sampler_stan_mcmc(),
 
 #' Use the stan MCMC sampler
 #'
-#' @description This option will use stan's NUTS sampler via [cmdstanr] for
-#'   Markov Chain Monte Carlo (MCMC) sampling of the `EpiSewer` model.
+#' @description This option uses stan's NUTS sampler via [cmdstanr] for Markov
+#'   Chain Monte Carlo (MCMC) sampling of the `EpiSewer` model.
 #'
 #' @param init_pathfinder Should stan's pathfinder algorihtm be used to
 #'   initialize the MCMC chains?
+#' @param init_pathfinder_max_lbfgs_iters The maximum number of iterations for
+#'   LBFGS during pathfinder initialization.
 #' @param ... Further arguments to pass to [cmdstanr].
 #' @inheritParams cmdstanr::sample
 #'
@@ -138,6 +143,7 @@ sampler_stan_mcmc <- function(
     show_messages = TRUE,
     show_exceptions = FALSE,
     init_pathfinder = FALSE,
+    init_pathfinder_max_lbfgs_iters = NULL,
     ...) {
   opts <- c(as.list(environment()), list(...))
   if (opts$threads_per_chain == 1) {
@@ -149,7 +155,7 @@ sampler_stan_mcmc <- function(
 
 #' Use stan's pathfinder variational inference algorithm
 #'
-#' @description This option will use stan's pathfinder algorithm via [cmdstanr]
+#' @description This option uses stan's pathfinder algorithm via [cmdstanr]
 #'   for variational inference. Sampling is fast but yields potentially
 #'   inaccurate results with unreliable uncertainty information. Currently, this
 #'   sampler is recommended only for preview purposes, not for real-world
@@ -402,17 +408,19 @@ get_checksum_model <- function(stanmodel, only_functions = FALSE) {
 #' @param stanmodel_instance A CmdStanModel object of the EpiSewer model
 #'   constructed using `cmdstanr::cmdstan_model()`.
 #' @param job An EpiSewer job object with data and default inits.
+#' @param max_iters The maximum number of iterations for LBFGS during pathfinder
+#'  initialization.
 #'
 #' @return Fitted model, a CmdStanPathfinder object. Can be used as arguments
 #'   for the inits of the `CmdStanModel$sample()` method.
 #'
 #' @keywords internal
-get_pathfinder_inits <- function(stanmodel_instance, job) {
+get_pathfinder_inits <- function(stanmodel_instance, job, max_iters = NULL) {
   arguments <- c(
     list(data = job$data),
     init = function() job$init,
     list(
-      num_paths = 1, draws = 100, seed = 0,
+      num_paths = 1, draws = 100, seed = 0, max_lbfgs_iters = max_iters,
       psis_resample = FALSE, sig_figs = 14,
       show_messages = FALSE, show_exceptions = FALSE
       )
