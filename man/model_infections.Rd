@@ -7,7 +7,7 @@
 model_infections(
   generation_dist = generation_dist_assume(),
   R = R_estimate_changepoint_splines(),
-  seeding = seeding_estimate_growth(),
+  seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
 )
 }
