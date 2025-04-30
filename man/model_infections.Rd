@@ -7,7 +7,7 @@
 model_infections(
   generation_dist = generation_dist_assume(),
   R = R_estimate_changepoint_splines(),
-  seeding = seeding_estimate_rw(),
+  seeding = seeding_estimate_growth(),
   infection_noise = infection_noise_estimate()
 )
 }
@@ -37,6 +37,7 @@ smoothing (ets), and smoothing splines. Modeling options:
 time. For these initial infections, a simple seeding model instead of the
 renewal model must be used. Modeling options:
 \itemize{
+\item \code{\link[=seeding_estimate_growth]{seeding_estimate_growth()}}
 \item \code{\link[=seeding_estimate_constant]{seeding_estimate_constant()}}
 \item \code{\link[=seeding_estimate_rw]{seeding_estimate_rw()}}
 }}

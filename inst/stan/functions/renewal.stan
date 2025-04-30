@@ -144,7 +144,7 @@ vector convolve(vector f, vector g) {
   return(fg);
 }
 
-  /**
+/**
 * Convolution of a time series for T time steps on log scale
 **
 * @param f The weight function, e.g. the incubation period distribution
@@ -163,3 +163,29 @@ vector log_convolve(vector f, vector g) {
   }
   return(fg);
 }
+
+/**
+* Find growth rate for a given reproduction number and discrete generation time
+* distribution
+*
+* @param R The effective reproduction number
+*
+* @param g The generation time distribution
+*
+* @return The calculated growth rate
+*/
+real get_growth_rate(real R, vector g) {
+    real r = 0.1;  // initial guess
+    int K = num_elements(g);
+    vector[K] ks = linspaced_vector(K, 1, K);  // time indices
+
+    for (i in 1:5) {
+      vector[K] ek = exp(-r * ks);
+      real S = dot_product(ek, g);
+      real S_prime = -dot_product(ks .* ek, g);
+      real f = inv(S) - R;                // f(r) = 1/S - R
+      real f_prime = (-1) / (S * S) * S_prime; // f'(r) = -1/S^2 * S'
+      r -= f / f_prime;  // Newton-Raphson update
+    }
+    return r;
+  }

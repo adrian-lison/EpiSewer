@@ -98,7 +98,7 @@ data {
   // --> probability for a delay of one comes first (zero excluded)
 
   // Seeding of infections ----
-  int<lower=0, upper=1> seeding_model; // 0 for fixed, 1 for random walk seeding
+  int<lower=0, upper=2> seeding_model; // 0 for fixed, 1 for random walk, 2 for growth rate seeding
   array[2] real iota_log_seed_intercept_prior;
   array[seeding_model == 1 ? 2 : 0] real iota_log_seed_sd_prior;
   int<lower=0> se; // seeding extension (used when time series starts with many non-detects)
@@ -358,13 +358,7 @@ transformed parameters {
   vector<lower=0>[(cv_type == 1) && total_partitions_observe!=1 ? n_measured : 0] nu_upsilon_b; // total partitions per measurement
   array[LOD_model > 0 ? 1 : 0] vector<lower=0>[n_measured] LOD_hurdle_scale;
 
-  // seeding
-  if (seeding_model == 0) {
-    iota[1 : (G+se)] = exp(rep_vector(iota_log_seed_intercept, (G+se)));
-  } else if (seeding_model == 1) {
-    iota[1 : (G+se)] = exp(random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0));
-  }
-
+  // Reproduction number ----
   if (R_model == 0) {
     ets_sd = csr_matrix_times_vector(
       L + S + D + T - (G+se) + h, R_vari_ncol[1], R_vari_w,
@@ -452,6 +446,22 @@ transformed parameters {
     R[(se+1):(L + S + D + T - G)] = apply_link(R_intercept + csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
+  }
+
+  // seeding
+  if (seeding_model == 0) {
+    iota[1:(G+se)] = exp(
+      rep_vector(iota_log_seed_intercept, (G+se))
+      );
+  } else if (seeding_model == 1) {
+    iota[1:(G+se)] = exp(
+      random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0)
+      );
+  } else if (seeding_model == 2) {
+    real seeding_r = get_growth_rate(R[se+1], generation_dist);
+    iota[1:(G+se)] = exp(
+      iota_log_seed_intercept + seeding_r * linspaced_vector(G+se, 1, G+se)
+      );
   }
 
   // compute Rt for extended seeding phase

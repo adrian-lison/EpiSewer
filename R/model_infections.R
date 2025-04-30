@@ -35,7 +35,7 @@
 model_infections <- function(
     generation_dist = generation_dist_assume(),
     R = R_estimate_changepoint_splines(),
-    seeding = seeding_estimate_rw(),
+    seeding = seeding_estimate_growth(),
     infection_noise = infection_noise_estimate()) {
   verify_is_modeldata(generation_dist, "generation_dist")
   verify_is_modeldata(R, "R")
@@ -1301,7 +1301,7 @@ add_R_variability <- function(length_R, h, length_seeding, partial_window,
 #'   epidemic, depending on what time period the model is fitted to, it may also
 #'   cover a different phase with stronger growth dynamics. Thus, if your data
 #'   starts in the middle of an epidemic wave, it is recommended to use
-#'   [seeding_estimate_rw()] instead of [seeding_estimate_constant()].
+#'   [seeding_estimate_growth()] instead of [seeding_estimate_constant()].
 #'
 #' @details If `intercept_prior_q5` or `intercept_prior_q95` are not specified
 #'   by the user, `EpiSewer` will compute a rough median empirical estimate of
@@ -1346,7 +1346,7 @@ seeding_estimate_constant <- function(
   modeldata$.metainfo$extend_seeding <- extend
 
   modeldata$.str$infections[["seeding"]] <- list(
-    seeding_estimate_fixed = c()
+    seeding_estimate_constant = c()
   )
 
   return(modeldata)
@@ -1459,6 +1459,78 @@ seeding_estimate_rw <- function(
 
   modeldata$.str$infections[["seeding"]] <- list(
     seeding_estimate_rw = c()
+  )
+
+  return(modeldata)
+}
+
+#' Estimate seeding infections with a fixed growth rate
+#'
+#' @description This option estimates an exponential growth of infections at the
+#'   start of the modeled time period, with the growth rate matching the initial
+#'   reproduction number.
+#'
+#' @inheritParams seeding_estimate_rw
+#'
+#' @details The seeding phase has the length of the maximum generation time
+#'   (during this time, the renewal model cannot be applied). It is here assumed
+#'   that the expected number of new infections increases exponentially during
+#'   this time period. The exponential growth rate of the seeding phase is
+#'   back-calculated from the initial reproduction number and therefore depends
+#'   on the `R_start_prior` provided to the `R_estimate_*` component.
+#'
+#' @details If `intercept_prior_q5` or `intercept_prior_q95` are not specified
+#'   by the user, `EpiSewer` will compute a rough median empirical estimate of
+#'   the number of cases using the supplied wastewater measurements and shedding
+#'   assumptions, and then infer the missing quantiles based on this. If none of
+#'   the quantiles are provided, they are set to be roughly 1/10 and 10 times
+#'   the empirical median estimate. We note that this is a violation of Bayesian
+#'   principles (data must not be used to inform priors) - but a neglectable
+#'   one, since it only ensures that the seeding is modeled on the right order
+#'   of magnitude and does not have relevant impacts on later Rt estimates.
+#'
+#' @details The priors of this component have the following functional form:
+#' - initial number of infections (log scale): `Normal`
+#'
+#' @details Credits to Samuel Brand and the authors of the EpiAware toolkit for
+#'   the idea to back-calculate the growth rate of the seeding phase from the
+#'   initial reproduction number.
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+seeding_estimate_growth <- function(
+    intercept_prior_q5 = NULL,
+    intercept_prior_q95 = NULL,
+    extend = TRUE,
+    modeldata = modeldata_init()) {
+
+  modeldata$seeding_model <- 2
+
+  modeldata <- add_seeding_intercept_prior(
+    intercept_prior_q5 = intercept_prior_q5,
+    intercept_prior_q95 = intercept_prior_q95,
+    calling_f_name = "seeding_estimate_growth",
+    modeldata = modeldata
+  )
+
+  modeldata$iota_log_seed_sd_prior <- numeric(0)
+  modeldata$.init$iota_log_seed_sd <- numeric(0)
+  modeldata$.init$iota_log_ar_noise <- numeric(0)
+
+  # compute regression vector for estimating log-linear trend of seeding phase
+  modeldata$iota_log_seed_trend_reg <- tbe(
+    get_regression_linear_trend(
+      1:modeldata$.metainfo$length_seeding,
+      weights = c(rep(0,modeldata$se), rev(modeldata$generation_dist))
+    ),
+    c(".metainfo$length_seeding", "generation_dist")
+  )
+
+  modeldata$.metainfo$extend_seeding <- extend
+
+  modeldata$.str$infections[["seeding"]] <- list(
+    seeding_estimate_growth = c()
   )
 
   return(modeldata)
