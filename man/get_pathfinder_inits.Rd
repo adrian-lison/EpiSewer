@@ -11,6 +11,9 @@ get_pathfinder_inits(stanmodel_instance, job, max_iters = NULL)
 constructed using \code{cmdstanr::cmdstan_model()}.}
 
 \item{job}{An EpiSewer job object with data and default inits.}
+
+\item{max_iters}{The maximum number of iterations for LBFGS during pathfinder
+initialization.}
 }
 \value{
 Fitted model, a CmdStanPathfinder object. Can be used as arguments

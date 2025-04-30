@@ -265,10 +265,10 @@ R_estimate_ets <- function(
   modeldata <- tbc(
     "R_ets_noise",
     {
-      modeldata$ets_length <- modeldata$.metainfo$length_R
-      modeldata$.init$ets_noise <- rep(0, modeldata$.metainfo$length_R - 1)
+      modeldata$ets_length <- modeldata$.metainfo$length_R_modeled
+      modeldata$.init$ets_noise <- rep(0, modeldata$.metainfo$length_R_modeled - 1)
       modeldata <- add_R_variability(
-        length_R = modeldata$.metainfo$length_R,
+        length_R = modeldata$.metainfo$length_R_modeled,
         length_seeding = modeldata$.metainfo$length_seeding,
         partial_window = modeldata$.metainfo$partial_window,
         partial_generation = modeldata$.metainfo$partial_generation,
@@ -284,7 +284,7 @@ R_estimate_ets <- function(
       }
     },
     required = c(
-      ".metainfo$length_R",
+      ".metainfo$length_R_modeled",
       ".metainfo$length_seeding",
       ".metainfo$partial_window",
       ".metainfo$partial_generation",
@@ -590,7 +590,7 @@ R_estimate_splines <- function(
 
       # Global spline model for Rt
       knots_global <- place_knots(
-        length_R = modeldata$.metainfo$length_R,
+        length_R = modeldata$.metainfo$length_R_modeled,
         forecast_horizon = modeldata$.metainfo$forecast_horizon,
         knot_distance = knot_distance_global,
         partial_window = modeldata$.metainfo$partial_window,
@@ -599,7 +599,7 @@ R_estimate_splines <- function(
         )
       modeldata$.metainfo$R_knots_global <- knots_global
       modeldata <- use_basis_splines(
-        spline_length = with(modeldata$.metainfo, length_R + forecast_horizon),
+        spline_length = with(modeldata$.metainfo, length_R_modeled + forecast_horizon),
         knots = knots_global,
         degree = spline_degree,
         modeldata = modeldata
@@ -607,7 +607,7 @@ R_estimate_splines <- function(
 
       # Local spline model for Rt
       knots_local <- place_knots(
-        length_R = modeldata$.metainfo$length_R,
+        length_R = modeldata$.metainfo$length_R_modeled,
         forecast_horizon = modeldata$.metainfo$forecast_horizon,
         knot_distance = knot_distance_local,
         partial_window = modeldata$.metainfo$partial_window,
@@ -616,7 +616,7 @@ R_estimate_splines <- function(
       )
       modeldata$.metainfo$R_knots_local <- knots_local
       modeldata <- use_basis_splines2(
-        spline_length = with(modeldata$.metainfo, length_R + forecast_horizon),
+        spline_length = with(modeldata$.metainfo, length_R_modeled + forecast_horizon),
         knots = knots_local,
         degree = spline_degree,
         modeldata = modeldata
@@ -624,7 +624,7 @@ R_estimate_splines <- function(
 
       # Changepoint model for variability of Rt
       modeldata <- add_R_variability(
-        length_R = modeldata$.metainfo$length_R,
+        length_R = modeldata$.metainfo$length_R_modeled,
         length_seeding = modeldata$.metainfo$length_seeding,
         partial_window = modeldata$.metainfo$partial_window,
         partial_generation = modeldata$.metainfo$partial_generation,
@@ -678,7 +678,7 @@ R_estimate_splines <- function(
 
     },
     required = c(
-      ".metainfo$length_R",
+      ".metainfo$length_R_modeled",
       ".metainfo$length_seeding",
       ".metainfo$partial_window",
       ".metainfo$partial_generation",
@@ -1016,8 +1016,8 @@ R_estimate_piecewise <- function(
     {
       modeldata$.metainfo$R_knots <- knots
       modeldata <- use_soft_changepoints(
-        scp_length = modeldata$.metainfo$length_R,
-        last_knot = modeldata$.metainfo$length_R - changepoint_min_distance,
+        scp_length = modeldata$.metainfo$length_R_modeled,
+        last_knot = modeldata$.metainfo$length_R_modeled - changepoint_min_distance,
         distance = changepoint_max_distance,
         min_distance = changepoint_min_distance,
         min_distance_tolerance = change_tolerance,
@@ -1028,7 +1028,7 @@ R_estimate_piecewise <- function(
         )
     },
     required = c(
-      ".metainfo$length_R",
+      ".metainfo$length_R_modeled",
       ".metainfo$partial_window",
       ".metainfo$partial_generation"
     ),
@@ -1174,14 +1174,14 @@ R_estimate_changepoint_splines <- function(
       # Spline model
       spline_knots <- list(
         interior = rev(seq(
-          modeldata$.metainfo$length_R - spline_knot_distance,
+          modeldata$.metainfo$length_R_modeled - spline_knot_distance,
           1, by = -spline_knot_distance
         )),
-        boundary = c(-3, modeldata$.metainfo$length_R)
+        boundary = c(-3, modeldata$.metainfo$length_R_modeled)
       )
       modeldata$.metainfo$R_knots <- spline_knots
       modeldata <- use_basis_splines(
-        spline_length = modeldata$.metainfo$length_R,
+        spline_length = modeldata$.metainfo$length_R_modeled,
         knots = spline_knots,
         degree = 3,
         modeldata = modeldata
@@ -1189,7 +1189,7 @@ R_estimate_changepoint_splines <- function(
       modeldata$bs_coeff_select <- c(1, spline_knots$interior, spline_knots$boundary[2], spline_knots$boundary[2])
 
       # Changepoint model
-      last_change <- with(modeldata$.metainfo, length_R - changepoint_min_distance)
+      last_change <- with(modeldata$.metainfo, length_R_modeled - changepoint_min_distance)
       distance = as.integer(floor(changepoint_max_distance/spline_knot_distance))
       changepoint_min_distance = as.integer(ceiling(changepoint_min_distance/spline_knot_distance))
       if (distance < 2 || changepoint_min_distance < 1) {
@@ -1214,7 +1214,7 @@ R_estimate_changepoint_splines <- function(
       )
     },
     required = c(
-      ".metainfo$length_R"
+      ".metainfo$length_R_modeled"
     ),
     modeldata = modeldata
   )
@@ -1301,7 +1301,7 @@ add_R_variability <- function(length_R, h, length_seeding, partial_window,
 #'   epidemic, depending on what time period the model is fitted to, it may also
 #'   cover a different phase with stronger growth dynamics. Thus, if your data
 #'   starts in the middle of an epidemic wave, it is recommended to use
-#'   [seeding_estimate_rw()] instead of [seeding_estimate_constant()].
+#'   [seeding_estimate_growth()] instead of [seeding_estimate_constant()].
 #'
 #' @details If `intercept_prior_q5` or `intercept_prior_q95` are not specified
 #'   by the user, `EpiSewer` will compute a rough median empirical estimate of
@@ -1346,7 +1346,7 @@ seeding_estimate_constant <- function(
   modeldata$.metainfo$extend_seeding <- extend
 
   modeldata$.str$infections[["seeding"]] <- list(
-    seeding_estimate_fixed = c()
+    seeding_estimate_constant = c()
   )
 
   return(modeldata)
@@ -1380,14 +1380,14 @@ seeding_estimate_constant <- function(
 #' @param extend Should the seeding phase be extended when concentrations are
 #'   very low at the start of the measurement time series? If `TRUE`, then the
 #'   seeding phase will be extended to the first date with three consecutive
-#'   detects (i.e. non-zero measurements). The reproduction number will only be
-#'   modeled from that date onward. This option often makes sense, as infection
-#'   numbers are typically very low during a period with many non-detects, which
-#'   can lead to sampling problems when estimating Rt. If you nevertheless want
-#'   Rt estimates also for this period, you can use `extend = FALSE`. Note
-#'   though that estimated reproduction numbers are not necessarily meaningful
-#'   during periods with very low infection numbers, as transmission dynamics
-#'   may be dominated by chance events and importations.
+#'   detects (i.e. non-zero measurements). Before that date, the reproduction
+#'   number will be retrospectively computed based on the seeded infections.
+#'   Explicit modeling of the Rt time series will only begin after the seeding
+#'   phase. This option avoids sampling problems when estimating Rt from very
+#'   low infection numbers during a period with many non-detects. Note that
+#'   estimated reproduction numbers are not necessarily meaningful during
+#'   periods with very low infection numbers, as transmission dynamics may be
+#'   dominated by chance events and importations.
 #'
 #' @details The seeding phase has the length of the maximum generation time
 #'   (during this time, the renewal model cannot be applied). Traditionally,
@@ -1459,6 +1459,102 @@ seeding_estimate_rw <- function(
 
   modeldata$.str$infections[["seeding"]] <- list(
     seeding_estimate_rw = c()
+  )
+
+  return(modeldata)
+}
+
+#' Estimate seeding infections with a time-varying growth rate
+#'
+#' @description This option estimates an exponential growth of infections at the
+#'   start of the modeled time period, with the growth rate varying over time.
+#'
+#' @param growth_change_prior_mu Prior (mean) on the daily standard deviation of
+#'   the random walk for the epidemic growth rate.
+#' @param growth_change_prior_sigma Prior (standard deviation) on the daily
+#'   standard deviation of the random walk for the epidemic growth rate.
+#'
+#' @inheritParams seeding_estimate_rw
+#'
+#' @details The seeding phase has the length of the maximum generation time
+#'   (during this time, the renewal model cannot be applied). It is here assumed
+#'   that the expected number of new infections increases exponentially during
+#'   this time period. The exponential growth rate of the seeding phase follows
+#'   a random walk that ends with a growth rate representing the first estimated
+#'   reproduction number at the start of the modeling phase. This means that the
+#'   intercept of the seeding phase growth rate depends on the `R_start_prior`
+#'   provided in the `R_estimate_*` component.
+#'
+#' @details If the lower and upper intervals of the prior for the initial number
+#'   of infections, i.e. `intercept_prior_q5` or `intercept_prior_q95` are not
+#'   specified by the user, `EpiSewer` will compute a rough median empirical
+#'   estimate of the number of cases using the supplied wastewater measurements
+#'   and shedding assumptions, and then infer the missing quantiles based on
+#'   this. If none of the quantiles are provided, they are set to be roughly
+#'   1/10 and 10 times the empirical median estimate. We note that this is a
+#'   violation of Bayesian principles (data must not be used to inform priors) -
+#'   but a neglectable one, since it only ensures that the seeding is modeled on
+#'   the right order of magnitude and does not have relevant impacts on later Rt
+#'   estimates.
+#'
+#' @details The priors of this component have the following functional form:
+#' - initial number of infections (log scale): `Normal`
+#' - standard deviation of the random walk on the growth rate: `Truncated normal`
+#'
+#' The priors for these parameters are determined based on the user-supplied
+#'   arguments, using appropriate transformations and the two-sigma-rule of
+#'   thumb.
+#'
+#' @details Credits to Samuel Brand and the authors of the EpiAware toolkit for
+#'   the idea to back-calculate the growth rate of the seeding phase from the
+#'   initial reproduction number.
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+seeding_estimate_growth <- function(
+    intercept_prior_q5 = NULL,
+    intercept_prior_q95 = NULL,
+    growth_change_prior_mu = 0,
+    growth_change_prior_sigma = 0.01,
+    extend = TRUE,
+    modeldata = modeldata_init()) {
+
+  modeldata$seeding_model <- 2
+
+  modeldata <- add_seeding_intercept_prior(
+    intercept_prior_q5 = intercept_prior_q5,
+    intercept_prior_q95 = intercept_prior_q95,
+    calling_f_name = "seeding_estimate_growth",
+    modeldata = modeldata
+  )
+
+  modeldata$iota_log_seed_sd_prior <- set_prior(
+    "iota_log_seed_sd",
+    "truncated normal",
+    mu = growth_change_prior_mu,
+    sigma = growth_change_prior_sigma
+  )
+
+  modeldata$.init$iota_log_seed_sd <- 1e-4
+  modeldata$.init$iota_log_ar_noise <- tbe(
+    rep(0, modeldata$.metainfo$length_seeding - 1),
+    ".metainfo$length_seeding"
+  )
+
+  # compute regression vector for estimating log-linear trend of seeding phase
+  modeldata$iota_log_seed_trend_reg <- tbe(
+    get_regression_linear_trend(
+      1:modeldata$.metainfo$length_seeding,
+      weights = c(rep(0,modeldata$se), rev(modeldata$generation_dist))
+    ),
+    c(".metainfo$length_seeding", "generation_dist")
+  )
+
+  modeldata$.metainfo$extend_seeding <- extend
+
+  modeldata$.str$infections[["seeding"]] <- list(
+    seeding_estimate_growth = c()
   )
 
   return(modeldata)

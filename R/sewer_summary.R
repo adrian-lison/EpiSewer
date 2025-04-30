@@ -39,7 +39,7 @@
 #' @export
 summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws = 50) {
   summary <- list()
-  T_shift_R <- with(data, L + S + D - (G + se))
+  T_shift_R <- with(data, L + S + D - G)
   T_shift_latent <- with(data, L + S + D)
   T_shift_onset <- with(data, S)
   T_shift_load <- with(data, 0)
