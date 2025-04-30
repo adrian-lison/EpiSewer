@@ -100,7 +100,7 @@ data {
   // Seeding of infections ----
   int<lower=0, upper=2> seeding_model; // 0 for fixed, 1 for random walk, 2 for growth rate seeding
   array[2] real iota_log_seed_intercept_prior;
-  array[seeding_model == 1 ? 2 : 0] real iota_log_seed_sd_prior;
+  array[seeding_model > 0 ? 2 : 0] real iota_log_seed_sd_prior;
   int<lower=0> se; // seeding extension (used when time series starts with many non-detects)
 
   // Infection noise ----
@@ -298,8 +298,8 @@ parameters {
 
   // seeding
   real iota_log_seed_intercept;
-  array[seeding_model == 1 ? 1 : 0] real<lower=0> iota_log_seed_sd;
-  vector<multiplier=(seeding_model == 1 ? iota_log_seed_sd[1] : 1)>[seeding_model == 1 ? (G+se) - 1 : 0] iota_log_ar_noise;
+  array[seeding_model > 0 ? 1 : 0] real<lower=0> iota_log_seed_sd;
+  vector<multiplier=(seeding_model > 0 ? iota_log_seed_sd[1] : 1)>[seeding_model > 0 ? (G+se) - 1 : 0] iota_log_ar_noise;
 
   // realized infections
   array[I_overdispersion && (I_xi_prior[2] > 0) ? 1 : 0] real<lower=0> I_xi; // positive to ensure identifiability
@@ -458,9 +458,12 @@ transformed parameters {
       random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0)
       );
   } else if (seeding_model == 2) {
-    real seeding_r = get_growth_rate(R[se+1], generation_dist);
+    real seeding_last_r = get_growth_rate(R[se+1], generation_dist);
+    vector[G + se] seeding_r = reverse(
+      random_walk([seeding_last_r]', iota_log_ar_noise, 0)
+      ); // backward-in-time random walk on growth rate
     iota[1:(G+se)] = exp(
-      iota_log_seed_intercept + seeding_r * linspaced_vector(G+se, 1, G+se)
+      iota_log_seed_intercept + cumulative_sum(seeding_r)
       );
   }
 
@@ -612,7 +615,7 @@ model {
 
   // Seeding
   iota_log_seed_intercept ~ normal(iota_log_seed_intercept_prior[1], iota_log_seed_intercept_prior[2]);
-  if (seeding_model == 1) {
+  if (seeding_model > 0) {
     iota_log_seed_sd[1] ~ normal(iota_log_seed_sd_prior[1], iota_log_seed_sd_prior[2]) T[0, ]; // truncated normal
     iota_log_ar_noise ~ normal(0, iota_log_seed_sd[1]); // Gaussian noise
   }

@@ -1464,33 +1464,46 @@ seeding_estimate_rw <- function(
   return(modeldata)
 }
 
-#' Estimate seeding infections with a fixed growth rate
+#' Estimate seeding infections with a time-varying growth rate
 #'
 #' @description This option estimates an exponential growth of infections at the
-#'   start of the modeled time period, with the growth rate matching the initial
-#'   reproduction number.
+#'   start of the modeled time period, with the growth rate varying over time.
+#'
+#' @param growth_change_prior_mu Prior (mean) on the daily standard deviation of
+#'   the random walk for the epidemic growth rate.
+#' @param growth_change_prior_sigma Prior (standard deviation) on the daily
+#'   standard deviation of the random walk for the epidemic growth rate.
 #'
 #' @inheritParams seeding_estimate_rw
 #'
 #' @details The seeding phase has the length of the maximum generation time
 #'   (during this time, the renewal model cannot be applied). It is here assumed
 #'   that the expected number of new infections increases exponentially during
-#'   this time period. The exponential growth rate of the seeding phase is
-#'   back-calculated from the initial reproduction number and therefore depends
-#'   on the `R_start_prior` provided to the `R_estimate_*` component.
+#'   this time period. The exponential growth rate of the seeding phase follows
+#'   a random walk that ends with a growth rate representing the first estimated
+#'   reproduction number at the start of the modeling phase. This means that the
+#'   intercept of the seeding phase growth rate depends on the `R_start_prior`
+#'   provided in the `R_estimate_*` component.
 #'
-#' @details If `intercept_prior_q5` or `intercept_prior_q95` are not specified
-#'   by the user, `EpiSewer` will compute a rough median empirical estimate of
-#'   the number of cases using the supplied wastewater measurements and shedding
-#'   assumptions, and then infer the missing quantiles based on this. If none of
-#'   the quantiles are provided, they are set to be roughly 1/10 and 10 times
-#'   the empirical median estimate. We note that this is a violation of Bayesian
-#'   principles (data must not be used to inform priors) - but a neglectable
-#'   one, since it only ensures that the seeding is modeled on the right order
-#'   of magnitude and does not have relevant impacts on later Rt estimates.
+#' @details If the lower and upper intervals of the prior for the initial number
+#'   of infections, i.e. `intercept_prior_q5` or `intercept_prior_q95` are not
+#'   specified by the user, `EpiSewer` will compute a rough median empirical
+#'   estimate of the number of cases using the supplied wastewater measurements
+#'   and shedding assumptions, and then infer the missing quantiles based on
+#'   this. If none of the quantiles are provided, they are set to be roughly
+#'   1/10 and 10 times the empirical median estimate. We note that this is a
+#'   violation of Bayesian principles (data must not be used to inform priors) -
+#'   but a neglectable one, since it only ensures that the seeding is modeled on
+#'   the right order of magnitude and does not have relevant impacts on later Rt
+#'   estimates.
 #'
 #' @details The priors of this component have the following functional form:
 #' - initial number of infections (log scale): `Normal`
+#' - standard deviation of the random walk on the growth rate: `Truncated normal`
+#'
+#' The priors for these parameters are determined based on the user-supplied
+#'   arguments, using appropriate transformations and the two-sigma-rule of
+#'   thumb.
 #'
 #' @details Credits to Samuel Brand and the authors of the EpiAware toolkit for
 #'   the idea to back-calculate the growth rate of the seeding phase from the
@@ -1502,6 +1515,8 @@ seeding_estimate_rw <- function(
 seeding_estimate_growth <- function(
     intercept_prior_q5 = NULL,
     intercept_prior_q95 = NULL,
+    growth_change_prior_mu = 0,
+    growth_change_prior_sigma = 0.01,
     extend = TRUE,
     modeldata = modeldata_init()) {
 
@@ -1514,9 +1529,18 @@ seeding_estimate_growth <- function(
     modeldata = modeldata
   )
 
-  modeldata$iota_log_seed_sd_prior <- numeric(0)
-  modeldata$.init$iota_log_seed_sd <- numeric(0)
-  modeldata$.init$iota_log_ar_noise <- numeric(0)
+  modeldata$iota_log_seed_sd_prior <- set_prior(
+    "iota_log_seed_sd",
+    "truncated normal",
+    mu = growth_change_prior_mu,
+    sigma = growth_change_prior_sigma
+  )
+
+  modeldata$.init$iota_log_seed_sd <- 1e-4
+  modeldata$.init$iota_log_ar_noise <- tbe(
+    rep(0, modeldata$.metainfo$length_seeding - 1),
+    ".metainfo$length_seeding"
+  )
 
   # compute regression vector for estimating log-linear trend of seeding phase
   modeldata$iota_log_seed_trend_reg <- tbe(
