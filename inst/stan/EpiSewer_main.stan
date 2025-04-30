@@ -365,19 +365,6 @@ transformed parameters {
     iota[1 : (G+se)] = exp(random_walk([iota_log_seed_intercept]', iota_log_ar_noise, 0));
   }
 
-  // compute Rt for extended seeding phase
-  if (se > 0) {
-    vector[L + S + D + T] infs;
-    vector[L + S + D + T - G] infness;
-    if (I_sample) {
-      infs = I;
-    } else {
-      infs = iota;
-    }
-    infness = infectiousness(L + S + D + T - G, G, 0, gi_rev, infs);
-    R[1:se] = iota[(G+1):(G+se)] ./ infness[1:se];
-  }
-
   if (R_model == 0) {
     ets_sd = csr_matrix_times_vector(
       L + S + D + T - (G+se) + h, R_vari_ncol[1], R_vari_w,
@@ -465,6 +452,13 @@ transformed parameters {
     R[(se+1):(L + S + D + T - G)] = apply_link(R_intercept + csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
+  }
+
+  // compute Rt for extended seeding phase
+  if (se > 0) {
+    vector[L + S + D + T - G] infness;
+    infness = infectiousness(L + S + D + T - G, G, 0, gi_rev, iota);
+    R[1:se] = iota[(G+1):(G+se)] ./ infness[1:se];
   }
 
   // renewal process
