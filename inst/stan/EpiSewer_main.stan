@@ -463,7 +463,7 @@ transformed parameters {
       random_walk([seeding_last_r]', iota_log_ar_noise, 0)
       ); // backward-in-time random walk on growth rate
     iota[1:(G+se)] = exp(
-      iota_log_seed_intercept + cumulative_sum(seeding_r)
+      random_walk([iota_log_seed_intercept]', seeding_r[1:(G+se-1)], 0)
       );
   }
 
