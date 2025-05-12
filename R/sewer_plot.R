@@ -1011,6 +1011,7 @@ plot_doubling_time <- function(results, median = FALSE, seeding = FALSE,
     intervals = intervals
   )
   plt <- suppressMessages(plt + coord_cartesian(ylim = c(-100, 100)))
+  return(plt)
 }
 
 plot_time_series <- function(results, variable, variable_name = variable,
@@ -1243,7 +1244,7 @@ plot_LOD <- function(modeldata) {
 #'   functions to adjust themes and scales, and to add further geoms.
 #' @export
 plot_prior_posterior <- function(result, param_name) {
-  if (!(class(result) == c("EpiSewerJobResult", "list") && "summary" %in% names(result))) {
+  if (!(identical(class(result), c("EpiSewerJobResult", "list")) && "summary" %in% names(result))) {
     cli::cli_abort(paste(
       "For prior-posterior visualization,",
       "please supply an `EpiSewer` results object."
@@ -1358,7 +1359,7 @@ plot_prior_posterior <- function(result, param_name) {
 #'   adjust themes and scales, and to add further geoms.
 #' @export
 plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
-  if (!(class(result) == c("EpiSewerJobResult", "list") && "summary" %in% names(result))) {
+  if (!(identical(class(result), c("EpiSewerJobResult", "list")) && "summary" %in% names(result))) {
     cli::cli_abort(paste(
       "For prior-posterior visualization,",
       "please supply an `EpiSewer` results object."
