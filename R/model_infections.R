@@ -931,10 +931,6 @@ R_estimate_approx <- function(
 #'   smaller than `change_tolerance` are ignored by `changepoint_min_distance`,
 #'   i.e. they can also occur closer to each other. This tolerance gives the
 #'   model more flexibility in placing changepoints with large jumps.
-#' @param strictness_k The k parameter of the logistic function used to
-#'   approximate a discrete changepoint model. Larger values make the changes
-#'   between the constant pieces more strict, i.e. more like discrete steps.
-#'   Note that choosing large values of k can slow down sampling.
 #' @param strictness_alpha The concentration parameter of the Dirichlet prior
 #'   for the changepoint positions. Choosing smaller values of
 #'   `strictness_alpha` will lead to more discrete changepoints. Note that
@@ -976,7 +972,6 @@ R_estimate_piecewise <- function(
     change_tolerance = 0.05,
     link = "inv_softplus",
     R_max = 6,
-    strictness_k = 20,
     strictness_alpha = 1,
     modeldata = modeldata_init()
     ) {
@@ -991,11 +986,17 @@ R_estimate_piecewise <- function(
     modeldata = modeldata
   )
 
-  # settings currently hidden from the user:
+  # Settings currently hidden from the user:
+  #
+  # @parameter sharpness_boltzmann The temperature parameter of the Boltzmann
+  # operator, which is used for a smooth approximation of the maximum function
+  # that is applied as a fuzzy OR on the changepoint indicators.
+  #
   # @parameter strictness_tol_k The k parameter of the logistic function used to
   #   soft-constrain the change tolerance bound. A minimum value of 4 is
   #   recommended, higher values are likely not necessary and can impede
   #   sampling.
+  sharpness_boltzmann <- 10
   strictness_tol_k <- 4
 
   modeldata$R_intercept_prior <- set_prior(
@@ -1022,7 +1023,7 @@ R_estimate_piecewise <- function(
         min_distance = changepoint_min_distance,
         min_distance_tolerance = change_tolerance,
         strictness_tol_k = strictness_tol_k,
-        strictness_k = strictness_k,
+        sharpness_boltzmann = sharpness_boltzmann,
         strictness_alpha = strictness_alpha,
         modeldata
         )
@@ -1087,10 +1088,6 @@ R_estimate_piecewise <- function(
 #'   ignored by `changepoint_min_distance`, i.e. they can also occur closer to
 #'   each other. This tolerance gives the model more flexibility in placing
 #'   changepoints with large trend changes.
-#' @param strictness_k The k parameter of the logistic function used to
-#'   approximate a discrete changepoint model. Larger values make the changes of
-#'   trends more strict, i.e. more like sharp turns. Note that choosing large
-#'   values of k can slow down sampling.
 #' @param strictness_alpha The concentration parameter of the Dirichlet prior
 #'   for the changepoint positions. Choosing smaller values of
 #'   `strictness_alpha` will lead to more strict changepoints. Note that
@@ -1133,7 +1130,6 @@ R_estimate_changepoint_splines <- function(
     spline_knot_distance = 3,
     link = "inv_softplus",
     R_max = 6,
-    strictness_k = 20,
     strictness_alpha = 0.5,
     modeldata = modeldata_init()
 ) {
@@ -1148,11 +1144,17 @@ R_estimate_changepoint_splines <- function(
     modeldata = modeldata
   )
 
-  # settings currently hidden from the user:
+  # Settings currently hidden from the user:
+  #
+  # @parameter sharpness_boltzmann The temperature parameter of the Boltzmann
+  # operator, which is used for a smooth approximation of the maximum function
+  # that is applied as a fuzzy OR on the changepoint indicators.
+  #
   # @parameter strictness_tol_k The k parameter of the logistic function used to
   #   soft-constrain the change tolerance bound. A minimum value of 4 is
   #   recommended, higher values are likely not necessary and can impede
   #   sampling.
+  sharpness_boltzmann <- 10
   strictness_tol_k <- 4
 
   modeldata$R_intercept_prior <- set_prior(
@@ -1208,7 +1210,7 @@ R_estimate_changepoint_splines <- function(
         min_distance = changepoint_min_distance,
         min_distance_tolerance = trend_change_tolerance,
         strictness_tol_k = strictness_tol_k,
-        strictness_k = strictness_k,
+        sharpness_boltzmann = sharpness_boltzmann,
         strictness_alpha = strictness_alpha,
         modeldata
       )

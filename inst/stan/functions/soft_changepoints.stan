@@ -9,32 +9,33 @@
 *
 * @param length_total Total length, e.g. number of time points in a time series.
 *
-* @param break_dist Default distance between breakpoints. The segments all have
+* @param distance Default distance between breakpoints. The segments all have
 *   the same length by default (equidistant breakpoints).
 *
-* @param min_break_dist Minimum distance between breakpoints. This will
+* @param min_distance Minimum distance between breakpoints. This will
 *   implement a constraint on how close to breakpoints can be to each other.
 *
-* @param delays Array of vectors. Each vector has length break_dist, and there
+* @param delays Array of vectors. Each vector has length distance, and there
 *   is one for each segment. The vector elements indicate how much the default
 *   breakpoint position gets delayed, where 0 means "place breakpoint here" and
 *   1 means "delay breakpoint further"
 *
-* @param logistic_k Sharpness parameter of logistic function. This influences
-*   how strict the approximation to the piecewise constant function is. Higher
-*   values mean sharper jumps / step-like behaviour but can slow down sampling.
+* @param boltzmann_sharpness Sharpness parameter (temperature) for the
+* Boltzmann operator (softmax-weighted average). Influences how sharp the
+* approximation of the maximum function for the fuzzy OR is.
 *
-* @param skip_tol Tolerance for `min_break_dist` constraint. When two segments
+* @param skip_tol Tolerance for `min_distance` constraint. When two segments
 *  differ by less than `skip_tol`, they are considered identical, meaning that
-*. the next segment can is not constrained by `min_break_dist` anymore.
+*. the next segment can is not constrained by `min_distance` anymore.
 */
 vector soft_changepoint(real intercept, vector segments,
                         int length_intercept, int length_total,
-                        int break_dist, int min_break_dist,
-                        array[] vector delays, real logistic_k,
+                        int distance, int min_distance,
+                        array[] vector delays,
+                        real boltzmann_sharpness,
                         real skip_tol, real skip_tol_logistic_k) {
   int n_segments = num_elements(segments);
-  array[n_segments] vector[break_dist] break_delay;
+  array[n_segments] vector[distance] break_delay;
 
   // knot placement
   for (seg_i in 1:n_segments) {
@@ -46,17 +47,16 @@ vector soft_changepoint(real intercept, vector segments,
       );
 
     // compute breakpoint delays
-    break_delay[seg_i] = 1-cumulative_sum(delays[seg_i]);
+    break_delay[seg_i] = 1-cumulative_boltzmann(delays[seg_i], boltzmann_sharpness);
 
-    // apply min_break_dist constraint
-    if ((seg_i > 1) && (min_break_dist > 1)) {
-      break_delay[seg_i][1:(min_break_dist-1)] += (1-skip) * break_delay[seg_i - 1][
-        (break_dist-min_break_dist+1):(break_dist-1)
-        ];
+    // apply min_distance constraint
+    if ((seg_i > 1) && (min_distance > 1)) {
+      break_delay[seg_i][1:(min_distance-1)] = boltzmann_elementwise(
+        break_delay[seg_i][1:(min_distance-1)],
+        (1-skip) * break_delay[seg_i - 1][(distance-min_distance+1):(distance-1)],
+        boltzmann_sharpness
+      );
     }
-
-    // logistic link: ensure that break_delay is in [0,1], and increase sharpness
-    break_delay[seg_i] = 1 / (1 + exp(logistic_k * (0.5 - break_delay[seg_i])));
   }
 
   // compute function values
@@ -64,18 +64,18 @@ vector soft_changepoint(real intercept, vector segments,
   if (length_intercept>=1) {
     y[1:length_intercept] = rep_vector(intercept, length_intercept);
   }
-  y[(length_intercept+1):(length_intercept+break_dist)] = (
+  y[(length_intercept+1):(length_intercept+distance)] = (
     intercept * break_delay[1] + segments[1] * (1-break_delay[1])
     );
   for (seg_i in 2:n_segments) {
-    int seg_start = length_intercept + 1 + (seg_i-1) * break_dist;
-    int seg_end = length_intercept + seg_i * break_dist;
+    int seg_start = length_intercept + 1 + (seg_i-1) * distance;
+    int seg_end = length_intercept + seg_i * distance;
     y[seg_start:seg_end] = (
       segments[seg_i - 1] * break_delay[seg_i] +
       segments[seg_i] * (1-break_delay[seg_i])
       );
   }
-  int last_knot = length_intercept+(n_segments*break_dist);
+  int last_knot = length_intercept+(n_segments*distance);
   y[(last_knot+1):length_total] = rep_vector(
     y[last_knot], length_total-last_knot
     );
@@ -109,4 +109,31 @@ real is_skip(real x, real y, real skip_tol, real logistic_k) {
   } else {
     return(0);
   }
+}
+
+/**
+* Compute adjusted prior for changepoint model under min_distance constraint
+*
+* @description By adjusting the prior for the changepoint position, we ensure
+* that changepoints occur with equal prior probability at each time step even
+* after accounting for the min_distance constraint.
+*
+* @param d Default distance between breakpoints. The segments all have
+*   the same length by default (equidistant breakpoints).
+*
+* @param d_min Minimum distance between breakpoints. This will
+*   implement a constraint on how close to breakpoints can be to each other.
+*
+* @return A simplex with adjusted weights for the changepoint position prior.
+*/
+vector changepoint_prior_adjusted(int d, real d_min) {
+  vector[d] weights = rep_vector(0, d);
+  for (j in 1:d) {
+    if (j <= d_min) {
+      weights[j] = (d - d_min) / ((d-d_min+j-1) * (d-d_min+j));
+    } else {
+      weights[j] = (1 - d_min/d) / (d-d_min);
+    }
+  }
+  return(weights);
 }

@@ -15,7 +15,6 @@ R_estimate_changepoint_splines(
   spline_knot_distance = 3,
   link = "inv_softplus",
   R_max = 6,
-  strictness_k = 20,
   strictness_alpha = 0.5,
   modeldata = modeldata_init()
 )
@@ -68,11 +67,6 @@ non-linear below (and in the case of \code{scaled_logit} also above) R=1.}
 \item{R_max}{If \code{link=scaled_logit} is used, a maximum reproduction number
 must be assumed. This should be higher than any realistic R value for the
 modeled pathogen. Default is 6.}
-
-\item{strictness_k}{The k parameter of the logistic function used to
-approximate a discrete changepoint model. Larger values make the changes of
-trends more strict, i.e. more like sharp turns. Note that choosing large
-values of k can slow down sampling.}
 
 \item{strictness_alpha}{The concentration parameter of the Dirichlet prior
 for the changepoint positions. Choosing smaller values of

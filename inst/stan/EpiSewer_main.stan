@@ -153,7 +153,7 @@ data {
   array[R_use_scp ? 1 : 0] real<lower=0> scp_skip_tolerance; // tolerance for skipping a changepoint
   array[R_use_scp ? 1 : 0] real<lower=0> scp_skip_tolerance_k; // trength of logistic link for skip tolerance
   array[R_use_scp ? 1 : 0] int<lower=0> scp_length_intercept;
-  array[R_use_scp ? 1 : 0] real scp_k; // strength of logistic link for changepoint model (lower k = softer)
+  array[R_use_scp ? 1 : 0] real scp_boltzmann_sharpness; // strength of smooth maximum function for fuzzy OR
   array[R_use_scp ? 1 : 0] real<lower=0> scp_alpha; // concentration parameter for changepoint model
 
   // Change point model for R variability
@@ -267,6 +267,10 @@ transformed data {
   } else {
     i_include = i_all;
   }
+
+  vector[scp_break_dist[1]] dirichlet_adjusted = changepoint_prior_adjusted(
+    scp_break_dist[1], 1.0 * scp_min_dist[1]
+    );
 
   if (R_link[1] < 0 || R_link[1] > 1) {
     reject("Link function must be one of inv_softplus (0) or scaled_logit (1)");
@@ -425,14 +429,14 @@ transformed parameters {
     R[(se+1):(L + S + D + T - G)] = apply_link(soft_changepoint(
       R_intercept, scp_knot_values, scp_length_intercept[1], scp_length,
       scp_break_dist[1], scp_min_dist[1], scp_break_delays,
-      scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
+      scp_boltzmann_sharpness[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
       ), R_link);
   } else if (R_model == 3) {
     scp_knot_values = scp_noise .* scp_sd;
     scp_values = cumulative_sum(soft_changepoint(
       0, scp_knot_values, scp_length_intercept[1], scp_length,
       scp_break_dist[1], scp_min_dist[1], scp_break_delays,
-      scp_k[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
+      scp_boltzmann_sharpness[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
       ));
     real last_diff = scp_knot_values[scp_n_knots[1]];
     vector[bs_ncol[1]] bs_coeff = append_row3(
@@ -608,8 +612,11 @@ model {
     bs2_coeff_noise_raw ~ std_normal(); // Gaussian noise
   }
   if (R_use_scp) {
-    for (i in 1:scp_n_knots[1]) {
-      scp_break_delays[i] ~ dirichlet(rep_vector(scp_alpha[1], scp_break_dist[1]));
+    scp_break_delays[1] ~ dirichlet(rep_vector(scp_alpha[1], scp_break_dist[1]));
+    for (i in 2:scp_n_knots[1]) {
+      scp_break_delays[i] ~ dirichlet(
+        scp_alpha[1] * scp_break_dist[1] * dirichlet_adjusted
+        );
     }
   }
 

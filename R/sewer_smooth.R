@@ -83,7 +83,7 @@ add_dummies_basis_splines2 <- function(modeldata) {
 #' @keywords internal
 use_soft_changepoints <- function(scp_length, last_knot, distance, min_distance,
                                  min_distance_tolerance, strictness_tol_k,
-                                 strictness_k, strictness_alpha,
+                                 sharpness_boltzmann, strictness_alpha,
                                  modeldata) {
   knots <- rev(seq(last_knot - distance, 1, by = -distance))
   modeldata$.metainfo$scp_knots <- knots
@@ -91,7 +91,7 @@ use_soft_changepoints <- function(scp_length, last_knot, distance, min_distance,
   modeldata$scp_min_dist <- min_distance
   modeldata$scp_skip_tolerance <- min_distance_tolerance
   modeldata$scp_skip_tolerance_k <- strictness_tol_k
-  modeldata$scp_k <- strictness_k
+  modeldata$scp_boltzmann_sharpness <- sharpness_boltzmann
   modeldata$scp_alpha <- strictness_alpha
 
   modeldata$scp_n_knots <- length(knots)
