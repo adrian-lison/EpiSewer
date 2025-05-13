@@ -439,3 +439,39 @@ If you use the dPCR-specific model of `EpiSewer` (see [noise_estimate_dPCR](http
   doi = {10.1101/2024.10.14.618307}
 }
 ```
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+All contributions to this project are gratefully acknowledged using the [`allcontributors` package](https://github.com/ropensci/allcontributors) following the [all-contributors](https://allcontributors.org) specification. Contributions of any kind are welcome!
+
+### Code
+
+
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>
+
+
+
+### Issue Authors
+
+
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>, 
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aigoldsteinh">igoldsteinh</a>, 
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Ajamesmbaazam">jamesmbaazam</a>
+
+
+
+### Issue Contributors
+
+
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3ASamuelBrand1">SamuelBrand1</a>, 
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3AOrthomyxoviridae">Orthomyxoviridae</a>, 
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3Akaitejohnson">kaitejohnson</a>
+
+
+<!-- markdownlint-enable -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+

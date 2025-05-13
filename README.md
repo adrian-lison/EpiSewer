@@ -143,18 +143,18 @@ in Zurich. Some days have missing measurements, but this is no problem:
 
 ``` r
 data_zurich$measurements
-#>            date concentration
-#>   1: 2022-01-01            NA
-#>   2: 2022-01-02            NA
-#>   3: 2022-01-03      455.7580
-#>   4: 2022-01-04      747.8792
-#>   5: 2022-01-05      573.7020
-#>  ---                         
-#> 116: 2022-04-26      182.3664
-#> 117: 2022-04-27      379.2421
-#> 118: 2022-04-28      439.7427
-#> 119: 2022-04-29      394.0033
-#> 120: 2022-04-30      293.1242
+#>            date concentration   weekday
+#>   1: 2022-01-01            NA  Saturday
+#>   2: 2022-01-02            NA    Sunday
+#>   3: 2022-01-03      455.7580    Monday
+#>   4: 2022-01-04      747.8792   Tuesday
+#>   5: 2022-01-05      573.7020 Wednesday
+#>  ---                                   
+#> 116: 2022-04-26      182.3664   Tuesday
+#> 117: 2022-04-27      379.2421 Wednesday
+#> 118: 2022-04-28      439.7427  Thursday
+#> 119: 2022-04-29      394.0033    Friday
+#> 120: 2022-04-30      293.1242  Saturday
 ```
 
 To show the handling of missing data more clearly, we make our data
@@ -548,18 +548,18 @@ number.
 
 ``` r
 head(ww_result$summary$R, 5)
-#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 1.055381 1.048665  0.8799468  1.000064  1.104198   1.260969
-#> 2: 2021-12-04 1.055389 1.048665  0.8799478  1.000064  1.104195   1.260969
-#> 3: 2021-12-05 1.055402 1.048735  0.8799507  1.000117  1.104193   1.260969
-#> 4: 2021-12-06 1.055421 1.048835  0.8803259  1.000117  1.104255   1.260904
-#> 5: 2021-12-07 1.055453 1.048840  0.8805724  1.000188  1.104162   1.258138
-#>        type seeding
-#> 1: estimate    TRUE
-#> 2: estimate    TRUE
-#> 3: estimate    TRUE
-#> 4: estimate    TRUE
-#> 5: estimate    TRUE
+#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95     type
+#> 1: 2021-12-03 1.055381 1.048665  0.8799468  1.000064  1.104198   1.260969 estimate
+#> 2: 2021-12-04 1.055389 1.048665  0.8799478  1.000064  1.104195   1.260969 estimate
+#> 3: 2021-12-05 1.055402 1.048735  0.8799507  1.000117  1.104193   1.260969 estimate
+#> 4: 2021-12-06 1.055421 1.048835  0.8803259  1.000117  1.104255   1.260904 estimate
+#> 5: 2021-12-07 1.055453 1.048840  0.8805724  1.000188  1.104162   1.258138 estimate
+#>    seeding
+#> 1:    TRUE
+#> 2:    TRUE
+#> 3:    TRUE
+#> 4:    TRUE
+#> 5:    TRUE
 ```
 
 The `fitted` attribute provides access to all details of the fitted stan
@@ -627,3 +627,34 @@ please also cite:
       journal = {bioRxiv preprint},
       doi = {10.1101/2024.10.14.618307}
     }
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+All contributions to this project are gratefully acknowledged using the
+[`allcontributors` package](https://github.com/ropensci/allcontributors)
+following the [all-contributors](https://allcontributors.org)
+specification. Contributions of any kind are welcome!
+
+### Code
+
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>
+
+### Issue Authors
+
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aigoldsteinh">igoldsteinh</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Ajamesmbaazam">jamesmbaazam</a>
+
+### Issue Contributors
+
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3ASamuelBrand1">SamuelBrand1</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3AOrthomyxoviridae">Orthomyxoviridae</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3Akaitejohnson">kaitejohnson</a>
+
+<!-- markdownlint-enable -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
