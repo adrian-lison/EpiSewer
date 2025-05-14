@@ -47,7 +47,7 @@ vector soft_changepoint(real intercept, vector segments,
       );
 
     // compute breakpoint delays
-    break_delay[seg_i] = 1-cumulative_boltzmann(delays[seg_i], boltzmann_sharpness);
+    break_delay[seg_i] = 1-cumulative_sum(delays[seg_i]);
 
     // apply min_distance constraint
     if ((seg_i > 1) && (min_distance > 1)) {
