@@ -99,8 +99,8 @@ use_soft_changepoints <- function(scp_length, last_knot, distance, min_distance,
   modeldata$scp_length <- scp_length
 
   modeldata$.init$scp_noise <- rep(0, length(knots))
-  modeldata$.init$scp_break_delays <- lapply(1:length(knots),function(x) {
-    rep(1/distance,distance)
+  modeldata$.init$scp_break_delays_raw <- lapply(1:length(knots),function(x) {
+    rep(1e-4, distance-1)
     })
   modeldata$.init$scp_sd <- rep(1e-4, length(knots))
   return(modeldata)

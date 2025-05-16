@@ -11,6 +11,7 @@ functions {
   #include functions/dist_gamma_sum.stan
   #include functions/dist_beta.stan
   #include functions/dist_gev.stan
+  #include functions/dist_dirichlet.stan
   #include functions/discretize.stan
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
@@ -292,7 +293,7 @@ parameters {
   vector[R_use_bs2 ? (bs2_ncol[1] - 1) : 0] bs2_coeff_noise_raw; // additive errors (non-centered)
 
   // soft changepoints (scp)
-  array[R_use_scp ? scp_n_knots[1] : 1] simplex[R_use_scp ? scp_break_dist[1] : 1] scp_break_delays;
+  array[R_use_scp ? scp_n_knots[1] : 1] vector[R_use_scp ? (scp_break_dist[1]-1) : 1] scp_break_delays_raw;
   vector[R_use_scp ? scp_n_knots[1] : 0] scp_noise; // additive errors
   vector<lower=0>[R_use_scp ? scp_n_knots[1] : 0] scp_sd; // R variability for soft changepoint model
 
@@ -341,6 +342,7 @@ transformed parameters {
   // soft changepoints (scp)
   vector[R_use_scp ? scp_n_knots[1] : 0] scp_knot_values;
   vector[R_model == 3 ? scp_length : 0] scp_values;
+  array[R_use_scp ? scp_n_knots[1] : 1] simplex[R_use_scp ? scp_break_dist[1] : 1] scp_break_delays;
 
   // parameters for specific R models
   vector[R_model == 1 ? h : 0] R_forecast_spline; // spline-based forecast of R
@@ -423,6 +425,9 @@ transformed parameters {
       R_forecast_spline = R_all[(L + S + D + T - (G+se) + 1):(L + S + D + T - (G+se) + h)];
     }
   } else if (R_model == 2) {
+    for (i in 1:scp_n_knots[1]) {
+      scp_break_delays[i] = transform_to_simplex(append_zero(scp_break_delays_raw[i]));
+    }
     scp_knot_values = random_walk(
       [R_intercept]', scp_noise .* scp_sd, 0
       )[2:(scp_n_knots[1]+1)]; // do not keep intercept here
@@ -432,6 +437,9 @@ transformed parameters {
       scp_boltzmann_sharpness[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
       ), R_link);
   } else if (R_model == 3) {
+    for (i in 1:scp_n_knots[1]) {
+      scp_break_delays[i] = transform_to_simplex(append_zero(scp_break_delays_raw[i]));
+    }
     scp_knot_values = scp_noise .* scp_sd;
     scp_values = cumulative_sum(soft_changepoint(
       0, scp_knot_values, scp_length_intercept[1], scp_length,
@@ -612,11 +620,13 @@ model {
     bs2_coeff_noise_raw ~ std_normal(); // Gaussian noise
   }
   if (R_use_scp) {
-    scp_break_delays[1] ~ dirichlet(rep_vector(scp_alpha[1], scp_break_dist[1]));
+    target += dirichlet_raw_lpdf(
+      append_zero(scp_break_delays_raw[1]) | rep_vector(scp_alpha[1], scp_break_dist[1])
+    );
     for (i in 2:scp_n_knots[1]) {
-      scp_break_delays[i] ~ dirichlet(
-        scp_alpha[1] * scp_break_dist[1] * dirichlet_adjusted
-        );
+      target += dirichlet_raw_lpdf(
+        append_zero(scp_break_delays_raw[i]) | scp_alpha[1] * scp_break_dist[1] * dirichlet_adjusted
+      );
     }
   }
 

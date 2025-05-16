@@ -244,3 +244,7 @@ Helper functions for primitive operations
   vector append_row3(vector x, vector y, vector z) {
     return append_row(append_row(x, y), z);
   }
+
+  vector append_zero(vector x) {
+    return append_row(x, [0]');
+  }
