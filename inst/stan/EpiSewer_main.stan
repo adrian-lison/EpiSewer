@@ -617,12 +617,12 @@ model {
     bs2_coeff_noise_raw ~ std_normal(); // Gaussian noise
   }
   if (R_use_scp) {
-    target += dirichlet_raw_lpdf(
-      append_zero(scp_break_delays_raw[1]) | scp_alpha_base
+    target += dirichlet_reduced_lpdf(
+      scp_break_delays_raw[1] | scp_alpha_base
     );
     for (i in 2:scp_n_knots[1]) {
-      target += dirichlet_raw_lpdf(
-        append_zero(scp_break_delays_raw[i]) | scp_alpha_adjusted
+      target += dirichlet_reduced_lpdf(
+        scp_break_delays_raw[i] | scp_alpha_adjusted
       );
     }
   }
