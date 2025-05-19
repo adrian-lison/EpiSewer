@@ -934,8 +934,7 @@ R_estimate_approx <- function(
 #' @param strictness_alpha The concentration parameter of the Dirichlet prior
 #'   for the changepoint positions. Choosing smaller values of
 #'   `strictness_alpha` will lead to more discrete changepoints. Note that
-#'   choosing small values of `strictness_alpha` can impede MCMC sampling and
-#'   lead to divergent transitions.
+#'   choosing small values of `strictness_alpha` can impede MCMC sampling.
 #'
 #' @details The Exponential-Gamma (EG) prior on the strength of changes is
 #'   parameterized via the arguments `change_prior_shape` and
@@ -996,7 +995,7 @@ R_estimate_piecewise <- function(
   #   soft-constrain the change tolerance bound. A minimum value of 4 is
   #   recommended, higher values are likely not necessary and can impede
   #   sampling.
-  sharpness_boltzmann <- 10
+  sharpness_boltzmann <- 25
   strictness_tol_k <- 4
 
   modeldata$R_intercept_prior <- set_prior(
@@ -1091,8 +1090,7 @@ R_estimate_piecewise <- function(
 #' @param strictness_alpha The concentration parameter of the Dirichlet prior
 #'   for the changepoint positions. Choosing smaller values of
 #'   `strictness_alpha` will lead to more strict changepoints. Note that
-#'   choosing small values of `strictness_alpha` can impede MCMC sampling and
-#'   lead to divergent transitions.
+#'   choosing small values of `strictness_alpha` can impede MCMC sampling.
 #'
 #' @details The Exponential-Gamma (EG) prior on the Rt trend is parameterized
 #'   via the arguments `change_prior_shape` and `change_prior_rate`. It has a
@@ -1154,7 +1152,7 @@ R_estimate_changepoint_splines <- function(
   #   soft-constrain the change tolerance bound. A minimum value of 4 is
   #   recommended, higher values are likely not necessary and can impede
   #   sampling.
-  sharpness_boltzmann <- 10
+  sharpness_boltzmann <- 25
   strictness_tol_k <- 4
 
   modeldata$R_intercept_prior <- set_prior(

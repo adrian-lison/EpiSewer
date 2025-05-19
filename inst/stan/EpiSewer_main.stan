@@ -155,7 +155,8 @@ data {
   array[R_use_scp ? 1 : 0] real<lower=0> scp_skip_tolerance_k; // trength of logistic link for skip tolerance
   array[R_use_scp ? 1 : 0] int<lower=0> scp_length_intercept;
   array[R_use_scp ? 1 : 0] real scp_boltzmann_sharpness; // strength of smooth maximum function for fuzzy OR
-  array[R_use_scp ? 1 : 0] real<lower=0> scp_alpha; // concentration parameter for changepoint model
+  vector[R_use_scp ? scp_break_dist[1] : 0] scp_alpha_base;
+  vector[R_use_scp ? scp_break_dist[1] : 0] scp_alpha_adjusted;
 
   // Change point model for R variability
   array[(R_model == 0 || R_model == 1) ? 1 : 0] real R_sd_baseline_prior; // sd of half-normal prior on baseline R variability
@@ -268,10 +269,6 @@ transformed data {
   } else {
     i_include = i_all;
   }
-
-  vector[scp_break_dist[1]] dirichlet_adjusted = changepoint_prior_adjusted(
-    scp_break_dist[1], 1.0 * scp_min_dist[1]
-    );
 
   if (R_link[1] < 0 || R_link[1] > 1) {
     reject("Link function must be one of inv_softplus (0) or scaled_logit (1)");
@@ -621,11 +618,11 @@ model {
   }
   if (R_use_scp) {
     target += dirichlet_raw_lpdf(
-      append_zero(scp_break_delays_raw[1]) | rep_vector(scp_alpha[1], scp_break_dist[1])
+      append_zero(scp_break_delays_raw[1]) | scp_alpha_base
     );
     for (i in 2:scp_n_knots[1]) {
       target += dirichlet_raw_lpdf(
-        append_zero(scp_break_delays_raw[i]) | scp_alpha[1] * scp_break_dist[1] * dirichlet_adjusted
+        append_zero(scp_break_delays_raw[i]) | scp_alpha_adjusted
       );
     }
   }

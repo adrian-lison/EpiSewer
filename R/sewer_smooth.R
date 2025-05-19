@@ -80,6 +80,60 @@ add_dummies_basis_splines2 <- function(modeldata) {
   return(modeldata)
 }
 
+#' @title Solve Dirichlet Parameters for Soft Changepoint Model
+#'
+#' @description This function solves for the parameters p_i of a Dirichlet
+#'   distribution given a total sum alpha and number of parameters n.
+#'
+#' @param alpha Total sum of all p_i
+#' @param n Number of parameters to solve for
+#' @param min_break_dist Minimum distance between changepoints. For first
+#'   segment, can be left empty/set to 1.
+#' @param prior_previous Vector with alpha values of prior for previous segment.
+#'   Required if prior_previous>1.
+#'
+#' @return A vector of p_i values
+#' @keywords internal
+changepoint_dirichlet_prior <- function(alpha, n, min_break_dist = 1, prior_previous = NULL) {
+  p <- numeric(n)
+  cumulative_sum <- 0
+
+  # Stepwise solve
+  for (i in 1:(n-1)) {
+    target <- i / n
+
+    # Define function to find root for p_i
+    f <- function(pi) {
+      shape1 <- cumulative_sum + pi
+      shape2 <- alpha - cumulative_sum - pi
+      Fnow = pbeta(0.5, shape2, shape1)
+      if (min_break_dist > 1 && i < min_break_dist) {
+        if (is.null(prior_previous)) {
+          cli::cli_abort(paste(
+            "You provided a min_break_dist>1",
+            "but no prior for the previous segment."
+          ))
+        }
+        Fprevious <- pbeta(0.5, sum(prior_previous) - sum(prior_previous[1:(n - min_break_dist + i)]), sum(prior_previous[1:(n - min_break_dist + i)]))
+      } else {
+        Fprevious <- 1
+      }
+      return(Fnow * Fprevious - target)
+    }
+
+    # Use uniroot to solve for p_i in valid range
+    lower <- 1e-6
+    upper <- alpha - cumulative_sum - 1e-6
+    result <- uniroot(f, lower = lower, upper = upper)
+    p[i] <- result$root
+    cumulative_sum <- cumulative_sum + p[i]
+  }
+  # Set last p_n to use remaining sum
+  p[n] <- alpha - cumulative_sum
+  return(p)
+}
+
+
 #' @keywords internal
 use_soft_changepoints <- function(scp_length, last_knot, distance, min_distance,
                                  min_distance_tolerance, strictness_tol_k,
@@ -92,7 +146,17 @@ use_soft_changepoints <- function(scp_length, last_knot, distance, min_distance,
   modeldata$scp_skip_tolerance <- min_distance_tolerance
   modeldata$scp_skip_tolerance_k <- strictness_tol_k
   modeldata$scp_boltzmann_sharpness <- sharpness_boltzmann
-  modeldata$scp_alpha <- strictness_alpha
+
+  modeldata$scp_alpha_base <- changepoint_dirichlet_prior(
+    alpha = strictness_alpha * distance,
+    n = distance
+    )
+  modeldata$scp_alpha_adjusted <- changepoint_dirichlet_prior(
+    alpha = strictness_alpha * distance,
+    n = distance,
+    min_break_dist = min_distance,
+    prior_previous = modeldata$scp_alpha_base
+  )
 
   modeldata$scp_n_knots <- length(knots)
   modeldata$scp_length_intercept <- knots[1] - 1
