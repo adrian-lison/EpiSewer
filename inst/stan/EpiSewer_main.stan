@@ -423,7 +423,7 @@ transformed parameters {
     }
   } else if (R_model == 2) {
     for (i in 1:scp_n_knots[1]) {
-      scp_break_delays[i] = transform_to_simplex(append_zero(scp_break_delays_raw[i]));
+      scp_break_delays[i] = softmax(append_row(scp_break_delays_raw[i], 0));
     }
     scp_knot_values = random_walk(
       [R_intercept]', scp_noise .* scp_sd, 0
@@ -435,7 +435,7 @@ transformed parameters {
       ), R_link);
   } else if (R_model == 3) {
     for (i in 1:scp_n_knots[1]) {
-      scp_break_delays[i] = transform_to_simplex(append_zero(scp_break_delays_raw[i]));
+      scp_break_delays[i] = softmax(append_row(scp_break_delays_raw[i], 0));
     }
     scp_knot_values = scp_noise .* scp_sd;
     scp_values = cumulative_sum(soft_changepoint(
