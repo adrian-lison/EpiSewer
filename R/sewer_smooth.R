@@ -174,13 +174,15 @@ add_dummies_soft_changepoints <- function(modeldata) {
   modeldata <- add_dummy_data(modeldata, c(
     "scp_n_knots", "scp_break_dist", "scp_min_dist",
     "scp_length_intercept", "scp_k", "scp_alpha",
-    "scp_skip_tolerance", "scp_skip_tolerance_k"
+    "scp_skip_tolerance", "scp_skip_tolerance_k",
+    "scp_boltzmann_sharpness", "scp_alpha_base", "scp_alpha_adjusted"
   ))
   modeldata$scp_length <- 0
   modeldata <- add_dummy_inits(modeldata, c(
     "scp_noise", "scp_sd"
   ))
   modeldata$.init$scp_break_delays <- matrix(1)
+  modeldata$.init$scp_break_delays_raw <- matrix(1)
   return(modeldata)
 }
 

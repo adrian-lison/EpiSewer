@@ -137,3 +137,30 @@ vector changepoint_prior_adjusted(int d, real d_min) {
   }
   return(weights);
 }
+
+vector approximate_changepoints(vector sigma, vector white_noise, real base_sd, int min_dist, real sd_tolerance, real logistic_k) {
+  int n = num_elements(white_noise);
+  vector[n] x = rep_vector(0, n);
+  x[1] = white_noise[1] * (base_sd + sigma[1]);
+  for (t in 2:n) {
+    real previous_change = sum(abs(x[max(1,t-min_dist):(t-1)]));
+    real change_limit_diff = soft_lower_upper(
+        logistic_k * (previous_change - sd_tolerance), -10, 10, 50
+        );
+    real dampening = inv_logit(-change_limit_diff);
+    x[t] = white_noise[t] * (base_sd + sigma[t] * dampening);
+  }
+  return(x);
+}
+
+vector noise_anticlustered_egarch(vector sigma, vector white_noise, real base_sd, int window, real beta) {
+  int n = num_elements(white_noise);
+  vector[n] x = rep_vector(0, n);
+  x[1] = white_noise[1] * (base_sd + sigma[1]);
+  for (t in 2:n) {
+    real previous_change = sum(abs(x[max(1,t-window):(t-1)]));
+    real dampening = exp(beta * previous_change);
+    x[t] = white_noise[t] * (base_sd + sigma[t] * dampening);
+  }
+  return(x);
+}

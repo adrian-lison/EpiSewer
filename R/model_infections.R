@@ -1186,7 +1186,6 @@ R_estimate_changepoint_splines <- function(
         degree = 3,
         modeldata = modeldata
       )
-      modeldata$bs_coeff_select <- c(1, spline_knots$interior, spline_knots$boundary[2], spline_knots$boundary[2])
 
       # Changepoint model
       last_change <- with(modeldata$.metainfo, length_R_modeled - changepoint_min_distance)
@@ -1232,6 +1231,120 @@ R_estimate_changepoint_splines <- function(
   )
 
   return(modeldata)
+}
+
+R_estimate_anticluster_splines <- function(
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
+    anticluster_window = 7,
+    trend_prior_shape = 5e1,
+    trend_prior_rate = 10e-1,
+    spline_block_size = 4,
+    R_sd_baseline_prior_sd = 0.1,
+    spline_knot_distance = 3,
+    link = "inv_softplus",
+    R_max = 6,
+    change_threshold = 0.1,
+    modeldata = modeldata_init()
+) {
+
+  modeldata <-  configure_R_model(
+    name_approach = "anticluster_splines",
+    model_id = 4,
+    use_ets = FALSE,
+    use_bs = TRUE,
+    use_bs2 = FALSE,
+    use_scp = FALSE,
+    modeldata = modeldata
+  )
+
+  modeldata$R_intercept_prior <- set_prior(
+    "R_intercept", "normal",
+    mu = R_start_prior_mu, sigma = R_start_prior_sigma
+  )
+  modeldata$.init$R_intercept <-
+    modeldata$R_intercept_prior$R_intercept_prior[1]
+
+  modeldata$R_sd_change_prior <- set_prior("R_sd_change",
+                                           "lomax",
+                                           shape = trend_prior_shape,
+                                           rate = trend_prior_rate
+  )
+
+  modeldata$antic_window <- anticluster_window
+  modeldata$antic_beta <- log(0.01)/change_threshold^2
+
+  modeldata <- tbc(
+    "R_anticluster_splines",
+    {
+      # Spline model
+      spline_knots <- list(
+        interior = rev(seq(
+          modeldata$.metainfo$length_R_modeled - spline_knot_distance,
+          1, by = -spline_knot_distance
+        )),
+        boundary = c(-3, modeldata$.metainfo$length_R_modeled)
+      )
+      modeldata$.metainfo$R_knots <- spline_knots
+      modeldata <- use_basis_splines(
+        spline_length = modeldata$.metainfo$length_R_modeled,
+        knots = spline_knots,
+        degree = 3,
+        modeldata = modeldata
+      )
+      #print(make_penalty_matrix(ncol(modeldata$.metainfo$bs_matrix), 1))
+      modeldata$bs_block_length <- spline_block_size
+      modeldata$.init$bs_coeff_noise_raw <- rep(1e-4, modeldata$bs_ncol)
+      n_blocks <- ((modeldata$bs_ncol-1) %/% modeldata$bs_block_length) + 1
+      modeldata$.init$bs_coeff_noise_lomax <- rep(1e-4, n_blocks)
+
+    },
+    required = c(
+      ".metainfo$length_R_modeled"
+    ),
+    modeldata = modeldata
+  )
+
+  modeldata <- add_link_function(link, R_max, modeldata)
+
+  # dummy data
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_R_vari(modeldata)
+  modeldata <- add_dummies_soft_changepoints(modeldata)
+
+  modeldata$R_sd_baseline_prior <- set_prior("R_sd_baseline",
+                                             "half-normal",
+                                             sigma = R_sd_baseline_prior_sd
+  )
+  modeldata$.init$R_sd_baseline <- 1e-4
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_anticluster_splines = c()
+  )
+
+  return(modeldata)
+}
+
+#' Construct a difference penalty matrix for a given spline basis
+#'
+#' @param B The basis matrix (e.g., from splines::bs() or mgcv::smoothCon())
+#' @param order Order of the difference penalty (1 = RW1, 2 = RW2)
+#' @param epsilon Small ridge term to ensure positive definiteness
+#' @return The penalty matrix P = D' D + epsilon * I
+make_penalty_matrix <- function(K, order = 1, epsilon = 1e-6) {
+
+  # Create the finite difference matrix D (of size (K - order) x K)
+  D <- diff(diag(K), differences = order)
+
+  # Penalty matrix: P = D^T D
+  P <- t(D) %*% D
+
+  # Add ridge penalty for numerical stability
+  P <- P + epsilon * diag(K)
+
+  return(P)
 }
 
 #' Add change point model for the variability of Rt

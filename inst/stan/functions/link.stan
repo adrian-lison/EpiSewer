@@ -45,6 +45,13 @@ Helper for link functions
   }
 
   /**
+  * Soft lower and upper limit (clipping) using the softplus function
+  */
+  real soft_lower_upper(real x, real l, real u, real k) {
+    return(u - softplus(u - (l + softplus(x - l, k)), k));
+  }
+
+  /**
   * Logistic
   */
   real logistic(real x, real c, real a, real k) {
