@@ -185,7 +185,7 @@ data {
   vector[R_use_scp ? scp_break_dist[1] : 0] scp_alpha_adjusted;
 
   // Change point model for R variability
-  array[(R_model == 0 || R_model == 1 || R_model == 4) ? 1 : 0] real R_sd_baseline_prior; // sd of half-normal prior on baseline R variability
+  array[(R_model == 0 || R_model == 1 || R_model == 4) ? 2 : 0] real R_sd_baseline_prior; // sd of half-normal prior on baseline R variability
   array[2] real R_sd_change_prior; // shape and rate of lomax prior (exponential with gamma distributed rate) on additive R variability at changepoints
   array[(R_model == 0 || R_model == 1) ? 1 : 0] int<lower=1> R_vari_ncol; // number of B-splines (degree 1) for change points
   array[(R_model == 0 || R_model == 1) ? 1 : 0] int<lower=0> R_vari_n_w; // number of nonzero entries in R_vari matrix
@@ -344,7 +344,7 @@ parameters {
   array[R_model == 4 ? bs_blocks_n : 0] real<lower=0> bs_coeff_noise_lomax;
 
   // Change point model for Rt variability
-  array[(R_model == 0 || R_model == 1 || R_model == 4) ? 1 : 0] real<lower=0> R_sd_baseline; // baseline R variability
+  array[(R_model == 0 || R_model == 1 || R_model == 4) ? (R_sd_baseline_prior[2] > 0 ? 1 : 0) : 0] real<lower=0> R_sd_baseline; // baseline R variability
   vector<lower=0>[(R_model == 0 || R_model == 1) ? (R_vari_ncol[1] > 2 ? R_vari_ncol[1] - 2 : R_vari_ncol[1]) : 0] R_sd_changepoints; // additive R variability at changepoints
 
   // seeding
@@ -418,9 +418,8 @@ transformed parameters {
     ets_sd = csr_matrix_times_vector(
       L + S + D + T - (G+se) + h, R_vari_ncol[1], R_vari_w,
       R_vari_v, R_vari_u,
-      R_sd_baseline[1] + (R_vari_ncol[1] > 2 ? append_row3(
-        [0]', R_sd_changepoints, [0]'
-        ) : R_sd_changepoints)
+      param_or_fixed(R_sd_baseline, R_sd_baseline_prior) +
+      (R_vari_ncol[1] > 2 ? append_row3([0]', R_sd_changepoints, [0]') : R_sd_changepoints)
       )[2:(L + S + D + T - (G+se))];
     // Innovations state space process implementing exponential smoothing
     R[(se+1):(L + S + D + T - G)] = apply_link(holt_damped_process(
@@ -459,7 +458,7 @@ transformed parameters {
     sqrt(csr_matrix_times_vector(
       bs2_ncol[1] - 1, R_vari_sel_local_ncol[1], R_vari_sel_local_w,
       R_vari_sel_local_v, R_vari_sel_local_u,
-      rep_vector(R_sd_baseline[1]^2, bs2_length) // we add together variances --> square sd
+      rep_vector(param_or_fixed(R_sd_baseline, R_sd_baseline_prior)^2, bs2_length) // we add together variances --> square sd
       ));
     vector[bs2_ncol[1]] bs2_coeff = random_walk([0]', bs2_coeff_noise, 0); // Basis spline coefficients
     R_local = csr_matrix_times_vector(
@@ -660,7 +659,7 @@ model {
   // Priors
   R_intercept ~ normal(R_intercept_prior[1], R_intercept_prior[2]); // prior for Rt at start of time series
   if (R_model == 0 || R_model == 1) {
-      R_sd_baseline[1] ~ normal(0, R_sd_baseline_prior[1]) T[0, ]; // half normal, baseline
+    target += normal_prior_lpdf(R_sd_baseline | R_sd_baseline_prior, 0); // truncated normal
     target += pareto_type_2_lpdf(
       R_sd_changepoints | 0, R_sd_change_prior[2], R_sd_change_prior[1]
       ); // Lomax distribution / exponential-gamma distribution
@@ -670,10 +669,10 @@ model {
     );
     scp_noise ~ std_normal();
   } else if (R_model == 4) {
-    R_sd_baseline[1] ~ normal(0, R_sd_baseline_prior[1]) T[0, ]; // half normal, baseline
     target += pareto_type_2_lpdf(
       bs_coeff_noise_lomax | 0, R_sd_change_prior[2], R_sd_change_prior[1]
     );
+    target += normal_prior_lpdf(R_sd_baseline | R_sd_baseline_prior, 0); // truncated normal
 
     vector[bs_blocks_n] bs_coeff_end;
     bs_coeff_end[1] = mdivide_left_tri_low(
@@ -908,9 +907,8 @@ generated quantities {
         vector[h] ets_sd_forecast = csr_matrix_times_vector(
           L + S + D + T - (G+se) + h, R_vari_ncol[1], R_vari_w,
           R_vari_v, R_vari_u,
-          R_sd_baseline[1] + (R_vari_ncol[1] > 2 ? append_row3(
-            [0]', R_sd_changepoints, [0]'
-            ) : R_sd_changepoints)
+          param_or_fixed(R_sd_baseline, R_sd_baseline_prior) +
+          (R_vari_ncol[1] > 2 ? append_row3([0]', R_sd_changepoints, [0]') : R_sd_changepoints)
         )[((L + S + D + T - (G+se)) + 1):((L + S + D + T - (G+se)) + h)];
         R_forecast = apply_link(holt_damped_process(
           [R_intercept, ets_trend_start[1]]',

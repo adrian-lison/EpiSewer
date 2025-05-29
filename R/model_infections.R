@@ -101,12 +101,13 @@ generation_dist_assume <-
 #'@param trend_prior_mu Prior (mean) on the initial trend of Rt.
 #'@param trend_prior_sigma Prior (standard deviation) on the initial trend of
 #'  Rt.
+#'@param sd_base_prior_mu Prior (mu) on the baseline standard deviation of the
+#'  innovations. Please note that for consistency, the overall standard
+#'  deviation of innovations will always be the baseline plus an additive
+#'  component from `sd_change_prior` - even if no changepoints are modeled (see
+#'  below).
 #'@param sd_base_prior_sd Prior (standard deviation) on the baseline standard
-#'  deviation of the innovations. We here use a half-normal prior, i.e.
-#'  `sd_base_prior_sd` is the only parameter to be specified for this prior.
-#'  Please note that for consistency, the overall standard deviation of
-#'  innovations will always be the baseline plus an additive component from
-#'  `sd_change_prior` even if no changepoints are modeled (see below).
+#'  deviation of the innovations. See `sd_base_prior_mu` for details.
 #'@param sd_change_distance Distance between changepoints used to model
 #'  additional variation in Rt. The default change point distance is 4 weeks.
 #'  Very short changepoint distances must be chosen with care, as they can make
@@ -115,7 +116,7 @@ generation_dist_assume <-
 #'@param sd_change_prior_shape Exponential-Gamma prior (shape) on standard
 #'  deviation additional to baseline. This prior describes the distribution of
 #'  the standard deviation of Rt over time. EpiSewer will estimate a baseline
-#'  standard deviation (see `sd_base_prior_sd`), and model additional variation
+#'  standard deviation (see `sd_base_prior_mu`), and model additional variation
 #'  on top of the baseline using a changepoint model. Please see the details for
 #'  more explanation.
 #'@param sd_change_prior_rate Exponential-Gamma prior (rate) on standard
@@ -189,10 +190,10 @@ generation_dist_assume <-
 #'  independently distributed and following a Lomax distribution, also known as
 #'  Exponential-Gamma (EG) distribution. This is an exponential distribution
 #'  where the rate is Gamma distributed. The prior `sd_change_prior` defines the
-#'  shape and rate of this Gamma distribution. The distribution has a
-#'  strong peak towards zero and a long tail. This regularizes the estimated
-#'  deviations from the baseline standard deviation - most deviations are small,
-#'  but during special time periods, the deviation might also be larger.
+#'  shape and rate of this Gamma distribution. The distribution has a strong
+#'  peak towards zero and a long tail. This regularizes the estimated deviations
+#'  from the baseline standard deviation - most deviations are small, but during
+#'  special time periods, the deviation might also be larger.
 #'
 #'@details The priors of this component have the following functional form:
 #' - initial level of Rt: `Normal`
@@ -212,6 +213,7 @@ R_estimate_ets <- function(
     R_start_prior_sigma = 0.8,
     trend_prior_mu = 0,
     trend_prior_sigma = 0.1,
+    sd_base_prior_mu = 0,
     sd_base_prior_sd = 0.025,
     sd_change_prior_shape = 0.5,
     sd_change_prior_rate = 1e-4,
@@ -249,8 +251,9 @@ R_estimate_ets <- function(
   )
 
   modeldata$R_sd_baseline_prior <- set_prior("R_sd_baseline",
-    "half-normal",
-    sigma = sd_base_prior_sd
+     "normal",
+     mu = sd_base_prior_mu,
+     sigma = sd_base_prior_sd
   )
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
     "lomax",
@@ -343,12 +346,13 @@ R_estimate_ets <- function(
 #'@param R_start_prior_mu Prior (mean) on the initial value of Rt.
 #'@param R_start_prior_sigma Prior (standard deviation) on the initial value of
 #'  Rt.
+#'@param sd_base_prior_mu Prior (mean) on the baseline standard deviation of the
+#'  innovations. Please note that for consistency, the overall standard
+#'  deviation of innovations will always be the baseline plus an additive
+#'  component from `sd_change_prior` even if no changepoints are modeled (see
+#'  below).
 #'@param sd_base_prior_sd Prior (standard deviation) on the baseline standard
-#'  deviation of the innovations. We here use a half-normal prior, i.e.
-#'  `sd_base_prior_sd` is the only parameter to be specified for this prior.
-#'  Please note that for consistency, the overall standard deviation of
-#'  innovations will always be the baseline plus an additive component from
-#'  `sd_change_prior` even if no changepoints are modeled (see below).
+#'  deviation of the innovations. See `sd_base_prior_mu` for details.
 #'@param sd_change_distance Distance between changepoints used to model
 #'  additional variation in Rt. The default change point distance is 4 weeks.
 #'  Very short changepoint distances must be chosen with care, as they can make
@@ -406,6 +410,7 @@ R_estimate_ets <- function(
 R_estimate_rw <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
+    sd_base_prior_mu = 0,
     sd_base_prior_sd = 0.025,
     sd_change_prior_shape = 0.5,
     sd_change_prior_rate = 1e-4,
@@ -418,6 +423,7 @@ R_estimate_rw <- function(
   modeldata <- R_estimate_ets(
     R_start_prior_mu = R_start_prior_mu,
     R_start_prior_sigma = R_start_prior_sigma,
+    sd_base_prior_mu = sd_base_prior_mu,
     sd_base_prior_sd = sd_base_prior_sd,
     sd_change_prior_shape = sd_change_prior_shape,
     sd_change_prior_rate = sd_change_prior_rate,
@@ -442,7 +448,7 @@ R_estimate_rw <- function(
   return(modeldata)
 }
 
-#'Estimate Rt via smoothing splines
+#' Estimate Rt via smoothing splines
 #'
 #'@description This option estimates the effective reproduction number Rt using
 #'  penalized cubic basis splines.
@@ -459,12 +465,12 @@ R_estimate_rw <- function(
 #'  (intercept).
 #'@param R_start_prior_sigma Prior (standard deviation) on the initial
 #'  reproduction number (intercept).
-#'@param R_sd_local_prior_sd Half-normal prior (standard deviation) for the
-#'  variation of the local (i.e. short-term) spline. This controls the standard
-#'  deviation of a random walk over the coefficients of the local spline. The
-#'  prior refers to the *daily* standard deviation and is thus independent of
-#'  the knot distance. We use a half-normal prior, i.e. `R_sd_local_prior_sd` is
-#'  the only parameter to be specified for this prior.
+#'@param R_sd_local_prior_mu Prior (mean) for the variation of the local (i.e.
+#'  short-term) spline. This controls the standard deviation of a random walk
+#'  over the coefficients of the local spline. The prior refers to the *daily*
+#'  standard deviation and is thus independent of the knot distance.
+#'@param R_sd_local_prior_sd Prior (standard deviation) for the variation of the
+#'  local (i.e. short-term) spline. See `R_sd_local_prior_mu` for details.
 #'@param R_sd_global_prior_shape Exponential-Gamma prior (shape) for the
 #'  variation of the global (i.e. long-term) spline. This controls the standard
 #'  deviation of a random walk over the coefficients of the global spline. The
@@ -563,6 +569,7 @@ R_estimate_splines <- function(
     knot_distance_local = 7,
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
+    R_sd_local_prior_mu = 0,
     R_sd_local_prior_sd = 0.05,
     R_sd_global_prior_shape = 1,
     R_sd_global_prior_rate = 1e-2,
@@ -693,7 +700,8 @@ R_estimate_splines <- function(
     sigma = R_start_prior_sigma
   )
   modeldata$R_sd_baseline_prior <- set_prior("R_sd_baseline",
-    "half-normal",
+    "normal",
+    mu = R_sd_local_prior_mu,
     sigma = R_sd_local_prior_sd
     )
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
