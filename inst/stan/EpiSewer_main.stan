@@ -162,7 +162,7 @@ data {
   vector[R_use_bs ? bs_n_w[1] : 0] bs_w; // nonzero entries in bs matrix
   array[R_use_bs ? bs_n_w[1] : 0] int bs_v; // column indices of bs_w
   array[R_use_bs ? (bs_length + 1) : 0] int bs_u; // row starting indices for bs_w plus padding
-  int<lower=0> bs_block_length;
+  int<lower=0, upper=1> R_use_bs_sharp; // should sharp changes be modelled
   // Local
   int<lower=0> bs2_length; // (L + S + D + T - (G+se) + h)
   int<lower=0> bs2_dist; // standard distance between knots
@@ -206,10 +206,6 @@ data {
   array[R_model == 1 ? R_vari_sel_local_n_w[1]: 0] int R_vari_sel_local_v; // column indices of R_vari_sel_local_w
   array[R_model == 1 ? bs2_ncol[1] : 0] int R_vari_sel_local_u; // row starting indices for R_vari_sel_local_w plus padding
 
-  // Anticlustered noise ----
-  array[R_model == 4 ? 1 : 0] int<lower=1> antic_window;
-  array[R_model == 4 ? 1 : 0] real<upper=0> antic_beta;
-
   // Link function and corresponding hyperparameters ----
   // first element: 0 = inv_softplus, 1 = scaled_logit
   // other elements: hyperparameters for the respective link function
@@ -225,19 +221,10 @@ transformed data {
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T+h] flow_log = log(flow);
 
-  // Basis spline blocks and cholesky decomposition ----
-  int<lower=1> bs_blocks_n = R_use_bs ? ((bs_ncol[1]-1) %/% bs_block_length) + 1 : 1;
-  array[bs_blocks_n] int<lower=1> bs_blocks_last; // last index of each block
-  bs_blocks_last[1] = R_use_bs ? ((bs_ncol[1]-1) % bs_block_length) + 1 : 0;
-
-  matrix[bs_blocks_last[1], bs_blocks_last[1]] bs_P_matrix_L_start;
-  matrix[bs_block_length, bs_block_length] bs_P_matrix_L;
+  // Basis spline penality matrix cholesky decomposition ----
+  matrix[R_use_bs ? bs_ncol[1]-1 : 0, R_use_bs ? bs_ncol[1]-1 : 0] bs_P_matrix_L;
   if (R_use_bs) {
-    bs_P_matrix_L_start = cholesky_decompose(first_order_diff_penalty(bs_blocks_last[1]));
-    bs_P_matrix_L = cholesky_decompose(first_order_diff_penalty(bs_block_length));
-    for (i in 2:bs_blocks_n) {
-      bs_blocks_last[i] = bs_blocks_last[i-1] + bs_block_length;
-    }
+    bs_P_matrix_L = cholesky_decompose(first_order_diff_penalty(bs_ncol[1]-1));
   }
 
   real flow_median_log = log(quantile(flow, 0.5));
@@ -331,17 +318,16 @@ parameters {
   array[R_use_ets && ets_phi_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
 
   // basis splines (bs)
-  vector[R_use_bs ? (bs_ncol[1]) : 0] bs_coeff_noise_raw; // additive errors (non-centered)
+  vector[R_use_bs ? bs_ncol[1] - 1 : 0] bs_coeff_noise_raw; // additive errors (non-centered)
   vector[R_use_bs2 ? (bs2_ncol[1] - 1) : 0] bs2_coeff_noise_raw; // additive errors (non-centered)
+
+  // sharp changes
+  vector<lower=0>[R_use_bs_sharp ? bs_ncol[1] : 0] bs_coeff_noise_sharp; // sharp changes
 
   // soft changepoints (scp)
   array[R_use_scp ? scp_n_knots[1] : 1] vector[R_use_scp ? (scp_break_dist[1]-1) : 1] scp_break_delays_raw;
   vector[R_use_scp ? scp_n_knots[1] : 0] scp_noise; // additive errors
   vector<lower=0>[R_use_scp ? scp_n_knots[1] : 0] scp_sd; // R variability for soft changepoint model
-
-  // anticlustered_noise
-  //vector<lower=0>[R_model == 4 ? bs_ncol[1] : 0] bs_coeff_noise_lomax;
-  array[R_model == 4 ? bs_blocks_n : 0] real<lower=0> bs_coeff_noise_lomax;
 
   // Change point model for Rt variability
   array[(R_model == 0 || R_model == 1 || R_model == 4) ? (R_sd_baseline_prior[2] > 0 ? 1 : 0) : 0] real<lower=0> R_sd_baseline; // baseline R variability
@@ -507,24 +493,13 @@ transformed parameters {
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
   } else if (R_model == 4) {
-    // vector[bs_ncol[1] - 1] bs_coeff_noise = noise_anticlustered_egarch(
-    //   bs_coeff_noise_lomax, bs_coeff_noise_raw, R_sd_baseline[1], antic_window[1], antic_beta[1]
-    //   );
-    vector[bs_ncol[1]] bs_coeff;
-    bs_coeff[1:bs_blocks_last[1]] = mdivide_left_tri_low(
-      bs_P_matrix_L_start', bs_coeff_noise_raw[1:bs_blocks_last[1]]
-      ) * bs_coeff_noise_lomax[1];
-    for (i in 2:bs_blocks_n) {
-      bs_coeff[(bs_blocks_last[i-1]+1):bs_blocks_last[i]] = mdivide_left_tri_low(
-        bs_P_matrix_L', bs_coeff_noise_raw[(bs_blocks_last[i-1]+1):bs_blocks_last[i]]
-        ) * bs_coeff_noise_lomax[i];
+    vector[bs_ncol[1]] bs_coeff = rep_vector(0, bs_ncol[1]);
+    int bs_k = bs_ncol[1] - 1; // index for the last column
+    bs_coeff[1:bs_k] = mdivide_left_tri_low(bs_P_matrix_L', bs_coeff_noise_raw);
+    bs_coeff[1:bs_k] = bs_coeff[1:bs_k] * param_or_fixed(R_sd_baseline, R_sd_baseline_prior);
+    if (R_use_bs_sharp) {
+      bs_coeff[1:bs_k] = bs_coeff[1:bs_k] .* (1 + bs_coeff_noise_sharp[1:bs_k]);
     }
-
-    // vector[bs_ncol[1]] bs_coeff = reverse(ar1_process(
-    //   [0]', 0.8, bs_coeff_noise_raw .* bs_coeff_noise_lomax, 0)
-    //   )[1:bs_ncol[1]];
-    //append_row(bs_coeff_noise_raw .* bs_coeff_noise_lomax, [0]');
-    //reverse(random_walk([0]', bs_coeff_noise_raw .* bs_coeff_noise_lomax, 0))[1:bs_ncol[1]];
     vector[(L + S + D + T - G) - se] Rspline = csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       );
@@ -669,27 +644,30 @@ model {
     );
     scp_noise ~ std_normal();
   } else if (R_model == 4) {
-    target += pareto_type_2_lpdf(
-      bs_coeff_noise_lomax | 0, R_sd_change_prior[2], R_sd_change_prior[1]
-    );
     target += normal_prior_lpdf(R_sd_baseline | R_sd_baseline_prior, 0); // truncated normal
 
-    vector[bs_blocks_n] bs_coeff_end;
-    bs_coeff_end[1] = mdivide_left_tri_low(
-      bs_P_matrix_L_start', bs_coeff_noise_raw[1:bs_blocks_last[1]]
-      )[bs_blocks_last[1]] * bs_coeff_noise_lomax[1];
-    for (i in 2:bs_blocks_n) {
-      bs_coeff_end[i] = mdivide_left_tri_low(
-        bs_P_matrix_L', bs_coeff_noise_raw[(bs_blocks_last[i-1]+1):bs_blocks_last[i]]
-        )[bs_block_length] * bs_coeff_noise_lomax[i];
-    }
-    vector[bs_blocks_n] bs_blocks_diff = rep_vector(0, bs_blocks_n);
-    if (bs_blocks_n > 1) {
-      bs_blocks_diff = append_row(bs_coeff_end[2:bs_blocks_n],0) - bs_coeff_end;
+   vector[bs_ncol[1]] bs_coeff = rep_vector(0, bs_ncol[1]);
+    int bs_k = bs_ncol[1] - 1; // index for the last column
+    bs_coeff[1:bs_k] = mdivide_left_tri_low(bs_P_matrix_L', bs_coeff_noise_raw);
+    bs_coeff[1:bs_k] = bs_coeff[1:bs_k] * param_or_fixed(R_sd_baseline, R_sd_baseline_prior);
+
+    if (R_use_bs_sharp) {
+      bs_coeff[1:bs_k] = bs_coeff[1:bs_k] .* (1 + bs_coeff_noise_sharp[1:bs_k]);
+      target += pareto_type_2_lpdf(
+        bs_coeff_noise_sharp | 0, R_sd_change_prior[2], R_sd_change_prior[1]
+      );
+      target += normal_lpdf(
+        bs_coeff[bs_ncol[1]] - bs_coeff[bs_ncol[1]-1] | 0,
+        param_or_fixed(R_sd_baseline, R_sd_baseline_prior) *
+        (1 + bs_coeff_noise_sharp[bs_ncol[1]])
+        );
     } else {
-      bs_blocks_diff[1] = bs_coeff_end[1] - 0;
+      target += normal_lpdf(
+        bs_coeff[bs_ncol[1]] - bs_coeff[bs_ncol[1]-1] | 0,
+        param_or_fixed(R_sd_baseline, R_sd_baseline_prior)
+        );
     }
-    target += normal_lpdf(bs_blocks_diff | 0, bs_coeff_noise_lomax);
+
   }
 
   if (R_use_ets) {
@@ -929,6 +907,8 @@ generated quantities {
         real last_R = R[L + S + D + T - G];
         real slope = scp_knot_values[scp_n_knots[1]] / (1.0*bs_dist);
         R_forecast = last_R + cumulative_sum(rep_vector(slope, h));
+      } else if (R_model == 4) {
+        R_forecast = rep_vector(R[L + S + D + T - G], h);
       }
 
       R_forecast = dampen_trend(

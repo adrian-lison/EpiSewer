@@ -330,6 +330,7 @@ R_estimate_ets <- function(
   modeldata <- add_dummies_basis_splines2(modeldata)
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_ets = c()
@@ -715,6 +716,7 @@ R_estimate_splines <- function(
   # dummies
   modeldata <- add_dummies_exponential_smoothing(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_splines = c()
@@ -1051,6 +1053,7 @@ R_estimate_piecewise <- function(
   modeldata <- add_dummies_basis_splines2(modeldata)
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_piecewise = c()
@@ -1233,6 +1236,7 @@ R_estimate_changepoint_splines <- function(
   modeldata <- add_dummies_basis_splines2(modeldata)
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_changepoint_splines = c()
@@ -1241,23 +1245,71 @@ R_estimate_changepoint_splines <- function(
   return(modeldata)
 }
 
-R_estimate_anticluster_splines <- function(
+#'@title Estimate Rt with a smooth derivative
+#'
+#'@description This option estimates the effective reproduction number Rt over
+#'  time as a smooth trend. It uses penalized smoothing splines placed on the
+#'  first-order differences of Rt. This leads to mostly gradual changes.
+#'  Occasional sharp changes are supported through an additional sparse prior.
+#'
+#'@param smooth_changes_prior_mu Prior (mean) for the smoothness of the Rt
+#'  trend. Smaller values lead to smoother Rt trajectories by increasing the
+#'  difference penalty for the trend smoothing splines. This can be interpreted
+#'  as the standard deviation of a random walk over the spline coefficients. For
+#'  example, a value of 0.02 supports trend changes by up to approximately 0.04
+#'  per spline knot, which in turn corresponds to a change from a stable Rt=1 to
+#'  Rt=1.5 within two weeks.
+#'@param smooth_changes_prior_sd Prior (sd) for the smoothness of the Rt trend.
+#'  By default, this is set to 0, which means that the smoothness is fixed to
+#'  `smooth_changes_prior_mu` and not estimated from the data.
+#'@param spline_knot_distance Distance (in days) between spline knots for the
+#'  penalized smoothing splines. Shorter distances increase flexibility of the
+#'  Rt trajectory but also the daily Rt uncertainty.
+#'@param sharp_changes Should occasional fast changes in Rt be supported? This
+#'  option multiplies each trend spline coefficient by a factor of 1+alpha_i,
+#'  where each alpha_i is sampled from a sparse distribution. This allows
+#'  individual trend spline coefficients to be extremely high (positive trend)
+#'  or low (negative trend), leading to fast short-term changes in Rt.
+#'@param sharp_changes_prior_shape Exponential-Gamma (EG) prior (shape) for the
+#'  strength of sharp changes in Rt. The exponential-Gamma prior is sparse, i.e.
+#'  it has a strong peak towards zero (no deviation from penalized splines) and
+#'  a long tail (occassional sharp changes). Smaller shape parameters will lead
+#'  to more sparseness, i.e. a longer tail. Note that when adjusting the shape,
+#'  you will likely also have to adjust the rate.
+#'@param sharp_changes_prior_rate Exponential-Gamma (EG) prior (rate) for the
+#'  strength of sharp changes in the Rt trend. See `sharp_changes_prior_shape`
+#'  above for an explanation. Larger rates will lead to more variability.
+#'
+#'@details The priors of this component have the following functional form:
+#' - R_start (intercept):
+#'  `Normal`
+#' - smooth_changes (standard deviation of the random walk over trend spline coefficients):
+#'  `Truncated-normal`
+#'- sharp_changes (additional multiplier to spline coefficients):
+#'  `Exponential-Gamma`
+#'
+#'@inheritParams R_estimate_splines
+#'
+#'@inheritParams template_model_helpers
+#'@inherit modeldata_init return
+#'@export
+#'@family {Rt models}
+R_estimate_smooth_derivative <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
-    anticluster_window = 7,
-    trend_prior_shape = 5e1,
-    trend_prior_rate = 10e-1,
-    spline_block_size = 4,
-    R_sd_baseline_prior_sd = 0.1,
-    spline_knot_distance = 3,
+    smooth_changes_prior_mu = 0.02,
+    smooth_changes_prior_sd = 0,
+    spline_knot_distance = 14,
+    sharp_changes = TRUE,
+    sharp_changes_prior_shape = 0.5,
+    sharp_changes_prior_rate = 1e-5,
     link = "inv_softplus",
     R_max = 6,
-    change_threshold = 0.1,
     modeldata = modeldata_init()
 ) {
 
   modeldata <-  configure_R_model(
-    name_approach = "anticluster_splines",
+    name_approach = "smooth_derivative",
     model_id = 4,
     use_ets = FALSE,
     use_bs = TRUE,
@@ -1273,17 +1325,24 @@ R_estimate_anticluster_splines <- function(
   modeldata$.init$R_intercept <-
     modeldata$R_intercept_prior$R_intercept_prior[1]
 
+  modeldata$R_sd_baseline_prior <- set_prior("R_sd_baseline",
+   "truncated_normal",
+   mu = smooth_changes_prior_mu,
+   sigma = smooth_changes_prior_sd
+  )
+  modeldata$.init$R_sd_baseline <- as.array(init_from_location_scale_prior(
+    modeldata$R_sd_baseline_prior
+  ))
+
+  modeldata$R_use_bs_sharp <- sharp_changes
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
-                                           "lomax",
-                                           shape = trend_prior_shape,
-                                           rate = trend_prior_rate
+     "lomax",
+     shape = sharp_changes_prior_shape,
+     rate = sharp_changes_prior_rate
   )
 
-  modeldata$antic_window <- anticluster_window
-  modeldata$antic_beta <- log(0.01)/change_threshold^2
-
   modeldata <- tbc(
-    "R_anticluster_splines",
+    "R_smooth_derivative",
     {
       # Spline model
       spline_knots <- list(
@@ -1291,7 +1350,7 @@ R_estimate_anticluster_splines <- function(
           modeldata$.metainfo$length_R_modeled - spline_knot_distance,
           1, by = -spline_knot_distance
         )),
-        boundary = c(-3, modeldata$.metainfo$length_R_modeled)
+        boundary = c(-1, modeldata$.metainfo$length_R_modeled)
       )
       modeldata$.metainfo$R_knots <- spline_knots
       modeldata <- use_basis_splines(
@@ -1300,11 +1359,11 @@ R_estimate_anticluster_splines <- function(
         degree = 3,
         modeldata = modeldata
       )
-      #print(make_penalty_matrix(ncol(modeldata$.metainfo$bs_matrix), 1))
-      modeldata$bs_block_length <- spline_block_size
-      modeldata$.init$bs_coeff_noise_raw <- rep(1e-4, modeldata$bs_ncol)
-      n_blocks <- ((modeldata$bs_ncol-1) %/% modeldata$bs_block_length) + 1
-      modeldata$.init$bs_coeff_noise_lomax <- rep(1e-4, n_blocks)
+      if (modeldata$R_use_bs_sharp) {
+        modeldata$.init$bs_coeff_noise_sharp <- rep(1e-4, modeldata$bs_ncol)
+      } else {
+        modeldata$.init$bs_coeff_noise_sharp <- numeric()
+      }
 
     },
     required = c(
@@ -1319,40 +1378,14 @@ R_estimate_anticluster_splines <- function(
   modeldata <- add_dummies_exponential_smoothing(modeldata)
   modeldata <- add_dummies_basis_splines2(modeldata)
   modeldata <- add_dummies_R_vari_selection(modeldata)
-  modeldata <- add_dummies_R_vari(modeldata)
+  modeldata <- add_dummies_R_vari(modeldata, keep_baseline = TRUE)
   modeldata <- add_dummies_soft_changepoints(modeldata)
 
-  modeldata$R_sd_baseline_prior <- set_prior("R_sd_baseline",
-                                             "half-normal",
-                                             sigma = R_sd_baseline_prior_sd
-  )
-  modeldata$.init$R_sd_baseline <- 1e-4
-
   modeldata$.str$infections[["R"]] <- list(
-    R_estimate_anticluster_splines = c()
+    R_estimate_smooth_derivative = c()
   )
 
   return(modeldata)
-}
-
-#' Construct a difference penalty matrix for a given spline basis
-#'
-#' @param B The basis matrix (e.g., from splines::bs() or mgcv::smoothCon())
-#' @param order Order of the difference penalty (1 = RW1, 2 = RW2)
-#' @param epsilon Small ridge term to ensure positive definiteness
-#' @return The penalty matrix P = D' D + epsilon * I
-make_penalty_matrix <- function(K, order = 1, epsilon = 1e-6) {
-
-  # Create the finite difference matrix D (of size (K - order) x K)
-  D <- diff(diag(K), differences = order)
-
-  # Penalty matrix: P = D^T D
-  P <- t(D) %*% D
-
-  # Add ridge penalty for numerical stability
-  P <- P + epsilon * diag(K)
-
-  return(P)
 }
 
 #' Add change point model for the variability of Rt

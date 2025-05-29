@@ -198,6 +198,14 @@ add_dummies_exponential_smoothing <- function(modeldata) {
   return(modeldata)
 }
 
+add_dummies_smooth_derivative <- function(modeldata) {
+  modeldata <- add_dummy_inits(modeldata, c(
+    "bs_coeff_noise_sharp"
+  ))
+  modeldata$R_use_bs_sharp <- FALSE
+  return(modeldata)
+}
+
 add_dummies_R_vari_selection <- function(modeldata) {
   R_vari_sel_dummies <- c(
     "R_vari_sel_ncol", "R_vari_sel_n_w", "R_vari_sel_w",
@@ -213,14 +221,17 @@ add_dummies_R_vari_selection <- function(modeldata) {
   return(modeldata)
 }
 
-add_dummies_R_vari <- function(modeldata) {
-  modeldata <- add_dummy_data(modeldata, c(
-    "R_sd_baseline_prior",
+add_dummies_R_vari <- function(modeldata, keep_baseline = FALSE) {
+  R_vari_dummies <- c(
     "R_vari_ncol", "R_vari_n_w", "R_vari_w", "R_vari_v", "R_vari_u"
-  ))
-  modeldata <- add_dummy_inits(modeldata, c(
-    "R_sd_baseline", "R_sd_changepoints"
-  ))
+  )
+  R_vari_dummies_inits <- c("R_sd_changepoints")
+  if (!keep_baseline) {
+    R_vari_dummies <- c(R_vari_dummies, "R_sd_baseline_prior")
+    R_vari_dummies_inits <- c(R_vari_dummies_inits, "R_sd_baseline")
+  }
+  modeldata <- add_dummy_data(modeldata, c(R_vari_dummies))
+  modeldata <- add_dummy_inits(modeldata, c(R_vari_dummies_inits))
   return(modeldata)
 }
 
