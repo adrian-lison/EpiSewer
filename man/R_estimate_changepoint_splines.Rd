@@ -71,8 +71,7 @@ modeled pathogen. Default is 6.}
 \item{strictness_alpha}{The concentration parameter of the Dirichlet prior
 for the changepoint positions. Choosing smaller values of
 \code{strictness_alpha} will lead to more strict changepoints. Note that
-choosing small values of \code{strictness_alpha} can impede MCMC sampling and
-lead to divergent transitions.}
+choosing small values of \code{strictness_alpha} can impede MCMC sampling.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -122,6 +121,7 @@ Other {Rt models}:
 \code{\link{R_estimate_ets}()},
 \code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
+\code{\link{R_estimate_smooth_derivative}()},
 \code{\link{R_estimate_splines}()}
 }
 \concept{{Rt models}}

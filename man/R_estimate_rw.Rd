@@ -7,6 +7,7 @@
 R_estimate_rw(
   R_start_prior_mu = 1,
   R_start_prior_sigma = 0.8,
+  sd_base_prior_mu = 0,
   sd_base_prior_sd = 0.025,
   sd_change_prior_shape = 0.5,
   sd_change_prior_rate = 1e-04,
@@ -24,12 +25,14 @@ R_estimate_rw(
 \item{R_start_prior_sigma}{Prior (standard deviation) on the initial value of
 Rt.}
 
+\item{sd_base_prior_mu}{Prior (mean) on the baseline standard deviation of the
+innovations. Please note that for consistency, the overall standard
+deviation of innovations will always be the baseline plus an additive
+component from \code{sd_change_prior} even if no changepoints are modeled (see
+below).}
+
 \item{sd_base_prior_sd}{Prior (standard deviation) on the baseline standard
-deviation of the innovations. We here use a half-normal prior, i.e.
-\code{sd_base_prior_sd} is the only parameter to be specified for this prior.
-Please note that for consistency, the overall standard deviation of
-innovations will always be the baseline plus an additive component from
-\code{sd_change_prior} even if no changepoints are modeled (see below).}
+deviation of the innovations. See \code{sd_base_prior_mu} for details.}
 
 \item{sd_change_prior_shape}{Exponential-Gamma prior (shape) on standard
 deviation additional to baseline. This prior describes the distribution of
@@ -120,6 +123,7 @@ Other {Rt models}:
 \code{\link{R_estimate_changepoint_splines}()},
 \code{\link{R_estimate_ets}()},
 \code{\link{R_estimate_piecewise}()},
+\code{\link{R_estimate_smooth_derivative}()},
 \code{\link{R_estimate_splines}()}
 }
 \concept{{Rt models}}

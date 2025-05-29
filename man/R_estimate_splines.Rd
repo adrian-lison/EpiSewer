@@ -9,6 +9,7 @@ R_estimate_splines(
   knot_distance_local = 7,
   R_start_prior_mu = 1,
   R_start_prior_sigma = 0.8,
+  R_sd_local_prior_mu = 0,
   R_sd_local_prior_sd = 0.05,
   R_sd_global_prior_shape = 1,
   R_sd_global_prior_rate = 0.01,
@@ -35,12 +36,13 @@ one knot each week.}
 \item{R_start_prior_sigma}{Prior (standard deviation) on the initial
 reproduction number (intercept).}
 
-\item{R_sd_local_prior_sd}{Half-normal prior (standard deviation) for the
-variation of the local (i.e. short-term) spline. This controls the standard
-deviation of a random walk over the coefficients of the local spline. The
-prior refers to the \emph{daily} standard deviation and is thus independent of
-the knot distance. We use a half-normal prior, i.e. \code{R_sd_local_prior_sd} is
-the only parameter to be specified for this prior.}
+\item{R_sd_local_prior_mu}{Prior (mean) for the variation of the local (i.e.
+short-term) spline. This controls the standard deviation of a random walk
+over the coefficients of the local spline. The prior refers to the \emph{daily}
+standard deviation and is thus independent of the knot distance.}
+
+\item{R_sd_local_prior_sd}{Prior (standard deviation) for the variation of the
+local (i.e. short-term) spline. See \code{R_sd_local_prior_mu} for details.}
 
 \item{R_sd_global_prior_shape}{Exponential-Gamma prior (shape) for the
 variation of the global (i.e. long-term) spline. This controls the standard
@@ -164,6 +166,7 @@ Other {Rt models}:
 \code{\link{R_estimate_changepoint_splines}()},
 \code{\link{R_estimate_ets}()},
 \code{\link{R_estimate_piecewise}()},
-\code{\link{R_estimate_rw}()}
+\code{\link{R_estimate_rw}()},
+\code{\link{R_estimate_smooth_derivative}()}
 }
 \concept{{Rt models}}
