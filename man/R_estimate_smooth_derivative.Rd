@@ -7,12 +7,9 @@
 R_estimate_smooth_derivative(
   R_start_prior_mu = 1,
   R_start_prior_sigma = 0.8,
-  smooth_changes_prior_mu = 0.02,
-  smooth_changes_prior_sd = 0,
   spline_knot_distance = 14,
-  sharp_changes = TRUE,
-  sharp_changes_prior_shape = 0.5,
-  sharp_changes_prior_rate = 1e-05,
+  trend_prior_shape = 1,
+  trend_prior_rate = 5e-04,
   link = "inv_softplus",
   R_max = 6,
   modeldata = modeldata_init()
@@ -25,38 +22,20 @@ R_estimate_smooth_derivative(
 \item{R_start_prior_sigma}{Prior (standard deviation) on the initial
 reproduction number (intercept).}
 
-\item{smooth_changes_prior_mu}{Prior (mean) for the smoothness of the Rt
-trend. Smaller values lead to smoother Rt trajectories by increasing the
-difference penalty for the trend smoothing splines. This can be interpreted
-as the standard deviation of a random walk over the spline coefficients. For
-example, a value of 0.02 supports trend changes by up to approximately 0.04
-per spline knot, which in turn corresponds to a change from a stable Rt=1 to
-Rt=1.5 within two weeks.}
-
-\item{smooth_changes_prior_sd}{Prior (sd) for the smoothness of the Rt trend.
-By default, this is set to 0, which means that the smoothness is fixed to
-\code{smooth_changes_prior_mu} and not estimated from the data.}
-
 \item{spline_knot_distance}{Distance (in days) between spline knots for the
 penalized smoothing splines. Shorter distances increase flexibility of the
 Rt trajectory but also the daily Rt uncertainty.}
 
-\item{sharp_changes}{Should occasional fast changes in Rt be supported? This
-option multiplies each trend spline coefficient by a factor of 1+alpha_i,
-where each alpha_i is sampled from a sparse distribution. This allows
-individual trend spline coefficients to be extremely high (positive trend)
-or low (negative trend), leading to fast short-term changes in Rt.}
+\item{trend_prior_shape}{Normal-Exponential-Gamma (NEG) prior (shape) for the
+Rt trend. The NEG prior is sparse, i.e. it has a strong peak at zero
+(transmission remains unchanged) and long tails (allows for occasional large
+positive or negative changes). Smaller shape parameters will lead to more
+sparseness (i.e. fewer but sharper changes in Rt). Note that when adjusting
+the shape, you will likely also have to adjust the rate.}
 
-\item{sharp_changes_prior_shape}{Exponential-Gamma (EG) prior (shape) for the
-strength of sharp changes in Rt. The exponential-Gamma prior is sparse, i.e.
-it has a strong peak towards zero (no deviation from penalized splines) and
-a long tail (occassional sharp changes). Smaller shape parameters will lead
-to more sparseness, i.e. a longer tail. Note that when adjusting the shape,
-you will likely also have to adjust the rate.}
-
-\item{sharp_changes_prior_rate}{Exponential-Gamma (EG) prior (rate) for the
-strength of sharp changes in the Rt trend. See \code{sharp_changes_prior_shape}
-above for an explanation. Larger rates will lead to more variability.}
+\item{trend_prior_rate}{Normal-Exponential-Gamma (NEG) prior (rate) for the
+strength of the Rt trend. See \code{sharp_changes_prior_shape} above for an
+explanation. Larger rates will lead to more Rt variability.}
 
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
@@ -83,19 +62,16 @@ performed before model fitting (\code{.checks}).
 }
 \description{
 This option estimates the effective reproduction number Rt over
-time as a smooth trend. It uses penalized smoothing splines placed on the
-first-order differences of Rt. This leads to mostly gradual changes.
-Occasional sharp changes are supported through an additional sparse prior.
+time as a smooth trend. It uses sparse smoothing splines placed on the
+first-order differences of Rt.
 }
 \details{
 The priors of this component have the following functional form:
 \itemize{
 \item R_start (intercept):
 \code{Normal}
-\item smooth_changes (standard deviation of the random walk over trend spline coefficients):
-\code{Truncated-normal}
-\item sharp_changes (additional multiplier to spline coefficients):
-\code{Exponential-Gamma}
+\item trend_prior:
+\code{Normal-Exponential-Gamma}
 }
 }
 \seealso{

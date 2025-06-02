@@ -16,31 +16,6 @@ functions {
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
   #include functions/soft_changepoints.stan
-
-  matrix first_order_diff_penalty(int block_length) {
-    int k = block_length - 1;
-    matrix[k, block_length] D;
-    matrix[block_length, block_length] P;
-
-    // Initialize D with zeros
-    D = rep_matrix(0, k, block_length);
-
-    // Build first-order difference matrix D
-    for (r in 1:k) {
-      D[r, r] = -1;
-      D[r, r + 1] = 1;
-    }
-
-    // Compute penalty matrix: P = D' * D
-    P = crossprod(D);
-
-    // Add ridge penalty for numerical stability
-    for (i in 1:block_length) {
-      P[i, i] += 1e-6; // small ridge penalty
-    }
-
-    return P;
-  }
 }
 data {
   // Measurements ----
@@ -162,7 +137,6 @@ data {
   vector[R_use_bs ? bs_n_w[1] : 0] bs_w; // nonzero entries in bs matrix
   array[R_use_bs ? bs_n_w[1] : 0] int bs_v; // column indices of bs_w
   array[R_use_bs ? (bs_length + 1) : 0] int bs_u; // row starting indices for bs_w plus padding
-  int<lower=0, upper=1> R_use_bs_sharp; // should sharp changes be modelled
   // Local
   int<lower=0> bs2_length; // (L + S + D + T - (G+se) + h)
   int<lower=0> bs2_dist; // standard distance between knots
@@ -185,7 +159,7 @@ data {
   vector[R_use_scp ? scp_break_dist[1] : 0] scp_alpha_adjusted;
 
   // Change point model for R variability
-  array[(R_model == 0 || R_model == 1 || R_model == 4) ? 2 : 0] real R_sd_baseline_prior; // sd of half-normal prior on baseline R variability
+  array[(R_model == 0 || R_model == 1) ? 2 : 0] real R_sd_baseline_prior; // sd of half-normal prior on baseline R variability
   array[2] real R_sd_change_prior; // shape and rate of lomax prior (exponential with gamma distributed rate) on additive R variability at changepoints
   array[(R_model == 0 || R_model == 1) ? 1 : 0] int<lower=1> R_vari_ncol; // number of B-splines (degree 1) for change points
   array[(R_model == 0 || R_model == 1) ? 1 : 0] int<lower=0> R_vari_n_w; // number of nonzero entries in R_vari matrix
@@ -220,12 +194,6 @@ transformed data {
   vector[S + 1] shed_rev_log = log(reverse(shedding_dist));
   vector[D + 1] residence_rev_log = log(reverse(residence_dist));
   vector[T+h] flow_log = log(flow);
-
-  // Basis spline penality matrix cholesky decomposition ----
-  matrix[R_use_bs ? bs_ncol[1]-1 : 0, R_use_bs ? bs_ncol[1]-1 : 0] bs_P_matrix_L;
-  if (R_use_bs) {
-    bs_P_matrix_L = cholesky_decompose(first_order_diff_penalty(bs_ncol[1]-1));
-  }
 
   real flow_median_log = log(quantile(flow, 0.5));
 
@@ -321,8 +289,8 @@ parameters {
   vector[R_use_bs ? bs_ncol[1] - 1 : 0] bs_coeff_noise_raw; // additive errors (non-centered)
   vector[R_use_bs2 ? (bs2_ncol[1] - 1) : 0] bs2_coeff_noise_raw; // additive errors (non-centered)
 
-  // sharp changes
-  vector<lower=0>[R_use_bs_sharp ? bs_ncol[1] : 0] bs_coeff_noise_sharp; // sharp changes
+  // smooth derivative
+  vector<lower=0>[R_model == 4 ? bs_ncol[1]-1 : 0] bs_coeff_noise_lomax;
 
   // soft changepoints (scp)
   array[R_use_scp ? scp_n_knots[1] : 1] vector[R_use_scp ? (scp_break_dist[1]-1) : 1] scp_break_delays_raw;
@@ -330,7 +298,7 @@ parameters {
   vector<lower=0>[R_use_scp ? scp_n_knots[1] : 0] scp_sd; // R variability for soft changepoint model
 
   // Change point model for Rt variability
-  array[(R_model == 0 || R_model == 1 || R_model == 4) ? (R_sd_baseline_prior[2] > 0 ? 1 : 0) : 0] real<lower=0> R_sd_baseline; // baseline R variability
+  array[(R_model == 0 || R_model == 1) ? (R_sd_baseline_prior[2] > 0 ? 1 : 0) : 0] real<lower=0> R_sd_baseline; // baseline R variability
   vector<lower=0>[(R_model == 0 || R_model == 1) ? (R_vari_ncol[1] > 2 ? R_vari_ncol[1] - 2 : R_vari_ncol[1]) : 0] R_sd_changepoints; // additive R variability at changepoints
 
   // seeding
@@ -489,21 +457,20 @@ transformed parameters {
       scp_values[scp_length] + last_diff
       ]'
       );
-    R[(se+1):(L + S + D + T - G)] = apply_link(R_intercept + csr_matrix_times_vector(
-      bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
+    R[(se+1):(L + S + D + T - G)] = apply_link(
+      R_intercept + csr_matrix_times_vector(
+        bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
   } else if (R_model == 4) {
-    vector[bs_ncol[1]] bs_coeff = rep_vector(0, bs_ncol[1]);
-    int bs_k = bs_ncol[1] - 1; // index for the last column
-    bs_coeff[1:bs_k] = mdivide_left_tri_low(bs_P_matrix_L', bs_coeff_noise_raw);
-    bs_coeff[1:bs_k] = bs_coeff[1:bs_k] * param_or_fixed(R_sd_baseline, R_sd_baseline_prior);
-    if (R_use_bs_sharp) {
-      bs_coeff[1:bs_k] = bs_coeff[1:bs_k] .* (1 + bs_coeff_noise_sharp[1:bs_k]);
-    }
+    vector[bs_ncol[1]] bs_coeff = append_row(
+      sqrt(bs_coeff_noise_lomax) .* bs_coeff_noise_raw, 0
+      );
     vector[(L + S + D + T - G) - se] Rspline = csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       );
-    R[(se+1):(L + S + D + T - G)] = apply_link(R_intercept + cumulative_sum(Rspline), R_link);
+    R[(se+1):(L + S + D + T - G)] = apply_link(
+      R_intercept + cumulative_sum(Rspline), R_link
+      );
   }
 
   // seeding
@@ -644,30 +611,9 @@ model {
     );
     scp_noise ~ std_normal();
   } else if (R_model == 4) {
-    target += normal_prior_lpdf(R_sd_baseline | R_sd_baseline_prior, 0); // truncated normal
-
-   vector[bs_ncol[1]] bs_coeff = rep_vector(0, bs_ncol[1]);
-    int bs_k = bs_ncol[1] - 1; // index for the last column
-    bs_coeff[1:bs_k] = mdivide_left_tri_low(bs_P_matrix_L', bs_coeff_noise_raw);
-    bs_coeff[1:bs_k] = bs_coeff[1:bs_k] * param_or_fixed(R_sd_baseline, R_sd_baseline_prior);
-
-    if (R_use_bs_sharp) {
-      bs_coeff[1:bs_k] = bs_coeff[1:bs_k] .* (1 + bs_coeff_noise_sharp[1:bs_k]);
-      target += pareto_type_2_lpdf(
-        bs_coeff_noise_sharp | 0, R_sd_change_prior[2], R_sd_change_prior[1]
-      );
-      target += normal_lpdf(
-        bs_coeff[bs_ncol[1]] - bs_coeff[bs_ncol[1]-1] | 0,
-        param_or_fixed(R_sd_baseline, R_sd_baseline_prior) *
-        (1 + bs_coeff_noise_sharp[bs_ncol[1]])
-        );
-    } else {
-      target += normal_lpdf(
-        bs_coeff[bs_ncol[1]] - bs_coeff[bs_ncol[1]-1] | 0,
-        param_or_fixed(R_sd_baseline, R_sd_baseline_prior)
-        );
-    }
-
+    target += pareto_type_2_lpdf(
+      bs_coeff_noise_lomax | 0, R_sd_change_prior[2], R_sd_change_prior[1]
+    );
   }
 
   if (R_use_ets) {

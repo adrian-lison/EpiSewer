@@ -200,9 +200,8 @@ add_dummies_exponential_smoothing <- function(modeldata) {
 
 add_dummies_smooth_derivative <- function(modeldata) {
   modeldata <- add_dummy_inits(modeldata, c(
-    "bs_coeff_noise_sharp"
+    "bs_coeff_noise_lomax"
   ))
-  modeldata$R_use_bs_sharp <- FALSE
   return(modeldata)
 }
 
