@@ -63,7 +63,7 @@ EpiSewer <- function(
   )
 
   job <- EpiSewerJob(
-    job_name = paste("EpiSewerJob", format(lubridate::now(), "%Y-%m-%d_%H-%M-%S")),
+    job_name = paste("EpiSewerJob", format(lubridate::now(), "%Y-%m-%d_%H-%M-%S"), sep="_"),
     modeldata = modeldata,
     fit_opts = fit_opts,
     results_opts = results_opts,
