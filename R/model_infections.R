@@ -1280,7 +1280,7 @@ R_estimate_smooth_derivative <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
     spline_knot_distance = 14,
-    trend_prior_shape = 1,
+    trend_prior_shape = 2,
     trend_prior_rate = 5e-4,
     link = "inv_softplus",
     R_max = 6,
@@ -1328,8 +1328,8 @@ R_estimate_smooth_derivative <- function(
         degree = 3,
         modeldata = modeldata
       )
-
-      modeldata$.init$bs_coeff_noise_lomax <- rep(1e-4, modeldata$bs_ncol - 1)
+      modeldata$.init$bs_coeff_noise_raw <- rep(1e-4, modeldata$bs_ncol - 2)
+      modeldata$.init$bs_coeff_noise_lomax <- rep(1e-4, modeldata$bs_ncol - 2)
     },
     required = c(
       ".metainfo$length_R_modeled"

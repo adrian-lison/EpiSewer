@@ -286,11 +286,11 @@ parameters {
   array[R_use_ets && ets_phi_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
 
   // basis splines (bs)
-  vector[R_use_bs ? bs_ncol[1] - 1 : 0] bs_coeff_noise_raw; // additive errors (non-centered)
+  vector[R_use_bs ? (R_model == 4 ? bs_ncol[1] - 2 : bs_ncol[1] - 1) : 0] bs_coeff_noise_raw; // additive errors (non-centered)
   vector[R_use_bs2 ? (bs2_ncol[1] - 1) : 0] bs2_coeff_noise_raw; // additive errors (non-centered)
 
   // smooth derivative
-  vector<lower=0>[R_model == 4 ? bs_ncol[1]-1 : 0] bs_coeff_noise_lomax;
+  vector<lower=0>[R_model == 4 ? bs_ncol[1]-2 : 0] bs_coeff_noise_lomax;
 
   // soft changepoints (scp)
   array[R_use_scp ? scp_n_knots[1] : 1] vector[R_use_scp ? (scp_break_dist[1]-1) : 1] scp_break_delays_raw;
@@ -373,7 +373,7 @@ transformed parameters {
       L + S + D + T - (G+se) + h, R_vari_ncol[1], R_vari_w,
       R_vari_v, R_vari_u,
       param_or_fixed(R_sd_baseline, R_sd_baseline_prior) +
-      (R_vari_ncol[1] > 2 ? append_row3([0]', R_sd_changepoints, [0]') : R_sd_changepoints)
+      (R_vari_ncol[1] > 2 ? append_row2([0]', R_sd_changepoints, [0]') : R_sd_changepoints)
       )[2:(L + S + D + T - (G+se))];
     // Innovations state space process implementing exponential smoothing
     R[(se+1):(L + S + D + T - G)] = apply_link(holt_damped_process(
@@ -391,7 +391,7 @@ transformed parameters {
     bs_coeff_ar_sd = csr_matrix_times_vector(
       bs_length, R_vari_ncol[1], R_vari_w,
       R_vari_v, R_vari_u,
-      (R_vari_ncol[1] > 2 ? append_row3(
+      (R_vari_ncol[1] > 2 ? append_row2(
         [0]', R_sd_changepoints, [0]'
         ) : R_sd_changepoints)
       );
@@ -449,7 +449,7 @@ transformed parameters {
       scp_boltzmann_sharpness[1], scp_skip_tolerance[1], scp_skip_tolerance_k[1]
       ));
     real last_diff = scp_knot_values[scp_n_knots[1]];
-    vector[bs_ncol[1]] bs_coeff = append_row3(
+    vector[bs_ncol[1]] bs_coeff = append_row2(
       [scp_values[1]]',
       scp_values,
       [
@@ -462,8 +462,8 @@ transformed parameters {
         bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       ), R_link);
   } else if (R_model == 4) {
-    vector[bs_ncol[1]] bs_coeff = append_row(
-      sqrt(bs_coeff_noise_lomax) .* bs_coeff_noise_raw, 0
+    vector[bs_ncol[1]] bs_coeff = append_row2(
+      0, (sqrt(bs_coeff_noise_lomax) .* bs_coeff_noise_raw), 0
       );
     vector[(L + S + D + T - G) - se] Rspline = csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
@@ -832,7 +832,7 @@ generated quantities {
           L + S + D + T - (G+se) + h, R_vari_ncol[1], R_vari_w,
           R_vari_v, R_vari_u,
           param_or_fixed(R_sd_baseline, R_sd_baseline_prior) +
-          (R_vari_ncol[1] > 2 ? append_row3([0]', R_sd_changepoints, [0]') : R_sd_changepoints)
+          (R_vari_ncol[1] > 2 ? append_row2([0]', R_sd_changepoints, [0]') : R_sd_changepoints)
         )[((L + S + D + T - (G+se)) + 1):((L + S + D + T - (G+se)) + h)];
         R_forecast = apply_link(holt_damped_process(
           [R_intercept, ets_trend_start[1]]',
