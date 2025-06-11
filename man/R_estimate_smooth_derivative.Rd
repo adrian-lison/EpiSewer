@@ -8,8 +8,8 @@ R_estimate_smooth_derivative(
   R_start_prior_mu = 1,
   R_start_prior_sigma = 0.8,
   spline_knot_distance = 14,
-  trend_prior_shape = 1,
-  trend_prior_rate = 5e-04,
+  trend_prior_shape = 2,
+  trend_prior_scale = 5e-04,
   link = "inv_softplus",
   R_max = 6,
   modeldata = modeldata_init()
@@ -31,11 +31,11 @@ Rt trend. The NEG prior is sparse, i.e. it has a strong peak at zero
 (transmission remains unchanged) and long tails (allows for occasional large
 positive or negative changes). Smaller shape parameters will lead to more
 sparseness (i.e. fewer but sharper changes in Rt). Note that when adjusting
-the shape, you will likely also have to adjust the rate.}
+the shape, you will likely also have to adjust the scale.}
 
-\item{trend_prior_rate}{Normal-Exponential-Gamma (NEG) prior (rate) for the
+\item{trend_prior_scale}{Normal-Exponential-Gamma (NEG) prior (scale) for the
 strength of the Rt trend. See \code{sharp_changes_prior_shape} above for an
-explanation. Larger rates will lead to more Rt variability.}
+explanation. Larger scales will lead to more Rt variability.}
 
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave

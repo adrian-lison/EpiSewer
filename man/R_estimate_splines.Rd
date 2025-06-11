@@ -12,7 +12,7 @@ R_estimate_splines(
   R_sd_local_prior_mu = 0,
   R_sd_local_prior_sd = 0.05,
   R_sd_global_prior_shape = 1,
-  R_sd_global_prior_rate = 0.01,
+  R_sd_global_prior_scale = 0.01,
   R_sd_global_change_distance = knot_distance_global,
   link = "inv_softplus",
   R_max = 6,
@@ -51,13 +51,13 @@ prior refers to the \emph{daily} standard deviation and is thus independent of
 the knot distance. The exponential-Gamma prior is sparse, i.e. it has a
 strong peak towards zero and a long tail. Smaller shape parameters will lead
 to more sparseness, i.e. a longer tail. Note that when adjusting the shape,
-you will likely also have to adjust the rate. The variation of the global
+you will likely also have to adjust the scale. The variation of the global
 splines follows a change point model to allow for adaptive changes, see
 details for more explanation.}
 
-\item{R_sd_global_prior_rate}{Exponential-Gamma prior (rate) for the variation
-of the global (i.e. long-term) spline. Larger rates will lead to more
-variability. See \code{R_sd_global_prior_shape} and the details for more
+\item{R_sd_global_prior_scale}{Exponential-Gamma prior (scale) for the
+variation of the global (i.e. long-term) spline. Larger scales will lead to
+more variability. See \code{R_sd_global_prior_shape} and the details for more
 explanation about this prior.}
 
 \item{R_sd_global_change_distance}{Distance between changepoints used to model

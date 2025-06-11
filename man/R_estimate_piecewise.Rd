@@ -10,7 +10,7 @@ R_estimate_piecewise(
   changepoint_max_distance = 14,
   changepoint_min_distance = 7,
   change_prior_shape = 0.5,
-  change_prior_rate = 1e-04,
+  change_prior_scale = 1e-04,
   change_tolerance = 0.05,
   link = "inv_softplus",
   R_max = 6,
@@ -44,13 +44,13 @@ given by the EG prior. This prior has a strong peak towards zero and a long
 tail. In other words, while most changes are expected to be small, the
 prior allows for occasional large jumps in Rt. Smaller shape parameters
 will lead to more sparseness, i.e. a longer tail. Note that when adjusting
-the shape, you will likely also have to adjust the rate. See details for
+the shape, you will likely also have to adjust the scale. See details for
 more advice on choosing a suitable prior.}
 
-\item{change_prior_rate}{Exponential-Gamma (EG) prior (rate) for the strength
-of changes between the pieces. See \code{change_prior_shape} above for an
-explanation. Larger rates will lead to more variability: a doubling of the
-rate roughly corresponds to a doubling of all quantiles of the prior.}
+\item{change_prior_scale}{Exponential-Gamma (EG) prior (scale) for the
+strength of changes between the pieces. See \code{change_prior_shape} above for
+an explanation. Larger scales will lead to more variability: a doubling of
+the scale roughly corresponds to a doubling of all quantiles of the prior.}
 
 \item{change_tolerance}{Tolerance for "negligible" changes in Rt. Changes
 smaller than \code{change_tolerance} are ignored by \code{changepoint_min_distance},
@@ -96,21 +96,22 @@ suitable for modeling gradual changes in Rt over time.
 \details{
 The Exponential-Gamma (EG) prior on the strength of changes is
 parameterized via the arguments \code{change_prior_shape} and
-\code{change_prior_rate}. It has a long tail to support large changes while
+\code{change_prior_scale}. It has a long tail to support large changes while
 keeping the variation low most of the time. The default configuration
 should work well in most contexts except for really extreme changes in Rt
 over a short time window. To check the quantiles of your prior, you can use
-the function \code{\link[=qexpgamma]{qexpgamma()}} with corresponding shape and rate parameters.
+the function \code{\link[=qexpgamma]{qexpgamma()}} with corresponding shape and scale parameters.
 
 If you need to adjust the overall variation, you can adjust the
-\code{change_prior_rate} parameter. A doubling of the rate roughly corresponds
+\code{change_prior_scale} parameter. A doubling of the scale roughly corresponds
 to a doubling of the quantiles. For example, when the 95\% quantile is 0.2
-for a given rate and you double that rate, the 95\% quantile will be at 0.4.
+for a given scale and you double that scale, the 95\% quantile will be at
+0.4.
 
 If you need to support more extreme changes, you can decrease the
 \code{change_prior_shape} parameter, which will emphasize the long-tail behavior
 of the prior. Note however that this will substantially increase all
-quantiles of the prior, so you will also have to decrease the rate
+quantiles of the prior, so you will also have to decrease the scale
 parameter to achieve a similar level of day-to-day variation.
 }
 \seealso{

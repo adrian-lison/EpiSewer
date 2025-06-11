@@ -12,7 +12,7 @@ R_estimate_ets(
   sd_base_prior_mu = 0,
   sd_base_prior_sd = 0.025,
   sd_change_prior_shape = 0.5,
-  sd_change_prior_rate = 1e-04,
+  sd_change_prior_scale = 1e-04,
   sd_change_distance = 7 * 26,
   link = "inv_softplus",
   R_max = 6,
@@ -54,7 +54,7 @@ standard deviation (see \code{sd_base_prior_mu}), and model additional variation
 on top of the baseline using a changepoint model. Please see the details for
 more explanation.}
 
-\item{sd_change_prior_rate}{Exponential-Gamma prior (rate) on standard
+\item{sd_change_prior_scale}{Exponential-Gamma prior (scale) on standard
 deviation additional to baseline. See \code{sd_change_prior_shape} and the
 details for more explanation.}
 
@@ -169,7 +169,7 @@ points. The additional variation defined at the changepoints is modeled as
 independently distributed and following a Lomax distribution, also known as
 Exponential-Gamma (EG) distribution. This is an exponential distribution
 where the rate is Gamma distributed. The prior \code{sd_change_prior} defines the
-shape and rate of this Gamma distribution. The distribution has a strong
+shape and scale of this Gamma distribution. The distribution has a strong
 peak towards zero and a long tail. This regularizes the estimated deviations
 from the baseline standard deviation - most deviations are small, but during
 special time periods, the deviation might also be larger.

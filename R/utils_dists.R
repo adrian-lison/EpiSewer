@@ -434,10 +434,10 @@ check_beta_alternative <- function(beta_mean, beta_sd) {
 #'
 #' @param p Vector of probabilities.
 #' @param shape Shape of the Exponential-Gamma distribution.
-#' @param rate Rate of the Exponential-Gamma distribution.
-qexpgamma <- function(p, shape, rate) {
+#' @param scale Scale of the Exponential-Gamma distribution.
+qexpgamma <- function(p, shape, scale) {
   names(p) <- paste0(100*p,"%")
-  round(sapply(p, extraDistr::qlomax, kappa = shape, lambda = 1/rate),3)
+  round(sapply(p, extraDistr::qlomax, kappa = shape, lambda = 1/scale),3)
 }
 
 # Distribution validation ----
