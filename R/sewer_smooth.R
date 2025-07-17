@@ -53,7 +53,6 @@ add_dummies_basis_splines <- function(modeldata) {
 #' @keywords internal
 use_basis_splines2 <- function(spline_length, knots, degree, modeldata) {
   modeldata$bs2_length <- spline_length
-  if (length())
   modeldata$bs2_dist <- median(diff(c(knots$interior, knots$boundary[2])))
   B <- splines::bs(
     1:spline_length,
