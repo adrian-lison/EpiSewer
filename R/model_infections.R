@@ -1318,7 +1318,7 @@ R_estimate_smooth_derivative <- function(
       # Spline model
       spline_knots <- list(
         interior = rev(seq(
-          modeldata$.metainfo$length_R_modeled - spline_knot_distance,
+          modeldata$.metainfo$length_R_modeled - ceiling(spline_knot_distance/2),
           1, by = -spline_knot_distance
         )),
         boundary = c(-1, modeldata$.metainfo$length_R_modeled)
