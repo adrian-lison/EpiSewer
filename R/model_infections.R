@@ -1282,8 +1282,8 @@ R_estimate_smooth_derivative <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
     spline_knot_distance = 14,
-    trend_prior_shape = 2,
-    trend_prior_scale = 5e-4,
+    trend_prior_shape = 5,
+    trend_prior_scale = 5e-3,
     link = "inv_softplus",
     R_max = 6,
     modeldata = modeldata_init()
@@ -1318,7 +1318,7 @@ R_estimate_smooth_derivative <- function(
       # Spline model
       spline_knots <- list(
         interior = rev(seq(
-          modeldata$.metainfo$length_R_modeled - ceiling(spline_knot_distance/2),
+          modeldata$.metainfo$length_R_modeled - spline_knot_distance,
           1, by = -spline_knot_distance
         )),
         boundary = c(-1, modeldata$.metainfo$length_R_modeled)
