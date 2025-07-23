@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/adrian-lison/EpiSewer,25,16
+/adrian-lison/EpiSewer/blob/main/man/R_estimate_ets.Rd,4,1
+/adrian-lison/EpiSewer/blob/main/inst/stan/EpiSewer_approx.stan,3,2
+/adrian-lison/EpiSewer/tree/main/inst/stan,3,2
+/adrian-lison/EpiSewer/tree/main/man,3,2
+/adrian-lison/EpiSewer/blob/main/R/sewer_summary.R,2,2
+/adrian-lison/EpiSewer/blob/main/R/model_shedding.R,2,1
+/adrian-lison/EpiSewer/issues/51,2,1
+/adrian-lison/EpiSewer/tree/main/R,2,1
+/adrian-lison/EpiSewer/blob/main/inst/stan/EpiSewer_main.stan,1,1
