@@ -34,7 +34,7 @@
 #' @family {module functions}
 model_infections <- function(
     generation_dist = generation_dist_assume(),
-    R = R_estimate_changepoint_splines(),
+    R = R_estimate_smooth_derivative(),
     seeding = seeding_estimate_rw(),
     infection_noise = infection_noise_estimate()) {
   verify_is_modeldata(generation_dist, "generation_dist")
