@@ -4,14 +4,14 @@
 \alias{qexpgamma}
 \title{Exponential-Gamma distribution}
 \usage{
-qexpgamma(p, shape, rate)
+qexpgamma(p, shape, scale)
 }
 \arguments{
 \item{p}{Vector of probabilities.}
 
 \item{shape}{Shape of the Exponential-Gamma distribution.}
 
-\item{rate}{Rate of the Exponential-Gamma distribution.}
+\item{scale}{Scale of the Exponential-Gamma distribution.}
 }
 \description{
 The Exponential-Gamma (EG) distribution is also known as the Lomax

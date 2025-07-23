@@ -180,7 +180,7 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
           )
         stopifnot(!"errors" %in% names(pathfind_init))
         options(cmdstanr_warn_inits = FALSE)
-        arguments$init <- pathfind_init
+        arguments$init <- pathfind_init$draws()
       },
       error = function(e) {
         cat(paste(

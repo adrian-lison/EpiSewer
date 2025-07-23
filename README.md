@@ -143,18 +143,18 @@ in Zurich. Some days have missing measurements, but this is no problem:
 
 ``` r
 data_zurich$measurements
-#>            date concentration   weekday
-#>   1: 2022-01-01            NA  Saturday
-#>   2: 2022-01-02            NA    Sunday
-#>   3: 2022-01-03      455.7580    Monday
-#>   4: 2022-01-04      747.8792   Tuesday
-#>   5: 2022-01-05      573.7020 Wednesday
-#>  ---                                   
-#> 116: 2022-04-26      182.3664   Tuesday
-#> 117: 2022-04-27      379.2421 Wednesday
-#> 118: 2022-04-28      439.7427  Thursday
-#> 119: 2022-04-29      394.0033    Friday
-#> 120: 2022-04-30      293.1242  Saturday
+#>            date concentration
+#>   1: 2022-01-01            NA
+#>   2: 2022-01-02            NA
+#>   3: 2022-01-03      455.7580
+#>   4: 2022-01-04      747.8792
+#>   5: 2022-01-05      573.7020
+#>  ---                         
+#> 116: 2022-04-26      182.3664
+#> 117: 2022-04-27      379.2421
+#> 118: 2022-04-28      439.7427
+#> 119: 2022-04-29      394.0033
+#> 120: 2022-04-30      293.1242
 ```
 
 To show the handling of missing data more clearly, we make our data
@@ -299,7 +299,7 @@ Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
 data, the complexity of the model used, and how well the model actually
-fits the data. On a modern laptop the example below should take about 5
+fits the data. On a modern laptop the example below should take about 6
 minutes to run.
 
 ``` r
@@ -518,7 +518,7 @@ ww_result$job$model
 #> 
 #> infections
 #>  |- generation_dist_assume
-#>  |- R_estimate_changepoint_splines
+#>  |- R_estimate_smooth_derivative
 #>  |- seeding_estimate_rw
 #>  |- infection_noise_estimate (overdispersion = TRUE)
 ```
@@ -548,18 +548,18 @@ number.
 
 ``` r
 head(ww_result$summary$R, 5)
-#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95     type
-#> 1: 2021-12-03 1.055381 1.048665  0.8799468  1.000064  1.104198   1.260969 estimate
-#> 2: 2021-12-04 1.055389 1.048665  0.8799478  1.000064  1.104195   1.260969 estimate
-#> 3: 2021-12-05 1.055402 1.048735  0.8799507  1.000117  1.104193   1.260969 estimate
-#> 4: 2021-12-06 1.055421 1.048835  0.8803259  1.000117  1.104255   1.260904 estimate
-#> 5: 2021-12-07 1.055453 1.048840  0.8805724  1.000188  1.104162   1.258138 estimate
-#>    seeding
-#> 1:    TRUE
-#> 2:    TRUE
-#> 3:    TRUE
-#> 4:    TRUE
-#> 5:    TRUE
+#>          date      mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
+#> 1: 2021-12-03 0.9854654 0.9914010  0.5086490 0.8570600  1.127522   1.397294
+#> 2: 2021-12-04 0.9866831 0.9927445  0.5164825 0.8594373  1.126350   1.394308
+#> 3: 2021-12-05 0.9886963 0.9934275  0.5263697 0.8632615  1.127323   1.385992
+#> 4: 2021-12-06 0.9916080 0.9967390  0.5437719 0.8680418  1.125373   1.372919
+#> 5: 2021-12-07 0.9954652 1.0036200  0.5665288 0.8738278  1.124315   1.355231
+#>        type seeding
+#> 1: estimate    TRUE
+#> 2: estimate    TRUE
+#> 3: estimate    TRUE
+#> 4: estimate    TRUE
+#> 5: estimate    TRUE
 ```
 
 The `fitted` attribute provides access to all details of the fitted stan
@@ -577,7 +577,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.9574684 0.9342793 1.0592704 1.0218015
+#> [1] 0.9028552 0.9395239 1.0738571 0.8592549
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -589,19 +589,19 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "f4b5aa9be59d90f0dc58acc306eb70cd"
+#> [1] "d86228897b135d42f2390763b0504b70"
 #> 
 #> $input
-#> [1] "6c415f5e21cf6547f2a7a470face2ac7"
+#> [1] "c0d0827c0a813dda87d75944aa9011b6"
 #> 
 #> $fit_opts
-#> [1] "5309bbbc3cd1cc109eac60d2fc82de45"
+#> [1] "4f5f052ce14fd6ff0a4eabd438e5f794"
 #> 
 #> $results_opts
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "b57d01341d896ab30df96cc3cd66461f"
+#> [1] "175e4c7e936709cfa158232010ca2733"
 ```
 
 ## Citing the package

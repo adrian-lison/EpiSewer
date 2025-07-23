@@ -24,7 +24,7 @@ add_sparse_matrix <- function(M, name, modeldata){
 #' @keywords internal
 use_basis_splines <- function(spline_length, knots, degree, modeldata) {
   modeldata$bs_length <- spline_length
-  modeldata$bs_dist <- median(diff(knots$interior))
+  modeldata$bs_dist <- median(diff(c(knots$interior, knots$boundary[2])))
   B <- splines::bs(
       1:spline_length,
       knots = knots$interior,
@@ -53,7 +53,7 @@ add_dummies_basis_splines <- function(modeldata) {
 #' @keywords internal
 use_basis_splines2 <- function(spline_length, knots, degree, modeldata) {
   modeldata$bs2_length <- spline_length
-  modeldata$bs2_dist <- median(diff(knots$interior))
+  modeldata$bs2_dist <- median(diff(c(knots$interior, knots$boundary[2])))
   B <- splines::bs(
     1:spline_length,
     knots = knots$interior,
@@ -174,13 +174,15 @@ add_dummies_soft_changepoints <- function(modeldata) {
   modeldata <- add_dummy_data(modeldata, c(
     "scp_n_knots", "scp_break_dist", "scp_min_dist",
     "scp_length_intercept", "scp_k", "scp_alpha",
-    "scp_skip_tolerance", "scp_skip_tolerance_k"
+    "scp_skip_tolerance", "scp_skip_tolerance_k",
+    "scp_boltzmann_sharpness", "scp_alpha_base", "scp_alpha_adjusted"
   ))
   modeldata$scp_length <- 0
   modeldata <- add_dummy_inits(modeldata, c(
     "scp_noise", "scp_sd"
   ))
   modeldata$.init$scp_break_delays <- matrix(1)
+  modeldata$.init$scp_break_delays_raw <- matrix(1)
   return(modeldata)
 }
 
@@ -193,6 +195,13 @@ add_dummies_exponential_smoothing <- function(modeldata) {
     "ets_trend_start", "ets_noise", "ets_alpha", "ets_beta", "ets_phi"
   ))
   modeldata$ets_length <- 0
+  return(modeldata)
+}
+
+add_dummies_smooth_derivative <- function(modeldata) {
+  modeldata <- add_dummy_inits(modeldata, c(
+    "bs_coeff_noise_lomax"
+  ))
   return(modeldata)
 }
 
@@ -211,14 +220,17 @@ add_dummies_R_vari_selection <- function(modeldata) {
   return(modeldata)
 }
 
-add_dummies_R_vari <- function(modeldata) {
-  modeldata <- add_dummy_data(modeldata, c(
-    "R_sd_baseline_prior",
+add_dummies_R_vari <- function(modeldata, keep_baseline = FALSE) {
+  R_vari_dummies <- c(
     "R_vari_ncol", "R_vari_n_w", "R_vari_w", "R_vari_v", "R_vari_u"
-  ))
-  modeldata <- add_dummy_inits(modeldata, c(
-    "R_sd_baseline", "R_sd_changepoints"
-  ))
+  )
+  R_vari_dummies_inits <- c("R_sd_changepoints")
+  if (!keep_baseline) {
+    R_vari_dummies <- c(R_vari_dummies, "R_sd_baseline_prior")
+    R_vari_dummies_inits <- c(R_vari_dummies_inits, "R_sd_baseline")
+  }
+  modeldata <- add_dummy_data(modeldata, c(R_vari_dummies))
+  modeldata <- add_dummy_inits(modeldata, c(R_vari_dummies_inits))
   return(modeldata)
 }
 

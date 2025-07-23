@@ -34,7 +34,7 @@
 #' @family {module functions}
 model_infections <- function(
     generation_dist = generation_dist_assume(),
-    R = R_estimate_changepoint_splines(),
+    R = R_estimate_smooth_derivative(),
     seeding = seeding_estimate_rw(),
     infection_noise = infection_noise_estimate()) {
   verify_is_modeldata(generation_dist, "generation_dist")
@@ -101,12 +101,13 @@ generation_dist_assume <-
 #'@param trend_prior_mu Prior (mean) on the initial trend of Rt.
 #'@param trend_prior_sigma Prior (standard deviation) on the initial trend of
 #'  Rt.
+#'@param sd_base_prior_mu Prior (mu) on the baseline standard deviation of the
+#'  innovations. Please note that for consistency, the overall standard
+#'  deviation of innovations will always be the baseline plus an additive
+#'  component from `sd_change_prior` - even if no changepoints are modeled (see
+#'  below).
 #'@param sd_base_prior_sd Prior (standard deviation) on the baseline standard
-#'  deviation of the innovations. We here use a half-normal prior, i.e.
-#'  `sd_base_prior_sd` is the only parameter to be specified for this prior.
-#'  Please note that for consistency, the overall standard deviation of
-#'  innovations will always be the baseline plus an additive component from
-#'  `sd_change_prior` even if no changepoints are modeled (see below).
+#'  deviation of the innovations. See `sd_base_prior_mu` for details.
 #'@param sd_change_distance Distance between changepoints used to model
 #'  additional variation in Rt. The default change point distance is 4 weeks.
 #'  Very short changepoint distances must be chosen with care, as they can make
@@ -115,10 +116,10 @@ generation_dist_assume <-
 #'@param sd_change_prior_shape Exponential-Gamma prior (shape) on standard
 #'  deviation additional to baseline. This prior describes the distribution of
 #'  the standard deviation of Rt over time. EpiSewer will estimate a baseline
-#'  standard deviation (see `sd_base_prior_sd`), and model additional variation
+#'  standard deviation (see `sd_base_prior_mu`), and model additional variation
 #'  on top of the baseline using a changepoint model. Please see the details for
 #'  more explanation.
-#'@param sd_change_prior_rate Exponential-Gamma prior (rate) on standard
+#'@param sd_change_prior_scale Exponential-Gamma prior (scale) on standard
 #'  deviation additional to baseline. See `sd_change_prior_shape` and the
 #'  details for more explanation.
 #'@param smooth_prior_mu Prior (mean) on the smoothing parameter. Must be
@@ -189,10 +190,10 @@ generation_dist_assume <-
 #'  independently distributed and following a Lomax distribution, also known as
 #'  Exponential-Gamma (EG) distribution. This is an exponential distribution
 #'  where the rate is Gamma distributed. The prior `sd_change_prior` defines the
-#'  shape and rate of this Gamma distribution. The distribution has a
-#'  strong peak towards zero and a long tail. This regularizes the estimated
-#'  deviations from the baseline standard deviation - most deviations are small,
-#'  but during special time periods, the deviation might also be larger.
+#'  shape and scale of this Gamma distribution. The distribution has a strong
+#'  peak towards zero and a long tail. This regularizes the estimated deviations
+#'  from the baseline standard deviation - most deviations are small, but during
+#'  special time periods, the deviation might also be larger.
 #'
 #'@details The priors of this component have the following functional form:
 #' - initial level of Rt: `Normal`
@@ -212,9 +213,10 @@ R_estimate_ets <- function(
     R_start_prior_sigma = 0.8,
     trend_prior_mu = 0,
     trend_prior_sigma = 0.1,
+    sd_base_prior_mu = 0,
     sd_base_prior_sd = 0.025,
     sd_change_prior_shape = 0.5,
-    sd_change_prior_rate = 1e-4,
+    sd_change_prior_scale = 1e-4,
     sd_change_distance = 7*26,
     link = "inv_softplus",
     R_max = 6,
@@ -249,13 +251,14 @@ R_estimate_ets <- function(
   )
 
   modeldata$R_sd_baseline_prior <- set_prior("R_sd_baseline",
-    "half-normal",
-    sigma = sd_base_prior_sd
+     "normal",
+     mu = sd_base_prior_mu,
+     sigma = sd_base_prior_sd
   )
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
     "lomax",
     shape = sd_change_prior_shape,
-    rate = sd_change_prior_rate
+    scale = sd_change_prior_scale
   )
 
   modeldata$.init$R_intercept <-
@@ -327,6 +330,7 @@ R_estimate_ets <- function(
   modeldata <- add_dummies_basis_splines2(modeldata)
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_ets = c()
@@ -343,12 +347,13 @@ R_estimate_ets <- function(
 #'@param R_start_prior_mu Prior (mean) on the initial value of Rt.
 #'@param R_start_prior_sigma Prior (standard deviation) on the initial value of
 #'  Rt.
+#'@param sd_base_prior_mu Prior (mean) on the baseline standard deviation of the
+#'  innovations. Please note that for consistency, the overall standard
+#'  deviation of innovations will always be the baseline plus an additive
+#'  component from `sd_change_prior` even if no changepoints are modeled (see
+#'  below).
 #'@param sd_base_prior_sd Prior (standard deviation) on the baseline standard
-#'  deviation of the innovations. We here use a half-normal prior, i.e.
-#'  `sd_base_prior_sd` is the only parameter to be specified for this prior.
-#'  Please note that for consistency, the overall standard deviation of
-#'  innovations will always be the baseline plus an additive component from
-#'  `sd_change_prior` even if no changepoints are modeled (see below).
+#'  deviation of the innovations. See `sd_base_prior_mu` for details.
 #'@param sd_change_distance Distance between changepoints used to model
 #'  additional variation in Rt. The default change point distance is 4 weeks.
 #'  Very short changepoint distances must be chosen with care, as they can make
@@ -360,7 +365,7 @@ R_estimate_ets <- function(
 #'  standard deviation (see `sd_base_prior_sd`), and model additional variation
 #'  on top of the baseline using a changepoint model. Please see the details for
 #'  more explanation.
-#'@param sd_change_prior_rate Exponential-Gamma prior (rate) on standard
+#'@param sd_change_prior_scale Exponential-Gamma prior (scale) on standard
 #'  deviation additional to baseline. See `sd_change_prior_shape` and the
 #'  details for more explanation.
 #'@param differenced If `FALSE` (default), the random walk is applied to the
@@ -389,7 +394,7 @@ R_estimate_ets <- function(
 #'  independently distributed and following a Lomax distribution, also known as
 #'  Exponential-Gamma (EG) distribution. This is an exponential distribution
 #'  where the rate is Gamma distributed. The prior `sd_change_prior` defines the
-#'  shape and rate of this Gamma distribution. The distribution has a strong
+#'  shape and scale of this Gamma distribution. The distribution has a strong
 #'  peak towards zero and a long tail. This regularizes the estimated deviations
 #'  from the baseline standard deviation - most deviations are small, but during
 #'  special time periods, the deviation might also be larger.
@@ -406,9 +411,10 @@ R_estimate_ets <- function(
 R_estimate_rw <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
+    sd_base_prior_mu = 0,
     sd_base_prior_sd = 0.025,
     sd_change_prior_shape = 0.5,
-    sd_change_prior_rate = 1e-4,
+    sd_change_prior_scale = 1e-4,
     sd_change_distance = 7*26,
     link = "inv_softplus",
     R_max = 6,
@@ -418,9 +424,10 @@ R_estimate_rw <- function(
   modeldata <- R_estimate_ets(
     R_start_prior_mu = R_start_prior_mu,
     R_start_prior_sigma = R_start_prior_sigma,
+    sd_base_prior_mu = sd_base_prior_mu,
     sd_base_prior_sd = sd_base_prior_sd,
     sd_change_prior_shape = sd_change_prior_shape,
-    sd_change_prior_rate = sd_change_prior_rate,
+    sd_change_prior_scale = sd_change_prior_scale,
     sd_change_distance = sd_change_distance,
     link = link,
     R_max = R_max,
@@ -459,12 +466,12 @@ R_estimate_rw <- function(
 #'  (intercept).
 #'@param R_start_prior_sigma Prior (standard deviation) on the initial
 #'  reproduction number (intercept).
-#'@param R_sd_local_prior_sd Half-normal prior (standard deviation) for the
-#'  variation of the local (i.e. short-term) spline. This controls the standard
-#'  deviation of a random walk over the coefficients of the local spline. The
-#'  prior refers to the *daily* standard deviation and is thus independent of
-#'  the knot distance. We use a half-normal prior, i.e. `R_sd_local_prior_sd` is
-#'  the only parameter to be specified for this prior.
+#'@param R_sd_local_prior_mu Prior (mean) for the variation of the local (i.e.
+#'  short-term) spline. This controls the standard deviation of a random walk
+#'  over the coefficients of the local spline. The prior refers to the *daily*
+#'  standard deviation and is thus independent of the knot distance.
+#'@param R_sd_local_prior_sd Prior (standard deviation) for the variation of the
+#'  local (i.e. short-term) spline. See `R_sd_local_prior_mu` for details.
 #'@param R_sd_global_prior_shape Exponential-Gamma prior (shape) for the
 #'  variation of the global (i.e. long-term) spline. This controls the standard
 #'  deviation of a random walk over the coefficients of the global spline. The
@@ -472,12 +479,12 @@ R_estimate_rw <- function(
 #'  the knot distance. The exponential-Gamma prior is sparse, i.e. it has a
 #'  strong peak towards zero and a long tail. Smaller shape parameters will lead
 #'  to more sparseness, i.e. a longer tail. Note that when adjusting the shape,
-#'  you will likely also have to adjust the rate. The variation of the global
+#'  you will likely also have to adjust the scale. The variation of the global
 #'  splines follows a change point model to allow for adaptive changes, see
 #'  details for more explanation.
-#'@param R_sd_global_prior_rate Exponential-Gamma prior (rate) for the variation
-#'  of the global (i.e. long-term) spline. Larger rates will lead to more
-#'  variability. See `R_sd_global_prior_shape` and the details for more
+#'@param R_sd_global_prior_scale Exponential-Gamma prior (scale) for the
+#'  variation of the global (i.e. long-term) spline. Larger scales will lead to
+#'  more variability. See `R_sd_global_prior_shape` and the details for more
 #'  explanation about this prior.
 #'@param R_sd_global_change_distance Distance between changepoints used to model
 #'  global variation in Rt. `EpiSewer` uses an adaptive model for the variation
@@ -563,9 +570,10 @@ R_estimate_splines <- function(
     knot_distance_local = 7,
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
+    R_sd_local_prior_mu = 0,
     R_sd_local_prior_sd = 0.05,
     R_sd_global_prior_shape = 1,
-    R_sd_global_prior_rate = 1e-2,
+    R_sd_global_prior_scale = 1e-2,
     R_sd_global_change_distance = knot_distance_global,
     link = "inv_softplus",
     R_max = 6,
@@ -693,13 +701,14 @@ R_estimate_splines <- function(
     sigma = R_start_prior_sigma
   )
   modeldata$R_sd_baseline_prior <- set_prior("R_sd_baseline",
-    "half-normal",
+    "normal",
+    mu = R_sd_local_prior_mu,
     sigma = R_sd_local_prior_sd
     )
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
     "lomax",
     shape = R_sd_global_prior_shape,
-    rate = R_sd_global_prior_rate
+    scale = R_sd_global_prior_scale
   )
 
   modeldata <- add_link_function(link, R_max, modeldata)
@@ -707,6 +716,7 @@ R_estimate_splines <- function(
   # dummies
   modeldata <- add_dummies_exponential_smoothing(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_splines = c()
@@ -921,12 +931,12 @@ R_estimate_approx <- function(
 #'   tail. In other words, while most changes are expected to be small, the
 #'   prior allows for occasional large jumps in Rt. Smaller shape parameters
 #'   will lead to more sparseness, i.e. a longer tail. Note that when adjusting
-#'   the shape, you will likely also have to adjust the rate. See details for
+#'   the shape, you will likely also have to adjust the scale. See details for
 #'   more advice on choosing a suitable prior.
-#' @param change_prior_rate Exponential-Gamma (EG) prior (rate) for the strength
-#'   of changes between the pieces. See `change_prior_shape` above for an
-#'   explanation. Larger rates will lead to more variability: a doubling of the
-#'   rate roughly corresponds to a doubling of all quantiles of the prior.
+#' @param change_prior_scale Exponential-Gamma (EG) prior (scale) for the
+#'   strength of changes between the pieces. See `change_prior_shape` above for
+#'   an explanation. Larger scales will lead to more variability: a doubling of
+#'   the scale roughly corresponds to a doubling of all quantiles of the prior.
 #' @param change_tolerance Tolerance for "negligible" changes in Rt. Changes
 #'   smaller than `change_tolerance` are ignored by `changepoint_min_distance`,
 #'   i.e. they can also occur closer to each other. This tolerance gives the
@@ -938,21 +948,22 @@ R_estimate_approx <- function(
 #'
 #' @details The Exponential-Gamma (EG) prior on the strength of changes is
 #'   parameterized via the arguments `change_prior_shape` and
-#'   `change_prior_rate`. It has a long tail to support large changes while
+#'   `change_prior_scale`. It has a long tail to support large changes while
 #'   keeping the variation low most of the time. The default configuration
 #'   should work well in most contexts except for really extreme changes in Rt
 #'   over a short time window. To check the quantiles of your prior, you can use
-#'   the function [qexpgamma()] with corresponding shape and rate parameters.
+#'   the function [qexpgamma()] with corresponding shape and scale parameters.
 #'
 #' @details If you need to adjust the overall variation, you can adjust the
-#'   `change_prior_rate` parameter. A doubling of the rate roughly corresponds
+#'   `change_prior_scale` parameter. A doubling of the scale roughly corresponds
 #'   to a doubling of the quantiles. For example, when the 95% quantile is 0.2
-#'   for a given rate and you double that rate, the 95% quantile will be at 0.4.
+#'   for a given scale and you double that scale, the 95% quantile will be at
+#'   0.4.
 #'
 #' @details If you need to support more extreme changes, you can decrease the
 #'   `change_prior_shape` parameter, which will emphasize the long-tail behavior
 #'   of the prior. Note however that this will substantially increase all
-#'   quantiles of the prior, so you will also have to decrease the rate
+#'   quantiles of the prior, so you will also have to decrease the scale
 #'   parameter to achieve a similar level of day-to-day variation.
 #'
 #' @inheritParams R_estimate_splines
@@ -967,7 +978,7 @@ R_estimate_piecewise <- function(
     changepoint_max_distance = 14,
     changepoint_min_distance = 7,
     change_prior_shape = 0.5,
-    change_prior_rate = 1e-4,
+    change_prior_scale = 1e-4,
     change_tolerance = 0.05,
     link = "inv_softplus",
     R_max = 6,
@@ -1008,7 +1019,7 @@ R_estimate_piecewise <- function(
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
     "lomax",
     shape = change_prior_shape,
-    rate = change_prior_rate
+    scale = change_prior_scale
   )
 
   modeldata <- tbc(
@@ -1043,6 +1054,7 @@ R_estimate_piecewise <- function(
   modeldata <- add_dummies_basis_splines2(modeldata)
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_piecewise = c()
@@ -1076,12 +1088,12 @@ R_estimate_piecewise <- function(
 #'   Rt to remain stable most of the time, this prior also allows for occasional
 #'   strong trends. Smaller shape parameters will lead to a longer tail, hence
 #'   more extreme trends are supported. Note that when adjusting the shape, you
-#'   will likely also have to adjust the rate. See details for more advice on
+#'   will likely also have to adjust the scale. See details for more advice on
 #'   choosing a suitable prior.
-#' @param trend_prior_rate Exponential-Gamma (EG) prior (rate) for the trend in
-#'   Rt. See `change_prior_shape` above for an explanation. Larger rates will
-#'   lead to more variability: a doubling of the rate roughly corresponds to a
-#'   doubling of all quantiles of the prior.
+#' @param trend_prior_scale Exponential-Gamma (EG) prior (scale) for the trend
+#'   in Rt. See `change_prior_shape` above for an explanation. Larger scales
+#'   will lead to more variability: a doubling of the scale roughly corresponds
+#'   to a doubling of all quantiles of the prior.
 #' @param trend_change_tolerance Tolerance for "negligible" trend changes.
 #'   Differences in the trend that are smaller than `change_tolerance` are
 #'   ignored by `changepoint_min_distance`, i.e. they can also occur closer to
@@ -1093,22 +1105,23 @@ R_estimate_piecewise <- function(
 #'   choosing small values of `strictness_alpha` can impede MCMC sampling.
 #'
 #' @details The Exponential-Gamma (EG) prior on the Rt trend is parameterized
-#'   via the arguments `change_prior_shape` and `change_prior_rate`. It has a
+#'   via the arguments `change_prior_shape` and `change_prior_scale`. It has a
 #'   long tail to support large trends while keeping the Rt variation low most
 #'   of the time. The default configuration should work well in most contexts
 #'   except for really extreme changes in Rt over a short time window. To check
 #'   the quantiles of your prior, you can use the function [qexpgamma()] with
-#'   corresponding shape and rate parameters.
+#'   corresponding shape and scale parameters.
 #'
 #' @details If you need to adjust the overall variation, you can adjust the
-#'   `change_prior_rate` parameter. A doubling of the rate roughly corresponds
-#'   to a doubling of the quantiles. For example, when the 95% quantile is 0.2
-#'   for a given rate and you double that rate, the 95% quantile will be at 0.4.
+#'   `change_prior_scale` parameter. A doubling of the scales roughly
+#'   corresponds to a doubling of the quantiles. For example, when the 95%
+#'   quantile is 0.2 for a given scale and you double that scale, the 95%
+#'   quantile will be at 0.4.
 #'
 #' @details If you need to support more extreme changes, you can decrease the
 #'   `change_prior_shape` parameter, which will emphasize the long-tail behavior
 #'   of the prior. Note however that this will substantially increase all
-#'   quantiles of the prior, so you will also have to decrease the rate
+#'   quantiles of the prior, so you will also have to decrease the scale
 #'   parameter to achieve a similar level of day-to-day variation.
 #'
 #' @inheritParams R_estimate_splines
@@ -1123,7 +1136,7 @@ R_estimate_changepoint_splines <- function(
     changepoint_max_distance = 3*5,
     changepoint_min_distance = 3*2,
     trend_prior_shape = 5e1,
-    trend_prior_rate = 10e-1,
+    trend_prior_scale = 10e-1,
     trend_change_tolerance = 0.01,
     spline_knot_distance = 3,
     link = "inv_softplus",
@@ -1165,7 +1178,7 @@ R_estimate_changepoint_splines <- function(
   modeldata$R_sd_change_prior <- set_prior("R_sd_change",
                                            "lomax",
                                            shape = trend_prior_shape,
-                                           rate = trend_prior_rate
+                                           scale = trend_prior_scale
   )
 
   modeldata <- tbc(
@@ -1186,7 +1199,6 @@ R_estimate_changepoint_splines <- function(
         degree = 3,
         modeldata = modeldata
       )
-      modeldata$bs_coeff_select <- c(1, spline_knots$interior, spline_knots$boundary[2], spline_knots$boundary[2])
 
       # Changepoint model
       last_change <- with(modeldata$.metainfo, length_R_modeled - changepoint_min_distance)
@@ -1226,9 +1238,118 @@ R_estimate_changepoint_splines <- function(
   modeldata <- add_dummies_basis_splines2(modeldata)
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_changepoint_splines = c()
+  )
+
+  return(modeldata)
+}
+
+#'@title Estimate Rt with a smooth derivative
+#'
+#'@description This option estimates the effective reproduction number Rt over
+#'  time as a smooth trend. It uses sparse smoothing splines placed on the
+#'  first-order differences of Rt.
+#'
+#'@param spline_knot_distance Distance (in days) between spline knots for the
+#'  penalized smoothing splines. Shorter distances increase flexibility of the
+#'  Rt trajectory but also the daily Rt uncertainty.
+#'@param trend_prior_shape Normal-Exponential-Gamma (NEG) prior (shape) for the
+#'  Rt trend. The NEG prior is sparse, i.e. it has a strong peak at zero
+#'  (transmission remains unchanged) and long tails (allows for occasional large
+#'  positive or negative changes). Smaller shape parameters will lead to more
+#'  sparseness (i.e. fewer but sharper changes in Rt). Note that when adjusting
+#'  the shape, you will likely also have to adjust the scale.
+#'@param trend_prior_scale Normal-Exponential-Gamma (NEG) prior (scale) for the
+#'  strength of the Rt trend. See `sharp_changes_prior_shape` above for an
+#'  explanation. Larger scales will lead to more Rt variability.
+#'
+#'@details The priors of this component have the following functional form:
+#' - R_start (intercept):
+#'  `Normal`
+#'- trend_prior:
+#'  `Normal-Exponential-Gamma`
+#'
+#'@inheritParams R_estimate_splines
+#'
+#'@inheritParams template_model_helpers
+#'@inherit modeldata_init return
+#'@export
+#'@family {Rt models}
+R_estimate_smooth_derivative <- function(
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
+    spline_knot_distance = 14,
+    trend_prior_shape = 5,
+    trend_prior_scale = 5e-3,
+    link = "inv_softplus",
+    R_max = 6,
+    modeldata = modeldata_init()
+) {
+
+  modeldata <-  configure_R_model(
+    name_approach = "smooth_derivative",
+    model_id = 4,
+    use_ets = FALSE,
+    use_bs = TRUE,
+    use_bs2 = FALSE,
+    use_scp = FALSE,
+    modeldata = modeldata
+  )
+
+  modeldata$R_intercept_prior <- set_prior(
+    "R_intercept", "normal",
+    mu = R_start_prior_mu, sigma = R_start_prior_sigma
+  )
+  modeldata$.init$R_intercept <-
+    modeldata$R_intercept_prior$R_intercept_prior[1]
+
+  modeldata$R_sd_change_prior <- set_prior("R_sd_change",
+     "lomax",
+     shape = trend_prior_shape,
+     scale = trend_prior_scale
+  )
+
+  modeldata <- tbc(
+    "R_smooth_derivative",
+    {
+      # Spline model
+      spline_knots <- list(
+        interior = rev(seq(
+          modeldata$.metainfo$length_R_modeled - spline_knot_distance,
+          1, by = -spline_knot_distance
+        )),
+        boundary = c(-1, modeldata$.metainfo$length_R_modeled)
+      )
+      modeldata$.metainfo$R_knots <- spline_knots
+      modeldata <- use_basis_splines(
+        spline_length = modeldata$.metainfo$length_R_modeled,
+        knots = spline_knots,
+        degree = 3,
+        modeldata = modeldata
+      )
+      modeldata$.init$bs_coeff_noise_raw <- rep(1e-4, modeldata$bs_ncol - 2)
+      modeldata$.init$bs_coeff_noise_lomax <- rep(1e-4, modeldata$bs_ncol - 2)
+    },
+    required = c(
+      ".metainfo$length_R_modeled"
+    ),
+    modeldata = modeldata
+  )
+
+  modeldata <- add_link_function(link, R_max, modeldata)
+
+  # dummy data
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_R_vari(modeldata)
+  modeldata <- add_dummies_soft_changepoints(modeldata)
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_smooth_derivative = c()
   )
 
   return(modeldata)

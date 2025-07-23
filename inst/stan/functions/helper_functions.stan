@@ -241,6 +241,13 @@ Helper functions for primitive operations
   /*
   append_row extended to three elements
   */
-  vector append_row3(vector x, vector y, vector z) {
+  vector append_row2(vector x, vector y, vector z) {
+    return append_row(append_row(x, y), z);
+  }
+
+  /*
+  append_row extended to three elements
+  */
+  vector append_row2(real x, vector y, real z) {
     return append_row(append_row(x, y), z);
   }

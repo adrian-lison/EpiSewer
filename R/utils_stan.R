@@ -47,7 +47,7 @@ get_stan_model <- function(
       )
     }
     if (model_metainfo$R_estimate_approach %in% c(
-      "splines", "ets", "rw", "piecewise", "changepoint_splines"
+      "splines", "ets", "rw", "piecewise", "changepoint_splines", "smooth_derivative"
       )) {
       model_filename <- "EpiSewer_main.stan"
     } else if (model_metainfo$R_estimate_approach == "approx") {

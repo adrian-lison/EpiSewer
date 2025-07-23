@@ -146,6 +146,7 @@ Other {Rt models}:
 \code{\link{R_estimate_ets}()},
 \code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
+\code{\link{R_estimate_smooth_derivative}()},
 \code{\link{R_estimate_splines}()}
 }
 \concept{{Rt models}}

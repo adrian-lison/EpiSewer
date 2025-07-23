@@ -10,7 +10,7 @@ R_estimate_changepoint_splines(
   changepoint_max_distance = 3 * 5,
   changepoint_min_distance = 3 * 2,
   trend_prior_shape = 50,
-  trend_prior_rate = 1,
+  trend_prior_scale = 1,
   trend_change_tolerance = 0.01,
   spline_knot_distance = 3,
   link = "inv_softplus",
@@ -45,13 +45,13 @@ a strong peak towards zero and a long tail. In other words, while we expect
 Rt to remain stable most of the time, this prior also allows for occasional
 strong trends. Smaller shape parameters will lead to a longer tail, hence
 more extreme trends are supported. Note that when adjusting the shape, you
-will likely also have to adjust the rate. See details for more advice on
+will likely also have to adjust the scale. See details for more advice on
 choosing a suitable prior.}
 
-\item{trend_prior_rate}{Exponential-Gamma (EG) prior (rate) for the trend in
-Rt. See \code{change_prior_shape} above for an explanation. Larger rates will
-lead to more variability: a doubling of the rate roughly corresponds to a
-doubling of all quantiles of the prior.}
+\item{trend_prior_scale}{Exponential-Gamma (EG) prior (scale) for the trend
+in Rt. See \code{change_prior_shape} above for an explanation. Larger scales
+will lead to more variability: a doubling of the scale roughly corresponds
+to a doubling of all quantiles of the prior.}
 
 \item{trend_change_tolerance}{Tolerance for "negligible" trend changes.
 Differences in the trend that are smaller than \code{change_tolerance} are
@@ -71,8 +71,7 @@ modeled pathogen. Default is 6.}
 \item{strictness_alpha}{The concentration parameter of the Dirichlet prior
 for the changepoint positions. Choosing smaller values of
 \code{strictness_alpha} will lead to more strict changepoints. Note that
-choosing small values of \code{strictness_alpha} can impede MCMC sampling and
-lead to divergent transitions.}
+choosing small values of \code{strictness_alpha} can impede MCMC sampling.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -98,22 +97,23 @@ trajectory while avoiding overfitting on noise.
 }
 \details{
 The Exponential-Gamma (EG) prior on the Rt trend is parameterized
-via the arguments \code{change_prior_shape} and \code{change_prior_rate}. It has a
+via the arguments \code{change_prior_shape} and \code{change_prior_scale}. It has a
 long tail to support large trends while keeping the Rt variation low most
 of the time. The default configuration should work well in most contexts
 except for really extreme changes in Rt over a short time window. To check
 the quantiles of your prior, you can use the function \code{\link[=qexpgamma]{qexpgamma()}} with
-corresponding shape and rate parameters.
+corresponding shape and scale parameters.
 
 If you need to adjust the overall variation, you can adjust the
-\code{change_prior_rate} parameter. A doubling of the rate roughly corresponds
-to a doubling of the quantiles. For example, when the 95\% quantile is 0.2
-for a given rate and you double that rate, the 95\% quantile will be at 0.4.
+\code{change_prior_scale} parameter. A doubling of the scales roughly
+corresponds to a doubling of the quantiles. For example, when the 95\%
+quantile is 0.2 for a given scale and you double that scale, the 95\%
+quantile will be at 0.4.
 
 If you need to support more extreme changes, you can decrease the
 \code{change_prior_shape} parameter, which will emphasize the long-tail behavior
 of the prior. Note however that this will substantially increase all
-quantiles of the prior, so you will also have to decrease the rate
+quantiles of the prior, so you will also have to decrease the scale
 parameter to achieve a similar level of day-to-day variation.
 }
 \seealso{
@@ -122,6 +122,7 @@ Other {Rt models}:
 \code{\link{R_estimate_ets}()},
 \code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
+\code{\link{R_estimate_smooth_derivative}()},
 \code{\link{R_estimate_splines}()}
 }
 \concept{{Rt models}}

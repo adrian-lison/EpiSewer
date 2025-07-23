@@ -230,7 +230,7 @@ using 4 chains with 500 warmup and 500 sampling iterations each.
 Stan regularly provides updates about the progress of the sampler. The overall 
 runtime will depend on your hardware resources, the size of the data, 
 the complexity of the model used, and how well the model actually fits the data.
-On a modern laptop the example below should take about 5 minutes to run.
+On a modern laptop the example below should take about 6 minutes to run.
 ```{r, eval = FALSE}
 options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(

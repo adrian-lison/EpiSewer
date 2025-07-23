@@ -9,9 +9,10 @@ R_estimate_ets(
   R_start_prior_sigma = 0.8,
   trend_prior_mu = 0,
   trend_prior_sigma = 0.1,
+  sd_base_prior_mu = 0,
   sd_base_prior_sd = 0.025,
   sd_change_prior_shape = 0.5,
-  sd_change_prior_rate = 1e-04,
+  sd_change_prior_scale = 1e-04,
   sd_change_distance = 7 * 26,
   link = "inv_softplus",
   R_max = 6,
@@ -37,21 +38,23 @@ Rt (level).}
 \item{trend_prior_sigma}{Prior (standard deviation) on the initial trend of
 Rt.}
 
+\item{sd_base_prior_mu}{Prior (mu) on the baseline standard deviation of the
+innovations. Please note that for consistency, the overall standard
+deviation of innovations will always be the baseline plus an additive
+component from \code{sd_change_prior} - even if no changepoints are modeled (see
+below).}
+
 \item{sd_base_prior_sd}{Prior (standard deviation) on the baseline standard
-deviation of the innovations. We here use a half-normal prior, i.e.
-\code{sd_base_prior_sd} is the only parameter to be specified for this prior.
-Please note that for consistency, the overall standard deviation of
-innovations will always be the baseline plus an additive component from
-\code{sd_change_prior} even if no changepoints are modeled (see below).}
+deviation of the innovations. See \code{sd_base_prior_mu} for details.}
 
 \item{sd_change_prior_shape}{Exponential-Gamma prior (shape) on standard
 deviation additional to baseline. This prior describes the distribution of
 the standard deviation of Rt over time. EpiSewer will estimate a baseline
-standard deviation (see \code{sd_base_prior_sd}), and model additional variation
+standard deviation (see \code{sd_base_prior_mu}), and model additional variation
 on top of the baseline using a changepoint model. Please see the details for
 more explanation.}
 
-\item{sd_change_prior_rate}{Exponential-Gamma prior (rate) on standard
+\item{sd_change_prior_scale}{Exponential-Gamma prior (scale) on standard
 deviation additional to baseline. See \code{sd_change_prior_shape} and the
 details for more explanation.}
 
@@ -166,10 +169,10 @@ points. The additional variation defined at the changepoints is modeled as
 independently distributed and following a Lomax distribution, also known as
 Exponential-Gamma (EG) distribution. This is an exponential distribution
 where the rate is Gamma distributed. The prior \code{sd_change_prior} defines the
-shape and rate of this Gamma distribution. The distribution has a
-strong peak towards zero and a long tail. This regularizes the estimated
-deviations from the baseline standard deviation - most deviations are small,
-but during special time periods, the deviation might also be larger.
+shape and scale of this Gamma distribution. The distribution has a strong
+peak towards zero and a long tail. This regularizes the estimated deviations
+from the baseline standard deviation - most deviations are small, but during
+special time periods, the deviation might also be larger.
 
 The priors of this component have the following functional form:
 \itemize{
@@ -188,6 +191,7 @@ Other {Rt models}:
 \code{\link{R_estimate_changepoint_splines}()},
 \code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
+\code{\link{R_estimate_smooth_derivative}()},
 \code{\link{R_estimate_splines}()}
 }
 \concept{{Rt models}}

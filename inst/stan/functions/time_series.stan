@@ -96,6 +96,10 @@ Time series process functions
     }
   }
 
+  vector ar1_process(vector start_values, real alpha, vector noise, int diff_order) {
+    return(holt_damped_process(start_values, alpha, 0, 0, noise, diff_order));
+  }
+
   real ets_coefficient_priors_lp(
     array[] real ets_alpha, array[] real ets_alpha_prior,
     array[] real ets_beta, array[] real ets_beta_prior,

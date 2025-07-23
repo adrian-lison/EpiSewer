@@ -175,7 +175,7 @@ The `infections` module describes the underlying process leading to infected ind
 ```{r}
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
-  R = R_estimate_changepoint_splines(),
+  R = R_estimate_smooth_derivative(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
 )
@@ -184,15 +184,16 @@ ww_infections <- model_infections(
 The module has the following epidemiological components:
 
 - `generation_dist`: We use the same generation time distribution as before.
-- `R`: This the effective reproduction number, our main parameter of interest. 
-We here estimate it using a combination of a changepoint model and smoothing 
-B-splines (`R_estimate_changepoint_splines()`), but there are other smoothing 
-approaches available (see `component_functions("R")`).
-- `seeding`: The renewal model used by `EpiSewer` requires a seeding phase 
-during which the reproduction number cannot be modeled. We thus let the initial 
+- `R`: This the effective reproduction number, our main parameter of interest.
+We here estimate it using smoothing B-splines on the first derivative of R
+(`R_estimate_smooth_derivative()`), but there are other smoothing approaches
+available (see `component_functions("R")`).
+- `seeding`: The renewal model used by `EpiSewer` requires a seeding phase
+during which the reproduction number cannot be modeled. We thus let the initial
 infections be estimated using a simple geometric random walk model.
 - `infection_noise`: We also model noise in the infection process, meaning that
-`EpiSewer` will fit a stochastic infection model. This makes sense in most cases.
+`EpiSewer` will fit a stochastic infection model. This makes sense in most
+cases.
 
 #### Forecast
 
@@ -341,7 +342,7 @@ ww_shedding <- model_shedding(
 
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
-  R = R_estimate_changepoint_splines(),
+  R = R_estimate_smooth_derivative(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
 )
