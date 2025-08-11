@@ -43,3 +43,35 @@ real beta2_prior_lpdf(array[] real y, real mean, real sd) {
 real beta2_prior_lpdf(array[] real y, array[] real prior) {
   return (beta2_prior_lpdf(y | prior[1], prior[2]));
 }
+
+
+/**
+  * Log beta density given mean and precision on unit scale
+  *
+  * @param mu mean
+  *
+  * @param phi precision
+  *
+  * @return The log of the beta density of y
+  */
+real beta3_lpdf(vector y, real mu, real phi) {
+  real alpha = mu * phi;
+  real beta = (1-mu) * phi;
+  return beta_lpdf(y | alpha, beta);
+}
+
+/**
+  * Log beta density given mean and precision on unit scale
+  *
+  * @param mu vector of means
+  *
+  * @param phi precision
+  *
+  * @return The log of the beta density of y
+  */
+real beta3_lpdf(vector y, vector mu, real phi) {
+  int n = num_elements(y);
+  vector[n] alpha = mu * phi;
+  vector[n] beta = (1-mu) * phi;
+  return beta_lpdf(y | alpha, beta);
+}
