@@ -63,12 +63,13 @@ start of the modeled time period, with the growth rate varying over time.
 \details{
 The seeding phase has the length of the maximum generation time
 (during this time, the renewal model cannot be applied). It is here assumed
-that the expected number of new infections increases exponentially during
-this time period. The exponential growth rate of the seeding phase follows
-a random walk that ends with a growth rate representing the first estimated
-reproduction number at the start of the modeling phase. This means that the
-intercept of the seeding phase growth rate depends on the \code{R_start_prior}
-provided in the \verb{R_estimate_*} component.
+that the expected number of new infections follows an exponential growth or
+decline process during this time period. The exponential growth rate of the
+seeding phase follows a random walk that ends with a growth rate
+representing the first estimated reproduction number at the start of the
+modeling phase. This means that the intercept of the seeding phase growth
+rate depends on the \code{R_start_prior} provided in the \verb{R_estimate_*}
+component.
 
 If the lower and upper intervals of the prior for the initial number
 of infections, i.e. \code{intercept_prior_q5} or \code{intercept_prior_q95} are not
@@ -86,11 +87,11 @@ The priors of this component have the following functional form:
 \itemize{
 \item initial number of infections (log scale): \code{Normal}
 \item standard deviation of the random walk on the growth rate: \verb{Truncated normal}
-}
 
 The priors for these parameters are determined based on the user-supplied
 arguments, using appropriate transformations and the two-sigma-rule of
 thumb.
+}
 
 Credits to Samuel Brand and the authors of the EpiAware toolkit for
 the idea to back-calculate the growth rate of the seeding phase from the

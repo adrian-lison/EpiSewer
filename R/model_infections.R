@@ -1599,12 +1599,13 @@ seeding_estimate_rw <- function(
 #'
 #' @details The seeding phase has the length of the maximum generation time
 #'   (during this time, the renewal model cannot be applied). It is here assumed
-#'   that the expected number of new infections increases exponentially during
-#'   this time period. The exponential growth rate of the seeding phase follows
-#'   a random walk that ends with a growth rate representing the first estimated
-#'   reproduction number at the start of the modeling phase. This means that the
-#'   intercept of the seeding phase growth rate depends on the `R_start_prior`
-#'   provided in the `R_estimate_*` component.
+#'   that the expected number of new infections follows an exponential growth or
+#'   decline process during this time period. The exponential growth rate of the
+#'   seeding phase follows a random walk that ends with a growth rate
+#'   representing the first estimated reproduction number at the start of the
+#'   modeling phase. This means that the intercept of the seeding phase growth
+#'   rate depends on the `R_start_prior` provided in the `R_estimate_*`
+#'   component.
 #'
 #' @details If the lower and upper intervals of the prior for the initial number
 #'   of infections, i.e. `intercept_prior_q5` or `intercept_prior_q95` are not
@@ -1622,7 +1623,7 @@ seeding_estimate_rw <- function(
 #' - initial number of infections (log scale): `Normal`
 #' - standard deviation of the random walk on the growth rate: `Truncated normal`
 #'
-#' The priors for these parameters are determined based on the user-supplied
+#'   The priors for these parameters are determined based on the user-supplied
 #'   arguments, using appropriate transformations and the two-sigma-rule of
 #'   thumb.
 #'

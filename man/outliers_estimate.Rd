@@ -53,7 +53,7 @@ Outliers are modeled as independent spikes in the load on a given
 sampling day. The spikes follow a generalized extreme value distribution
 (GEV) that is scaled by the average load per case. The default prior for
 the GEV is chosen such that distribution of spikes is extremely
-right-tailed, and the 95\% quantile of spikes is below the load equivalent
+right-tailed, and the 99\% quantile of spikes is below the load equivalent
 of 1 case, i.e. has minimal impact on estimated infection dynamics. Note
 that because of the properties of the GEV, the mean posterior estimates of
 loads and concentrations will be theoretically infinite if this modeling
