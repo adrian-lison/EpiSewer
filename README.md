@@ -518,7 +518,7 @@ ww_result$job$model
 #> 
 #> infections
 #>  |- generation_dist_assume
-#>  |- R_estimate_smooth_derivative
+#>  |- R_estimate_splines
 #>  |- seeding_estimate_rw
 #>  |- infection_noise_estimate (overdispersion = TRUE)
 ```
@@ -548,12 +548,12 @@ number.
 
 ``` r
 head(ww_result$summary$R, 5)
-#>          date      mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 0.9854654 0.9914010  0.5086490 0.8570600  1.127522   1.397294
-#> 2: 2021-12-04 0.9866831 0.9927445  0.5164825 0.8594373  1.126350   1.394308
-#> 3: 2021-12-05 0.9886963 0.9934275  0.5263697 0.8632615  1.127323   1.385992
-#> 4: 2021-12-06 0.9916080 0.9967390  0.5437719 0.8680418  1.125373   1.372919
-#> 5: 2021-12-07 0.9954652 1.0036200  0.5665288 0.8738278  1.124315   1.355231
+#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
+#> 1: 2021-12-03 1.033961 1.036185  0.6736519 0.9383015  1.135603   1.363244
+#> 2: 2021-12-04 1.034428 1.036025  0.6824790 0.9389188  1.132238   1.352063
+#> 3: 2021-12-05 1.035141 1.035805  0.6894310 0.9424300  1.128025   1.337265
+#> 4: 2021-12-06 1.036031 1.037465  0.7101947 0.9459913  1.125225   1.330535
+#> 5: 2021-12-07 1.037028 1.035575  0.7226779 0.9492257  1.123778   1.325589
 #>        type seeding
 #> 1: estimate    TRUE
 #> 2: estimate    TRUE
@@ -571,13 +571,13 @@ each chain:
 ``` r
 ww_result$fitted$diagnostic_summary()
 #> $num_divergent
-#> [1] 0 0 0 0
+#> [1] 0 0 3 2
 #> 
 #> $num_max_treedepth
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.9028552 0.9395239 1.0738571 0.8592549
+#> [1] 0.8911642 0.9440131 1.0275218 0.9908777
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -592,7 +592,7 @@ ww_result$checksums
 #> [1] "d86228897b135d42f2390763b0504b70"
 #> 
 #> $input
-#> [1] "c0d0827c0a813dda87d75944aa9011b6"
+#> [1] "1b3ade9eb69f4488767b0e60ca79ef14"
 #> 
 #> $fit_opts
 #> [1] "4f5f052ce14fd6ff0a4eabd438e5f794"
@@ -601,7 +601,7 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "175e4c7e936709cfa158232010ca2733"
+#> [1] "0250741cfad014f7ace289267fc7762f"
 ```
 
 ## Citing the package

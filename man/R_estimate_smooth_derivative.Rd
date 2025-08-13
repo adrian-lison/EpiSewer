@@ -8,8 +8,8 @@ R_estimate_smooth_derivative(
   R_start_prior_mu = 1,
   R_start_prior_sigma = 0.8,
   spline_knot_distance = 14,
-  trend_prior_shape = 2,
-  trend_prior_scale = 5e-04,
+  trend_prior_shape = 5,
+  trend_prior_scale = 0.005,
   link = "inv_softplus",
   R_max = 6,
   modeldata = modeldata_init()
