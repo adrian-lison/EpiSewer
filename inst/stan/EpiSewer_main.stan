@@ -16,6 +16,8 @@ functions {
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
   #include functions/soft_changepoints.stan
+  #include gptools/util.stan
+  #include gptools/fft1.stan
 }
 data {
   // Measurements ----
@@ -110,11 +112,12 @@ data {
   array[I_overdispersion ? 2 : 0] real I_xi_prior; // prior on the overdispersion parameter
 
   // Effective reproduction number ----
-  int<lower=0, upper=4> R_model; // 0 for exponential smoothing (ets), 1 for spline smoothing (bs), 2 for soft changepoints (scp)
+  int<lower=0, upper=5> R_model; // 0 for exponential smoothing (ets), 1 for spline smoothing (bs), 2 for soft changepoints (scp)
   int<lower=0, upper=1> R_use_ets;
   int<lower=0, upper=1> R_use_bs;
   int<lower=0, upper=1> R_use_bs2;
   int<lower=0, upper=1> R_use_scp;
+  int<lower=0, upper=1> R_use_gp;
 
   array[2] real R_intercept_prior; // prior for R at start of modeled time series
 
@@ -157,6 +160,14 @@ data {
   array[R_use_scp ? 1 : 0] real scp_boltzmann_sharpness; // strength of smooth maximum function for fuzzy OR
   vector[R_use_scp ? scp_break_dist[1] : 0] scp_alpha_base;
   vector[R_use_scp ? scp_break_dist[1] : 0] scp_alpha_adjusted;
+
+  // gaussian process (gp)
+  array[R_use_gp ? 1 : 0] real<lower=0> gp_nu;
+  array[R_use_gp ? 2 : 0] real<lower=0> gp_sigma_prior;
+  array[R_use_gp ? 2 : 0] real<lower=0> gp_length_prior;
+  array[R_use_gp ? 1 : 0] real<lower=0> gp_eta;
+  array[R_use_gp ? 1 : 0] int<lower=0> gp_padding;
+  array[R_model == 5 ? 1 : 0] real<lower=0>gp_phi;
 
   // Change point model for R variability
   array[(R_model == 0 || R_model == 1) ? 2 : 0] real R_sd_baseline_prior; // sd of half-normal prior on baseline R variability
@@ -270,6 +281,11 @@ transformed data {
     i_include = i_all;
   }
 
+  array[R_use_gp ? 1 : 0] int<lower=1> gp_n;
+  if (R_use_gp) {
+    gp_n[1] = L + S + D + T - (G+se) + h + gp_padding[1] * 2;
+  }
+
   if (R_link[1] < 0 || R_link[1] > 1) {
     reject("Link function must be one of inv_softplus (0) or scaled_logit (1)");
   }
@@ -291,11 +307,16 @@ parameters {
 
   // smooth derivative
   vector<lower=0>[R_model == 4 ? bs_ncol[1]-2 : 0] bs_coeff_noise_lomax;
+  vector<lower=0>[R_model == 5 ? gp_n[1] : 0] gp_noise_raw;
 
   // soft changepoints (scp)
   array[R_use_scp ? scp_n_knots[1] : 1] vector[R_use_scp ? (scp_break_dist[1]-1) : 1] scp_break_delays_raw;
   vector[R_use_scp ? scp_n_knots[1] : 0] scp_noise; // additive errors
   vector<lower=0>[R_use_scp ? scp_n_knots[1] : 0] scp_sd; // R variability for soft changepoint model
+
+  // gaussian process (gp)
+  array[R_use_gp && gp_sigma_prior[2] > 0 ? 1 : 0] real<lower=0> gp_sigma;
+  array[R_use_gp && gp_length_prior[2] > 0 ? 1 : 0] real<lower=0> gp_length;
 
   // Change point model for Rt variability
   array[(R_model == 0 || R_model == 1) ? (R_sd_baseline_prior[2] > 0 ? 1 : 0) : 0] real<lower=0> R_sd_baseline; // baseline R variability
@@ -348,7 +369,7 @@ transformed parameters {
   }
 
   // parameters for specific R models
-  vector[R_model == 1 ? h : 0] R_forecast_spline; // spline-based forecast of R
+  vector[R_model == 1 || R_model == 5 ? h : 0] R_forecast_model; // spline-based forecast of R
   vector<lower=0>[R_model == 1 ? bs_length : 0] bs_coeff_ar_sd; // sd for random walk on log bs coeffs
 
   // other time series parameters ----
@@ -424,7 +445,7 @@ transformed parameters {
       );
     R[(se+1):(L + S + D + T - G)] = R_all[1:(L + S + D + T - (G+se))];
     if (h>0) {
-      R_forecast_spline = R_all[(L + S + D + T - (G+se) + 1):(L + S + D + T - (G+se) + h)];
+      R_forecast_model = R_all[(L + S + D + T - (G+se) + 1):(L + S + D + T - (G+se) + h)];
     }
   } else if (R_model == 2) {
     for (i in 1:scp_n_knots[1]) {
@@ -465,12 +486,26 @@ transformed parameters {
     vector[bs_ncol[1]] bs_coeff = append_row2(
       0, (sqrt(bs_coeff_noise_lomax) .* bs_coeff_noise_raw), 0
       );
-    vector[(L + S + D + T - G) - se] Rspline = csr_matrix_times_vector(
+    vector[(L + S + D + T - G) - se] R_spline = csr_matrix_times_vector(
       bs_length, bs_ncol[1], bs_w, bs_v, bs_u, bs_coeff
       );
     R[(se+1):(L + S + D + T - G)] = apply_link(
-      R_intercept + cumulative_sum(Rspline), R_link
+      R_intercept + cumulative_sum(R_spline), R_link
       );
+  } else if (R_model == 5) {
+    vector[gp_n[1] %/% 2 + 1] cov_rfft = gp_eta[1] + gp_periodic_matern_cov_rfft(
+      gp_nu[1], gp_n[1], param_or_fixed(gp_sigma, gp_sigma_prior), param_or_fixed(gp_length, gp_length_prior), gp_n[1]
+      );
+    vector[L + S + D + T - (G+se) + h] R_gp = ar1_process(gp_phi[1], gp_inv_rfft(
+      gp_noise_raw, zeros_vector(gp_n[1]), cov_rfft
+      ))[(1+gp_padding[1]):(L + S + D + T - (G+se) + h + gp_padding[1])];
+    vector[L + S + D + T - (G+se) + h] R_all = apply_link(
+      R_intercept + R_gp, R_link
+      );
+    R[(se+1):(L + S + D + T - G)] = R_all[1:(L + S + D + T - (G+se))];
+    if (h>0) {
+      R_forecast_model = R_all[(L + S + D + T - (G+se) + 1):(L + S + D + T - (G+se) + h)];
+    }
   }
 
   // seeding
@@ -614,6 +649,10 @@ model {
     target += pareto_type_2_lpdf(
       bs_coeff_noise_lomax | 0, R_sd_change_prior[2], R_sd_change_prior[1]
     );
+  } else if (R_model == 5) {
+    target += normal_prior_lpdf(gp_sigma | gp_sigma_prior, 0); // truncated normal
+    target += normal_prior_lpdf(gp_length | gp_length_prior, 0); // truncated normal
+    gp_noise_raw ~ std_normal(); // Gaussian noise for GP model
   }
 
   if (R_use_ets) {
@@ -846,7 +885,7 @@ generated quantities {
           ets_diff[1]
         ), R_link)[((L + S + D + T - (G+se)) + 1):((L + S + D + T - (G+se)) + h)];
       } else if (R_model == 1) {
-        R_forecast = R_forecast_spline;
+        R_forecast = R_forecast_model;
       } else if (R_model == 2) {
         R_forecast = rep_vector(R[L + S + D + T - G], h);
       } else if (R_model == 3) {
@@ -855,6 +894,8 @@ generated quantities {
         R_forecast = last_R + cumulative_sum(rep_vector(slope, h));
       } else if (R_model == 4) {
         R_forecast = rep_vector(R[L + S + D + T - G], h);
+      } else if (R_model == 5) {
+        R_forecast = R_forecast_model;
       }
 
       R_forecast = dampen_trend(

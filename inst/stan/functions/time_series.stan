@@ -96,8 +96,26 @@ Time series process functions
     }
   }
 
-  vector ar1_process(vector start_values, real alpha, vector noise, int diff_order) {
-    return(holt_damped_process(start_values, alpha, 0, 0, noise, diff_order));
+  vector ar1_process(real phi, vector noise) {
+    int n = num_elements(noise);
+    vector[n] y; // observations (from 1:n)
+    y[1] = noise[1];
+    for (t in 2:n) {
+      y[t] = phi * y[t-1] + noise[t];
+    }
+    return(y);
+  }
+
+
+  vector ar1_process(real start_value, real phi, vector noise) {
+    int n = num_elements(noise) + 1; // n = 1 (for start value) + length of noise
+    vector[n] y; // observations (from 1:n)
+    vector[n] epsilons = append_row(0, noise); // innovations (from 1:n)
+    y[1] = start_value;
+    for (t in 2:n) {
+      y[t] = phi * y[t-1] + epsilons[t];
+    }
+    return(y);
   }
 
   real ets_coefficient_priors_lp(

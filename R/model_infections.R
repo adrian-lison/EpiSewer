@@ -234,9 +234,6 @@ R_estimate_ets <- function(
     name_approach = "ets",
     model_id = 0,
     use_ets = TRUE,
-    use_bs = FALSE,
-    use_bs2 = FALSE,
-    use_scp = FALSE,
     modeldata = modeldata
   )
 
@@ -331,6 +328,7 @@ R_estimate_ets <- function(
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
   modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_ets = c()
@@ -582,10 +580,8 @@ R_estimate_splines <- function(
   modeldata <- configure_R_model(
     name_approach = "splines",
     model_id = 1,
-    use_ets = FALSE,
     use_bs = TRUE,
     use_bs2 = TRUE,
-    use_scp = FALSE,
     modeldata = modeldata
   )
 
@@ -717,6 +713,7 @@ R_estimate_splines <- function(
   modeldata <- add_dummies_exponential_smoothing(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
   modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_splines = c()
@@ -989,9 +986,6 @@ R_estimate_piecewise <- function(
   modeldata <-  configure_R_model(
     name_approach = "piecewise",
     model_id = 2,
-    use_ets = FALSE,
-    use_bs = FALSE,
-    use_bs2 = FALSE,
     use_scp = TRUE,
     modeldata = modeldata
   )
@@ -1055,6 +1049,7 @@ R_estimate_piecewise <- function(
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
   modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_piecewise = c()
@@ -1148,9 +1143,7 @@ R_estimate_changepoint_splines <- function(
   modeldata <-  configure_R_model(
     name_approach = "changepoint_splines",
     model_id = 3,
-    use_ets = FALSE,
     use_bs = TRUE,
-    use_bs2 = FALSE,
     use_scp = TRUE,
     modeldata = modeldata
   )
@@ -1239,6 +1232,7 @@ R_estimate_changepoint_splines <- function(
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
   modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_changepoint_splines = c()
@@ -1292,10 +1286,7 @@ R_estimate_smooth_derivative <- function(
   modeldata <-  configure_R_model(
     name_approach = "smooth_derivative",
     model_id = 4,
-    use_ets = FALSE,
     use_bs = TRUE,
-    use_bs2 = FALSE,
-    use_scp = FALSE,
     modeldata = modeldata
   )
 
@@ -1347,9 +1338,141 @@ R_estimate_smooth_derivative <- function(
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_smooth_derivative = c()
+  )
+
+  return(modeldata)
+}
+
+#' @title Estimate Rt using a Gaussian process
+#'
+#' @description This option estimates the effective reproduction number Rt over
+#'   time as a smooth trend using a Gaussian process model.
+#'
+#' @param gp_sigma_prior_mu Prior (mean) on the magnitude of the Gaussian
+#'   process.
+#' @param gp_sigma_prior_sigma Prior (standard deviation) on the magnitude of
+#'   the Gaussian process.
+#' @param gp_length_prior_mu Prior (mean) on the length scale of the Gaussian
+#'   process.
+#' @param gp_length_prior_sigma Prior (standard deviation) on the length scale
+#'   of the Gaussian process.
+#' @param gp_matern_nu The Matern parameter nu of the Gaussian process. The
+#'   default is 3/2.
+#' @param gp_padding_factor The domain of the Gaussian process must be padded to
+#'   attenuate boundary effects (resulting from a periodic kernel used for the
+#'   Fast Fourier Transform computation). The domain is padded both at the start
+#'   and end of the time series by `gp_padding_factor` times the length scale.
+#'   As expected length scale, we use `gp_length_prior_mu +
+#'   gp_length_prior_sigma`.
+#' @param gp_phi The damping factor of the Gaussian process. When `phi=1`, there
+#'   is no dampening and the Gaussian process is non-stationary (GP on first
+#'   order differences). This is desirable for real-time estimation, as it
+#'   encodes a prior assumption that the current transmission dynamics will
+#'   continue, however the non-stationarity slows down MCMC sampling. For
+#'   `phi<1`, the GP becomes stationary and reverts to the global mean in the
+#'   long term. We use a default of `phi=0.9`, which gives a stationary GP that
+#'   samples faster but still behaves similarly to a GP on first order
+#'   differences on short-term scales. Note that when `phi=0`, this corresponds
+#'   to modeling a GP directly on Rt instead of the differences of Rt. This may
+#'   require adjusting the `gp_sigma` prior.
+#'
+#' @details The priors of this component have the following functional form:
+#' - R_start (intercept):
+#'   `Normal`
+#' - gp_sigma (magnitude):
+#'   `Truncated Normal`
+#' - gp_length (length scale):
+#'   `Truncated Normal`
+#'
+#' @inheritParams R_estimate_splines
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {Rt models}
+R_estimate_gp <- function(
+    R_start_prior_mu = 1,
+    R_start_prior_sigma = 0.8,
+    gp_sigma_prior_mu = 0.05,
+    gp_sigma_prior_sigma = 0.01,
+    gp_length_prior_mu = 28,
+    gp_length_prior_sigma = 3.5,
+    gp_matern_nu = 3/2,
+    gp_padding_factor = 4,
+    gp_phi = 0.9,
+    link = "inv_softplus",
+    R_max = 6,
+    modeldata = modeldata_init()
+) {
+
+  modeldata <- configure_R_model(
+    name_approach = "gp",
+    model_id = 5,
+    use_gp = TRUE,
+    modeldata = modeldata
+  )
+
+  modeldata$R_intercept_prior <- set_prior(
+    "R_intercept", "normal",
+    mu = R_start_prior_mu, sigma = R_start_prior_sigma
+  )
+  modeldata$.init$R_intercept <-
+    modeldata$R_intercept_prior$R_intercept_prior[1]
+
+  modeldata$gp_nu <- gp_matern_nu
+  modeldata$gp_eta <- 1e-9
+  modeldata$gp_padding <- (gp_length_prior_mu + gp_length_prior_sigma) * gp_padding_factor
+  modeldata$gp_phi <- gp_phi
+
+  modeldata$gp_length_prior <- set_prior("gp_length",
+    mu = gp_length_prior_mu, sigma = gp_length_prior_sigma
+  )
+  modeldata$.init$gp_length <- init_from_location_scale_prior(
+    modeldata$gp_length_prior
+  )
+
+  modeldata$gp_sigma_prior <- set_prior("gp_sigma",
+    mu = gp_sigma_prior_mu, sigma = gp_sigma_prior_sigma
+  )
+  modeldata$.init$gp_sigma <- init_from_location_scale_prior(
+    modeldata$gp_sigma_prior
+  )
+
+  modeldata <- tbc(
+    "R_gp",
+    {
+      gp_n_without_padding <- with(
+        modeldata, .metainfo$length_R_modeled + .metainfo$forecast_horizon
+        )
+      modeldata$.init$gp_noise_raw <- rep(
+        1e-4, gp_n_without_padding + 2 * modeldata$gp_padding
+        )
+    },
+    required = c(
+      ".metainfo$length_R_modeled",
+      ".metainfo$forecast_horizon"
+    ),
+    modeldata = modeldata
+  )
+
+  modeldata <- add_link_function(link, R_max, modeldata)
+
+  # dummy data
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_basis_splines(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_R_vari(modeldata)
+  modeldata <- add_dummies_soft_changepoints(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata$R_sd_change_prior <- c(-1, -1)
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_gp = c()
   )
 
   return(modeldata)

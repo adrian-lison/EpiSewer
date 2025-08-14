@@ -1,12 +1,15 @@
 #' @keywords internal
-configure_R_model <- function(name_approach, model_id, use_ets, use_bs,
-                              use_bs2, use_scp, modeldata) {
+configure_R_model <- function(name_approach, model_id,
+                              use_ets = FALSE, use_bs = FALSE, use_bs2 = FALSE,
+                              use_scp = FALSE, use_gp = FALSE,
+                              modeldata) {
   modeldata$.metainfo$R_estimate_approach <- name_approach
   modeldata$R_model <- model_id
   modeldata$R_use_ets <- use_ets
   modeldata$R_use_bs <- use_bs
   modeldata$R_use_bs2 <- use_bs2
   modeldata$R_use_scp <- use_scp
+  modeldata$R_use_gp <- use_gp
   return(modeldata)
 }
 
@@ -201,6 +204,17 @@ add_dummies_exponential_smoothing <- function(modeldata) {
 add_dummies_smooth_derivative <- function(modeldata) {
   modeldata <- add_dummy_inits(modeldata, c(
     "bs_coeff_noise_lomax"
+  ))
+  return(modeldata)
+}
+
+add_dummies_gp <- function(modeldata) {
+  modeldata <- add_dummy_data(modeldata, c(
+    "gp_nu", "gp_sigma_prior", "gp_length_prior",
+    "gp_eta", "gp_padding", "gp_phi"
+  ))
+  modeldata <- add_dummy_inits(modeldata, c(
+    "gp_noise_raw", "gp_sigma", "gp_length"
   ))
   return(modeldata)
 }
