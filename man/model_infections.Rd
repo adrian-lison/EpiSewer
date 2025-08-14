@@ -31,6 +31,7 @@ smoothing (ets), and smoothing splines. Modeling options:
 \item \code{\link[=R_estimate_changepoint_splines]{R_estimate_changepoint_splines()}}
 \item \code{\link[=R_estimate_rw]{R_estimate_rw()}}
 \item \code{\link[=R_estimate_splines]{R_estimate_splines()}}
+\item \code{\link[=R_estimate_gp]{R_estimate_gp()}}
 }}
 
 \item{seeding}{Seeding of initial infections. The renewal model used by

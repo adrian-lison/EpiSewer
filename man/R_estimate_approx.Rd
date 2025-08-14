@@ -144,6 +144,7 @@ the smoothing hyperparameters if needed.
 Other {Rt models}: 
 \code{\link{R_estimate_changepoint_splines}()},
 \code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_gp}()},
 \code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
 \code{\link{R_estimate_smooth_derivative}()},

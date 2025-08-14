@@ -119,6 +119,7 @@ Other {Rt models}:
 \code{\link{R_estimate_approx}()},
 \code{\link{R_estimate_changepoint_splines}()},
 \code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_gp}()},
 \code{\link{R_estimate_rw}()},
 \code{\link{R_estimate_smooth_derivative}()},
 \code{\link{R_estimate_splines}()}

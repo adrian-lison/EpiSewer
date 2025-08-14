@@ -189,6 +189,7 @@ The priors of this component have the following functional form:
 Other {Rt models}: 
 \code{\link{R_estimate_approx}()},
 \code{\link{R_estimate_changepoint_splines}()},
+\code{\link{R_estimate_gp}()},
 \code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
 \code{\link{R_estimate_smooth_derivative}()},
