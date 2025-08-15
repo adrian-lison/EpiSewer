@@ -32,12 +32,11 @@ model_measurements <- function(
   return(modeldata_combine(concentrations, noise, LOD))
 }
 
-#' Observe concentration measurements
+#' Observe measurements
 #'
-#' @description This option fits the `EpiSewer` model to pathogen concentrations
-#'   measured in wastewater samples. It is suitable for different quantification
-#'   methods such as qPCR or dPCR. The measured concentrations are by default
-#'   modeled via a gamma likelihood.
+#' @description This helper function is called from other measurement modeling
+#'   functions. Currently supported are [concentrations_observe()] and
+#'   [concentrations_observe_partitions()].
 #'
 #' @param measurements A `data.frame` with each row representing one
 #'   measurement. Must have at least a column with dates and a column with
@@ -54,6 +53,11 @@ model_measurements <- function(
 #' @param date_col Name of the column containing the dates.
 #' @param concentration_col Name of the column containing the measured
 #'   concentrations.
+#' @param positive_partitions_col Name of the column in the `measurements`
+#'   data.frame containing the number of positive partitions (e.g. positive
+#'   droplets for ddPCR) in the dPCR reaction of each measurement. If several
+#'   technical replicates are used, this should be the AVERAGE number of
+#'   positive partitions per replicate.
 #' @param replicate_col Name of the column containing the replicate ID of each
 #'   measurement. This is used to identify multiple measurements made of a
 #'   sample from the same date. Should be `NULL` if only one measurement per
@@ -71,7 +75,7 @@ model_measurements <- function(
 #' @param total_partitions_col Name of the column in the `measurements`
 #'   data.frame containing the number of total partitions (e.g. droplets for
 #'   ddPCR) in the dPCR reaction of each measurement. If several technical
-#'   replicates are used, this should be the average number of valid partitions
+#'   replicates are used, this should be the AVERAGE number of valid partitions
 #'   per replicate. Only applies when modeling concentration measurements via
 #'   the dPCR-specific noise model. Can be used by the [noise_estimate_dPCR()]
 #'   and [LOD_estimate_dPCR()] modeling components. Note that this is really the
@@ -79,35 +83,50 @@ model_measurements <- function(
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
-#' @export
-#' @family {observation types}
-concentrations_observe <-
-  function(measurements = NULL,
-           composite_window = 1,
-           distribution = "gamma",
-           date_col = "date",
-           concentration_col = "concentration",
-           replicate_col = NULL,
-           n_averaged = 1,
-           n_averaged_col = NULL,
-           total_partitions_col = NULL,
-           modeldata = modeldata_init()) {
+measurements_observe_ <- function(
+    measurements = NULL,
+    observation_type = c("concentrations", "partitions"),
+    composite_window = 1,
+    distribution = "gamma",
+    date_col = "date",
+    concentration_col = NULL,
+    positive_partitions_col = NULL,
+    replicate_col = NULL,
+    n_averaged = 1,
+    n_averaged_col = NULL,
+    total_partitions_col = NULL,
+    modeldata = modeldata_init()) {
+
+    observation_type <- rlang::arg_match(observation_type)
+
     if (!(composite_window %% 1 == 0 && composite_window > 0)) {
       cli::cli_abort(
         "The argument `composite_window` must be a positive integer."
       )
     }
 
-    modeldata <- tbp("concentrations_observe",
+    modeldata <- tbp("measurements_observe",
       {
-        required_data_cols <- list(
-          date_col, concentration_col, replicate_col,
-          n_averaged_col, total_partitions_col
+        if (observation_type == "concentrations") {
+          required_data_cols <- list(
+            date_col, concentration_col, replicate_col,
+            n_averaged_col, total_partitions_col
           )
-        data_col_names <- c(
-          "date", "concentration", "replicate_id",
-          "n_averaged", "total_partitions"
-          )[!sapply(required_data_cols,is.null)]
+          data_col_names <- c(
+            "date", "concentration", "replicate_id",
+            "n_averaged", "total_partitions"
+          )[!sapply(required_data_cols, is.null)]
+        } else if (observation_type == "partitions") {
+          required_data_cols <- list(
+            date_col, positive_partitions_col, concentration_col,
+            replicate_col, n_averaged_col, total_partitions_col
+          )
+          data_col_names <- c(
+            "date", "positive_partitions", "concentration",
+            "replicate_id", "n_averaged", "total_partitions"
+          )[!sapply(required_data_cols, is.null)]
+        }
+
         required_data_cols <- purrr::list_c(required_data_cols)
         if (!all(required_data_cols %in% names(measurements))) {
           cli::cli_abort(
@@ -122,18 +141,33 @@ concentrations_observe <-
         }
         measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
         measurements <- setnames(measurements, old = required_data_cols, new = data_col_names)
-        modeldata$.metainfo$measurements_cols <- list(
-          date_col = date_col,
-          concentration_col = concentration_col,
-          replicate_col = replicate_col,
-          n_averaged_col = n_averaged_col,
-          total_partitions_col = total_partitions_col
-        )
+
+        if (observation_type == "concentrations") {
+          modeldata$.metainfo$measurements_cols <- list(
+            date_col = date_col,
+            concentration_col = concentration_col,
+            replicate_col = replicate_col,
+            n_averaged_col = n_averaged_col,
+            total_partitions_col = total_partitions_col
+          )
+        } else if (observation_type == "partitions") {
+          modeldata$.metainfo$measurements_cols <- list(
+            date_col = date_col,
+            positive_partitions_col = positive_partitions_col,
+            concentration_col = concentration_col,
+            replicate_col = replicate_col,
+            n_averaged_col = n_averaged_col,
+            total_partitions_col = total_partitions_col
+          )
+        }
 
         # housekeeping
         measurements <- measurements[!is.na(concentration) & !is.na(date), ]
         measurements[, date := as.Date(date)]
         measurements[, concentration := as.numeric(concentration)]
+        if (observation_type == "partitions") {
+          measurements[, positive_partitions := as.numeric(positive_partitions)]
+        }
 
         if (nrow(measurements)==0) {
           cli::cli_abort(
@@ -175,8 +209,16 @@ concentrations_observe <-
         modeldata$measure_to_sample <- sapply(measured_dates, function(x) {
           which(x == modeldata$sample_to_date)[[1]]
         })
-        modeldata$measured_concentrations <- measurements[["concentration"]]
         modeldata$.metainfo$measured_dates <- measurements[["date"]]
+
+        modeldata$measured_concentrations <- measurements[["concentration"]]
+        if (observation_type == "concentrations") {
+          modeldata$positive_partitions <- numeric(0)
+          modeldata$.init$concentration_with_noise_raw <- numeric(0)
+        } else if (observation_type == "partitions") {
+          modeldata$positive_partitions <- measurements[["positive_partitions"]]
+          modeldata$.init$concentration_with_noise_raw <- rep(1, modeldata$n_measured)
+        }
 
         if (!is.null(replicate_col)) {
           modeldata$replicate_ids <- as.integer(measurements[["replicate_id"]])
@@ -201,13 +243,47 @@ concentrations_observe <-
             ))
         }
 
-        if (!is.null(total_partitions_col)) {
-          modeldata$dPCR_total_partitions <- as.integer(
-            measurements[["total_partitions"]]
-            )
-        } else {
-          modeldata$dPCR_total_partitions <- numeric(0)
-        }
+        # total valid partitions in PCR run
+        modeldata <- tbc("dPCR_total_partitions", {
+          if (modeldata$total_partitions_observe) {
+            if (!is.null(total_partitions_col)) {
+              modeldata$dPCR_total_partitions <- as.integer(
+                measurements[["total_partitions"]]
+              )
+            } else {
+              cli::cli_abort(paste0(
+                "You specified `total_partitions_observe = TRUE`, but this ",
+                "requires a column with the total number of partitions in the ",
+                "dPCR run. Please specify a column with the total number of ",
+                "partitions via the `total_partitions_col` ",
+                "argument in ", cli_help("concentrations_observe"), " or ",
+                cli_help("concentrations_observe_partitions"), "."
+              ))
+            }
+          } else {
+            if (observation_type == "partitions") {
+              cli::cli_abort(paste0(
+                "You specified `total_partitions_observe = FALSE`, but ",
+                "total partition counts are required for the ",
+                "`concentrations_observe_partitions` model component. ",
+                "Please specify `total_partitions_observe = TRUE` ",
+                "in ", cli_help("noise_estimate_dPCR"),
+                " and provide ",
+                "a column with the total number of partitions via the ",
+                "`total_partitions_col` argument in ",
+                cli_help("concentrations_observe_partitions"), "."
+              ))
+            }
+            if (!is.null(total_partitions_col)) {
+              cli::cli_inform(c("i" = paste0(
+                "Note: Your data contains a column with the number of total ",
+                "partitions in the dPCR."), "!" = paste0("However, you specified ",
+                 "total_partitions_observe = FALSE, so this column is currently ignored."
+                )))
+            }
+            modeldata$dPCR_total_partitions <- numeric(0)
+          }
+        }, required = c("total_partitions_observe"), modeldata = modeldata)
 
         return(modeldata)
       },
@@ -220,18 +296,23 @@ concentrations_observe <-
     } else {
       .str_details <- c()
     }
-    modeldata$.str$measurements[["concentrations"]] <- list(
-      concentrations_observe = .str_details
-    )
 
-    modeldata$positive_partitions <- numeric(0)
-    modeldata$.init$concentration_with_noise_raw <- numeric(0)
+    if (observation_type == "concentrations") {
+      modeldata$.str$measurements[["concentrations"]] <- list(
+        concentrations_observe = .str_details
+      )
+    } else if (observation_type == "partitions") {
+      modeldata$.str$measurements[["concentrations"]] <- list(
+        concentrations_observe_partitions = .str_details
+      )
+    }
 
     available_distributions <- c(
       "gamma" = 0,
       "log-normal" = 1,
       "truncated normal" = 2,
-      "normal" = 3
+      "normal" = 3,
+      "binomial" = 4
     )
 
     distribution_aliases <- c(
@@ -276,38 +357,98 @@ concentrations_observe <-
           "Consider using a Gamma or Log-Normal distribution instead."
       )))
     }
+    if (distribution == "binomial" && observation_type != "partitions") {
+      cli::cli_abort(paste0(
+        "The Binomial distribution is only supported for positive partitions ",
+        "counts in dPCR assays. Please use `concentrations_observe_partitions()` ",
+        "to specify this distribution type."
+      ))
+    }
 
     modeldata$obs_dist = do.call(
       switch, c(distribution, as.list(c(available_distributions,-1)))
       )
 
     return(modeldata)
-  }
+}
+
+#' Observe concentration measurements
+#'
+#' @description This option fits the `EpiSewer` model to pathogen concentrations
+#'   measured in wastewater samples. It is suitable for different quantification
+#'   methods such as qPCR or dPCR. By default, the measured concentrations are
+#'   modeled via a gamma likelihood.
+#'
+#' @inheritParams template_model_helpers
+#' @inheritParams measurements_observe_
+#' @inherit modeldata_init return
+#'
+#' @export
+#' @family {observation types}
+concentrations_observe <- function(
+    measurements = NULL,
+    composite_window = 1,
+    distribution = "gamma",
+    date_col = "date",
+    concentration_col,
+    replicate_col = NULL,
+    n_averaged = 1,
+    n_averaged_col = NULL,
+    total_partitions_col = NULL,
+    modeldata = modeldata_init()) {
+  return(measurements_observe_(
+    measurements = measurements,
+    observation_type = "concentrations",
+    composite_window = composite_window,
+    distribution = distribution,
+    date_col = date_col,
+    concentration_col = concentration_col,
+    positive_partitions_col = NULL,
+    replicate_col = replicate_col,
+    n_averaged = n_averaged,
+    n_averaged_col = n_averaged_col,
+    total_partitions_col = total_partitions_col,
+    modeldata = modeldata))
+}
 
 #' Observe positive dPCR partition counts
 #'
 #' @description This option fits the `EpiSewer` model to positive partition
-#'   counts in digital PCR (dPCR), e.g. positive droplets in ddPCR, for the
-#'   pathogen target of interest. This allows the use of a dPCR-specific
-#'   likelihood using a Poisson distribution. For a more generic likelihood, see
+#'   counts in digital PCR (dPCR), e.g. positive droplets in ddPCR. This allows
+#'   the use of a dPCR-specific likelihood using a Binomial model for the number
+#'   of positive partitions observed. For a more generic likelihood, see
 #'   [concentrations_observe()].
 #'
 #' @inheritParams template_model_helpers
+#' @inheritParams measurements_observe_
 #' @inherit modeldata_init return
+#'
+#' @export
 #' @family {observation types}
-#' @keywords internal
-partitions_observe <-
-  function(data,
-           composite_window = 1,
-           date_col = "date",
-           positive_partitions_col = "positive_partitions",
-           total_partitions_col = "total_partitions",
-           replicate_col = NULL,
-           modeldata = modeldata_init()) {
-    cli::cli_abort(paste(
-      "Specification of measurements via dPCR partition count",
-      "is not implemented yet."
-    ))
+concentrations_observe_partitions <- function(
+    measurements = NULL,
+    composite_window = 1,
+    date_col = "date",
+    concentration_col,
+    positive_partitions_col,
+    replicate_col = NULL,
+    n_averaged = 1,
+    n_averaged_col = NULL,
+    total_partitions_col,
+    modeldata = modeldata_init()) {
+      return(measurements_observe_(
+        measurements = measurements,
+        observation_type = "partitions",
+        composite_window = composite_window,
+        distribution = "binomial",
+        date_col = date_col,
+        concentration_col = concentration_col,
+        positive_partitions_col = positive_partitions_col,
+        replicate_col = replicate_col,
+        n_averaged = n_averaged,
+        n_averaged_col = n_averaged_col,
+        total_partitions_col = total_partitions_col,
+        modeldata = modeldata))
   }
 
 #' Estimate measurement noise (internal helper function)
@@ -412,7 +553,7 @@ noise_estimate_ <-
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
            cv_type = "constant",
-           partitions_observe = NULL,
+           total_partitions_observe = NULL,
            max_partitions_prior_lower= NULL,
            max_partitions_prior_upper = NULL,
            partition_loss_mean_prior_lower = NULL,
@@ -446,7 +587,6 @@ noise_estimate_ <-
 
     if (cv_type == "constant") {
       modeldata$total_partitions_observe <- FALSE
-      modeldata$dPCR_total_partitions <- numeric(0)
       modeldata$cv_type <- 0
       modeldata$max_partitions_prior <- numeric(0)
       modeldata$partition_loss_mu_prior <- numeric(0)
@@ -461,13 +601,13 @@ noise_estimate_ <-
       modeldata$cv_pre_type <- numeric(0)
       modeldata$cv_pre_approx_taylor <- numeric(0)
     } else if (cv_type == "dPCR") {
-      if (!is.null(modeldata$obs_dist) && modeldata$obs_dist == 4) {
-        modeldata$cv_type <- 3 # binomial model of positive partitions
-      } else {
-        modeldata$cv_type <- 1 # continuous model of measured concentrations
-      }
+      # 1: continuous model of measured concentrations
+      # 3: binomial model of positive partitions
+      modeldata$cv_type <- tbe(
+        ifelse(modeldata$obs_dist == 4, 3, 1), "obs_dist"
+      )
 
-      if (partitions_observe || (!is.null(modeldata$obs_dist) && modeldata$obs_dist == 4)) {
+      if (total_partitions_observe || (!is.null(modeldata$obs_dist) && modeldata$obs_dist == 4)) {
         modeldata$total_partitions_observe <- TRUE
         modeldata$max_partitions_prior <- numeric(0)
         modeldata$partition_loss_mu_prior <- numeric(0)
@@ -480,7 +620,7 @@ noise_estimate_ <-
         modeldata$.checks$check_total_partitions_col <- function(md, ...) {
           if (length(md$dPCR_total_partitions)==0) {
             cli::cli_abort(paste0(
-              "You specified `partitions_observe = TRUE`, which requires ",
+              "You specified `total_partitions_observe = TRUE`, which requires ",
               "a column with the number of total partitions in the PCR for ",
               "each sample in your data. Please specify such a column via the ",
               "`total_partitions_col` argument in ",
@@ -490,14 +630,6 @@ noise_estimate_ <-
         }
       } else {
         modeldata$total_partitions_observe <- FALSE
-        if (length(modeldata$dPCR_total_partitions) > 0) {
-          cli::cli_inform(c("i" = paste0(
-            "Note: Your data contains a column with the number of total ",
-            "partitions in the dPCR."), "!" = paste0("However, you specified ",
-                                                     "partitions_observe = FALSE, so this column is currently ignored."
-            )))
-          modeldata$dPCR_total_partitions <- numeric(0)
-        }
 
         # maximum number of partitions
         modeldata$max_partitions_prior <- set_prior_trunc_normal(
@@ -564,7 +696,6 @@ noise_estimate_ <-
 
     } else if (cv_type == "constant_var") {
       modeldata$total_partitions_observe <- FALSE
-      modeldata$dPCR_total_partitions <- numeric(0)
       modeldata$cv_type <- 2
       modeldata$max_partitions_prior <- numeric(0)
       modeldata$partition_loss_mu_prior <- numeric(0)
@@ -747,7 +878,7 @@ noise_estimate_dPCR <-
   function(replicates = FALSE,
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
-           partitions_observe = FALSE,
+           total_partitions_observe = FALSE,
            max_partitions_prior_lower = 5000,
            max_partitions_prior_upper = 30000,
            partition_loss_mean_prior_lower = 0.01,
@@ -774,7 +905,7 @@ noise_estimate_dPCR <-
       partition_loss_variation_prior_lower = partition_loss_variation_prior_lower,
       partition_loss_variation_prior_upper = partition_loss_variation_prior_upper,
       partition_loss_max = partition_loss_max,
-      partitions_observe = partitions_observe,
+      total_partitions_observe = total_partitions_observe,
       volume_scaled_prior_mu = volume_scaled_prior_mu,
       volume_scaled_prior_sigma = volume_scaled_prior_sigma,
       pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
