@@ -23,8 +23,11 @@ data.table::setnafill(WW_data, type = "locf", cols = "flow")
 WW_data[is.na(dilution) & !is.na(concentration), dilution := median(WW_data$dilution, na.rm = T)]
 WW_data[is.na(total_droplets) & !is.na(concentration), total_droplets := median(WW_data$total_droplets, na.rm = T)]
 
+# back-calculate positive droplets
+WW_data[, positive_droplets := round((1 - exp(-concentration * 1.73e-5)) * total_droplets)]
+
 Influenza_A_Zurich <- list(
-  measurements = WW_data[, c("date", "concentration", "replicate_id", "dilution", "total_droplets")],
+  measurements = WW_data[, c("date", "concentration", "replicate_id", "dilution", "total_droplets", "positive_droplets")],
   flows = WW_data[, c("date", "flow")],
   units = list(concentration = "gc/mL", flow = "mL/day")
 )
