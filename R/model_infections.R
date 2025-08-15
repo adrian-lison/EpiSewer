@@ -301,7 +301,7 @@ R_estimate_ets <- function(
     mu = smooth_prior_mu, sigma = smooth_prior_sigma
   )
   modeldata$.init$ets_alpha <- init_from_location_scale_prior(
-    modeldata$ets_alpha_prior
+    modeldata$ets_alpha_prior, enforce_positive = TRUE
   )
 
   check_beta_alternative(trend_smooth_prior_mu, trend_smooth_prior_sigma)
@@ -309,7 +309,7 @@ R_estimate_ets <- function(
     mu = trend_smooth_prior_mu, sigma = trend_smooth_prior_sigma
   )
   modeldata$.init$ets_beta <- init_from_location_scale_prior(
-    modeldata$ets_beta_prior
+    modeldata$ets_beta_prior, enforce_positive = TRUE
   )
 
   check_beta_alternative(dampen_prior_mu, dampen_prior_sigma)
@@ -317,7 +317,7 @@ R_estimate_ets <- function(
     mu = dampen_prior_mu, beta = dampen_prior_sigma
   )
   modeldata$.init$ets_phi <- init_from_location_scale_prior(
-    modeldata$ets_phi_prior
+    modeldata$ets_phi_prior, enforce_positive = TRUE
   )
 
   modeldata <- add_link_function(link, R_max, modeldata)
@@ -890,7 +890,7 @@ R_estimate_approx <- function(
     sigma = inf_sd_prior_sigma
   )
   modeldata$.init$inf_ar_sd <- init_from_location_scale_prior(
-    modeldata$inf_ar_sd_prior
+    modeldata$inf_ar_sd_prior, enforce_positive = TRUE
   )
 
   modeldata$inf_smooth <- inf_smooth
@@ -1851,7 +1851,9 @@ infection_noise_estimate <-
         "I_xi", "normal",
         mu = overdispersion_prior_mu, sigma = overdispersion_prior_sigma
       )
-      modeldata$.init$I_xi <- init_from_location_scale_prior(modeldata$I_xi_prior)
+      modeldata$.init$I_xi <- init_from_location_scale_prior(
+        modeldata$I_xi_prior, enforce_positive = TRUE
+        )
     } else {
       modeldata$I_xi_prior <- numeric(0)
       modeldata$.init$I_xi <- numeric(0)

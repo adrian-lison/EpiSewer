@@ -673,7 +673,7 @@ load_variation_estimate <- function(
     mu = cv_prior_mu, sigma = cv_prior_sigma
   )
   modeldata$.init$nu_zeta <- as.array(init_from_location_scale_prior(
-    modeldata$nu_zeta_prior
+    modeldata$nu_zeta_prior, enforce_positive = TRUE
   ))
 
   modeldata <- tbc("zeta_normal_approximation",

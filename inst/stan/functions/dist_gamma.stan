@@ -112,6 +112,21 @@ vector gamma3_rng(vector mean, vector cv) {
   return to_vector(gamma_rng(alpha, beta));
 }
 
+vector gamma3_rng(vector mean, real cv) {
+  int n = num_elements(mean);
+  real cv_squared = (cv^2);
+  real alpha = 1 / cv_squared;
+  vector[n] beta = 1 / (mean * cv_squared);
+  if (min(beta) == 0) {
+    reject(
+        "Inverse scale parameter of Gamma distribution is zero. | ",
+        "Mean: ", mean, " | ",
+        "CV: ", cv, " | "
+        );
+  }
+  return to_vector(gamma_rng(alpha, beta));
+}
+
 vector gamma3_noncentered(real mean, real cv, vector noise) {
   return(mean / inv_square(cv) * noise);
 }

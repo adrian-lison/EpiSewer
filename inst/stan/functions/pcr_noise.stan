@@ -6,18 +6,16 @@
   *
   * @param nu_pre pre-PCR CV (all other noise factors)
   *
-  * @param m number of partitions
+  * @param m total number of partitions (i.e. sum of partitions of all replicates)
   *
   * @param c conversion factor c = sv, i.e. should be partition volume v
   * multiplied by scaling factor s (concentration in assay / concentration in wastewater)
   *
-  * @param n number of replicates that are averaged
-  *
   * @return A vector with the corresponding coefficients of variation
   */
-vector cv_dPCR(vector lambda, vector m, real c, vector n) {
+vector cv_dPCR(vector lambda, vector m, real c) {
   int N = num_elements(lambda);
-  vector[N] total_var = (exp(lambda * c) - 1) ./ (n .* m * c^2);
+  vector[N] total_var = (exp(lambda * c) - 1) ./ (m * c^2);
   vector[N] cv = sqrt(total_var) ./ lambda;
   return cv;
 }
@@ -31,12 +29,10 @@ vector cv_dPCR(vector lambda, vector m, real c, vector n) {
   *
   * @param nu_pre pre-PCR CV (all other noise factors)
   *
-  * @param m number of partitions
+  * @param m total number of partitions (i.e. sum of partitions of all replicates)
   *
   * @param c conversion factor c = sv, i.e. should be partition volume v
-  * multiplied by scaling factor s (concentration in assay / concentration in wastewater)
-  *
-  * @param n number of replicates that are averaged
+  * multiplied by scaling factor s (concentration in assay / concentration in original sample)
   *
   * @param pre_type type of pre-PCR noise (0: gamma, 1: log-normal)
   *
@@ -44,9 +40,9 @@ vector cv_dPCR(vector lambda, vector m, real c, vector n) {
   *
   * @return A vector with the corresponding coefficients of variation
   */
-vector cv_dPCR_pre(vector lambda, real nu_pre, vector m, real c, vector n, int pre_type, int approx_taylor) {
+vector cv_dPCR_pre(vector lambda, real nu_pre, vector m, real c, int pre_type, int approx_taylor) {
   if (nu_pre == 0) {
-    return cv_dPCR(lambda, m, c, n);
+    return cv_dPCR(lambda, m, c);
   }
   int N = num_elements(lambda);
   vector[N] var_exp = nu_pre^2 * lambda^2;
@@ -60,7 +56,7 @@ vector cv_dPCR_pre(vector lambda, real nu_pre, vector m, real c, vector n, int p
   } else {
     reject("Unknown pre-PCR noise type");
   }
-  vector[N] exp_var = (E_exp - 1) ./ (n .* m * c^2);
+  vector[N] exp_var = (E_exp - 1) ./ (m * c^2);
   vector[N] total_var = var_exp + exp_var;
   vector[N] cv = sqrt(total_var) ./ lambda;
   return cv;
@@ -174,34 +170,4 @@ vector log_E_exp_lnorm(vector lambda, real nu_pre, vector t) {
 }
 vector log_E_exp_lnorm(vector lambda, real nu_pre, real t) {
   return(log_E_exp_lnorm(lambda, nu_pre, rep_vector(t, num_elements(lambda))));
-}
-
-/**
-  * Draw number of total valid partitions in dPCR run, assuming
-  * lognormally distributed partition loss, and assuming that
-  * the maximum number of partitions is 3 standard deviations above the mean
-  *
-  * @param mu_m Expected number of partitions
-  *
-  * @param m_cv Coefficient of variation of number of partitions
-  *
-  * @param noise_raw Standard normal noise for non-centered parameterization
-  *
-  * @return A vector of total partition numbers, same length as noise_raw
-  */
-vector total_partitions_noncentered(real m_mu, real m_cv, vector noise_raw) {
-  int N = num_elements(noise_raw);
-  if (m_cv == 0) {
-    return rep_vector(m_mu, N);
-  }
-  real max_partitions = m_mu + 3 * m_mu * m_cv;
-  real lnorm_unit_mean = max_partitions - m_mu;
-  real lnorm_unit_sd = m_mu * m_cv;
-  real sigma2 = log((lnorm_unit_sd / lnorm_unit_mean)^2 + 1);
-  real meanlog = log(lnorm_unit_mean) - sigma2 / 2;
-  real sdlog = sqrt(sigma2);
-  vector[N] lost_partitions = exp(meanlog + sdlog * noise_raw); // log-normal
-  vector[N] total_partitions = max_partitions - lost_partitions;
-  total_partitions = softplus(total_partitions, 10); // softplus as soft >0 constraint
-  return(total_partitions);
 }

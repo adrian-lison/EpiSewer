@@ -251,3 +251,22 @@ Helper functions for primitive operations
   vector append_row2(real x, vector y, real z) {
     return append_row(append_row(x, y), z);
   }
+
+  /**
+  * Compute partial sums of a vector with n_elements
+  *
+  * @param x The vector from which to select elements
+  * @param n_elements The number of elements to sum up, respectively
+  * @return A vector with the sum of elements the first n_elements[1] elements,
+  * then the next n_elements[2] elements, and so on
+  */
+  vector sum_partial_vector_n(vector x, array[] int n_elements) {
+    int m = num_elements(n_elements);
+    array[m] int n_elements_cum = cumulative_sum(n_elements);
+    vector[m] res;
+    res[1] = sum(x[1:n_elements_cum[1]]);
+    for (i in 2:m) {
+      res[i] = sum(x[(n_elements_cum[i-1]+1):n_elements_cum[i]]);
+    }
+    return res;
+  }

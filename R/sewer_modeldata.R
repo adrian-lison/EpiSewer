@@ -79,18 +79,28 @@ modeldata_update_metainfo <- function(modeldata) {
                       required = c(
                         "LOD_model", "n_averaged",
                         "dPCR_total_partitions", "total_partitions_observe",
-                         "nu_upsilon_b_mu_prior", "nu_upsilon_c_prior"
+                        "max_partitions_prior", "partition_loss_max",
+                        "partition_loss_mu_prior"
                         ),
                       throw_error = FALSE
   )) {
     if (modeldata$LOD_model == 2) {
     total_partitions_median = median(modeldata$dPCR_total_partitions)
     n_averaged_median = median(modeldata$n_averaged)
-    total_partitions_expected <- ifelse(
-      modeldata$total_partitions_observe,
-      total_partitions_median,
-      modeldata$nu_upsilon_b_mu_prior$nu_upsilon_b_mu_prior[1] * 1e4
-      )
+
+    total_partitions_expected = NULL
+    if (modeldata$total_partitions_observe) {
+      total_partitions_expected = total_partitions_median;
+    } else {
+      max_partitions_expected = trunc_normal_mean(
+        modeldata$max_partitions_prior$max_partitions_prior[1],
+        modeldata$max_partitions_prior$max_partitions_prior[2]
+      );
+      total_partitions_expected = 1e4 * max_partitions_expected *
+        (1 - modeldata$partition_loss_max[1] *
+         plogis(modeldata$partition_loss_mu_prior$partition_loss_mu_prior[1]));
+    }
+
     conversion_expected <- modeldata$nu_upsilon_c_prior$nu_upsilon_c_prior[1] * 1e-5
 
     modeldata$.metainfo$LOD_expected_scale <- total_partitions_expected *

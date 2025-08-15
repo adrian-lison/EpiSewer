@@ -402,6 +402,27 @@ get_discrete_lognormal <- function(
   return(probs)
 }
 
+# Truncated normal ----
+
+#' Calculate the mean of a truncated normal distribution (truncated below zero)
+#' with mean mu and standard deviation sigma.
+#'
+#' @param mu Mean of the untruncated normal distribution
+#' @param sigma Standard deviation of the untruncated normal distribution
+#'
+#' @return The mean of the truncated normal distribution
+trunc_normal_mean <- function(mu, sigma) {
+  if (sigma == 0) {
+    return(mu)
+  } else {
+    alpha <- -mu / sigma
+    phi_alpha <- exp(dnorm(alpha, log = TRUE))  # std_normal_lpdf
+    Phi_alpha <- pnorm(alpha)                   # Phi_approx
+    return(mu + sigma * phi_alpha / (1 - Phi_alpha))
+  }
+}
+
+
 # Beta ----
 get_beta_alpha_alternative <- function(beta_mean, beta_sd) {
   alpha <- beta_mean * (beta_mean * (1 - beta_mean) / beta_sd^2 - 1)
