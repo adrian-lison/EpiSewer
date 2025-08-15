@@ -601,7 +601,7 @@ model {
   // Priors
   R_intercept ~ normal(R_intercept_prior[1], R_intercept_prior[2]); // prior for Rt at start of time series
   if (R_model == 0 || R_model == 1) {
-    target += normal_prior_lpdf(R_sd_baseline | R_sd_baseline_prior, 0); // truncated normal
+    target += normal_prior_lb_lpdf(R_sd_baseline | R_sd_baseline_prior, 0); // truncated normal
     target += pareto_type_2_lpdf(
       R_sd_changepoints | 0, R_sd_change_prior[2], R_sd_change_prior[1]
       ); // Lomax distribution / exponential-gamma distribution
@@ -657,7 +657,7 @@ model {
   // Sampling of infections
   if (I_sample) {
     if (I_overdispersion) {
-      target += normal_prior_lpdf(I_xi | I_xi_prior, 0); // truncated normal
+      target += normal_prior_lb_lpdf(I_xi | I_xi_prior, 0); // truncated normal
       I[1 : (L + S + D + T)] ~ normal(iota, iota .* soft_upper(sqrt(iota .* (1 + iota * (param_or_fixed(I_xi, I_xi_prior) ^ 2)))./iota, 0.5, 10)) T[0, ]; // approximates negative binomial
     } else {
       I[1 : (L + S + D + T)] ~ normal(iota, iota .* soft_upper(sqrt(iota)./iota, 0.5, 10)) T[0, ]; // approximates Poisson
@@ -679,7 +679,7 @@ model {
 
   // Prior on individual-level shedding load variation
   if (load_vari) {
-    target += normal_prior_lpdf(nu_zeta | nu_zeta_prior, 0); // truncated normal
+    target += normal_prior_lb_lpdf(nu_zeta | nu_zeta_prior, 0); // truncated normal
     target += gamma3_sum_log_lpdf(zeta_log_exact | 1, param_or_fixed(nu_zeta, nu_zeta_prior), lambda[zeta_exact]); // gamma sum (exact)
     zeta_raw_approx ~ std_normal(); // non-centered noise for gamma sum (approx)
   }
@@ -697,10 +697,10 @@ model {
   // Prior on cv of likelihood for measurements
   nu_upsilon_a ~ normal(nu_upsilon_a_prior[1], nu_upsilon_a_prior[2]) T[0, ]; // truncated normal
   if (cv_type == 1) {
-    target += normal_prior_lpdf(nu_upsilon_b_mu | nu_upsilon_b_mu_prior, 0); // truncated normal
-    target += normal_prior_lpdf(nu_upsilon_c | nu_upsilon_c_prior, 0); // truncated normal
+    target += normal_prior_lb_lpdf(nu_upsilon_b_mu | nu_upsilon_b_mu_prior, 0); // truncated normal
+    target += normal_prior_lb_lpdf(nu_upsilon_c | nu_upsilon_c_prior, 0); // truncated normal
     if (total_partitions_observe != 1) {
-      target += normal_prior_lpdf(nu_upsilon_b_cv | nu_upsilon_b_cv_prior, 0); // truncated normal
+      target += normal_prior_lb_lpdf(nu_upsilon_b_cv | nu_upsilon_b_cv_prior, 0); // truncated normal
       nu_upsilon_b_noise_raw ~ std_normal();
     }
   }

@@ -191,8 +191,8 @@ real normal_prior_lpdf(array[] real y, real mean, real sd) {
 }
 
 /**
-  * Truncated normal prior on a parameter, with the option to fix the parameter
-  * (i.e. no sampling) by providing a prior with zero variance.
+  * Lower truncated normal prior on a parameter, with the option to fix the
+  * parameter (i.e. no sampling) by providing a prior with zero variance.
   *
   * @param y Array with the parameter. If the prior has zero variance, the no
   * parameter will be sampled, hence the array has length 0. Otherwise, the
@@ -207,12 +207,38 @@ real normal_prior_lpdf(array[] real y, real mean, real sd) {
   *
   * @return The log of the prior probability of y
   */
-real normal_prior_lpdf(array[] real y, real mean, real sd, real lb) {
+real normal_prior_lb_lpdf(array[] real y, real mean, real sd, real lb) {
   if (sd == 0) {
     return(0); // parameter fixed, not sampled
   } else {
     int n = num_elements(y);
     return (normal_lpdf(y | mean, sd) - n * normal_lccdf(lb | mean, sd));
+  }
+}
+
+/**
+  * Upper truncated normal prior on a parameter, with the option to fix the
+  * parameter (i.e. no sampling) by providing a prior with zero variance.
+  *
+  * @param y Array with the parameter. If the prior has zero variance, the no
+  * parameter will be sampled, hence the array has length 0. Otherwise, the
+  * array has length 1.
+  *
+  * @param mean Mean of the prior.
+  *
+  * @param sd Standard deviation of the prior. If this is zero, then no
+  * parameter will be sampled and the mean of the prior will be used instead.
+  *
+  * @param ub upper bound
+  *
+  * @return The log of the prior probability of y
+  */
+real normal_prior_ub_lpdf(array[] real y, real mean, real sd, real ub) {
+  if (sd == 0) {
+    return(0); // parameter fixed, not sampled
+  } else {
+    int n = num_elements(y);
+    return (normal_lpdf(y | mean, sd) - n * normal_lcdf(ub | mean, sd));
   }
 }
 
@@ -235,8 +261,8 @@ real normal_prior_lpdf(array[] real y, array[] real prior) {
 }
 
 /**
-  * Truncated normal prior on a parameter, with the option to fix the parameter
-  * (i.e. no sampling) by providing a prior with zero variance.
+  * Lower truncated normal prior on a parameter, with the option to fix the
+  * parameter (i.e. no sampling) by providing a prior with zero variance.
   *
   * @param y Array with the parameter. If the prior has zero variance, the no
   * parameter will be sampled, hence the array has length 0. Otherwise, the
@@ -250,6 +276,47 @@ real normal_prior_lpdf(array[] real y, array[] real prior) {
   *
   * @return The log of the prior probability of y
   */
-real normal_prior_lpdf(array[] real y, array[] real prior, real lb) {
-  return (normal_prior_lpdf(y | prior[1], prior[2], lb));
+real normal_prior_lb_lpdf(array[] real y, array[] real prior, real lb) {
+  return (normal_prior_lb_lpdf(y | prior[1], prior[2], lb));
+}
+
+/**
+  * Upper truncated normal prior on a parameter, with the option to fix the
+  * parameter (i.e. no sampling) by providing a prior with zero variance.
+  *
+  * @param y Array with the parameter. If the prior has zero variance, the no
+  * parameter will be sampled, hence the array has length 0. Otherwise, the
+  * array has length 1.
+  *
+  * @param prior The prior for the parameter. This assumes that the prior is
+  * stored in an array of length 2, where the first element contains the mean
+  * and the second element the standard deviation of the prior.
+  *
+  * @param ub upper bound
+  *
+  * @return The log of the prior probability of y
+  */
+real normal_prior_ub_lpdf(array[] real y, array[] real prior, real ub) {
+  return (normal_prior_ub_lpdf(y | prior[1], prior[2], ub));
+}
+
+/**
+  * Calculate the mean of a truncated normal distribution (truncated below zero)
+  * with mean mu and standard deviation sigma.
+  *
+  * @param mu Mean of the untruncated normal distribution
+  *
+  * @param sigma Standard deviation of the untruncated normal distribution
+  *
+  * @return The mean of the truncated normal distribution
+  */
+real trunc_normal_mean(real mu, real sigma) {
+  if (sigma == 0) {
+    return mu;
+  } else {
+    real alpha = -mu / sigma;
+    real phi_alpha = exp(std_normal_lpdf(alpha));
+    real Phi_alpha = Phi_approx(alpha);
+    return mu + sigma * phi_alpha / (1 - Phi_alpha);
+  }
 }

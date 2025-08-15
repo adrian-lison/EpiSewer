@@ -34,23 +34,6 @@ real gamma2_lpdf(vector y, vector mean, vector sd) {
   return gamma_lpdf(y | alpha, beta);
 }
 
-/**
-  * Log density of the sum of N i.i.d gamma RVs
-  * given mean and sd on unit scale
-  *
-  * @param mean mean
-  *
-  * @param sd standard deviation
-  *
-  * @return The log of the gamma sum density of y
-  */
-real gamma2_sum_lpdf(vector y, real mean, real sd, vector N) {
-  int n = num_elements(y);
-  vector[n] alpha = N * ((mean / sd)^2);
-  real beta = mean / (sd^2);
-  return gamma_lpdf(y | alpha, beta);
-}
-
 // --------------------------------------------------------
 // gamma3: mean, cv
 // --------------------------------------------------------
@@ -72,14 +55,14 @@ real gamma3_lpdf(vector y, vector mean, real cv) {
 }
 
 /**
-* Log gamma density given mean and cv on unit scale
-*
-* @param mean vector of means
-*
-* @param cv vector of coefficients of variation
-*
-* @return The log of the gamma density of y
-*/
+  * Log gamma density given mean and cv on unit scale
+  *
+  * @param mean vector of means
+  *
+  * @param cv vector of coefficients of variation
+  *
+  * @return The log of the gamma density of y
+  */
 real gamma3_lpdf(vector y, vector mean, vector cv) {
   int n = num_elements(y);
   vector[n] cv_squared = (cv^2);
@@ -89,13 +72,30 @@ real gamma3_lpdf(vector y, vector mean, vector cv) {
 }
 
 /**
-  * Generate Gamma variate given mean and coefficient of variation
+  * Log gamma density given mean and cv on unit scale
+  *
+  * @param mean mean (scalar)
+  *
+  * @param cv vector of coefficients of variation
+  *
+  * @return The log of the gamma density of y
+  */
+real gamma3_lpdf(vector y, real mean, vector cv) {
+  int n = num_elements(y);
+  vector[n] cv_squared = (cv^2);
+  vector[n] alpha = 1 / cv_squared;
+  vector[n] beta = 1 / (mean * cv_squared);
+  return gamma_lpdf(y | alpha, beta);
+}
+
+/**
+  * Generate gamma variate given mean and coefficient of variation
   *
   * @param mean vector of means
   *
   * @param cv vector of coefficients of variation
   *
-  * @return Vector of Gamma variates
+  * @return Vector of gamma variates
   */
 vector gamma3_rng(vector mean, vector cv) {
   int n = num_elements(mean);
@@ -110,4 +110,16 @@ vector gamma3_rng(vector mean, vector cv) {
         );
   }
   return to_vector(gamma_rng(alpha, beta));
+}
+
+vector gamma3_noncentered(real mean, real cv, vector noise) {
+  return(mean / inv_square(cv) * noise);
+}
+
+vector gamma3_noncentered(vector mean, real cv, vector noise) {
+  return(mean / inv_square(cv) .* noise);
+}
+
+vector gamma3_noncentered(vector mean, vector cv, vector noise) {
+  return(mean ./ inv_square(cv) .* noise);
 }
