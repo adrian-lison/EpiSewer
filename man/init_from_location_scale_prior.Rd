@@ -4,7 +4,7 @@
 \alias{init_from_location_scale_prior}
 \title{Provide initialization value for a parameter based on the supplied prior with location and scale}
 \usage{
-init_from_location_scale_prior(prior)
+init_from_location_scale_prior(prior, enforce_positive = FALSE)
 }
 \arguments{
 \item{prior}{Prior for parameter as provided by \code{\link[=set_prior]{set_prior()}}. Should be a

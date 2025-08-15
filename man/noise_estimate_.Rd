@@ -9,11 +9,14 @@ noise_estimate_(
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
   cv_type = "constant",
-  total_partitions_prior_mu = NULL,
-  total_partitions_prior_sigma = NULL,
-  total_partitions_observe = NULL,
-  partition_variation_prior_mu = NULL,
-  partition_variation_prior_sigma = NULL,
+  partitions_observe = NULL,
+  max_partitions_prior_lower = NULL,
+  max_partitions_prior_upper = NULL,
+  partition_loss_mean_prior_lower = NULL,
+  partition_loss_mean_prior_upper = NULL,
+  partition_loss_variation_prior_lower = NULL,
+  partition_loss_variation_prior_upper = NULL,
+  partition_loss_max = NULL,
   volume_scaled_prior_mu = NULL,
   volume_scaled_prior_sigma = NULL,
   pre_replicate_cv_prior_mu = 0,
@@ -44,28 +47,50 @@ better model fit. If "constant_var", not the coefficient of variation but
 the variance of measurements is modeled as constant. This is usually a
 misspecification and is only supported for comparison purposes.}
 
-\item{total_partitions_prior_mu}{Prior (mean) on the total number of
-partitions in the dPCR reaction.}
+\item{max_partitions_prior_lower}{Prior (5\% quantile) for the maximum total
+number of dPCR partitions. This is usually defined by the manufacturer of
+the dPCR system/chip used, which supports a certain maximum number of
+partitions. If you know the exact dPCR system and its maximum partition
+number, you can set both \code{max_partitions_prior_lower} and
+\code{max_partitions_prior_upper} to this value. Otherwise, this prior can be
+used to set a broad lower and upper bound for the maximum number of
+partitions, to reflect a range of popular dPCR systems/chips.}
 
-\item{total_partitions_prior_sigma}{Prior (standard deviation) on the total
-number of partitions in the dPCR reaction. If this is set to zero, the
-total number of partitions will be fixed to the prior mean and not
-estimated.}
+\item{max_partitions_prior_upper}{Prior (95\% quantile) for the maximum total
+number of dPCR partitions (see \code{max_partitions_prior_lower} for details.)}
 
-\item{total_partitions_observe}{If TRUE, the total number of partitions is
-taken from the supplied measurements \code{data.frame}. This requires that the
-argument \code{total_partitions_col} is specified in \code{\link[=concentrations_observe]{concentrations_observe()}}.}
+\item{partition_loss_mean_prior_lower}{Prior (5\% quantile) for the mean
+relative partition loss. A certain proportion of partitions in a dPCR run
+is typically invalid and discarded from the concentration estimate. This
+prior can be used to set a lower and upper bound for the mean proportion of
+partitions lost. Note that for proportions close to 0 or to
+\code{partition_loss_max} (see below), the resulting mean partition loss can
+slightly differ from what is specified here, because we internally
+translate this prior to the logit scale.}
 
-\item{partition_variation_prior_mu}{Prior (mean) on the coefficient of
-variation of the total number of partitions in the dPCR reaction. Usually,
-the maximum number of partitions possible for a given dPCR chip is not
-reached, i.e. a certain number of partitions is lost. This loss varies
-between PCR runs, and is modeled as log-normal distributed in EpiSewer.}
+\item{partition_loss_mean_prior_upper}{Prior (95\% quantile) for the mean
+relative partition loss (see \code{partition_loss_mean_prior_lower} for
+details). In well-functioning dPCR assays, the mean proportion of lost
+partitions should not be very high (definitely below 50\%).}
 
-\item{partition_variation_prior_sigma}{Prior (standard deviation) on the
-coefficient of variation of the total number of partitions in the dPCR
-reaction. If this is set to zero, the partition variation will be fixed to
-the prior mean and not estimated.}
+\item{partition_loss_variation_prior_lower}{Prior (5\% quantile) for the
+variation in the number of invalid partitions across dPCR runs. The
+proportion of partitions lost typically varies between dPCR runs. We thus
+model this proportion as logit-normal distributed, with mean
+(approximately) defined by \code{partition_loss_mean_prior} and logit-level
+standard deviation \code{sigma}. You can use
+\code{partition_loss_variation_prior_lower} and
+\code{partition_loss_variation_prior_upper} to set a lower and upper bound for
+\code{sigma}.}
+
+\item{partition_loss_variation_prior_upper}{Prior (95\% quantile) for the
+variation in the number of invalid partitions across dPCR runs (see
+\code{partition_loss_variation_prior_lower} for details).}
+
+\item{partition_loss_max}{The maximum proportion of partitions that can be
+lost in a valid dPCR run. During quality control, runs where the proportion
+of invalid partitions is above some threshold (e.g. 50\%) are often
+discarded. This parameter can be used to represent such a QC threshold.}
 
 \item{volume_scaled_prior_mu}{Prior (mean) on the conversion factor
 (partition volume scaled by the dilution of wastewater in the assay) for
@@ -98,6 +123,10 @@ questionable).}
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
 also be an already partly specified model returned by other \code{EpiSewer}
 modeling functions.}
+
+\item{total_partitions_observe}{If TRUE, the total number of partitions is
+taken from the supplied measurements \code{data.frame}. This requires that the
+argument \code{total_partitions_col} is specified in \code{\link[=concentrations_observe]{concentrations_observe()}}.}
 }
 \value{
 A \code{modeldata} object containing data and specifications of the model
