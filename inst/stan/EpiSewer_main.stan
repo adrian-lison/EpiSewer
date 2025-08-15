@@ -28,8 +28,8 @@ data {
   int<lower=1> w; // composite window: how many past days the samples cover, e.g. 1 for individual day samples, 7 for weekly composite samples, ...
   array[n_measured] int<lower=0> n_averaged; // number of averaged technical replicates per measurement
   int<lower=0, upper=4> obs_dist; // Parametric distribution for observation likelihood: 0 (default) for gamma, 1 for log-normal, 2 for truncated normal, 3 for normal, 4 for binomial (partition counts)
-  vector<lower=0>[obs_dist != 4 ? n_measured : 0] measured_concentrations; // measured concentrations
-  array[obs_dist == 4 ? n_measured : 0] int<lower=0> positive_partitions; // number of positive partitions (binomial model)
+  vector<lower=0>[n_measured] measured_concentrations; // measured concentrations
+  vector<lower=0>[obs_dist == 4 ? n_measured : 0] positive_partitions; // number of positive partitions (binomial model)
 
   // Flow ----
   vector<lower=0>[T+h] flow; // flow rate for normalization of measurements
@@ -273,28 +273,26 @@ transformed data {
   array[n_measured - n_zero] int<lower=0> i_nonzero;
   array[n_measured - n_dropLOD] int<lower=0> i_LOD;
   array[n_measured - n_zero - n_dropLOD] int<lower=0> i_nonzero_LOD;
-  if (obs_dist != 4) {
-    int i_z = 0;
-    int i_nz = 0;
-    int i_lod = 0;
-    int i_nzs = 0;
-    for (n in 1:n_measured) {
-      i_all[n] = n;
-      if (measured_concentrations[n] == 0) {
-        i_z += 1;
-        i_zero[i_z] = n;
-      } else {
-        i_nz += 1;
-        i_nonzero[i_nz] = n;
-        if (measured_concentrations[n] < conc_drop_prob) {
-          i_nzs += 1;
-          i_nonzero_LOD[i_nzs] = n;
-        }
-      }
+  int i_z = 0;
+  int i_nz = 0;
+  int i_lod = 0;
+  int i_nzs = 0;
+  for (n in 1:n_measured) {
+    i_all[n] = n;
+    if (measured_concentrations[n] == 0) {
+      i_z += 1;
+      i_zero[i_z] = n;
+    } else {
+      i_nz += 1;
+      i_nonzero[i_nz] = n;
       if (measured_concentrations[n] < conc_drop_prob) {
-          i_lod += 1;
-          i_LOD[i_lod] = n;
+        i_nzs += 1;
+        i_nonzero_LOD[i_nzs] = n;
       }
+    }
+    if (measured_concentrations[n] < conc_drop_prob) {
+        i_lod += 1;
+        i_LOD[i_lod] = n;
     }
   }
   int n_dropzero = (obs_dist == 3 ? 0 : n_zero); // only include zeros for non-truncated normal
@@ -794,7 +792,7 @@ model {
       cv[i_include] = cv_dPCR_pre(
         concentration[i_include], // lambda (concentration)
         nu_upsilon_a, // nu_pre (pre-PCR CV)
-        nu_upsilon_b, // m (number of partitions across replicates)
+        nu_upsilon_b[i_include], // m (number of partitions across replicates)
         param_or_fixed(nu_upsilon_c, nu_upsilon_c_prior) * 1e-5, // c (conversion factor)
         cv_pre_type[1], // Type of pre-PCR CV
         cv_pre_approx_taylor[1] // Should taylor approximation be used?
@@ -1003,7 +1001,7 @@ generated quantities {
     concentration = exp(concentration_log);
 
     vector[T+h] nu_upsilon_b_all;
-    if (cv_type == 1) {
+    if (cv_type == 1 || cv_type == 3) {
       if (total_partitions_observe) {
         nu_upsilon_b_all = total_partitions_all .* to_vector(n_averaged_all);
       } else {
