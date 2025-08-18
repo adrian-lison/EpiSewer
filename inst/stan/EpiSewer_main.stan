@@ -493,14 +493,19 @@ transformed parameters {
       R_intercept + cumulative_sum(R_spline), R_link
       );
   } else if (R_model == 5) {
+    vector[gp_n[1]] gp_mean = append_row2(
+      zeros_vector(gp_padding[1]),
+      [R_intercept-1]',
+      zeros_vector(gp_n[1] - gp_padding[1] - 1)
+      );
     vector[gp_n[1] %/% 2 + 1] cov_rfft = gp_eta[1] + gp_periodic_matern_cov_rfft(
       gp_nu[1], gp_n[1], param_or_fixed(gp_sigma, gp_sigma_prior), param_or_fixed(gp_length, gp_length_prior), gp_n[1]
       );
-    vector[L + S + D + T - (G+se) + h] R_gp = ar1_process(gp_phi[1], gp_inv_rfft(
-      gp_noise_raw, zeros_vector(gp_n[1]), cov_rfft
-      ))[(1+gp_padding[1]):(L + S + D + T - (G+se) + h + gp_padding[1])];
+    vector[L + S + D + T - (G+se) + h] R_gp = ar1_process(
+      gp_phi[1], gp_inv_rfft(gp_noise_raw, gp_mean, cov_rfft)
+      )[(1+gp_padding[1]):(L + S + D + T - (G+se) + h + gp_padding[1])];
     vector[L + S + D + T - (G+se) + h] R_all = apply_link(
-      R_intercept + R_gp, R_link
+      1 + R_gp, R_link
       );
     R[(se+1):(L + S + D + T - G)] = R_all[1:(L + S + D + T - (G+se))];
     if (h>0) {
