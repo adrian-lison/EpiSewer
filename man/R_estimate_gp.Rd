@@ -11,9 +11,11 @@ R_estimate_gp(
   gp_sigma_prior_sigma = 0.01,
   gp_length_prior_mu = 28,
   gp_length_prior_sigma = 3.5,
-  gp_matern_nu = 3/2,
-  gp_padding_factor = 4,
-  gp_phi = 0.9,
+  gp_length_max = 7 * 4 * 2,
+  gp_matern_nu = c(3/2, 5/2, 1/2),
+  gp_boundary_factor = 3,
+  gp_n_basis_factor = 3.42,
+  phi = 0.95,
   link = "inv_softplus",
   R_max = 6,
   modeldata = modeldata_init()
@@ -27,36 +29,69 @@ R_estimate_gp(
 reproduction number (intercept).}
 
 \item{gp_sigma_prior_mu}{Prior (mean) on the magnitude of the Gaussian
-process.}
+process. Can be approximately interpreted as the marginal standard
+deviation of changes in Rt. Higher values of sigma allow faster changes in
+Rt.}
 
 \item{gp_sigma_prior_sigma}{Prior (standard deviation) on the magnitude of
 the Gaussian process.}
 
 \item{gp_length_prior_mu}{Prior (mean) on the length scale of the Gaussian
-process.}
+process (in days). This influences the “persistence” of trends in Rt. A
+higher length scale means that the Rt trend will change more slowly.
+Choosing a length scale that is too short can lead to overfitting of the Rt
+trajectory, while choosing a length scale that is too long can result in
+unrealistically smooth Rt estimates.}
 
 \item{gp_length_prior_sigma}{Prior (standard deviation) on the length scale
 of the Gaussian process.}
 
-\item{gp_matern_nu}{The Matern parameter nu of the Gaussian process. The
-default is 3/2.}
+\item{gp_length_max}{Maximum length scale of the Gaussian process. The normal
+prior for the length scale is truncated between 0 and \code{gp_length_max}.}
 
-\item{gp_padding_factor}{The domain of the Gaussian process must be padded to
-attenuate boundary effects (resulting from a periodic kernel used for the
-Fast Fourier Transform computation). The domain is padded both at the start
-and end of the time series by \code{gp_padding_factor} times the length scale.
-As expected length scale, we use \code{gp_length_prior_mu + gp_length_prior_sigma}.}
+\item{gp_matern_nu}{The smoothness parameter of the Matern kernel. The
+default is 3/2, other possible choices are 5/2 (more smooth) and 1/2 (less
+smooth). However, we recommend tuning smoothness primarily using the length
+scale prior.}
 
-\item{gp_phi}{The damping factor of the Gaussian process. When \code{phi=1}, there
-is no dampening and the Gaussian process is non-stationary (GP on first
-order differences). This is desirable for real-time estimation, as it
-encodes a prior assumption that the current transmission dynamics will
-continue, however the non-stationarity slows down MCMC sampling. For
-\code{phi<1}, the GP becomes stationary and reverts to the global mean in the
-long term. We use a default of \code{phi=0.9}, which gives a stationary GP that
-samples faster but still behaves similarly to a GP on first order
-differences on short-term scales. Note that when \code{phi=0}, this corresponds
-to modeling a GP directly on Rt instead of the differences of Rt. This may
+\item{gp_boundary_factor}{The boundary factor used in the Gaussian process
+approximation. The default (\code{gp_boundary_factor = 3}) is higher than the
+minimum recommendation from Riutort-Mayol et al. to ensure accurate
+real-time estimation. Lower values can lead to boundary effects close to
+the present and start of the time series and are thus not recommended. When
+modeling very long shedding delays, the boundary factor might need to be
+further increased. Note that this will also automatically increase the
+number of basis functions used and thereby slow down sampling.}
+
+\item{gp_n_basis_factor}{Factor used to automatically determine \code{m}, the
+number of basis functions in the Gaussian process approximation. Based on
+recommendations from Riutort-Mayol et al., we let
+\code{m = gp_n_basis_factor * c / (l / S)},
+where \code{c} is the \code{gp_boundary_factor}, \code{l} is the length
+scale of the GP (we use the 5\% quantile of \code{gp_length_prior} for a
+conservative result), and \code{S} is the maximum absolute value of the input
+space, which is \code{(n-1)/2} where \code{n} is the number of Rt time steps modeled.
+This means that the number of basis function automatically adapts to the
+length scale and number of observations in the model. For the default
+settings (\code{gp_boundary_factor = 3} and \code{gp_n_basis_factor = 3.42}) and a
+lower length scale of 3 weeks, this corresponds to approx. 0.25x the number
+of Rt time points modeled. Increasing \code{gp_n_basis_factor} will make the
+approximation more accurate by proportionally increasing the number of
+basis functions, but can slow down sampling.}
+
+\item{phi}{The strength of autocorrelation applied to the Gaussian process.
+When \code{phi=1}, the Gaussian process effectively smoothes the first order
+differences of Rt. This is desirable for real-time estimation, as it
+encodes the minimally informed prior assumption that the current
+transmission dynamics will continue unchanged. However the resulting
+non-stationarity of the time series slows down MCMC sampling. In contrast,
+for \code{phi<1}, the time series is stationary and reverts to \code{Rt=1} in the
+long term. We here use a default of \code{phi=0.95}, which samples faster than
+\code{phi=1} but still predicts continued transmission dynamics on short-term
+scales. Decreasing \code{phi} will speed up sampling further but lead to faster
+reversion to \code{Rt=1} towards the present (it is thus only recommended for
+retrospective estimation, not real-time). Note that \code{phi=0} corresponds to
+modeling a GP directly on Rt instead of the differences of Rt. This may
 require adjusting the \code{gp_sigma} prior.}
 
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
@@ -87,6 +122,21 @@ This option estimates the effective reproduction number Rt over
 time as a smooth trend using a Gaussian process model.
 }
 \details{
+The estimated Rt trajectory is primarily influenced by the priors
+for the \emph{magnitude} and the \emph{length scale} of the Gaussian process. We
+recommend adjusting the \emph{magnitude} when changes in Rt seem to be too slow
+or too fast (often resulting in maximum Rt values that are too low or too
+high). In contrast, we recommend adjusting the \emph{length scale} when the Rt
+trajectory seems to have too much or too little resolution.
+
+The Gaussian process is modeled using a Hilbert space approximation
+as described in Riutort-Mayol et al. (2023). This allows for fast inference
+without significant loss of accuracy. See the reference for more detail on
+choosing an adequate boundary factor and basis function factor. The
+\code{EpiSewer} implementation of the approximate Gaussian process is strongly
+inspired by the implementation in the
+\href{https://github.com/epiforecasts/EpiNow2/}{EpiNow2} package.
+
 The priors of this component have the following functional form:
 \itemize{
 \item R_start (intercept):
@@ -96,6 +146,17 @@ The priors of this component have the following functional form:
 \item gp_length (length scale):
 \verb{Truncated Normal}
 }
+}
+\references{
+Riutort-Mayol, G., Bürkner, PC., Andersen, M.R. et al. Practical
+Hilbert space approximate Bayesian Gaussian processes for probabilistic
+programming. \emph{Stat Comput} 33, 17 (2023).
+\url{https://doi.org/10.1007/s11222-022-10167-2}
+
+Abbott S, Hellewell J, Thompson RN et al. Estimating the
+time-varying reproduction number of SARS-CoV-2 using national and
+subnational case counts. \emph{Wellcome Open Res} 5, 112 (2020).
+\url{https://doi.org/10.12688/wellcomeopenres.16006.2}
 }
 \seealso{
 Other {Rt models}: 

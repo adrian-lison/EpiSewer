@@ -16,8 +16,7 @@ functions {
   #include functions/hurdle.stan
   #include functions/pcr_noise.stan
   #include functions/soft_changepoints.stan
-  #include gptools/util.stan
-  #include gptools/fft1.stan
+  #include functions/gaussian_process.stan
 }
 data {
   // Measurements ----
@@ -162,12 +161,14 @@ data {
   vector[R_use_scp ? scp_break_dist[1] : 0] scp_alpha_adjusted;
 
   // gaussian process (gp)
-  array[R_use_gp ? 1 : 0] real<lower=0> gp_nu;
-  array[R_use_gp ? 2 : 0] real<lower=0> gp_sigma_prior;
-  array[R_use_gp ? 2 : 0] real<lower=0> gp_length_prior;
-  array[R_use_gp ? 1 : 0] real<lower=0> gp_eta;
-  array[R_use_gp ? 1 : 0] int<lower=0> gp_padding;
-  array[R_model == 5 ? 1 : 0] real<lower=0>gp_phi;
+  array[R_use_gp ? 1 : 0] int<lower=1> gp_n; // number of time points (L + S + D + T - (G+se) + h - 1)
+  array[R_use_gp ? 1 : 0] real<lower=0> gp_matern_nu; // smoothness (Matern kernel)
+  array[R_use_gp ? 2 : 0] real<lower=0> gp_sigma_prior; // magnitude (Matern kernel)
+  array[R_use_gp ? 2 : 0] real<lower=0> gp_length_prior; // length scale (Matern kernel)
+  array[R_use_gp ? 1 : 0] real<lower=0> gp_length_max; // max length scale (Matern kernel)
+  array[R_use_gp ? 1 : 0] real<lower=0> gp_c; // boundary factor
+  array[R_use_gp ? 1 : 0] int<lower=0> gp_m; // number of basis functions
+  array[R_model == 5 ? 1 : 0] real<lower=0> gp_ar_phi; // autoregressive smoothing parameter
 
   // Change point model for R variability
   array[(R_model == 0 || R_model == 1) ? 2 : 0] real R_sd_baseline_prior; // sd of half-normal prior on baseline R variability
@@ -281,9 +282,29 @@ transformed data {
     i_include = i_all;
   }
 
-  array[R_use_gp ? 1 : 0] int<lower=1> gp_n;
+  matrix[R_use_gp ? gp_n[1] : 0, R_use_gp ? gp_m[1] : 0] gp_PHI;
+  array[R_use_gp ? 1 : 0] real<lower=0> gp_L; // boundary condition
+  int gp_params_fixed = R_use_gp && gp_sigma_prior[2] == 0 && gp_length_prior[2] == 0;
+  vector[gp_params_fixed ? gp_m[1] : 0] diagSPD_fixed;
   if (R_use_gp) {
-    gp_n[1] = L + S + D + T - (G+se) + h + gp_padding[1] * 2;
+    // maximum absolute value of input space (mean-centered time points)
+    real gp_S = (gp_n[1] - 1) / 2.0;
+    // mean-centered time points in interval [-S, S]
+    vector[gp_n[1]] x = linspaced_vector(gp_n[1], -gp_S, gp_S);
+    // boundary condition = boundary factor * S
+    gp_L[1] = gp_c[1] * gp_S;
+    // eigenvalue matrix of Laplacian operator in the interval [-L, L]
+    gp_PHI = gp_eigenvalue_matrix(gp_n[1], gp_m[1], gp_L[1], x);
+    if (gp_params_fixed) {
+      // if parameters are fixed, precompute diagonal of SPD matrix
+      diagSPD_fixed = diagSPD_Matern(
+        gp_matern_nu[1], // smoothness
+        gp_sigma_prior[1], // magnitude
+        gp_length_prior[1], // length scale
+        gp_L[1], // boundary condition
+        gp_m[1] // number of basis functions
+      );
+    }
   }
 
   if (R_link[1] < 0 || R_link[1] > 1) {
@@ -307,16 +328,16 @@ parameters {
 
   // smooth derivative
   vector<lower=0>[R_model == 4 ? bs_ncol[1]-2 : 0] bs_coeff_noise_lomax;
-  vector<lower=0>[R_model == 5 ? gp_n[1] : 0] gp_noise_raw;
 
   // soft changepoints (scp)
   array[R_use_scp ? scp_n_knots[1] : 1] vector[R_use_scp ? (scp_break_dist[1]-1) : 1] scp_break_delays_raw;
   vector[R_use_scp ? scp_n_knots[1] : 0] scp_noise; // additive errors
   vector<lower=0>[R_use_scp ? scp_n_knots[1] : 0] scp_sd; // R variability for soft changepoint model
 
-  // gaussian process (gp)
-  array[R_use_gp && gp_sigma_prior[2] > 0 ? 1 : 0] real<lower=0> gp_sigma;
-  array[R_use_gp && gp_length_prior[2] > 0 ? 1 : 0] real<lower=0> gp_length;
+  // Gaussian process (gp)
+  vector<lower=0>[R_model == 5 ? gp_m[1] : 0] gp_noise_raw; // non-centered noise for basis functions
+  array[R_use_gp && gp_sigma_prior[2] > 0 ? 1 : 0] real<lower=0> gp_sigma; // magnitude
+  array[R_use_gp && gp_length_prior[2] > 0 ? 1 : 0] real<lower=0, upper=(R_use_gp ? gp_length_max[1] : 0)> gp_length; // length scale
 
   // Change point model for Rt variability
   array[(R_model == 0 || R_model == 1) ? (R_sd_baseline_prior[2] > 0 ? 1 : 0) : 0] real<lower=0> R_sd_baseline; // baseline R variability
@@ -493,20 +514,22 @@ transformed parameters {
       R_intercept + cumulative_sum(R_spline), R_link
       );
   } else if (R_model == 5) {
-    vector[gp_n[1]] gp_mean = append_row2(
-      zeros_vector(gp_padding[1]),
-      [R_intercept-1]',
-      zeros_vector(gp_n[1] - gp_padding[1] - 1)
-      );
-    vector[gp_n[1] %/% 2 + 1] cov_rfft = gp_eta[1] + gp_periodic_matern_cov_rfft(
-      gp_nu[1], gp_n[1], param_or_fixed(gp_sigma, gp_sigma_prior), param_or_fixed(gp_length, gp_length_prior), gp_n[1]
-      );
+    vector[gp_m[1]] diagSPD;
+    if (gp_params_fixed) {
+      diagSPD = diagSPD_fixed;
+    } else {
+      diagSPD = diagSPD_Matern(
+        gp_matern_nu[1], // smoothness
+        param_or_fixed(gp_sigma, gp_sigma_prior), // magnitude
+        param_or_fixed(gp_length, gp_length_prior), // length scale
+        gp_L[1], // boundary condition
+        gp_m[1] // number of basis functions
+        );
+    }
     vector[L + S + D + T - (G+se) + h] R_gp = ar1_process(
-      gp_phi[1], gp_inv_rfft(gp_noise_raw, gp_mean, cov_rfft)
-      )[(1+gp_padding[1]):(L + S + D + T - (G+se) + h + gp_padding[1])];
-    vector[L + S + D + T - (G+se) + h] R_all = apply_link(
-      1 + R_gp, R_link
+      R_intercept - 1, gp_ar_phi[1], gp_PHI * (diagSPD .* gp_noise_raw)
       );
+    vector[L + S + D + T - (G+se) + h] R_all = apply_link(1 + R_gp, R_link);
     R[(se+1):(L + S + D + T - G)] = R_all[1:(L + S + D + T - (G+se))];
     if (h>0) {
       R_forecast_model = R_all[(L + S + D + T - (G+se) + 1):(L + S + D + T - (G+se) + h)];
@@ -656,7 +679,7 @@ model {
     );
   } else if (R_model == 5) {
     target += normal_prior_lpdf(gp_sigma | gp_sigma_prior, 0); // truncated normal
-    target += normal_prior_lpdf(gp_length | gp_length_prior, 0); // truncated normal
+    target += normal_prior_lb_ub_lpdf(gp_length | gp_length_prior, 0, gp_length_max[1]); // truncated normal
     gp_noise_raw ~ std_normal(); // Gaussian noise for GP model
   }
 

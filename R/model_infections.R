@@ -1353,32 +1353,77 @@ R_estimate_smooth_derivative <- function(
 #'   time as a smooth trend using a Gaussian process model.
 #'
 #' @param gp_sigma_prior_mu Prior (mean) on the magnitude of the Gaussian
-#'   process.
+#'   process. Can be approximately interpreted as the marginal standard
+#'   deviation of changes in Rt. Higher values of sigma allow faster changes in
+#'   Rt.
 #' @param gp_sigma_prior_sigma Prior (standard deviation) on the magnitude of
 #'   the Gaussian process.
 #' @param gp_length_prior_mu Prior (mean) on the length scale of the Gaussian
-#'   process.
+#'   process (in days). This influences the “persistence” of trends in Rt. A
+#'   higher length scale means that the Rt trend will change more slowly.
+#'   Choosing a length scale that is too short can lead to overfitting of the Rt
+#'   trajectory, while choosing a length scale that is too long can result in
+#'   unrealistically smooth Rt estimates.
 #' @param gp_length_prior_sigma Prior (standard deviation) on the length scale
 #'   of the Gaussian process.
-#' @param gp_matern_nu The Matern parameter nu of the Gaussian process. The
-#'   default is 3/2.
-#' @param gp_padding_factor The domain of the Gaussian process must be padded to
-#'   attenuate boundary effects (resulting from a periodic kernel used for the
-#'   Fast Fourier Transform computation). The domain is padded both at the start
-#'   and end of the time series by `gp_padding_factor` times the length scale.
-#'   As expected length scale, we use `gp_length_prior_mu +
-#'   gp_length_prior_sigma`.
-#' @param gp_phi The damping factor of the Gaussian process. When `phi=1`, there
-#'   is no dampening and the Gaussian process is non-stationary (GP on first
-#'   order differences). This is desirable for real-time estimation, as it
-#'   encodes a prior assumption that the current transmission dynamics will
-#'   continue, however the non-stationarity slows down MCMC sampling. For
-#'   `phi<1`, the GP becomes stationary and reverts to the global mean in the
-#'   long term. We use a default of `phi=0.9`, which gives a stationary GP that
-#'   samples faster but still behaves similarly to a GP on first order
-#'   differences on short-term scales. Note that when `phi=0`, this corresponds
-#'   to modeling a GP directly on Rt instead of the differences of Rt. This may
+#' @param gp_length_max Maximum length scale of the Gaussian process. The normal
+#'   prior for the length scale is truncated between 0 and `gp_length_max`.
+#' @param gp_matern_nu The smoothness parameter of the Matern kernel. The
+#'   default is 3/2, other possible choices are 5/2 (more smooth) and 1/2 (less
+#'   smooth). However, we recommend tuning smoothness primarily using the length
+#'   scale prior.
+#' @param gp_boundary_factor The boundary factor used in the Gaussian process
+#'   approximation. The default (`gp_boundary_factor = 3`) is higher than the
+#'   minimum recommendation from Riutort-Mayol et al. to ensure accurate
+#'   real-time estimation. Lower values can lead to boundary effects close to
+#'   the present and start of the time series and are thus not recommended. When
+#'   modeling very long shedding delays, the boundary factor might need to be
+#'   further increased. Note that this will also automatically increase the
+#'   number of basis functions used and thereby slow down sampling.
+#' @param gp_n_basis_factor Factor used to automatically determine `m`, the
+#'   number of basis functions in the Gaussian process approximation. Based on
+#'   recommendations from Riutort-Mayol et al., we let
+#'   `m = gp_n_basis_factor * c / (l / S)`,
+#'   where `c` is the `gp_boundary_factor`, `l` is the length
+#'   scale of the GP (we use the 5% quantile of `gp_length_prior` for a
+#'   conservative result), and `S` is the maximum absolute value of the input
+#'   space, which is `(n-1)/2` where `n` is the number of Rt time steps modeled.
+#'   This means that the number of basis function automatically adapts to the
+#'   length scale and number of observations in the model. For the default
+#'   settings (`gp_boundary_factor = 3` and `gp_n_basis_factor = 3.42`) and a
+#'   lower length scale of 3 weeks, this corresponds to approx. 0.25x the number
+#'   of Rt time points modeled. Increasing `gp_n_basis_factor` will make the
+#'   approximation more accurate by proportionally increasing the number of
+#'   basis functions, but can slow down sampling.
+#' @param phi The strength of autocorrelation applied to the Gaussian process.
+#'   When `phi=1`, the Gaussian process effectively smoothes the first order
+#'   differences of Rt. This is desirable for real-time estimation, as it
+#'   encodes the minimally informed prior assumption that the current
+#'   transmission dynamics will continue unchanged. However the resulting
+#'   non-stationarity of the time series slows down MCMC sampling. In contrast,
+#'   for `phi<1`, the time series is stationary and reverts to `Rt=1` in the
+#'   long term. We here use a default of `phi=0.95`, which samples faster than
+#'   `phi=1` but still predicts continued transmission dynamics on short-term
+#'   scales. Decreasing `phi` will speed up sampling further but lead to faster
+#'   reversion to `Rt=1` towards the present (it is thus only recommended for
+#'   retrospective estimation, not real-time). Note that `phi=0` corresponds to
+#'   modeling a GP directly on Rt instead of the differences of Rt. This may
 #'   require adjusting the `gp_sigma` prior.
+#'
+#' @details The estimated Rt trajectory is primarily influenced by the priors
+#'   for the *magnitude* and the *length scale* of the Gaussian process. We
+#'   recommend adjusting the *magnitude* when changes in Rt seem to be too slow
+#'   or too fast (often resulting in maximum Rt values that are too low or too
+#'   high). In contrast, we recommend adjusting the *length scale* when the Rt
+#'   trajectory seems to have too much or too little resolution.
+#'
+#' @details The Gaussian process is modeled using a Hilbert space approximation
+#'   as described in Riutort-Mayol et al. (2023). This allows for fast inference
+#'   without significant loss of accuracy. See the reference for more detail on
+#'   choosing an adequate boundary factor and basis function factor. The
+#'   `EpiSewer` implementation of the approximate Gaussian process is strongly
+#'   inspired by the implementation in the
+#'   [EpiNow2](https://github.com/epiforecasts/EpiNow2/) package.
 #'
 #' @details The priors of this component have the following functional form:
 #' - R_start (intercept):
@@ -1387,6 +1432,15 @@ R_estimate_smooth_derivative <- function(
 #'   `Truncated Normal`
 #' - gp_length (length scale):
 #'   `Truncated Normal`
+#'
+#' @references Riutort-Mayol, G., Bürkner, PC., Andersen, M.R. et al. Practical
+#' Hilbert space approximate Bayesian Gaussian processes for probabilistic
+#' programming. *Stat Comput* 33, 17 (2023).
+#' \url{https://doi.org/10.1007/s11222-022-10167-2}
+#' @references Abbott S, Hellewell J, Thompson RN et al. Estimating the
+#'   time-varying reproduction number of SARS-CoV-2 using national and
+#'   subnational case counts. *Wellcome Open Res* 5, 112 (2020).
+#'   \url{https://doi.org/10.12688/wellcomeopenres.16006.2}
 #'
 #' @inheritParams R_estimate_splines
 #'
@@ -1401,9 +1455,11 @@ R_estimate_gp <- function(
     gp_sigma_prior_sigma = 0.01,
     gp_length_prior_mu = 28,
     gp_length_prior_sigma = 3.5,
-    gp_matern_nu = 3/2,
-    gp_padding_factor = 4,
-    gp_phi = 0.9,
+    gp_length_max = 7*4*2,
+    gp_matern_nu = c(3/2, 5/2, 1/2),
+    gp_boundary_factor = 3,
+    gp_n_basis_factor = 3.42,
+    phi = 0.95,
     link = "inv_softplus",
     R_max = 6,
     modeldata = modeldata_init()
@@ -1416,6 +1472,7 @@ R_estimate_gp <- function(
     modeldata = modeldata
   )
 
+  # intercept
   modeldata$R_intercept_prior <- set_prior(
     "R_intercept", "normal",
     mu = R_start_prior_mu, sigma = R_start_prior_sigma
@@ -1423,18 +1480,7 @@ R_estimate_gp <- function(
   modeldata$.init$R_intercept <-
     modeldata$R_intercept_prior$R_intercept_prior[1]
 
-  modeldata$gp_nu <- gp_matern_nu
-  modeldata$gp_eta <- 1e-9
-  modeldata$gp_padding <- (gp_length_prior_mu + gp_length_prior_sigma) * gp_padding_factor
-  modeldata$gp_phi <- gp_phi
-
-  modeldata$gp_length_prior <- set_prior("gp_length",
-    mu = gp_length_prior_mu, sigma = gp_length_prior_sigma
-  )
-  modeldata$.init$gp_length <- init_from_location_scale_prior(
-    modeldata$gp_length_prior
-  )
-
+  # magnitude
   modeldata$gp_sigma_prior <- set_prior("gp_sigma",
     mu = gp_sigma_prior_mu, sigma = gp_sigma_prior_sigma
   )
@@ -1442,15 +1488,37 @@ R_estimate_gp <- function(
     modeldata$gp_sigma_prior
   )
 
+  # length scale
+  modeldata$gp_length_prior <- set_prior("gp_length",
+    mu = gp_length_prior_mu, sigma = gp_length_prior_sigma
+  )
+  modeldata$gp_length_max <- gp_length_max
+  modeldata$.init$gp_length <- init_from_location_scale_prior(
+    modeldata$gp_length_prior
+  )
+
+  # further settings
+  if (identical(gp_matern_nu,c(3/2, 5/2, 1/2))) gp_matern_nu <- 3/2
+  if (gp_matern_nu %in% c(3/2, 5/2, 1/2)) {
+    modeldata$gp_matern_nu <- gp_matern_nu
+  } else {
+    cli::cli_abort(
+      "The Matern kernel parameter `nu` must be one of 3/2, 5/2, 1/2."
+    )
+  }
+  modeldata$gp_ar_phi <- phi
+  modeldata$gp_c <- gp_boundary_factor
+
   modeldata <- tbc(
     "R_gp",
     {
-      gp_n_without_padding <- with(
-        modeldata, .metainfo$length_R_modeled + .metainfo$forecast_horizon
+      modeldata$gp_n <- with(
+        modeldata$.metainfo, length_R_modeled + forecast_horizon - 1
         )
-      modeldata$.init$gp_noise_raw <- rep(
-        1e-4, gp_n_without_padding + 2 * modeldata$gp_padding
-        )
+      l = max(1, gp_length_prior_mu - 2 * gp_length_prior_sigma) # length scale (5% quantile of prior)
+      S <- (modeldata$gp_n - 1) / 2.0 # maximum absolute value of input space
+      modeldata$gp_m <- ceiling(gp_n_basis_factor * modeldata$gp_c / (l / S)) # number of basis functions
+      modeldata$.init$gp_noise_raw <- rep(1e-4, modeldata$gp_m)
     },
     required = c(
       ".metainfo$length_R_modeled",
