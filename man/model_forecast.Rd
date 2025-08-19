@@ -6,7 +6,7 @@
 \usage{
 model_forecast(
   horizon = horizon_none(),
-  dampening = dampening_assume(dampening = 0.8)
+  damping = damping_assume(damping = 0.8)
 )
 }
 \arguments{
@@ -19,12 +19,12 @@ Available options:
 \item \code{\link[=horizon_assume]{horizon_assume()}}
 }}
 
-\item{dampening}{EpiSewer dampens the forecast of Rt so that trends in
+\item{damping}{EpiSewer dampens the forecast of Rt so that trends in
 transmission will level off after some time. This prevents unrealistic
 extrapolation of transmission dynamics. Available options:
 \itemize{
-\item \code{\link[=dampening_none]{dampening_none()}}
-\item \code{\link[=dampening_assume]{dampening_assume()}}
+\item \code{\link[=damping_none]{damping_none()}}
+\item \code{\link[=damping_assume]{damping_assume()}}
 }}
 }
 \value{

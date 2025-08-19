@@ -12,10 +12,10 @@
 #'   forecasts. Projections over longer horizons can be highly inaccurate.
 #'   Available options:
 #'   `r component_functions_("horizon")`
-#' @param dampening EpiSewer dampens the forecast of Rt so that trends in
+#' @param damping EpiSewer dampens the forecast of Rt so that trends in
 #'   transmission will level off after some time. This prevents unrealistic
 #'   extrapolation of transmission dynamics. Available options:
-#'   `r component_functions_("dampening")`
+#'   `r component_functions_("damping")`
 #'
 #' @details Forecasts account for the estimated variation of transmission
 #'   dynamics over time and therefore tend to become more uncertain at longer
@@ -33,10 +33,10 @@
 #' @export
 #' @family {module functions}
 model_forecast <- function(horizon = horizon_none(),
-                           dampening = dampening_assume(dampening = 0.8)) {
+                           damping = damping_assume(damping = 0.8)) {
   verify_is_modeldata(horizon, "horizon")
-  verify_is_modeldata(dampening, "dampening")
-  return(modeldata_combine(horizon, dampening))
+  verify_is_modeldata(damping, "damping")
+  return(modeldata_combine(horizon, damping))
 }
 
 #' Do not produce forecasts
@@ -86,17 +86,17 @@ horizon_assume <- function(horizon, modeldata = modeldata_init()) {
 
 #' Do not dampen forecasts
 #'
-#' @description This option applies no dampening to Rt forecasts, i.e. the trend
+#' @description This option applies no damping to Rt forecasts, i.e. the trend
 #'   projected by the R estimation model will be continued until the end of the
 #'   forecast horizon.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-dampening_none <- function(modeldata = modeldata_init()) {
-  modeldata$forecast_dampening <- 1
-  modeldata$.str$forecast[["dampening"]] <- list(
-    dampening_none = c()
+damping_none <- function(modeldata = modeldata_init()) {
+  modeldata$forecast_damping <- 1
+  modeldata$.str$forecast[["damping"]] <- list(
+    damping_none = c()
   )
   return(modeldata)
 }
@@ -107,21 +107,21 @@ dampening_none <- function(modeldata = modeldata_init()) {
 #'   transmission will level off after some time. This prevents unrealistic
 #'   extrapolation of transmission dynamics.
 #'
-#' @param dampening The forecast dampening parameter. A value of 1 means no
-#'   dampening, a value of 0 means flat forecast. The default is 0.8, which
+#' @param damping The forecast damping parameter. A value of 1 means no
+#'   damping, a value of 0 means flat forecast. The default is 0.8, which
 #'   levels off after a horizon of approximately 2 weeks.
 #'
-#' @details The applied dampening is exponential, i.e. the trend is reduced by
-#'   `dampening^1` on the first forecast day, by `dampening^2` on the second
+#' @details The applied damping is exponential, i.e. the trend is reduced by
+#'   `damping^1` on the first forecast day, by `damping^2` on the second
 #'   forecast day, and so on.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-dampening_assume <- function(dampening = 0.8, modeldata = modeldata_init()) {
-  modeldata$forecast_dampening <- dampening
-  modeldata$.str$forecast[["dampening"]] <- list(
-    dampening_assume = c()
+damping_assume <- function(damping = 0.95, modeldata = modeldata_init()) {
+  modeldata$forecast_damping <- damping
+  modeldata$.str$forecast[["damping"]] <- list(
+    damping_assume = c()
   )
   return(modeldata)
 }

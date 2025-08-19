@@ -92,8 +92,8 @@ generation_dist_assume <-
 #'
 #'@description This option estimates the effective reproduction number over time
 #'  using exponential smoothing. It implements Holt's linear trend method with
-#'  dampening through an innovations state space model with a level, trend, and
-#'  dampening component.
+#'  damping through an innovations state space model with a level, trend, and
+#'  damping component.
 #'
 #'@param R_start_prior_mu Prior (mean) on the initial value of Rt (level).
 #'@param R_start_prior_sigma Prior (standard deviation) on the initial value of
@@ -134,10 +134,10 @@ generation_dist_assume <-
 #'  smoothing parameter. If this is set to zero, the trend smoothing parameter
 #'  will be fixed to `trend_smooth_prior_mu` and not estimated. If positive, a
 #'  beta prior with the corresponding mean and standard deviation is used.
-#'@param dampen_prior_mu Prior (mean) on the dampening parameter. Must be
+#'@param dampen_prior_mu Prior (mean) on the damping parameter. Must be
 #'  between 0 and 1.
-#'@param dampen_prior_sigma Prior (standard deviation) on the dampening
-#'  parameter. If this is set to zero, the dampening parameter will be fixed to
+#'@param dampen_prior_sigma Prior (standard deviation) on the damping
+#'  parameter. If this is set to zero, the damping parameter will be fixed to
 #'  `dampen_prior_mu` and not estimated. If positive, a beta prior with the
 #'  corresponding mean and standard deviation is used.
 #'@param differenced If `FALSE` (default), exponential smoothing is applied to
@@ -151,7 +151,7 @@ generation_dist_assume <-
 #'@inheritParams R_estimate_splines
 #'
 #'@details The innovations state space model consists of three components: a
-#'  level, a trend, and a dampening component.
+#'  level, a trend, and a damping component.
 #' - The level is smoothed based on the levels from earlier time steps,
 #'  with exponentially decaying weights, as controlled by a smoothing parameter
 #'  (often called alpha). Note that *smaller* values of `alpha` indicate
@@ -162,12 +162,12 @@ generation_dist_assume <-
 #'  parameter (often called beta). Note that *smaller* values of `beta` indicate
 #'  *stronger* smoothing. In particular, `beta = 1` means that only the last
 #'  trend is used.
-#' - The dampening determines how long a previous trend continues into the
+#' - The damping determines how long a previous trend continues into the
 #'  future before it levels of to a stationary time series. The strength of
-#'  dampening is controlled by a dampening parameter (often called phi). Note
-#'  that *smaller* values of `phi` indicate *stronger* dampening. In particular,
-#'  `phi = 1` means no dampening. Values below `phi = 0.8` are seldom in
-#'  practice as the dampening becomes very strong.
+#'  damping is controlled by a damping parameter (often called phi). Note
+#'  that *smaller* values of `phi` indicate *stronger* damping. In particular,
+#'  `phi = 1` means no damping. Values below `phi = 0.8` are seldom in
+#'  practice as the damping becomes very strong.
 #'
 #'@details Often, `alpha`, `beta`, and `phi` are jointly unidentifiable. It may
 #'  therefore be necessary to fix at least one of the parameters (typically
@@ -202,7 +202,7 @@ generation_dist_assume <-
 #' - additional standard deviation at changepoints: `Exponential-Gamma`
 #' - smoothing parameter: `Beta`
 #' - trend smoothing parameter: `Beta`
-#' - dampening parameter: `Beta`
+#' - damping parameter: `Beta`
 #'
 #'@inheritParams template_model_helpers
 #'@inherit modeldata_init return
@@ -764,7 +764,7 @@ R_estimate_splines <- function(
 #'   *stronger* smoothing of the trend (useful for longer generation times),
 #'   and *larger* values to *less* smoothing of the trend (useful for shorter
 #'   generation times).
-#' @param inf_trend_dampen Trend dampening parameter (phi) for infections. The
+#' @param inf_trend_dampen Trend damping parameter (phi) for infections. The
 #'   exponential trend in infections is dampened over time (exponential growth
 #'   will not continue for ever). This mainly influences the trend towards the
 #'   present. For the default value (0.9), the trend will only roughly half as

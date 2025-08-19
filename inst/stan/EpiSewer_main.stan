@@ -197,8 +197,8 @@ data {
   // other elements: hyperparameters for the respective link function
   array[4] real R_link;
 
-  // forecast dampening
-  real<lower=0, upper=1> forecast_dampening; // dampening of forecasted R
+  // forecast damping
+  real<lower=0, upper=1> forecast_damping; // damping of forecasted R
 }
 transformed data {
   vector[G] gi_rev = reverse(generation_dist);
@@ -320,7 +320,7 @@ parameters {
   vector[R_use_ets ? ets_length - 1 : 0] ets_noise; // additive errors
   array[R_use_ets && ets_alpha_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_alpha; // smoothing parameter for the level
   array[R_use_ets && ets_beta_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_beta; // smoothing parameter for the trend
-  array[R_use_ets && ets_phi_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // dampening parameter of the trend
+  array[R_use_ets && ets_phi_prior[2] > 0 ? 1 : 0] real<lower=0, upper=1> ets_phi; // damping parameter of the trend
 
   // basis splines (bs)
   vector[R_use_bs ? (R_model == 4 ? bs_ncol[1] - 2 : bs_ncol[1] - 1) : 0] bs_coeff_noise_raw; // additive errors (non-centered)
@@ -927,7 +927,7 @@ generated quantities {
       }
 
       R_forecast = dampen_trend(
-        R[L + S + D + T - G], R_forecast, forecast_dampening
+        R[L + S + D + T - G], R_forecast, forecast_damping
         );
 
       // Forecasting of infections
