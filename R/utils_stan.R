@@ -143,7 +143,7 @@ sampler_stan_mcmc <- function(
     refresh = 200,
     show_messages = TRUE,
     show_exceptions = FALSE,
-    init_pathfinder = FALSE,
+    init_pathfinder = TRUE,
     init_pathfinder_max_lbfgs_iters = NULL,
     ...) {
   opts <- c(as.list(environment()), list(...))
