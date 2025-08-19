@@ -6,7 +6,7 @@
 \usage{
 model_forecast(
   horizon = horizon_none(),
-  damping = damping_assume(damping = 0.8)
+  damping = damping_assume(damping = 0.95)
 )
 }
 \arguments{

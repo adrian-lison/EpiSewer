@@ -208,11 +208,11 @@ If we want to produce forecasts, we can define the forecast horizon (e.g. 7 days
 ```{r}
 ww_forecast2 <- model_forecast(
   horizon = horizon_assume(horizon = 7),
-  damping = damping_assume(0.8)
+  damping = damping_assume(0.95)
 )
 ```
 
-The `damping` component allows to dampen the forecast of Rt so that trends in transmission will level off after some time. This prevents unrealistic extrapolation of transmission dynamics. The default is `0.8`, meaning that the trend is reduced by 20% each day until the Rt forecast is essentially constant.
+The `damping` component allows to dampen the forecast of Rt so that trends in transmission will level off after some time. This prevents unrealistic extrapolation of transmission dynamics. The default is `0.95`, meaning that the trend is reduced by 5% each day until the Rt forecast is essentially constant.
 
 #### Side notes
 
@@ -348,7 +348,7 @@ ww_infections <- model_infections(
 
 ww_forecast <- model_forecast(
   horizon = horizon_none(),
-  damping = damping_assume(0.8)
+  damping = damping_assume(0.95)
 )
 
 ww_fit_opts <- set_fit_opts(

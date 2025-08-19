@@ -33,7 +33,7 @@
 #' @export
 #' @family {module functions}
 model_forecast <- function(horizon = horizon_none(),
-                           damping = damping_assume(damping = 0.8)) {
+                           damping = damping_assume(damping = 0.95)) {
   verify_is_modeldata(horizon, "horizon")
   verify_is_modeldata(damping, "damping")
   return(modeldata_combine(horizon, damping))
