@@ -13,8 +13,8 @@
 #' `r component_functions_("generation_dist")`
 #' @param R Effective reproduction number over time. This is the main parameter
 #'   of interest estimated by `EpiSewer`. `R` is smoothed using a time series
-#'   smoothing prior. Currently supported are: random walk (rw), exponential
-#'   smoothing (ets), and smoothing splines. Modeling options:
+#'   smoothing prior (Gaussian process by default). A variety of smoothing
+#'   priors is supported. Modeling options:
 #' `r component_functions_("R")`
 #' @param seeding Seeding of initial infections. The renewal model used by
 #'   `EpiSewer` requires a seeding phase of the length of the maximum generation
@@ -34,7 +34,7 @@
 #' @family {module functions}
 model_infections <- function(
     generation_dist = generation_dist_assume(),
-    R = R_estimate_splines(),
+    R = R_estimate_gp(),
     seeding = seeding_estimate_rw(),
     infection_noise = infection_noise_estimate()) {
   verify_is_modeldata(generation_dist, "generation_dist")
@@ -1395,8 +1395,8 @@ R_estimate_smooth_derivative <- function(
 #'   of Rt time points modeled. Increasing `gp_n_basis_factor` will make the
 #'   approximation more accurate by proportionally increasing the number of
 #'   basis functions, but can slow down sampling.
-#' @param phi The strength of autocorrelation applied to the Gaussian process.
-#'   When `phi=1`, the Gaussian process effectively smoothes the first order
+#' @param phi Damping factor controlling the autocorrelation of the Rt process.
+#'   When `phi=1`, the Gaussian process effectively applies to the first order
 #'   differences of Rt. This is desirable for real-time estimation, as it
 #'   encodes the minimally informed prior assumption that the current
 #'   transmission dynamics will continue unchanged. However the resulting

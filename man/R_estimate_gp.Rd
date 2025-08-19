@@ -79,8 +79,8 @@ of Rt time points modeled. Increasing \code{gp_n_basis_factor} will make the
 approximation more accurate by proportionally increasing the number of
 basis functions, but can slow down sampling.}
 
-\item{phi}{The strength of autocorrelation applied to the Gaussian process.
-When \code{phi=1}, the Gaussian process effectively smoothes the first order
+\item{phi}{Damping factor controlling the autocorrelation of the Rt process.
+When \code{phi=1}, the Gaussian process effectively applies to the first order
 differences of Rt. This is desirable for real-time estimation, as it
 encodes the minimally informed prior assumption that the current
 transmission dynamics will continue unchanged. However the resulting

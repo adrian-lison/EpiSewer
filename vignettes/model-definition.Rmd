@@ -38,14 +38,35 @@ Here, $c$ defines the maximum possible $R_t$ (default $R_\max=6$). This link fun
 #### Smoothing
 $R_t$ is modeled via a time series or smoothing spline prior which ensure smoothness through temporal autocorrelation of the $R_t$ estimates.
 
-##### Option 1: Random walk
+##### Option 1: Gaussian process (default)
+This option models $R_t$ as a Gaussian process (GP) with a Matérn kernel, i.e.
+
+\begin{equation}
+\text{link}(R_t) = 1 + \delta_t\quad |\quad (1-\phi L)\delta \sim \mathcal{GP}\,\!\big(0,\, k_\nu(\tau;\,\ell_R,\sigma^2_R)\big),
+\end{equation}
+
+where $\nu$ is the kernel smoothing parameter, $\ell_R$ the length scale, and
+$\sigma^2_R$ the marginal variance of the GP, and $L$ is the lag operator. The
+parameter $\phi$ is a damping factor that controls the autocorrelation of the
+GP. When $\phi=1$, the Gaussian process effectively applies to the first order
+differences of $R_t$. This is desirable for real-time estimation, as it encodes
+the minimally informed prior assumption that the current transmission dynamics
+will continue unchanged. However the resulting non-stationarity of the time
+series slows down MCMC sampling. For $\phi<1$, we get an AR(1) process that is
+stationary and reverts to $R_t=1$ in the long term. We here use a default of
+$\phi=0.95$, which samples faster than $\phi=1$ due to stationarity but still
+predicts continued transmission dynamics on short-term scales.
+
+##### Option 2: Random walk
+This option smoothes Rt using a simple random walk model, i.e.
+
 \begin{equation}
 \text{link}(R_t)\,|\,R_{t-1} \sim N(\text{link}(R_{t-1}),{\sigma_{\text{link}(R)}}^2)
 \end{equation}
 
 with a normal prior on the intercept $R_1$ and a zero-truncated normal prior on the standard deviation $\sigma_{\text{link}(R)}$ of the random walk.
 
-##### Option 2: Exponential smoothing
+##### Option 3: Exponential smoothing
 This option uses an **innovations state space model** with additive errors to implement an exponential smoothing prior (Holt's linear trend method with damping)[^hyndman]. For this, $R_t$ is modeled recursively as
 
 \begin{align*}
@@ -61,7 +82,7 @@ Moreover, $\alpha'$ is a level smoothing parameter, $\beta'$ a trend smoothing p
 
 In theory, the damping parameter $\phi'$ can also be estimated from the data, but usually has to be fixed due to identifiability issues. The default is $\phi'=0.9$, i.e. the strength of the trend is assumed to halve approximately every week of predicting into the future.
 
-##### Option 3: Splines
+##### Option 4: Splines
 \begin{equation}
 \text{link}(R_t) = \boldsymbol{B}_{[t,\,]} \, a
 \end{equation}
@@ -91,9 +112,8 @@ The two components are then smoothed using penalized cubic splines as described 
 \delta_t^\phi = \boldsymbol{B}^\phi_{[t,\,]} \, a^\phi, \quad \phi \in \{\text{local},\text{global}\}.
 \end{equation}
 
-##### Option 4: Smooth derivative
-This option enforces a smooth first derivative of $R_t$.
-This is achieved by placing cubic splines on the first-order differences of $R_t$, \ie
+##### Option 5: Smooth derivative
+This option enforces a smooth first derivative of $R_t$ by placing cubic splines on the first-order differences of $R_t$, \ie
 
 \begin{equation}
 \text{link}(R_t) = \text{link}(R_{t-1}) + \delta_t,\quad \delta_t = \boldsymbol{B}_{[t,\,]} \, a,
@@ -101,7 +121,7 @@ This is achieved by placing cubic splines on the first-order differences of $R_t
 
 where the spline coefficients $a = (a_0, a_1, \dots, a_{n+2})$ are given a sparse Normal-Exponential-Gamma prior $a_i \sim \text{NEG}(\mu = 0, \lambda = \lambda_a, \gamma = \gamma_a)$ for $1 \leq i \leq n+1$. This prior has a long tail that supports large changes in $R_t$. The first and last spline coefficient are fixed to 0 to avoid erroneous extrapolation towards the boundaries. This also has the effect that trends in $R_t$ level off towards the present.
 
-##### Option 5: Piecewise constant
+##### Option 6: Piecewise constant
 This option models $R_t$ as a piecewise constant function. The changepoints of the constant pieces are estimated from the data using an approximate changepoint model, corresponding roughly to the following model:
 
 \begin{equation}
@@ -112,7 +132,7 @@ where $R_1$ is the intercept, $C_i$ are the estimated changepoint times of $K$ d
 Generally, this option is suitable when $R_t$ follows a step-like trajectory with occasional large jumps, e.g. due to strong interventions. It is less suitable for modeling gradual changes in $R_t$ over time.
 
 ##### Addition: Changepoint model for variability
-Options 1-3 also support changes in the variability of $R_t$ over time.
+Options 2-4 also support changes in the variability of $R_t$ over time.
 For example, during the height of an epidemic wave, countermeasures may lead to much faster changes in $R_t$ than observable at other times (baseline). This potential additional variability is modeled using a linear change point model for $\sigma_{\text{link}(R)}^2$ (or for $\sigma_{a}$ when using splines). The change points are placed at regular intervals, and the additional variation at the changepoints is modeled as independently distributed and following an Exponential-Gamma (EG) distribution, which has a strong peak towards zero and a long tail.
 
 ### Infections
