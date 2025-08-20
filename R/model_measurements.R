@@ -750,9 +750,20 @@ noise_estimate_ <-
     } else {
       .str_details <- c()
     }
-    modeldata$.str$measurements[["noise"]] <- list(
-      noise_estimate = .str_details
-    )
+
+    if (cv_type == "constant") {
+      modeldata$.str$measurements[["noise"]] <- list(
+        noise_estimate = .str_details
+      )
+    } else if (cv_type == "dPCR") {
+      modeldata$.str$measurements[["noise"]] <- list(
+        noise_estimate_dPCR = .str_details
+      )
+    } else if (cv_type == "constant_var") {
+      modeldata$.str$measurements[["noise"]] <- list(
+        noise_estimate_constant_var = .str_details
+      )
+    }
 
     return(modeldata)
   }
