@@ -1266,7 +1266,7 @@ plot_prior_posterior <- function(result, param_name) {
     param_name_long <- all_params[param_i, "long_name"]
     param_scaling <- all_params[param_i, "scaling"]
     param_transf <- all_params[param_i, "transf"]
-  } else if (param_name %in% all_parameters()$raw_name) {
+  } else if (param_name %in% all_params$raw_name) {
     param_i <- which(all_params$raw_name == param_name)
     param_name <- all_params[param_i, "short_name"]
     raw_name <- all_params[param_i, "raw_name"]
@@ -1285,7 +1285,7 @@ plot_prior_posterior <- function(result, param_name) {
   )
 
   tryCatch(
-    posterior_draws <- as.vector(result$fitted$draws(raw_name)),
+    posterior_draws <- as.vector(result$fitted$draws(raw_name[[1]])),
     error = function(e) {
       cli::cli_abort(paste0(
         "Parameter `", raw_name, "` not found in model fit."
@@ -1295,7 +1295,7 @@ plot_prior_posterior <- function(result, param_name) {
 
   if (prior_dist_type == "normal") {
     prior_draws <- rnorm(2000, mean = prior_params[1], sd = prior_params[2])
-  } else if (prior_dist_type == "truncated normal") {
+  } else if (prior_dist_type %in% c("truncated normal", "truncated-normal")) {
     prior_draws <- extraDistr::rtnorm(
       2000, mean = prior_params[1], sd = prior_params[2], a = 0
       )
@@ -1310,6 +1310,9 @@ plot_prior_posterior <- function(result, param_name) {
   }
 
   # apply transformation and scaling
+  if (is.function(param_scaling[[1]])) {
+    param_scaling[[1]] <- param_scaling[[1]](result)
+  }
   prior_draws <- param_transf[[1]](prior_draws) * param_scaling[[1]]
   posterior_draws <- param_transf[[1]](posterior_draws) * param_scaling[[1]]
 
