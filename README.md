@@ -299,7 +299,7 @@ Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
 data, the complexity of the model used, and how well the model actually
-fits the data. On a modern laptop the example below should take about 5
+fits the data. On a modern laptop the example below should take about 7
 minutes to run.
 
 ``` r
@@ -549,11 +549,11 @@ number.
 ``` r
 head(ww_result$summary$R, 5)
 #>          date      mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 0.8560564 0.8482630  0.2772660 0.6291182  1.057510   1.509294
-#> 2: 2021-12-04 0.8766471 0.8715660  0.3345569 0.6715507  1.063483   1.473215
-#> 3: 2021-12-05 0.8968627 0.8918710  0.3935783 0.7116105  1.066480   1.453430
-#> 4: 2021-12-06 0.9166269 0.9135610  0.4518082 0.7514147  1.070470   1.424528
-#> 5: 2021-12-07 0.9358757 0.9324735  0.5034643 0.7833108  1.077913   1.395807
+#> 1: 2021-12-03 0.9640861 0.9527065  0.4310854 0.7852498  1.130455   1.539073
+#> 2: 2021-12-04 0.9747671 0.9648285  0.4802296 0.8070900  1.132445   1.521714
+#> 3: 2021-12-05 0.9853968 0.9763785  0.5271689 0.8248925  1.133347   1.494667
+#> 4: 2021-12-06 0.9959923 0.9864485  0.5640496 0.8430830  1.135987   1.488622
+#> 5: 2021-12-07 1.0065567 0.9952830  0.5993325 0.8592827  1.138815   1.476473
 #>        type seeding
 #> 1: estimate    TRUE
 #> 2: estimate    TRUE
@@ -577,7 +577,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.7917700 0.9641964 1.0156847 0.9824768
+#> [1] 0.8485633 0.8689926 0.9941091 0.8919377
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -592,7 +592,7 @@ ww_result$checksums
 #> [1] "5d6e2a5b1a5cc86d0f8cea08026671ac"
 #> 
 #> $input
-#> [1] "e71bbe7dfa1ad2ccc3811fc1aee81dfb"
+#> [1] "a94d41b981a0f2f88a0c5c19c81f5856"
 #> 
 #> $fit_opts
 #> [1] "bfdedc2ea8d89b577ad57b86ac83e706"

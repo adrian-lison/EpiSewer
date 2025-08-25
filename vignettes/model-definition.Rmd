@@ -54,7 +54,7 @@ the minimally informed prior assumption that the current transmission dynamics
 will continue unchanged. However the resulting non-stationarity of the time
 series slows down MCMC sampling. For $\phi<1$, we get an AR(1) process that is
 stationary and reverts to $R_t=1$ in the long term. We here use a default of
-$\phi=0.95$, which samples faster than $\phi=1$ due to stationarity but still
+$\phi=0.99$, which samples faster than $\phi=1$ due to stationarity but still
 predicts continued transmission dynamics on short-term scales.
 
 ##### Option 2: Random walk

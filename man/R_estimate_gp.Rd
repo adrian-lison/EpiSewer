@@ -15,7 +15,7 @@ R_estimate_gp(
   gp_matern_nu = c(3/2, 5/2, 1/2),
   gp_boundary_factor = 3,
   gp_n_basis_factor = 3.42,
-  phi = 0.95,
+  phi = 0.99,
   link = "inv_softplus",
   R_max = 6,
   modeldata = modeldata_init()
@@ -86,7 +86,7 @@ encodes the minimally informed prior assumption that the current
 transmission dynamics will continue unchanged. However the resulting
 non-stationarity of the time series slows down MCMC sampling. In contrast,
 for \code{phi<1}, the time series is stationary and reverts to \code{Rt=1} in the
-long term. We here use a default of \code{phi=0.95}, which samples faster than
+long term. We here use a default of \code{phi=0.99}, which samples faster than
 \code{phi=1} but still predicts continued transmission dynamics on short-term
 scales. Decreasing \code{phi} will speed up sampling further but lead to faster
 reversion to \code{Rt=1} towards the present (it is thus only recommended for
