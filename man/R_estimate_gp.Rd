@@ -5,57 +5,74 @@
 \title{Estimate Rt using a Gaussian process}
 \usage{
 R_estimate_gp(
-  R_start_prior_mu = 1,
-  R_start_prior_sigma = 0.8,
-  gp_sigma_prior_mu = 0.05,
-  gp_sigma_prior_sigma = 0.01,
-  gp_length_prior_mu = 28,
-  gp_length_prior_sigma = 3.5,
-  gp_length_max = 7 * 4 * 2,
-  gp_matern_nu = c(3/2, 5/2, 1/2),
-  gp_boundary_factor = 3,
-  gp_n_basis_factor = 3.42,
-  phi = 0.99,
+  R_intercept_prior_mu = 1,
+  R_intercept_prior_sigma = 0,
+  length_scale_prior_mu = 7 * 3,
+  length_scale_prior_sigma = 7/2,
+  magnitude_prior_mu = 0.2,
+  magnitude_prior_sigma = 0.05,
+  long_length_scale_prior_mu = 7 * 4 * 3,
+  long_length_scale_prior_sigma = 7,
+  long_magnitude_prior_mu = 0.4,
+  long_magnitude_prior_sigma = 0.1,
+  matern_nu = c(3/2, 5/2, 1/2),
+  boundary_factor = 3,
+  n_basis_factor = 3.42,
   link = "inv_softplus",
   R_max = 6,
   modeldata = modeldata_init()
 )
 }
 \arguments{
-\item{R_start_prior_mu}{Prior (mean) on the initial reproduction number
-(intercept).}
+\item{R_intercept_prior_mu}{Prior (mean) for the intercept of Rt. Should be
+set to 1 unless you have a clear a priori expectation of the average Rt
+during the modeled time period.}
 
-\item{R_start_prior_sigma}{Prior (standard deviation) on the initial
-reproduction number (intercept).}
+\item{R_intercept_prior_sigma}{Prior (standard deviation) for the intercept
+of Rt. By default, we fix \code{R_intercept} to 1 by setting
+\code{R_intercept_prior_sigma=0}. This is because deviations from Rt=1 are
+already captured by the long-term trend component (see below).}
 
-\item{gp_sigma_prior_mu}{Prior (mean) on the magnitude of the Gaussian
+\item{length_scale_prior_mu}{Prior (mean) on the length scale of the Gaussian
+process (in days). This influences the smoothness of Rt. A higher length
+scale means that the Rt will change more slowly. Choosing a length scale
+that is too short can lead to overfitting of the Rt trajectory, while
+choosing a length scale that is too long can result in unrealistically
+smooth Rt estimates.}
+
+\item{length_scale_prior_sigma}{Prior (standard deviation) on the length
+scale of the Gaussian process. Set to zero to fix the length scale.}
+
+\item{magnitude_prior_mu}{Prior (mean) on the magnitude of the Gaussian
 process. Can be approximately interpreted as the marginal standard
-deviation of changes in Rt. Higher values of sigma allow faster changes in
-Rt.}
+deviation of Rt. A higher magnitude allows more extreme Rt values.}
 
-\item{gp_sigma_prior_sigma}{Prior (standard deviation) on the magnitude of
-the Gaussian process.}
+\item{magnitude_prior_sigma}{Prior (standard deviation) on the magnitude of
+the Gaussian process. Set to zero to fix the magnitude.}
 
-\item{gp_length_prior_mu}{Prior (mean) on the length scale of the Gaussian
-process (in days). This influences the “persistence” of trends in Rt. A
-higher length scale means that the Rt trend will change more slowly.
-Choosing a length scale that is too short can lead to overfitting of the Rt
-trajectory, while choosing a length scale that is too long can result in
-unrealistically smooth Rt estimates.}
+\item{long_length_scale_prior_mu}{Prior (mean) on the length scale of the
+long-term trend Gaussian process (in days). This should be quite long, at
+least several times the mean shedding delay of the pathogen.}
 
-\item{gp_length_prior_sigma}{Prior (standard deviation) on the length scale
-of the Gaussian process.}
+\item{long_length_scale_prior_sigma}{Prior (standard deviation) on the length
+scale of the long-term trend Gaussian process. Set to zero to fix the
+length scale.}
 
-\item{gp_length_max}{Maximum length scale of the Gaussian process. The normal
-prior for the length scale is truncated between 0 and \code{gp_length_max}.}
+\item{long_magnitude_prior_mu}{Prior (mean) on the magnitude of the long-term
+trend Gaussian process. Can be approximately interpreted as the marginal
+standard deviation of the long-term Rt trend. A higher magnitude allows
+more extreme Rt values.}
 
-\item{gp_matern_nu}{The smoothness parameter of the Matern kernel. The
-default is 3/2, other possible choices are 5/2 (more smooth) and 1/2 (less
-smooth). However, we recommend tuning smoothness primarily using the length
-scale prior.}
+\item{long_magnitude_prior_sigma}{Prior (standard deviation) on the magnitude
+of the long-term trend Gaussian process. Set to zero to fix the magnitude.}
 
-\item{gp_boundary_factor}{The boundary factor used in the Gaussian process
-approximation. The default (\code{gp_boundary_factor = 3}) is higher than the
+\item{matern_nu}{The smoothness parameter of the Matern kernel. The default
+is 3/2, other possible choices are 5/2 (more smooth) and 1/2 (less smooth).
+However, we recommend tuning smoothness primarily using the length scale
+prior.}
+
+\item{boundary_factor}{The boundary factor used in the Gaussian process
+approximation. The default (\code{boundary_factor = 3}) is higher than the
 minimum recommendation from Riutort-Mayol et al. to ensure accurate
 real-time estimation. Lower values can lead to boundary effects close to
 the present and start of the time series and are thus not recommended. When
@@ -63,36 +80,19 @@ modeling very long shedding delays, the boundary factor might need to be
 further increased. Note that this will also automatically increase the
 number of basis functions used and thereby slow down sampling.}
 
-\item{gp_n_basis_factor}{Factor used to automatically determine \code{m}, the
-number of basis functions in the Gaussian process approximation. Based on
-recommendations from Riutort-Mayol et al., we let
-\code{m = gp_n_basis_factor * c / (l / S)},
-where \code{c} is the \code{gp_boundary_factor}, \code{l} is the length
-scale of the GP (we use the 5\% quantile of \code{gp_length_prior} for a
-conservative result), and \code{S} is the maximum absolute value of the input
-space, which is \code{(n-1)/2} where \code{n} is the number of Rt time steps modeled.
-This means that the number of basis function automatically adapts to the
-length scale and number of observations in the model. For the default
-settings (\code{gp_boundary_factor = 3} and \code{gp_n_basis_factor = 3.42}) and a
-lower length scale of 3 weeks, this corresponds to approx. 0.25x the number
-of Rt time points modeled. Increasing \code{gp_n_basis_factor} will make the
-approximation more accurate by proportionally increasing the number of
-basis functions, but can slow down sampling.}
-
-\item{phi}{Damping factor controlling the autocorrelation of the Rt process.
-When \code{phi=1}, the Gaussian process effectively applies to the first order
-differences of Rt. This is desirable for real-time estimation, as it
-encodes the minimally informed prior assumption that the current
-transmission dynamics will continue unchanged. However the resulting
-non-stationarity of the time series slows down MCMC sampling. In contrast,
-for \code{phi<1}, the time series is stationary and reverts to \code{Rt=1} in the
-long term. We here use a default of \code{phi=0.99}, which samples faster than
-\code{phi=1} but still predicts continued transmission dynamics on short-term
-scales. Decreasing \code{phi} will speed up sampling further but lead to faster
-reversion to \code{Rt=1} towards the present (it is thus only recommended for
-retrospective estimation, not real-time). Note that \code{phi=0} corresponds to
-modeling a GP directly on Rt instead of the differences of Rt. This may
-require adjusting the \code{gp_sigma} prior.}
+\item{n_basis_factor}{Factor used to automatically determine \code{m}, the number
+of basis functions in the Gaussian process approximation. Based on
+recommendations from Riutort-Mayol et al., we let \code{m = n_basis_factor * c / (l / S)}, where \code{c} is the \code{boundary_factor}, \code{l} is the length scale of
+the GP (we use the 5\% quantile of \code{gp_length_prior} for a conservative
+result), and \code{S} is the maximum absolute value of the input space, which is
+\code{(n-1)/2} where \code{n} is the number of Rt time steps modeled. This means that
+the number of basis function automatically adapts to the length scale and
+number of observations in the model. For the default settings
+(\code{boundary_factor = 3} and \code{n_basis_factor = 3.42}) and a lower length
+scale of 3 weeks, this corresponds to approx. 0.25x the number of Rt time
+points modeled. Increasing \code{n_basis_factor} will make the approximation
+more accurate by proportionally increasing the number of basis functions,
+but can slow down sampling.}
 
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
@@ -119,15 +119,15 @@ performed before model fitting (\code{.checks}).
 }
 \description{
 This option estimates the effective reproduction number Rt over
-time as a smooth trend using a Gaussian process model.
+time as a smooth function using a Gaussian process model.
 }
 \details{
 The estimated Rt trajectory is primarily influenced by the priors
-for the \emph{magnitude} and the \emph{length scale} of the Gaussian process. We
-recommend adjusting the \emph{magnitude} when changes in Rt seem to be too slow
-or too fast (often resulting in maximum Rt values that are too low or too
-high). In contrast, we recommend adjusting the \emph{length scale} when the Rt
-trajectory seems to have too much or too little resolution.
+for the \emph{length scale} and the \emph{magnitude} of the Gaussian process. We
+recommend adjusting the \emph{magnitude} when maximum Rt values seem to be too
+low or too high. In contrast, we recommend adjusting the \emph{length scale}
+when the Rt trajectory seems to have too little resolution (try a shorter
+length scale) or is overfitting on noise (try a longer length scale).
 
 The Gaussian process is modeled using a Hilbert space approximation
 as described in Riutort-Mayol et al. (2023). This allows for fast inference
@@ -139,11 +139,15 @@ inspired by the implementation in the
 
 The priors of this component have the following functional form:
 \itemize{
-\item R_start (intercept):
+\item R_intercept (intercept):
 \code{Normal}
-\item gp_sigma (magnitude):
+\item magnitude (magnitude):
 \verb{Truncated Normal}
-\item gp_length (length scale):
+\item length_scale (length scale):
+\verb{Truncated Normal}
+\item long_magnitude (magnitude for long-term trend):
+\verb{Truncated Normal}
+\item long_length_scale (length scale for long-term trend):
 \verb{Truncated Normal}
 }
 }

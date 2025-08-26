@@ -210,11 +210,13 @@ add_dummies_smooth_derivative <- function(modeldata) {
 
 add_dummies_gp <- function(modeldata) {
   modeldata <- add_dummy_data(modeldata, c(
-    "gp_n", "gp_matern_nu", "gp_sigma_prior", "gp_length_prior",
-    "gp_length_max", "gp_c", "gp_m", "gp_ar_phi"
+    "gp_n", "gp_matern_nu", "gp_c",
+    "gp_sigma_prior", "gp_length_prior", "gp_length_max", "gp_m",
+    "gp2_sigma_prior", "gp2_length_prior", "gp2_length_max", "gp2_m"
   ))
   modeldata <- add_dummy_inits(modeldata, c(
-    "gp_noise_raw", "gp_sigma", "gp_length"
+    "gp_noise_raw", "gp_sigma", "gp_length",
+    "gp2_noise_raw", "gp2_sigma", "gp2_length"
   ))
   return(modeldata)
 }
