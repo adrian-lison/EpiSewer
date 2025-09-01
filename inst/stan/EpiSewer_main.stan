@@ -578,6 +578,7 @@ transformed parameters {
   }
 
   // seeding
+  vector[seeding_model == 2 ? G + se : 0] seeding_r;
   if (seeding_model == 0) {
     iota[1:(G+se)] = exp(
       rep_vector(iota_log_seed_intercept, (G+se))
@@ -588,7 +589,7 @@ transformed parameters {
       );
   } else if (seeding_model == 2) {
     real seeding_last_r = get_growth_rate(R[se+1], generation_dist);
-    vector[G + se] seeding_r = reverse(
+    seeding_r = reverse(
       random_walk([seeding_last_r]', iota_log_ar_noise, 0)
       ); // backward-in-time random walk on growth rate
     iota[1:(G+se)] = exp(
@@ -598,9 +599,15 @@ transformed parameters {
 
   // compute Rt for extended seeding phase
   if (se > 0) {
-    vector[L + S + D + T - G] infness;
-    infness = infectiousness(L + S + D + T - G, G, 0, gi_rev, iota);
-    R[1:se] = iota[(G+1):(G+se)] ./ infness[1:se];
+    if (seeding_model == 2) {
+      for (t in 1:se) {
+        R[t] = get_R_from_growth_rate(seeding_r[G + t - 1], generation_dist);
+        }
+    } else {
+      vector[L + S + D + T - G] infness;
+      infness = infectiousness(L + S + D + T - G, G, 0, gi_rev, iota);
+      R[1:se] = iota[(G+1):(G+se)] ./ infness[1:se];
+    }
   }
 
   // renewal process
