@@ -53,7 +53,7 @@ the beta parameter. Default is 0.5, \emph{smaller} values will lead to
 and \emph{larger} values to \emph{less} smoothing of the trend (useful for shorter
 generation times).}
 
-\item{inf_trend_dampen}{Trend dampening parameter (phi) for infections. The
+\item{inf_trend_dampen}{Trend damping parameter (phi) for infections. The
 exponential trend in infections is dampened over time (exponential growth
 will not continue for ever). This mainly influences the trend towards the
 present. For the default value (0.9), the trend will only roughly half as
@@ -144,6 +144,7 @@ the smoothing hyperparameters if needed.
 Other {Rt models}: 
 \code{\link{R_estimate_changepoint_splines}()},
 \code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_gp}()},
 \code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
 \code{\link{R_estimate_smooth_derivative}()},

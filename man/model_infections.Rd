@@ -6,7 +6,7 @@
 \usage{
 model_infections(
   generation_dist = generation_dist_assume(),
-  R = R_estimate_splines(),
+  R = R_estimate_gp(),
   seeding = seeding_estimate_rw(),
   infection_noise = infection_noise_estimate()
 )
@@ -21,8 +21,8 @@ of its secondary cases. Modeling options:
 
 \item{R}{Effective reproduction number over time. This is the main parameter
 of interest estimated by \code{EpiSewer}. \code{R} is smoothed using a time series
-smoothing prior. Currently supported are: random walk (rw), exponential
-smoothing (ets), and smoothing splines. Modeling options:
+smoothing prior (Gaussian process by default). A variety of smoothing
+priors is supported. Modeling options:
 \itemize{
 \item \code{\link[=R_estimate_smooth_derivative]{R_estimate_smooth_derivative()}}
 \item \code{\link[=R_estimate_piecewise]{R_estimate_piecewise()}}
@@ -31,6 +31,7 @@ smoothing (ets), and smoothing splines. Modeling options:
 \item \code{\link[=R_estimate_changepoint_splines]{R_estimate_changepoint_splines()}}
 \item \code{\link[=R_estimate_rw]{R_estimate_rw()}}
 \item \code{\link[=R_estimate_splines]{R_estimate_splines()}}
+\item \code{\link[=R_estimate_gp]{R_estimate_gp()}}
 }}
 
 \item{seeding}{Seeding of initial infections. The renewal model used by

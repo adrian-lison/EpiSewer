@@ -49,8 +49,8 @@ configurable modeling components.
 
 **Infections**  
 ⭐ Stochastic infection model with overdispersion  
-⭐ Flexible $R_t$ smoothing (random walk, exponential smoothing,
-splines, changepoint models)  
+⭐ Flexible $R_t$ smoothing (Gaussian process, random walk, exponential
+smoothing, splines, changepoint models)  
 ⭐ Transmission indicators: $R_t$, growth rate, doubling time, and more
 
 **Forecast**  
@@ -299,7 +299,7 @@ Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
 data, the complexity of the model used, and how well the model actually
-fits the data. On a modern laptop the example below should take about 6
+fits the data. On a modern laptop the example below should take about 3
 minutes to run.
 
 ``` r
@@ -518,7 +518,7 @@ ww_result$job$model
 #> 
 #> infections
 #>  |- generation_dist_assume
-#>  |- R_estimate_splines
+#>  |- R_estimate_gp
 #>  |- seeding_estimate_rw
 #>  |- infection_noise_estimate (overdispersion = TRUE)
 ```
@@ -549,11 +549,11 @@ number.
 ``` r
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 1.033961 1.036185  0.6736519 0.9383015  1.135603   1.363244
-#> 2: 2021-12-04 1.034428 1.036025  0.6824790 0.9389188  1.132238   1.352063
-#> 3: 2021-12-05 1.035141 1.035805  0.6894310 0.9424300  1.128025   1.337265
-#> 4: 2021-12-06 1.036031 1.037465  0.7101947 0.9459913  1.125225   1.330535
-#> 5: 2021-12-07 1.037028 1.035575  0.7226779 0.9492257  1.123778   1.325589
+#> 1: 2021-12-03 1.112290 1.107885  0.8731150  1.023628  1.194263   1.371650
+#> 2: 2021-12-04 1.108402 1.104925  0.8775604  1.021650  1.187858   1.359649
+#> 3: 2021-12-05 1.105258 1.100970  0.8810196  1.021370  1.182110   1.350143
+#> 4: 2021-12-06 1.102681 1.099215  0.8894637  1.020787  1.178908   1.342310
+#> 5: 2021-12-07 1.100468 1.096355  0.8913712  1.020630  1.174815   1.333901
 #>        type seeding
 #> 1: estimate    TRUE
 #> 2: estimate    TRUE
@@ -571,13 +571,13 @@ each chain:
 ``` r
 ww_result$fitted$diagnostic_summary()
 #> $num_divergent
-#> [1] 0 0 3 2
+#> [1] 0 0 0 0
 #> 
 #> $num_max_treedepth
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.8911642 0.9440131 1.0275218 0.9908777
+#> [1] 1.1275981 1.0685936 0.9168733 0.9728679
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -589,19 +589,19 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "d86228897b135d42f2390763b0504b70"
+#> [1] "df1728c80a97f9d14521b5a43bc98a12"
 #> 
 #> $input
-#> [1] "1b3ade9eb69f4488767b0e60ca79ef14"
+#> [1] "fe4dcf4fec009452352bbbb048962c2b"
 #> 
 #> $fit_opts
-#> [1] "4f5f052ce14fd6ff0a4eabd438e5f794"
+#> [1] "bfdedc2ea8d89b577ad57b86ac83e706"
 #> 
 #> $results_opts
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "0250741cfad014f7ace289267fc7762f"
+#> [1] "96250a57308e8c15fee1f96f624aecf6"
 ```
 
 ## Citing the package

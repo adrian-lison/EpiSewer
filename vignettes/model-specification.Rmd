@@ -112,7 +112,7 @@ EpiSewer::component_functions("infection_noise")
 ```
 
 #### `r emo::ji("bulb")` Multiple modeling options
-Some components have multiple versions of the same modeling function type. For example, there are several approaches to estimate the reproduction number, such as `R_estimate_rw()` (random walk), `R_estimate_ets()` (exponential smoothing), `R_estimate_splines()` (smoothing splines) and more.
+Some components have multiple versions of the same modeling function type. For example, there are several approaches to estimate the reproduction number, such as `R_estimate_gp()` (Gaussian process), `R_estimate_rw()` (random walk), `R_estimate_ets()` (exponential smoothing), `R_estimate_splines()` (smoothing splines) and more.
 
 ```{r}
 EpiSewer::component_functions("R")

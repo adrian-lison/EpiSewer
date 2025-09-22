@@ -47,7 +47,8 @@ get_stan_model <- function(
       )
     }
     if (model_metainfo$R_estimate_approach %in% c(
-      "splines", "ets", "rw", "piecewise", "changepoint_splines", "smooth_derivative"
+      "splines", "ets", "rw", "piecewise", "changepoint_splines",
+      "smooth_derivative", "gp"
       )) {
       model_filename <- "EpiSewer_main.stan"
     } else if (model_metainfo$R_estimate_approach == "approx") {
@@ -142,7 +143,7 @@ sampler_stan_mcmc <- function(
     refresh = 200,
     show_messages = TRUE,
     show_exceptions = FALSE,
-    init_pathfinder = FALSE,
+    init_pathfinder = TRUE,
     init_pathfinder_max_lbfgs_iters = NULL,
     ...) {
   opts <- c(as.list(environment()), list(...))

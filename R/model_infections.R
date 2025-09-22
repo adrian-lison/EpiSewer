@@ -13,8 +13,8 @@
 #' `r component_functions_("generation_dist")`
 #' @param R Effective reproduction number over time. This is the main parameter
 #'   of interest estimated by `EpiSewer`. `R` is smoothed using a time series
-#'   smoothing prior. Currently supported are: random walk (rw), exponential
-#'   smoothing (ets), and smoothing splines. Modeling options:
+#'   smoothing prior (Gaussian process by default). A variety of smoothing
+#'   priors is supported. Modeling options:
 #' `r component_functions_("R")`
 #' @param seeding Seeding of initial infections. The renewal model used by
 #'   `EpiSewer` requires a seeding phase of the length of the maximum generation
@@ -34,7 +34,7 @@
 #' @family {module functions}
 model_infections <- function(
     generation_dist = generation_dist_assume(),
-    R = R_estimate_splines(),
+    R = R_estimate_gp(),
     seeding = seeding_estimate_rw(),
     infection_noise = infection_noise_estimate()) {
   verify_is_modeldata(generation_dist, "generation_dist")
@@ -92,8 +92,8 @@ generation_dist_assume <-
 #'
 #'@description This option estimates the effective reproduction number over time
 #'  using exponential smoothing. It implements Holt's linear trend method with
-#'  dampening through an innovations state space model with a level, trend, and
-#'  dampening component.
+#'  damping through an innovations state space model with a level, trend, and
+#'  damping component.
 #'
 #'@param R_start_prior_mu Prior (mean) on the initial value of Rt (level).
 #'@param R_start_prior_sigma Prior (standard deviation) on the initial value of
@@ -134,10 +134,10 @@ generation_dist_assume <-
 #'  smoothing parameter. If this is set to zero, the trend smoothing parameter
 #'  will be fixed to `trend_smooth_prior_mu` and not estimated. If positive, a
 #'  beta prior with the corresponding mean and standard deviation is used.
-#'@param dampen_prior_mu Prior (mean) on the dampening parameter. Must be
+#'@param dampen_prior_mu Prior (mean) on the damping parameter. Must be
 #'  between 0 and 1.
-#'@param dampen_prior_sigma Prior (standard deviation) on the dampening
-#'  parameter. If this is set to zero, the dampening parameter will be fixed to
+#'@param dampen_prior_sigma Prior (standard deviation) on the damping
+#'  parameter. If this is set to zero, the damping parameter will be fixed to
 #'  `dampen_prior_mu` and not estimated. If positive, a beta prior with the
 #'  corresponding mean and standard deviation is used.
 #'@param differenced If `FALSE` (default), exponential smoothing is applied to
@@ -151,7 +151,7 @@ generation_dist_assume <-
 #'@inheritParams R_estimate_splines
 #'
 #'@details The innovations state space model consists of three components: a
-#'  level, a trend, and a dampening component.
+#'  level, a trend, and a damping component.
 #' - The level is smoothed based on the levels from earlier time steps,
 #'  with exponentially decaying weights, as controlled by a smoothing parameter
 #'  (often called alpha). Note that *smaller* values of `alpha` indicate
@@ -162,12 +162,12 @@ generation_dist_assume <-
 #'  parameter (often called beta). Note that *smaller* values of `beta` indicate
 #'  *stronger* smoothing. In particular, `beta = 1` means that only the last
 #'  trend is used.
-#' - The dampening determines how long a previous trend continues into the
+#' - The damping determines how long a previous trend continues into the
 #'  future before it levels of to a stationary time series. The strength of
-#'  dampening is controlled by a dampening parameter (often called phi). Note
-#'  that *smaller* values of `phi` indicate *stronger* dampening. In particular,
-#'  `phi = 1` means no dampening. Values below `phi = 0.8` are seldom in
-#'  practice as the dampening becomes very strong.
+#'  damping is controlled by a damping parameter (often called phi). Note
+#'  that *smaller* values of `phi` indicate *stronger* damping. In particular,
+#'  `phi = 1` means no damping. Values below `phi = 0.8` are seldom in
+#'  practice as the damping becomes very strong.
 #'
 #'@details Often, `alpha`, `beta`, and `phi` are jointly unidentifiable. It may
 #'  therefore be necessary to fix at least one of the parameters (typically
@@ -202,7 +202,7 @@ generation_dist_assume <-
 #' - additional standard deviation at changepoints: `Exponential-Gamma`
 #' - smoothing parameter: `Beta`
 #' - trend smoothing parameter: `Beta`
-#' - dampening parameter: `Beta`
+#' - damping parameter: `Beta`
 #'
 #'@inheritParams template_model_helpers
 #'@inherit modeldata_init return
@@ -234,9 +234,6 @@ R_estimate_ets <- function(
     name_approach = "ets",
     model_id = 0,
     use_ets = TRUE,
-    use_bs = FALSE,
-    use_bs2 = FALSE,
-    use_scp = FALSE,
     modeldata = modeldata
   )
 
@@ -331,6 +328,7 @@ R_estimate_ets <- function(
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
   modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_ets = c()
@@ -582,10 +580,8 @@ R_estimate_splines <- function(
   modeldata <- configure_R_model(
     name_approach = "splines",
     model_id = 1,
-    use_ets = FALSE,
     use_bs = TRUE,
     use_bs2 = TRUE,
-    use_scp = FALSE,
     modeldata = modeldata
   )
 
@@ -717,6 +713,7 @@ R_estimate_splines <- function(
   modeldata <- add_dummies_exponential_smoothing(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
   modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_splines = c()
@@ -767,7 +764,7 @@ R_estimate_splines <- function(
 #'   *stronger* smoothing of the trend (useful for longer generation times),
 #'   and *larger* values to *less* smoothing of the trend (useful for shorter
 #'   generation times).
-#' @param inf_trend_dampen Trend dampening parameter (phi) for infections. The
+#' @param inf_trend_dampen Trend damping parameter (phi) for infections. The
 #'   exponential trend in infections is dampened over time (exponential growth
 #'   will not continue for ever). This mainly influences the trend towards the
 #'   present. For the default value (0.9), the trend will only roughly half as
@@ -989,9 +986,6 @@ R_estimate_piecewise <- function(
   modeldata <-  configure_R_model(
     name_approach = "piecewise",
     model_id = 2,
-    use_ets = FALSE,
-    use_bs = FALSE,
-    use_bs2 = FALSE,
     use_scp = TRUE,
     modeldata = modeldata
   )
@@ -1055,6 +1049,7 @@ R_estimate_piecewise <- function(
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
   modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_piecewise = c()
@@ -1148,9 +1143,7 @@ R_estimate_changepoint_splines <- function(
   modeldata <-  configure_R_model(
     name_approach = "changepoint_splines",
     model_id = 3,
-    use_ets = FALSE,
     use_bs = TRUE,
-    use_bs2 = FALSE,
     use_scp = TRUE,
     modeldata = modeldata
   )
@@ -1239,6 +1232,7 @@ R_estimate_changepoint_splines <- function(
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
   modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_changepoint_splines = c()
@@ -1292,10 +1286,7 @@ R_estimate_smooth_derivative <- function(
   modeldata <-  configure_R_model(
     name_approach = "smooth_derivative",
     model_id = 4,
-    use_ets = FALSE,
     use_bs = TRUE,
-    use_bs2 = FALSE,
-    use_scp = FALSE,
     modeldata = modeldata
   )
 
@@ -1347,9 +1338,240 @@ R_estimate_smooth_derivative <- function(
   modeldata <- add_dummies_R_vari_selection(modeldata)
   modeldata <- add_dummies_R_vari(modeldata)
   modeldata <- add_dummies_soft_changepoints(modeldata)
+  modeldata <- add_dummies_gp(modeldata)
 
   modeldata$.str$infections[["R"]] <- list(
     R_estimate_smooth_derivative = c()
+  )
+
+  return(modeldata)
+}
+
+#' @title Estimate Rt using Gaussian processes
+#'
+#' @description This option estimates the effective reproduction number Rt over
+#'   time using a Gaussian process (GP) model. There are two GPs: one for the
+#'   long-term trend in Rt, and one for short-term deviations from this trend.
+#'
+#' @param R_intercept_prior_mu Prior (mean) for the intercept of Rt. Should be
+#'   set to 1 unless you have a clear a priori expectation of the average Rt
+#'   during the modeled time period.
+#' @param R_intercept_prior_sigma Prior (standard deviation) for the intercept
+#'   of Rt. By default, we fix `R_intercept` to 1 by setting
+#'   `R_intercept_prior_sigma=0`. This is because deviations from Rt=1 are
+#'   already captured by the long-term trend component (see below).
+#' @param length_scale_prior_mu Prior (mean) on the length scale of the
+#'   short-term Gaussian process (in days). This influences the smoothness of
+#'   Rt. A higher length scale means that the Rt will change more slowly.
+#'   Choosing a length scale that is too short can lead to overfitting of the Rt
+#'   trajectory, while choosing a length scale that is too long can result in
+#'   unrealistically smooth Rt estimates.
+#' @param length_scale_prior_sigma Prior (standard deviation) on the length
+#'   scale of the short-term Gaussian process. Set to zero to fix the length
+#'   scale.
+#' @param magnitude_prior_mu Prior (mean) on the magnitude of the short-term
+#'   Gaussian process. Can be approximately interpreted as the marginal standard
+#'   deviation of Rt. A higher magnitude allows more extreme Rt values.
+#' @param magnitude_prior_sigma Prior (standard deviation) on the magnitude of
+#'   the short-term Gaussian process. Set to zero to fix the magnitude.
+#' @param long_length_scale_prior_mu Prior (mean) on the length scale of the
+#'   long-term Gaussian process (in days). This should be quite long, at least
+#'   several times the mean shedding delay of the pathogen, and significantly
+#'   larger than the mean prior for the short-term GP (`length_scale_prior_mu`).
+#' @param long_length_scale_prior_sigma Prior (standard deviation) on the length
+#'   scale of the long-term Gaussian process. Set to zero to fix the length
+#'   scale.
+#' @param long_magnitude_prior_mu Prior (mean) on the magnitude of the long-term
+#'   Gaussian process. Can be approximately interpreted as the marginal standard
+#'   deviation of the long-term Rt trend. A higher magnitude allows more extreme
+#'   Rt values.
+#' @param long_magnitude_prior_sigma Prior (standard deviation) on the magnitude
+#'   of the long-term Gaussian process. Set to zero to fix the magnitude.
+#' @param matern_nu The smoothness parameter of the Matern kernel. The default
+#'   is 3/2, other possible choices are 5/2 (more smooth) and 1/2 (less smooth).
+#'   However, we recommend tuning smoothness primarily using the length scale
+#'   priors.
+#' @param boundary_factor The boundary factor used in the Gaussian process
+#'   approximation. The default (`boundary_factor = 3`) is higher than the
+#'   minimum recommendation from Riutort-Mayol et al. to ensure accurate
+#'   real-time estimation. Lower values can lead to boundary effects close to
+#'   the present and start of the time series and are thus not recommended. When
+#'   modeling very long shedding delays, the boundary factor might need to be
+#'   further increased. Note that this will also automatically increase the
+#'   number of basis functions used and thereby slow down sampling.
+#' @param n_basis_factor Factor used to automatically determine `m`, the number
+#'   of basis functions in the Gaussian process approximation. Based on
+#'   recommendations from Riutort-Mayol et al., we let `m = n_basis_factor * c /
+#'   (l / S)`, where `c` is the `boundary_factor`, `l` is the length scale of
+#'   the GP (we use the 5% quantile of `gp_length_prior` for a conservative
+#'   result), and `S` is the maximum absolute value of the zero-centered input
+#'   space, which is `(n-1)/2` where `n` is the number of Rt time steps modeled.
+#'   This means that the number of basis function automatically adapts to the
+#'   length scale and number of observations in the model. For the default
+#'   settings (`boundary_factor = 3` and `n_basis_factor = 3.42`) and a lower
+#'   length scale of 3 weeks, this corresponds to approx. 0.25x the number of Rt
+#'   time points modeled. Increasing `n_basis_factor` will make the
+#'   approximation more accurate by proportionally increasing the number of
+#'   basis functions, but can slow down sampling.
+#'
+#' @details The estimated Rt trajectory is primarily influenced by the priors
+#'   for the *length scale* and the *magnitude* of the short-term and long-term
+#'   Gaussian processes. We recommend adjusting the *magnitude* when maximum Rt
+#'   values seem to be too low or too high. In contrast, we recommend adjusting
+#'   the *length scale* when the Rt trajectory seems to have too little
+#'   resolution (try shorter length scales) or is overfitting on noise (try
+#'   longer length scales). Note that, to ensure identifiability, the prior mean
+#'   for the length scale of the long-term GP should always be significantly
+#'   larger than the prior mean for the short-term GP.
+#'
+#' @details The Gaussian process is modeled using a Hilbert space approximation
+#'   as described in Riutort-Mayol et al. (2023). This allows for fast inference
+#'   without significant loss of accuracy. See the reference for more detail on
+#'   choosing an adequate boundary factor and basis function factor. The
+#'   `EpiSewer` implementation of the approximate Gaussian process is strongly
+#'   inspired by the implementation in the
+#'   [EpiNow2](https://github.com/epiforecasts/EpiNow2/) package.
+#'
+#' @details The priors of this component have the following functional form:
+#' - R_intercept (intercept):
+#'   `Normal`
+#' - magnitude (magnitude):
+#'   `Truncated Normal`
+#' - length_scale (length scale):
+#'   `Truncated Normal`
+#' - long_magnitude (magnitude for long-term trend):
+#'   `Truncated Normal`
+#' - long_length_scale (length scale for long-term trend):
+#'   `Truncated Normal`
+#'
+#' @references Riutort-Mayol, G., Bürkner, PC., Andersen, M.R. et al. Practical
+#'   Hilbert space approximate Bayesian Gaussian processes for probabilistic
+#'   programming. *Stat Comput* 33, 17 (2023).
+#'   \url{https://doi.org/10.1007/s11222-022-10167-2}
+#' @references Abbott S, Hellewell J, Thompson RN et al. Estimating the
+#'   time-varying reproduction number of SARS-CoV-2 using national and
+#'   subnational case counts. *Wellcome Open Res* 5, 112 (2020).
+#'   \url{https://doi.org/10.12688/wellcomeopenres.16006.2}
+#'
+#' @inheritParams R_estimate_splines
+#'
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {Rt models}
+R_estimate_gp <- function(
+    R_intercept_prior_mu = 1,
+    R_intercept_prior_sigma = 0,
+    length_scale_prior_mu = 7*3,
+    length_scale_prior_sigma = 7/2,
+    magnitude_prior_mu = 0.2,
+    magnitude_prior_sigma = 0.05,
+    long_length_scale_prior_mu = 7*4*3,
+    long_length_scale_prior_sigma = 7,
+    long_magnitude_prior_mu = 0.4,
+    long_magnitude_prior_sigma = 0.1,
+    matern_nu = c(3/2, 5/2, 1/2),
+    boundary_factor = 3,
+    n_basis_factor = 3.42,
+    link = "inv_softplus",
+    R_max = 6,
+    modeldata = modeldata_init()
+) {
+
+  modeldata <- configure_R_model(
+    name_approach = "gp",
+    model_id = 5,
+    use_gp = TRUE,
+    modeldata = modeldata
+  )
+
+  # intercept
+  modeldata$R_intercept_prior <- set_prior(
+    "R_intercept", "normal",
+    mu = R_intercept_prior_mu, sigma = R_intercept_prior_sigma
+  )
+  modeldata$.init$R_intercept <- init_from_location_scale_prior(
+    modeldata$R_intercept_prior
+  )
+
+  # magnitude
+  modeldata$gp_sigma_prior <- set_prior("gp_sigma",
+    mu = long_magnitude_prior_mu, sigma = long_magnitude_prior_sigma
+  )
+  modeldata$.init$gp_sigma <- init_from_location_scale_prior(
+    modeldata$gp_sigma_prior
+  )
+  modeldata$gp2_sigma_prior <- set_prior("gp2_sigma",
+    mu = magnitude_prior_mu, sigma = magnitude_prior_sigma
+  )
+  modeldata$.init$gp2_sigma <- init_from_location_scale_prior(
+    modeldata$gp2_sigma_prior
+  )
+
+  # length scale
+  modeldata$gp_length_prior <- set_prior("gp_length",
+    mu = long_length_scale_prior_mu, sigma = long_length_scale_prior_sigma
+  )
+  modeldata$.init$gp_length <- init_from_location_scale_prior(
+    modeldata$gp_length_prior
+  )
+  modeldata$gp_length_max <- long_length_scale_prior_mu + 3 * long_length_scale_prior_sigma
+  modeldata$gp2_length_prior <- set_prior("gp2_length",
+    mu = length_scale_prior_mu, sigma = length_scale_prior_sigma
+  )
+  modeldata$.init$gp2_length <- init_from_location_scale_prior(
+    modeldata$gp2_length_prior
+  )
+  modeldata$gp2_length_max <- length_scale_prior_mu + 3 * length_scale_prior_sigma
+
+  # further settings
+  if (identical(matern_nu,c(3/2, 5/2, 1/2))) matern_nu <- 3/2
+  if (matern_nu %in% c(3/2, 5/2, 1/2)) {
+    modeldata$gp_matern_nu <- matern_nu
+  } else {
+    cli::cli_abort(
+      "The Matern kernel parameter `nu` must be one of 3/2, 5/2, 1/2."
+    )
+  }
+  modeldata$gp_c <- boundary_factor
+
+  modeldata <- tbc(
+    "R_gp",
+    {
+      modeldata$gp_n <- with(
+        modeldata$.metainfo, length_R_modeled + forecast_horizon
+        )
+      S <- (modeldata$gp_n - 1) / 2.0 # maximum absolute value of input space
+
+      l = max(1, long_length_scale_prior_mu - 2 * long_length_scale_prior_sigma) # length scale (5% quantile of prior)
+      modeldata$gp_m <- ceiling(n_basis_factor * modeldata$gp_c / (l / S)) # number of basis functions
+      modeldata$.init$gp_noise_raw <- rep(1e-4, modeldata$gp_m)
+
+      l2 = max(1, length_scale_prior_mu - 2 * length_scale_prior_sigma) # length scale (5% quantile of prior)
+      modeldata$gp2_m <- ceiling(n_basis_factor * modeldata$gp_c / (l2 / S)) # number of basis functions
+      modeldata$.init$gp2_noise_raw <- rep(1e-4, modeldata$gp2_m)
+    },
+    required = c(
+      ".metainfo$length_R_modeled",
+      ".metainfo$forecast_horizon"
+    ),
+    modeldata = modeldata
+  )
+
+  modeldata <- add_link_function(link, R_max, modeldata)
+
+  # dummy data
+  modeldata <- add_dummies_exponential_smoothing(modeldata)
+  modeldata <- add_dummies_basis_splines(modeldata)
+  modeldata <- add_dummies_basis_splines2(modeldata)
+  modeldata <- add_dummies_R_vari_selection(modeldata)
+  modeldata <- add_dummies_R_vari(modeldata)
+  modeldata <- add_dummies_soft_changepoints(modeldata)
+  modeldata <- add_dummies_smooth_derivative(modeldata)
+  modeldata$R_sd_change_prior <- c(-1, -1)
+
+  modeldata$.str$infections[["R"]] <- list(
+    R_estimate_gp = c()
   )
 
   return(modeldata)

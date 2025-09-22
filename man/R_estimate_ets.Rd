@@ -89,11 +89,11 @@ smoothing parameter. If this is set to zero, the trend smoothing parameter
 will be fixed to \code{trend_smooth_prior_mu} and not estimated. If positive, a
 beta prior with the corresponding mean and standard deviation is used.}
 
-\item{dampen_prior_mu}{Prior (mean) on the dampening parameter. Must be
+\item{dampen_prior_mu}{Prior (mean) on the damping parameter. Must be
 between 0 and 1.}
 
-\item{dampen_prior_sigma}{Prior (standard deviation) on the dampening
-parameter. If this is set to zero, the dampening parameter will be fixed to
+\item{dampen_prior_sigma}{Prior (standard deviation) on the damping
+parameter. If this is set to zero, the damping parameter will be fixed to
 \code{dampen_prior_mu} and not estimated. If positive, a beta prior with the
 corresponding mean and standard deviation is used.}
 
@@ -123,12 +123,12 @@ performed before model fitting (\code{.checks}).
 \description{
 This option estimates the effective reproduction number over time
 using exponential smoothing. It implements Holt's linear trend method with
-dampening through an innovations state space model with a level, trend, and
-dampening component.
+damping through an innovations state space model with a level, trend, and
+damping component.
 }
 \details{
 The innovations state space model consists of three components: a
-level, a trend, and a dampening component.
+level, a trend, and a damping component.
 \itemize{
 \item The level is smoothed based on the levels from earlier time steps,
 with exponentially decaying weights, as controlled by a smoothing parameter
@@ -140,12 +140,12 @@ with exponentially decaying weights, as controlled by a trend smoothing
 parameter (often called beta). Note that \emph{smaller} values of \code{beta} indicate
 \emph{stronger} smoothing. In particular, \code{beta = 1} means that only the last
 trend is used.
-\item The dampening determines how long a previous trend continues into the
+\item The damping determines how long a previous trend continues into the
 future before it levels of to a stationary time series. The strength of
-dampening is controlled by a dampening parameter (often called phi). Note
-that \emph{smaller} values of \code{phi} indicate \emph{stronger} dampening. In particular,
-\code{phi = 1} means no dampening. Values below \code{phi = 0.8} are seldom in
-practice as the dampening becomes very strong.
+damping is controlled by a damping parameter (often called phi). Note
+that \emph{smaller} values of \code{phi} indicate \emph{stronger} damping. In particular,
+\code{phi = 1} means no damping. Values below \code{phi = 0.8} are seldom in
+practice as the damping becomes very strong.
 }
 
 Often, \code{alpha}, \code{beta}, and \code{phi} are jointly unidentifiable. It may
@@ -182,13 +182,14 @@ The priors of this component have the following functional form:
 \item additional standard deviation at changepoints: \code{Exponential-Gamma}
 \item smoothing parameter: \code{Beta}
 \item trend smoothing parameter: \code{Beta}
-\item dampening parameter: \code{Beta}
+\item damping parameter: \code{Beta}
 }
 }
 \seealso{
 Other {Rt models}: 
 \code{\link{R_estimate_approx}()},
 \code{\link{R_estimate_changepoint_splines}()},
+\code{\link{R_estimate_gp}()},
 \code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
 \code{\link{R_estimate_smooth_derivative}()},

@@ -332,7 +332,7 @@ all_components <- function() {
     "sample_effects",
     "noise",
     "horizon",
-    "dampening"
+    "damping"
   )
   return(components)
 }

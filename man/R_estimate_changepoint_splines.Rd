@@ -120,6 +120,7 @@ parameter to achieve a similar level of day-to-day variation.
 Other {Rt models}: 
 \code{\link{R_estimate_approx}()},
 \code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_gp}()},
 \code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
 \code{\link{R_estimate_smooth_derivative}()},

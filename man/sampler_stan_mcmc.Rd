@@ -17,7 +17,7 @@ sampler_stan_mcmc(
   refresh = 200,
   show_messages = TRUE,
   show_exceptions = FALSE,
-  init_pathfinder = FALSE,
+  init_pathfinder = TRUE,
   init_pathfinder_max_lbfgs_iters = NULL,
   ...
 )
