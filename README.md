@@ -299,7 +299,7 @@ Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
 data, the complexity of the model used, and how well the model actually
-fits the data. On a modern laptop the example below should take about 7
+fits the data. On a modern laptop the example below should take about 3
 minutes to run.
 
 ``` r
@@ -548,12 +548,12 @@ number.
 
 ``` r
 head(ww_result$summary$R, 5)
-#>          date      mean    median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 0.9640861 0.9527065  0.4310854 0.7852498  1.130455   1.539073
-#> 2: 2021-12-04 0.9747671 0.9648285  0.4802296 0.8070900  1.132445   1.521714
-#> 3: 2021-12-05 0.9853968 0.9763785  0.5271689 0.8248925  1.133347   1.494667
-#> 4: 2021-12-06 0.9959923 0.9864485  0.5640496 0.8430830  1.135987   1.488622
-#> 5: 2021-12-07 1.0065567 0.9952830  0.5993325 0.8592827  1.138815   1.476473
+#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
+#> 1: 2021-12-03 1.112290 1.107885  0.8731150  1.023628  1.194263   1.371650
+#> 2: 2021-12-04 1.108402 1.104925  0.8775604  1.021650  1.187858   1.359649
+#> 3: 2021-12-05 1.105258 1.100970  0.8810196  1.021370  1.182110   1.350143
+#> 4: 2021-12-06 1.102681 1.099215  0.8894637  1.020787  1.178908   1.342310
+#> 5: 2021-12-07 1.100468 1.096355  0.8913712  1.020630  1.174815   1.333901
 #>        type seeding
 #> 1: estimate    TRUE
 #> 2: estimate    TRUE
@@ -577,7 +577,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.8485633 0.8689926 0.9941091 0.8919377
+#> [1] 1.1275981 1.0685936 0.9168733 0.9728679
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -589,10 +589,10 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "5d6e2a5b1a5cc86d0f8cea08026671ac"
+#> [1] "df1728c80a97f9d14521b5a43bc98a12"
 #> 
 #> $input
-#> [1] "a94d41b981a0f2f88a0c5c19c81f5856"
+#> [1] "fe4dcf4fec009452352bbbb048962c2b"
 #> 
 #> $fit_opts
 #> [1] "bfdedc2ea8d89b577ad57b86ac83e706"
@@ -601,7 +601,7 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "35c67a658290d42fc5eec0890e29f117"
+#> [1] "96250a57308e8c15fee1f96f624aecf6"
 ```
 
 ## Citing the package
