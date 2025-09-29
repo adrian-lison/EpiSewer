@@ -304,29 +304,24 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 #'
 #' @export
 sewer_compile <- function(model = NULL, force_recompile = FALSE, verbose = FALSE) {
-  all_models <- c(
-    "EpiSewer_main.stan",
-    "EpiSewer_approx.stan"
-    )
   if (!is.null(model)) {
     if (model %in% c("main", "EpiSewer_main")) {
       model <- "EpiSewer_main.stan"
     } else if (model %in% c("approx", "EpiSewer_approx")) {
       model <- "EpiSewer_approx.stan"
+    } else {
+      cli::cli_abort(paste("The model", model, "is not available."))
     }
-    if (!(model %in% all_models)) {
-      cli::cli_abort(paste(
-          "The model", model, "is not available."
-      ))
-    }
-    all_models <- model
+    models_to_compile <- model
+  } else {
+    models_to_compile <- c("EpiSewer_main.stan")
   }
   comp_success <- NULL
 
-  for (i in 1:length(all_models)) {
-    model_name <- all_models[i]
+  for (i in 1:length(models_to_compile)) {
+    model_name <- models_to_compile[i]
     cat("\r                                                      \r", sep = "");
-    cat(sprintf("\r| Compiling model %d/%d ", i, length(all_models)), sep = "")
+    cat(sprintf("\r| Compiling model %d/%d ", i, length(models_to_compile)), sep = "")
     #flush.console()
     success <- tryCatch(
       {
@@ -347,7 +342,7 @@ sewer_compile <- function(model = NULL, force_recompile = FALSE, verbose = FALSE
     )
     cat(paste(sprintf(
       "\r| Compiling model %d/%d",
-      i, length(all_models)), ifelse(success, "(success) ", "(failed) ")
+      i, length(models_to_compile)), ifelse(success, "(success) ", "(failed) ")
       ), sep = "")
     Sys.sleep(0.5)
     comp_success <- c(comp_success, success)
@@ -357,7 +352,7 @@ sewer_compile <- function(model = NULL, force_recompile = FALSE, verbose = FALSE
     cli::cli_warn(
       paste(
         "The following models could not be compiled:",
-        paste(all_models[!comp_success], collapse = ", ")
+        paste(models_to_compile[!comp_success], collapse = ", ")
       )
     )
   } else {
