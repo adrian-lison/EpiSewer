@@ -1285,7 +1285,7 @@ plot_prior_posterior <- function(result, param_name) {
   )
 
   tryCatch(
-    posterior_draws <- as.vector(result$fitted$draws(raw_name)),
+    posterior_draws <- as.vector(result$fitted$draws(raw_name[[1]])),
     error = function(e) {
       cli::cli_abort(paste0(
         "Parameter `", raw_name, "` not found in model fit."
@@ -1293,15 +1293,16 @@ plot_prior_posterior <- function(result, param_name) {
     }
   )
 
+  set.seed(0)
   if (prior_dist_type == "normal") {
-    prior_draws <- rnorm(2000, mean = prior_params[1], sd = prior_params[2])
+    prior_draws <- rnorm(4000, mean = prior_params[1], sd = prior_params[2])
   } else if (prior_dist_type == "truncated normal") {
     prior_draws <- extraDistr::rtnorm(
-      2000, mean = prior_params[1], sd = prior_params[2], a = 0
+      4000, mean = prior_params[1], sd = prior_params[2], a = 0
       )
   } else if (prior_dist_type == "beta") {
     prior_draws <- rbeta(
-      2000, shape1 = prior_params[1], shape2 = prior_params[2]
+      4000, shape1 = prior_params[1], shape2 = prior_params[2]
       )
   } else {
     cli::cli_abort(paste0(
