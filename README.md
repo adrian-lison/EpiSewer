@@ -144,6 +144,7 @@ in Zurich. Some days have missing measurements, but this is no problem:
 ``` r
 data_zurich$measurements
 #>            date concentration
+#>          <Date>         <num>
 #>   1: 2022-01-01            NA
 #>   2: 2022-01-02            NA
 #>   3: 2022-01-03      455.7580
@@ -166,6 +167,7 @@ per week.
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
 head(measurements_sparse, 10)
 #>           date concentration  weekday
+#>         <Date>         <num>   <char>
 #>  1: 2022-01-03      455.7580   Monday
 #>  2: 2022-01-06      330.7298 Thursday
 #>  3: 2022-01-10      387.6885   Monday
@@ -189,6 +191,7 @@ volume unit as the concentration (mL here in both cases).
 ``` r
 data_zurich$flows
 #>            date        flow
+#>          <Date>       <num>
 #>   1: 2022-01-01 3.41163e+11
 #>   2: 2022-01-02 3.41163e+11
 #>   3: 2022-01-03 1.58972e+11
@@ -218,6 +221,7 @@ of cases.
 ``` r
 data_zurich$cases
 #>            date     cases
+#>          <Date>     <num>
 #>   1: 2022-01-01        NA
 #>   2: 2022-01-02        NA
 #>   3: 2022-01-03 1519.5313
@@ -472,7 +476,8 @@ data.
 
 ### More details
 
-We can further inspect our results object. It has three attributes:
+We can further inspect our results object. It has the following
+attributes:
 
 ``` r
 names(ww_result)
@@ -549,12 +554,14 @@ number.
 ``` r
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 1.112290 1.107885  0.8731150  1.023628  1.194263   1.371650
-#> 2: 2021-12-04 1.108402 1.104925  0.8775604  1.021650  1.187858   1.359649
-#> 3: 2021-12-05 1.105258 1.100970  0.8810196  1.021370  1.182110   1.350143
-#> 4: 2021-12-06 1.102681 1.099215  0.8894637  1.020787  1.178908   1.342310
-#> 5: 2021-12-07 1.100468 1.096355  0.8913712  1.020630  1.174815   1.333901
+#>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>
+#> 1: 2021-12-02 1.115172 1.110672  0.8615012  1.022565  1.201434   1.401401
+#> 2: 2021-12-03 1.110969 1.108036  0.8628105  1.020731  1.197291   1.385792
+#> 3: 2021-12-04 1.107426 1.104952  0.8605573  1.018906  1.192224   1.370607
+#> 4: 2021-12-05 1.104382 1.102559  0.8669692  1.017617  1.187447   1.361395
+#> 5: 2021-12-06 1.101656 1.100388  0.8699916  1.016991  1.180810   1.349066
 #>        type seeding
+#>      <fctr>  <lgcl>
 #> 1: estimate    TRUE
 #> 2: estimate    TRUE
 #> 3: estimate    TRUE
@@ -577,7 +584,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 1.1275981 1.0685936 0.9168733 0.9728679
+#> [1] 0.9483824 1.0604264 0.9608296 0.8695765
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -592,7 +599,7 @@ ww_result$checksums
 #> [1] "df1728c80a97f9d14521b5a43bc98a12"
 #> 
 #> $input
-#> [1] "fe4dcf4fec009452352bbbb048962c2b"
+#> [1] "a2976b41049451d10be221f31e922835"
 #> 
 #> $fit_opts
 #> [1] "bfdedc2ea8d89b577ad57b86ac83e706"
@@ -601,7 +608,7 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "96250a57308e8c15fee1f96f624aecf6"
+#> [1] "03dd9d0e5e02a8b393c5e765de3f79fa"
 ```
 
 ## Citing the package
@@ -631,7 +638,9 @@ please also cite:
 ## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+
 <!-- prettier-ignore-start -->
+
 <!-- markdownlint-disable -->
 
 All contributions to this project are gratefully acknowledged using the
@@ -656,5 +665,7 @@ specification. Contributions of any kind are welcome!
 <a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3Akaitejohnson">kaitejohnson</a>
 
 <!-- markdownlint-enable -->
+
 <!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->

@@ -371,7 +371,7 @@ plot_prior_posterior(ww_result, "measurement_noise_cv")
 As we can see, the prior (in grey) and posterior (in blue) differ substantially, indicating that this parameter is well informed by the data.
 
 ### More details
-We can further inspect our results object. It has three attributes:
+We can further inspect our results object. It has the following attributes:
 ```{r}
 names(ww_result)
 ```
