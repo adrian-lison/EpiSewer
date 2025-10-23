@@ -38,9 +38,9 @@
 #'   respect to the estimated trajectories. Only available when plotting a
 #'   single model.
 #'
-#' @return A ggplot object showing the time series of estimated infections,
+#' @return A `ggplot` object showing the time series of estimated infections,
 #'   either with credible intervals or as "spaghetti plot". Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and to
+#'   manipulated using `ggplot2` functions to adjust themes and scales, and to
 #'   add further geoms.
 #' @export
 #' @import ggplot2
@@ -216,9 +216,9 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
 #'   [model_forecast()].
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the time series of estimated Rt, either with
+#' @return A `ggplot` object showing the time series of estimated Rt, either with
 #'   credible intervals or as "spaghetti plot". Can be further manipulated using
-#'   [ggplot2] functions to adjust themes and scales, and to add further geoms.
+#'   `ggplot2` functions to adjust themes and scales, and to add further geoms.
 #' @export
 plot_R <- function(results, draws = FALSE, ndraws = NULL,
                    median = FALSE, seeding = FALSE,
@@ -451,8 +451,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   observations are ordered by concentration, which helps to visualize bias
 #'   and variance of the predictions as a function of the concentration.
 #'
-#' @return A ggplot object showing predicted and observed concentrations over
-#'   time. Can be further manipulated using [ggplot2] functions to adjust themes
+#' @return A `ggplot` object showing predicted and observed concentrations over
+#'   time. Can be further manipulated using `ggplot2` functions to adjust themes
 #'   and scales, and to add further geoms.
 #' @export
 plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL,
@@ -900,8 +900,8 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
 #'
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the estimated load over time. Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and to
+#' @return A `ggplot` object showing the estimated load over time. Can be further
+#'   manipulated using `ggplot2` functions to adjust themes and scales, and to
 #'   add further geoms.
 #'
 #' @export
@@ -941,8 +941,8 @@ plot_load <- function(results, median = FALSE,
 #'
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the estimated growth rate over time. Can be
-#'   further manipulated using [ggplot2] functions to adjust themes and scales,
+#' @return A `ggplot` object showing the estimated growth rate over time. Can be
+#'   further manipulated using `ggplot2` functions to adjust themes and scales,
 #'   and to add further geoms.
 #'
 #' @export
@@ -982,8 +982,8 @@ plot_growth_rate <- function(results, median = FALSE, seeding = FALSE,
 #'
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the estimated time-varying doubling time. Can
-#'   be further manipulated using [ggplot2] functions to adjust themes and
+#' @return A `ggplot` object showing the estimated time-varying doubling time. Can
+#'   be further manipulated using `ggplot2` functions to adjust themes and
 #'   scales, and to add further geoms.
 #'
 #' @export
@@ -1124,8 +1124,8 @@ plot_time_series <- function(results, variable, variable_name = variable,
 #'
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the estimated effect sizes. Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and to
+#' @return A `ggplot` object showing the estimated effect sizes. Can be further
+#'   manipulated using `ggplot2` functions to adjust themes and scales, and to
 #'   add further geoms.
 #' @export
 plot_sample_effects <- function(results,
@@ -1190,7 +1190,7 @@ plot_sample_effects <- function(results,
 #'
 #' @return A plot showing the probability of non-detection (i.e. zero
 #'   measurement) for different concentrations below and above the assumed LOD.
-#'   Can be further manipulated using [ggplot2] functions to adjust themes and
+#'   Can be further manipulated using `ggplot2` functions to adjust themes and
 #'   scales, and to add further geoms.
 #' @export
 #'
@@ -1240,7 +1240,7 @@ plot_LOD <- function(modeldata) {
 #' `r all_parameters(TRUE)`
 #'
 #' @return A plot showing the density of the prior (grey) and posterior (blue)
-#'   for the respective parameter. Can be further manipulated using [ggplot2]
+#'   for the respective parameter. Can be further manipulated using `ggplot2`
 #'   functions to adjust themes and scales, and to add further geoms.
 #' @export
 plot_prior_posterior <- function(result, param_name) {
@@ -1355,7 +1355,7 @@ plot_prior_posterior <- function(result, param_name) {
 #'
 #' @return A growth report plot showing the probability that infections have
 #'   been growing without interruption for at least 3, 7, 14, 21, and 28 days,
-#'   respectively. Can be further manipulated using [ggplot2] functions to
+#'   respectively. Can be further manipulated using `ggplot2` functions to
 #'   adjust themes and scales, and to add further geoms.
 #' @export
 plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {

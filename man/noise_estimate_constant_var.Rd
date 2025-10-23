@@ -73,7 +73,7 @@ The priors of this component have the following functional form:
 }
 \seealso{
 Other {noise models}: 
-\code{\link{noise_estimate_dPCR}()},
-\code{\link{noise_estimate}()}
+\code{\link{noise_estimate}()},
+\code{\link{noise_estimate_dPCR}()}
 }
 \concept{{noise models}}

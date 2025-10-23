@@ -156,7 +156,7 @@ The priors of this component have the following functional form:
 dPCR.
 
 Other {noise models}: 
-\code{\link{noise_estimate_constant_var}()},
-\code{\link{noise_estimate}()}
+\code{\link{noise_estimate}()},
+\code{\link{noise_estimate_constant_var}()}
 }
 \concept{{noise models}}

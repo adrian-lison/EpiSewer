@@ -26,8 +26,8 @@ included. The colors and legend will be ordered according to the order in
 \code{model_levels}.}
 }
 \value{
-A ggplot object showing the estimated effect sizes. Can be further
-manipulated using \link{ggplot2} functions to adjust themes and scales, and to
+A \code{ggplot} object showing the estimated effect sizes. Can be further
+manipulated using \code{ggplot2} functions to adjust themes and scales, and to
 add further geoms.
 }
 \description{

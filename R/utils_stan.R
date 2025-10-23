@@ -299,7 +299,7 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 #' @details If one or several models are not successfully compiled, please
 #'   ensure that `cmdstan` is properly set up and try updating it to a newer
 #'   version using [cmdstanr::install_cmdstan()]. If the problem persists,
-#'   please run [sewer_compile(verbose = TRUE)] and post the output in
+#'   please run `sewer_compile(verbose = TRUE)` and post the output in
 #'   a new issue on GitHub, along with your [cmdstanr::cmdstan_version()].
 #'
 #' @export
