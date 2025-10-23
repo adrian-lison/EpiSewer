@@ -132,7 +132,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
         geom_line(
           data = data_base_model[type == "estimate",],
           aes(y = I, group = .draw),
-          size = 0.1, alpha = 0.9, color = "black"
+          linewidth = 0.1, alpha = 0.9, color = "black"
         )
       }
       } +
@@ -144,14 +144,14 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
               data_base_model[type == "forecast"]
             ),
             aes(y = I, group = .draw),
-            size = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
+            linewidth = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
           )
         }
       } +
       geom_line(
         data = data_to_plot[model!=base_model & type == "estimate",],
         aes(y = I, group = paste0(.draw, model), color = model),
-        size = 0.1, alpha = 0.9
+        linewidth = 0.1, alpha = 0.9
       ) +
       {
         if (has_forecast) {
@@ -161,7 +161,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
               data_to_plot[model!=base_model & type == "forecast",]
             ),
             aes(y = I, group = paste0(.draw, model), color = model),
-            size = 0.3, alpha = 0.9, linetype = "dashed"
+            linewidth = 0.3, alpha = 0.9, linetype = "dashed"
           )
         }
       }
@@ -321,7 +321,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
         geom_line(
           data = data_base_model[type == "estimate",],
           aes(y = R, group = .draw),
-          size = 0.1, alpha = 0.9, color = "black"
+          linewidth = 0.1, alpha = 0.9, color = "black"
           )
         }
       } +
@@ -333,14 +333,14 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
               data_base_model[type == "forecast"]
             ),
             aes(y = R, group = .draw),
-            size = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
+            linewidth = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
           )
         }
       } +
       geom_line(
         data = data_to_plot[model!=base_model & type == "estimate",],
         aes(y = R, group = paste0(.draw, model), color = model),
-        size = 0.1, alpha = 0.9
+        linewidth = 0.1, alpha = 0.9
         ) +
       {
         if (has_forecast) {
@@ -350,7 +350,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
               data_to_plot[model!=base_model & type == "forecast",]
               ),
             aes(y = R, group = paste0(.draw, model), color = model),
-            size = 0.3, alpha = 0.9, linetype = "dashed"
+            linewidth = 0.3, alpha = 0.9, linetype = "dashed"
           )
         }
       }
