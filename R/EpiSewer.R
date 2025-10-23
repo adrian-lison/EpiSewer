@@ -148,6 +148,7 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
 
   result$stan_model <- get_stan_model(
     model_metainfo = job$metainfo,
+    model_filename = job$fit_opts$model$model_filename,
     model_folder = job$fit_opts$model$model_folder,
     profile = job$fit_opts$model$profile,
     threads = job$fit_opts$model$threads,
