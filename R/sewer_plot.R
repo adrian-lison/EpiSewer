@@ -1209,10 +1209,29 @@ plot_sample_effects <- function(results,
 #' modeldata <- LOD_assume(limit = 2.56, prob = 0.95)
 #' plot_LOD(modeldata)
 plot_LOD <- function(modeldata) {
+  lod_model <- modeldata$.str$measurements$LO
+  if (is.null(lod_model)) {
+    cli::cli_abort(
+      "No LOD model is currently included in the modeldata."
+    )
+  } else if (names(lod_model) == "LOD_none") {
+    cli::cli_abort(
+      "LOD cannot be plotted when using LOD_none()."
+    )
+  } else if (names(lod_model) != "LOD_assume") {
+    cli::cli_abort(
+      paste0(
+        "LOD plotting is currently only supported for LOD_assume(). ",
+        "The provided model uses ", names(lod_model), "() instead."
+      )
+    )
+  }
+
   if (!all(c("LOD_model", "LOD_scale") %in% names(modeldata))) {
-    cli::cli_abort(c(
-      "The following variables must be present in model data:",
-      "LOD_model", "LOD_scale"
+    cli::cli_abort(paste(
+      "To plot the LOD, variables `LOD_model` and `LOD_scale` must",
+      "be present in model data. Maybe you have not provided a limit to",
+      "LOD_assume() yet?"
     ))
   }
   LOD_f <- function(x) {
