@@ -256,8 +256,8 @@ residence_dist_assume <-
   function(residence_dist = NULL, modeldata = modeldata_init()) {
     modeldata <- tbp("residence_dist_assume",
       {
-        modeldata$D <- length(residence_dist) - 1
         residence_dist <- check_dist(residence_dist, "residence time distribution")
+        modeldata$D <- length(residence_dist) - 1
         modeldata$residence_dist <- residence_dist
         return(modeldata)
       },

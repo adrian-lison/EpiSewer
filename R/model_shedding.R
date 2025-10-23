@@ -76,10 +76,10 @@ incubation_dist_assume <-
 
         modeldata <- tbp("incubation_dist_assume",
          {
-           modeldata$L <- length(incubation_dist) - 1
            incubation_dist <- check_dist(
              incubation_dist, "incubation period distribution"
            )
+           modeldata$L <- length(incubation_dist) - 1
            modeldata$incubation_dist <- incubation_dist
            return(modeldata)
          },
@@ -135,9 +135,9 @@ shedding_dist_assume <-
   function(shedding_dist = NULL, shedding_reference = NULL, modeldata = modeldata_init()) {
     modeldata <- tbp("shedding_dist_assume",
       {
+        shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
         modeldata$S <- length(shedding_dist) - 1
         modeldata$shedding_dist_type <- 0 # 0 = fixed, discrete/non-parametric
-        shedding_dist <- check_dist(shedding_dist, "shedding load distribution")
         modeldata$shedding_dist <- shedding_dist
         if (!shedding_reference %in% c("infection", "symptom_onset")) {
           cli::cli_abort(paste(

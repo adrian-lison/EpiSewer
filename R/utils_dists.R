@@ -454,13 +454,19 @@ check_dist <- function(dist, name = "probability distribution") {
       "All probabilities must be positive."
     ))
   }
-  if (sum(dist) != 1) {
+  if (!all.equal(sum(dist), 1)) {
     cli::cli_warn(paste(
       "Supplied", name, "does not sum to 1.",
       "EpiSewer will normalize the probabilities such that they sum to 1.\n"
     ))
     dist <- dist / sum(dist)
   }
+
+  # artificially extend dist if it has length 1 (avoids indexing issues)
+  if (length(dist) == 1 && dist == c(1)) {
+    dist <- c(1,0)
+  }
+
   return(dist)
 }
 

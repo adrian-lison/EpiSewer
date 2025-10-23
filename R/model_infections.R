@@ -70,11 +70,11 @@ generation_dist_assume <-
   function(generation_dist = NULL, modeldata = modeldata_init()) {
     modeldata <- tbp("generation_dist_assume",
       {
-        modeldata$G <- length(generation_dist)
         generation_dist <- check_dist(
           generation_dist,
           "generation time distribution"
         )
+        modeldata$G <- length(generation_dist)
         modeldata$generation_dist <- generation_dist
       },
       required_assumptions = "generation_dist",
