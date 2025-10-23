@@ -133,7 +133,8 @@
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_zurich</span> <span class="op">&lt;-</span> <span class="va">SARS_CoV_2_Zurich</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">data_zurich</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "measurements" "flows"        "cases"        "units"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "measurements" "flows"        "cases"       </span></span>
+<span><span class="co">#&gt; [4] "units"</span></span></code></pre></div>
 <ul>
 <li>
 <code>measurements</code>: <code>EpiSewer</code> requires a time series of concentration measurements. Measurements should ideally be in gc/mL (gc = gene copies).</li>
@@ -148,19 +149,20 @@
 <p>The <code>measurements</code> data contains daily viral concentration measurements (in gc/mL) for the SARS-CoV-2 N1 gene at the wastewater treatment plant in Zurich. Some days have missing measurements, but this is no problem: <code>EpiSewer</code> naturally accounts for missing values during estimation.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_zurich</span><span class="op">$</span><span class="va">measurements</span></span>
-<span><span class="co">#&gt;            date concentration</span></span>
-<span><span class="co">#&gt;          &lt;Date&gt;         &lt;num&gt;</span></span>
-<span><span class="co">#&gt;   1: 2022-01-01            NA</span></span>
-<span><span class="co">#&gt;   2: 2022-01-02            NA</span></span>
-<span><span class="co">#&gt;   3: 2022-01-03      455.7580</span></span>
-<span><span class="co">#&gt;   4: 2022-01-04      747.8792</span></span>
-<span><span class="co">#&gt;   5: 2022-01-05      573.7020</span></span>
-<span><span class="co">#&gt;  ---                         </span></span>
-<span><span class="co">#&gt; 116: 2022-04-26      182.3664</span></span>
-<span><span class="co">#&gt; 117: 2022-04-27      379.2421</span></span>
-<span><span class="co">#&gt; 118: 2022-04-28      439.7427</span></span>
-<span><span class="co">#&gt; 119: 2022-04-29      394.0033</span></span>
-<span><span class="co">#&gt; 120: 2022-04-30      293.1242</span></span></code></pre></div>
+<span><span class="co">#&gt; Index: &lt;weekday&gt;</span></span>
+<span><span class="co">#&gt;            date concentration   weekday</span></span>
+<span><span class="co">#&gt;          &lt;Date&gt;         &lt;num&gt;    &lt;char&gt;</span></span>
+<span><span class="co">#&gt;   1: 2022-01-01            NA  Saturday</span></span>
+<span><span class="co">#&gt;   2: 2022-01-02            NA    Sunday</span></span>
+<span><span class="co">#&gt;   3: 2022-01-03      455.7580    Monday</span></span>
+<span><span class="co">#&gt;   4: 2022-01-04      747.8792   Tuesday</span></span>
+<span><span class="co">#&gt;   5: 2022-01-05      573.7020 Wednesday</span></span>
+<span><span class="co">#&gt;  ---                                   </span></span>
+<span><span class="co">#&gt; 116: 2022-04-26      182.3664   Tuesday</span></span>
+<span><span class="co">#&gt; 117: 2022-04-27      379.2421 Wednesday</span></span>
+<span><span class="co">#&gt; 118: 2022-04-28      439.7427  Thursday</span></span>
+<span><span class="co">#&gt; 119: 2022-04-29      394.0033    Friday</span></span>
+<span><span class="co">#&gt; 120: 2022-04-30      293.1242  Saturday</span></span></code></pre></div>
 <p>To show the handling of missing data more clearly, we make our data artificially sparse by keeping only measurements that were made on <em>Mondays</em> and <em>Thursdays.</em> This means we will only have two measurements per week.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">measurements_sparse</span> <span class="op">&lt;-</span> <span class="va">data_zurich</span><span class="op">$</span><span class="va">measurements</span><span class="op">[</span>,<span class="va">weekday</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/weekday.POSIXt.html" class="external-link">weekdays</a></span><span class="op">(</span><span class="va">data_zurich</span><span class="op">$</span><span class="va">measurements</span><span class="op">$</span><span class="va">date</span><span class="op">)</span><span class="op">]</span><span class="op">[</span><span class="va">weekday</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Monday"</span>,<span class="st">"Thursday"</span><span class="op">)</span>,<span class="op">]</span></span>
@@ -336,13 +338,16 @@
 <p>We can further inspect our results object. It has the following attributes:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"     </span></span>
-<span><span class="co">#&gt; [6] "diagnostics" "runtime"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "job"         "stan_model"  "checksums"  </span></span>
+<span><span class="co">#&gt; [4] "summary"     "fitted"      "diagnostics"</span></span>
+<span><span class="co">#&gt; [7] "runtime"</span></span></code></pre></div>
 <p>The <code>job</code> attribute stores all information about the job that was defined via <code>EpiSewer</code>. It contains the data used, alongside meta-information, and the settings for the sampler. By calling <code>run(ww_result$job)</code>, the job can be run again.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">job</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "job_name"      "jobarray_size" "data"          "model"        </span></span>
-<span><span class="co">#&gt;  [5] "init"          "fit_opts"      "results_opts"  "priors_text"  </span></span>
+<span><span class="co">#&gt;  [1] "job_name"      "jobarray_size"</span></span>
+<span><span class="co">#&gt;  [3] "data"          "model"        </span></span>
+<span><span class="co">#&gt;  [5] "init"          "fit_opts"     </span></span>
+<span><span class="co">#&gt;  [7] "results_opts"  "priors_text"  </span></span>
 <span><span class="co">#&gt;  [9] "metainfo"      "overwrite"</span></span></code></pre></div>
 <p>In particular, we can print a concise summary of the modeling details (the <code>EpiSewer</code> defaults in this case):</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
@@ -375,29 +380,42 @@
 <p>The <code>summary</code> attribute stores summarized results for important parameters from the model.</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "samples"                  "R"                       </span></span>
-<span><span class="co">#&gt;  [3] "R_diagnostics"            "expected_infections"     </span></span>
-<span><span class="co">#&gt;  [5] "infections"               "growth_rate"             </span></span>
-<span><span class="co">#&gt;  [7] "doubling_time"            "days_growing"            </span></span>
-<span><span class="co">#&gt;  [9] "expected_load"            "expected_concentration"  </span></span>
-<span><span class="co">#&gt; [11] "concentration"            "normalized_concentration"</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] "samples"                 </span></span>
+<span><span class="co">#&gt;  [2] "R"                       </span></span>
+<span><span class="co">#&gt;  [3] "R_diagnostics"           </span></span>
+<span><span class="co">#&gt;  [4] "expected_infections"     </span></span>
+<span><span class="co">#&gt;  [5] "infections"              </span></span>
+<span><span class="co">#&gt;  [6] "growth_rate"             </span></span>
+<span><span class="co">#&gt;  [7] "doubling_time"           </span></span>
+<span><span class="co">#&gt;  [8] "days_growing"            </span></span>
+<span><span class="co">#&gt;  [9] "expected_load"           </span></span>
+<span><span class="co">#&gt; [10] "expected_concentration"  </span></span>
+<span><span class="co">#&gt; [11] "concentration"           </span></span>
+<span><span class="co">#&gt; [12] "normalized_concentration"</span></span></code></pre></div>
 <p>For example, we can access the exact estimates for the reproduction number.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">R</span>, <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="co">#&gt;          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95</span></span>
-<span><span class="co">#&gt;        &lt;Date&gt;    &lt;num&gt;    &lt;num&gt;      &lt;num&gt;     &lt;num&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1: 2021-12-02 1.115172 1.110672  0.8615012  1.022565  1.201434   1.401401</span></span>
-<span><span class="co">#&gt; 2: 2021-12-03 1.110969 1.108036  0.8628105  1.020731  1.197291   1.385792</span></span>
-<span><span class="co">#&gt; 3: 2021-12-04 1.107426 1.104952  0.8605573  1.018906  1.192224   1.370607</span></span>
-<span><span class="co">#&gt; 4: 2021-12-05 1.104382 1.102559  0.8669692  1.017617  1.187447   1.361395</span></span>
-<span><span class="co">#&gt; 5: 2021-12-06 1.101656 1.100388  0.8699916  1.016991  1.180810   1.349066</span></span>
-<span><span class="co">#&gt;        type seeding</span></span>
-<span><span class="co">#&gt;      &lt;fctr&gt;  &lt;lgcl&gt;</span></span>
-<span><span class="co">#&gt; 1: estimate    TRUE</span></span>
-<span><span class="co">#&gt; 2: estimate    TRUE</span></span>
-<span><span class="co">#&gt; 3: estimate    TRUE</span></span>
-<span><span class="co">#&gt; 4: estimate    TRUE</span></span>
-<span><span class="co">#&gt; 5: estimate    TRUE</span></span></code></pre></div>
+<span><span class="co">#&gt;          date     mean   median lower_0.95</span></span>
+<span><span class="co">#&gt;        &lt;Date&gt;    &lt;num&gt;    &lt;num&gt;      &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1: 2021-12-02 1.115172 1.110672  0.8615012</span></span>
+<span><span class="co">#&gt; 2: 2021-12-03 1.110969 1.108036  0.8628105</span></span>
+<span><span class="co">#&gt; 3: 2021-12-04 1.107426 1.104952  0.8605573</span></span>
+<span><span class="co">#&gt; 4: 2021-12-05 1.104382 1.102559  0.8669692</span></span>
+<span><span class="co">#&gt; 5: 2021-12-06 1.101656 1.100388  0.8699916</span></span>
+<span><span class="co">#&gt;    lower_0.5 upper_0.5 upper_0.95     type</span></span>
+<span><span class="co">#&gt;        &lt;num&gt;     &lt;num&gt;      &lt;num&gt;   &lt;fctr&gt;</span></span>
+<span><span class="co">#&gt; 1:  1.022565  1.201434   1.401401 estimate</span></span>
+<span><span class="co">#&gt; 2:  1.020731  1.197291   1.385792 estimate</span></span>
+<span><span class="co">#&gt; 3:  1.018906  1.192224   1.370607 estimate</span></span>
+<span><span class="co">#&gt; 4:  1.017617  1.187447   1.361395 estimate</span></span>
+<span><span class="co">#&gt; 5:  1.016991  1.180810   1.349066 estimate</span></span>
+<span><span class="co">#&gt;    seeding</span></span>
+<span><span class="co">#&gt;     &lt;lgcl&gt;</span></span>
+<span><span class="co">#&gt; 1:    TRUE</span></span>
+<span><span class="co">#&gt; 2:    TRUE</span></span>
+<span><span class="co">#&gt; 3:    TRUE</span></span>
+<span><span class="co">#&gt; 4:    TRUE</span></span>
+<span><span class="co">#&gt; 5:    TRUE</span></span></code></pre></div>
 <p>The <code>fitted</code> attribute provides access to all details of the fitted stan model (see <a href="https://mc-stan.org/cmdstanr/reference/CmdStanMCMC.html" class="external-link">cmdstanr</a> for details). For example, we can use this to show sampler diagnostics for each chain:</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_result</span><span class="op">$</span><span class="va">fitted</span><span class="op">$</span><span class="fu">diagnostic_summary</span><span class="op">(</span><span class="op">)</span></span>
@@ -458,7 +476,7 @@
 <div class="section level3">
 <h3 id="code">Code<a class="anchor" aria-label="anchor" href="#code"></a>
 </h3>
-<p><a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison" class="external-link">adrian-lison</a></p>
+<p><a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison" class="external-link">adrian-lison</a>, <a href="https://github.com/adrian-lison/EpiSewer/commits?author=bamueh" class="external-link">bamueh</a></p>
 </div>
 <div class="section level3">
 <h3 id="issue-authors">Issue Authors<a class="anchor" aria-label="anchor" href="#issue-authors"></a>
