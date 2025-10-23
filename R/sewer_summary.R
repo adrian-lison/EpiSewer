@@ -48,7 +48,8 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
 
   # pseudo-randomize selected draws
   set.seed(which.min(fit$draws("R")))
-  draw_ids <- sample.int(prod(dim(fit$draws("R[1]"))), ndraws)
+  total_draws <- prod(dim(fit$draws("R[1]")))
+  draw_ids <- sample.int(total_draws, min(ndraws, total_draws))
 
   # draws
   R_samples <- get_latent_trajectories(
