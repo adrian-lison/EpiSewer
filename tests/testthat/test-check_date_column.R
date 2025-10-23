@@ -78,10 +78,10 @@ test_that("check_date_column() converts factor dates", {
 test_that("check_date_column() throws error for unparseable character strings", {
   dt <- data.table(date = c("not a date", "also not a date", "2022-01-03"))
 
-  expect_error(
+  expect_warning(expect_error(
     check_date_column(dt, "date"),
-    "The date column `date` could not be converted to Date format"
-  )
+    "Please check your date data for invalid values"
+  ))
 })
 
 test_that("check_date_column() throws error for numeric types", {

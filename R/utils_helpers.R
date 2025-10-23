@@ -386,7 +386,7 @@ check_date_column <- function(data, date_col_name) {
   if (!inherits(date_col_data, "Date")) {
     # Try to convert POSIXct/POSIXlt to Date
     if (inherits(date_col_data, c("POSIXct", "POSIXlt", "POSIXt"))) {
-      data[, date := as.Date(date)]
+      data[, date := lubridate::as_date(date)]
       cli::cli_inform(c(
         "i" = paste0(
           "The date column `", date_col_name, "` was of type POSIXct/POSIXlt ",
@@ -396,7 +396,7 @@ check_date_column <- function(data, date_col_name) {
     } else if (is.character(date_col_data) || is.factor(date_col_data)) {
       # Try to parse character/factor as Date
       tryCatch({
-        data[, date := as.Date(date)]
+        data[, date := lubridate::as_date(date)]
       }, error = function(e) {
         cli::cli_abort(c(
           paste0(
