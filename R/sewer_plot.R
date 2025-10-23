@@ -539,8 +539,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
 
         flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]
         flows <- setnames(flows, old = c(date_col, flow_col), new = c("date", "flow"))
-
-        flows[, date := lubridate::as_date(date)]
+        flows <- check_date_column(flows, date_col)
 
         if (any(duplicated(flows, by = "date"))) {
           flows <- unique(flows, by = c("date", "flow"))

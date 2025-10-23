@@ -128,7 +128,7 @@ flows_observe <-
           flow_col = flow_col
         )
 
-        flows[, date := lubridate::as_date(date)]
+        flows <- check_date_column(flows, date_col)
 
         if (any(duplicated(flows, by = "date"))) {
           flows <- unique(flows, by = c("date", "flow"))
