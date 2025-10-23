@@ -1,7 +1,3 @@
-## ----------------------------------------------------------------
-##                        Helper functions                       -
-## ----------------------------------------------------------------
-
 #' Clip values of a vector between a lower and an upper bound
 #'
 #' @param vec A vector with values to be clipped
@@ -354,3 +350,94 @@ cli_help <- function(function_name, label = NULL) {
     ")}"
   ))
 }
+
+#' Check and convert date column to Date type
+#'
+#' @description Internal helper function to validate that a date column is of
+#'   type Date and convert it if necessary. Handles POSIXct/POSIXlt conversion
+#'   and parsing of character/factor columns.
+#'
+#' @param data A data.table containing the date column.
+#' @param date_col_name The name of the date column (for error messages).
+#'
+#' @return The data.table with the date column validated and converted to Date.
+#' @keywords internal
+check_date_column <- function(data, date_col_name) {
+  # Check if the date column exists
+  if (!"date" %in% names(data)) {
+    cli::cli_abort(c(
+      paste0(
+        "The date column does not exist in the data."
+      ),
+      "i" = paste0(
+        "Expected a column named 'date', but the data contains: ",
+        paste(names(data), collapse = ", ")
+      ),
+      "i" = paste0(
+        "Please ensure the column `", date_col_name, "` is correctly ",
+        "specified and present in your data."
+      )
+    ))
+  }
+
+  date_col_data <- data[["date"]]
+
+  # Check if already a Date
+  if (!inherits(date_col_data, "Date")) {
+    # Try to convert POSIXct/POSIXlt to Date
+    if (inherits(date_col_data, c("POSIXct", "POSIXlt", "POSIXt"))) {
+      data[, date := as.Date(date)]
+      cli::cli_inform(c(
+        "i" = paste0(
+          "The date column `", date_col_name, "` was of type POSIXct/POSIXlt ",
+          "and has been converted to Date."
+        )
+      ))
+    } else if (is.character(date_col_data) || is.factor(date_col_data)) {
+      # Try to parse character/factor as Date
+      tryCatch({
+        data[, date := as.Date(date)]
+      }, error = function(e) {
+        cli::cli_abort(c(
+          paste0(
+            "The date column `", date_col_name, "` could not be converted ",
+            "to Date format."
+          ),
+          "x" = paste0("Original error: ", e$message),
+          "i" = paste0(
+            "Please ensure the date column contains valid dates in a ",
+            "recognized format (e.g., 'YYYY-MM-DD')."
+          )
+        ))
+      })
+    } else {
+      # Unrecognized type
+      cli::cli_abort(c(
+        paste0(
+          "The date column `", date_col_name, "` must be of type Date, ",
+          "POSIXct, POSIXlt, or a character string that can be parsed as a date."
+        ),
+        "x" = paste0("Found type: ", class(date_col_data)[1]),
+        "i" = paste0(
+          "Please convert your date column to a proper Date type before ",
+          "passing it to this function."
+        )
+      ))
+    }
+  }
+
+  # Final validation: ensure all dates are valid after conversion
+  if (any(is.na(data[["date"]]))) {
+    n_invalid <- sum(is.na(data[["date"]]))
+    cli::cli_abort(c(
+      paste0(
+        "After conversion, ", n_invalid, " date value(s) in column `",
+        date_col_name, "` are NA or invalid."
+      ),
+      "i" = "Please check your date data for invalid values."
+    ))
+  }
+
+  return(data)
+}
+

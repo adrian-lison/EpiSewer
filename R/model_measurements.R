@@ -131,7 +131,7 @@ concentrations_observe <-
 
         # housekeeping
         measurements <- measurements[!is.na(concentration) & !is.na(date), ]
-        measurements[, date := as.Date(date)]
+        measurements <- check_date_column(measurements, date_col)
         measurements[, concentration := as.numeric(concentration)]
 
         if (nrow(measurements)==0) {
