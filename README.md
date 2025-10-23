@@ -122,7 +122,8 @@ Technology) to the public domain (CC BY 4.0 license).
 ``` r
 data_zurich <- SARS_CoV_2_Zurich
 names(data_zurich)
-#> [1] "measurements" "flows"        "cases"        "units"
+#> [1] "measurements" "flows"        "cases"       
+#> [4] "units"
 ```
 
 - `measurements`: `EpiSewer` requires a time series of concentration
@@ -143,19 +144,20 @@ in Zurich. Some days have missing measurements, but this is no problem:
 
 ``` r
 data_zurich$measurements
-#>            date concentration
-#>          <Date>         <num>
-#>   1: 2022-01-01            NA
-#>   2: 2022-01-02            NA
-#>   3: 2022-01-03      455.7580
-#>   4: 2022-01-04      747.8792
-#>   5: 2022-01-05      573.7020
-#>  ---                         
-#> 116: 2022-04-26      182.3664
-#> 117: 2022-04-27      379.2421
-#> 118: 2022-04-28      439.7427
-#> 119: 2022-04-29      394.0033
-#> 120: 2022-04-30      293.1242
+#> Index: <weekday>
+#>            date concentration   weekday
+#>          <Date>         <num>    <char>
+#>   1: 2022-01-01            NA  Saturday
+#>   2: 2022-01-02            NA    Sunday
+#>   3: 2022-01-03      455.7580    Monday
+#>   4: 2022-01-04      747.8792   Tuesday
+#>   5: 2022-01-05      573.7020 Wednesday
+#>  ---                                   
+#> 116: 2022-04-26      182.3664   Tuesday
+#> 117: 2022-04-27      379.2421 Wednesday
+#> 118: 2022-04-28      439.7427  Thursday
+#> 119: 2022-04-29      394.0033    Friday
+#> 120: 2022-04-30      293.1242  Saturday
 ```
 
 To show the handling of missing data more clearly, we make our data
@@ -481,8 +483,9 @@ attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"     
-#> [6] "diagnostics" "runtime"
+#> [1] "job"         "stan_model"  "checksums"  
+#> [4] "summary"     "fitted"      "diagnostics"
+#> [7] "runtime"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -492,8 +495,10 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "data"          "model"        
-#>  [5] "init"          "fit_opts"      "results_opts"  "priors_text"  
+#>  [1] "job_name"      "jobarray_size"
+#>  [3] "data"          "model"        
+#>  [5] "init"          "fit_opts"     
+#>  [7] "results_opts"  "priors_text"  
 #>  [9] "metainfo"      "overwrite"
 ```
 
@@ -540,12 +545,18 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#>  [1] "samples"                  "R"                       
-#>  [3] "R_diagnostics"            "expected_infections"     
-#>  [5] "infections"               "growth_rate"             
-#>  [7] "doubling_time"            "days_growing"            
-#>  [9] "expected_load"            "expected_concentration"  
-#> [11] "concentration"            "normalized_concentration"
+#>  [1] "samples"                 
+#>  [2] "R"                       
+#>  [3] "R_diagnostics"           
+#>  [4] "expected_infections"     
+#>  [5] "infections"              
+#>  [6] "growth_rate"             
+#>  [7] "doubling_time"           
+#>  [8] "days_growing"            
+#>  [9] "expected_load"           
+#> [10] "expected_concentration"  
+#> [11] "concentration"           
+#> [12] "normalized_concentration"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -553,20 +564,27 @@ number.
 
 ``` r
 head(ww_result$summary$R, 5)
-#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>
-#> 1: 2021-12-02 1.115172 1.110672  0.8615012  1.022565  1.201434   1.401401
-#> 2: 2021-12-03 1.110969 1.108036  0.8628105  1.020731  1.197291   1.385792
-#> 3: 2021-12-04 1.107426 1.104952  0.8605573  1.018906  1.192224   1.370607
-#> 4: 2021-12-05 1.104382 1.102559  0.8669692  1.017617  1.187447   1.361395
-#> 5: 2021-12-06 1.101656 1.100388  0.8699916  1.016991  1.180810   1.349066
-#>        type seeding
-#>      <fctr>  <lgcl>
-#> 1: estimate    TRUE
-#> 2: estimate    TRUE
-#> 3: estimate    TRUE
-#> 4: estimate    TRUE
-#> 5: estimate    TRUE
+#>          date     mean   median lower_0.95
+#>        <Date>    <num>    <num>      <num>
+#> 1: 2021-12-02 1.115172 1.110672  0.8615012
+#> 2: 2021-12-03 1.110969 1.108036  0.8628105
+#> 3: 2021-12-04 1.107426 1.104952  0.8605573
+#> 4: 2021-12-05 1.104382 1.102559  0.8669692
+#> 5: 2021-12-06 1.101656 1.100388  0.8699916
+#>    lower_0.5 upper_0.5 upper_0.95     type
+#>        <num>     <num>      <num>   <fctr>
+#> 1:  1.022565  1.201434   1.401401 estimate
+#> 2:  1.020731  1.197291   1.385792 estimate
+#> 3:  1.018906  1.192224   1.370607 estimate
+#> 4:  1.017617  1.187447   1.361395 estimate
+#> 5:  1.016991  1.180810   1.349066 estimate
+#>    seeding
+#>     <lgcl>
+#> 1:    TRUE
+#> 2:    TRUE
+#> 3:    TRUE
+#> 4:    TRUE
+#> 5:    TRUE
 ```
 
 The `fitted` attribute provides access to all details of the fitted stan
@@ -650,7 +668,8 @@ specification. Contributions of any kind are welcome!
 
 ### Code
 
-<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=bamueh">bamueh</a>
 
 ### Issue Authors
 
