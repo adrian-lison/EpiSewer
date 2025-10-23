@@ -39,23 +39,13 @@ Here, $c$ defines the maximum possible $R_t$ (default $R_\max=6$). This link fun
 $R_t$ is modeled via a time series or smoothing spline prior which ensure smoothness through temporal autocorrelation of the $R_t$ estimates.
 
 ##### Option 1: Gaussian process (default)
-This option models $R_t$ as a Gaussian process (GP) with a Matérn kernel, i.e.
+This option models $R_t$ using Gaussian processes (GPs) with a Matérn kernel, i.e.
 
 \begin{equation}
-\text{link}(R_t) = 1 + \delta_t\quad |\quad (1-\phi L)\delta \sim \mathcal{GP}\,\!\big(0,\, k_\nu(\tau;\,\ell_R,\sigma^2_R)\big),
+\text{link}(R_t) = \alpha_t + \delta_t\quad |\quad \alpha \sim \mathcal{GP}\,\!\big(1,\, k_\nu(\tau;\,\ell_\alpha,\sigma^2_\alpha)\big),\; \delta \sim \mathcal{GP}\,\!\big(0,\, k_\nu(\tau;\,\ell_\delta,\sigma^2_\delta)\big),
 \end{equation}
 
-where $\nu$ is the kernel smoothing parameter, $\ell_R$ the length scale, and
-$\sigma^2_R$ the marginal variance of the GP, and $L$ is the lag operator. The
-parameter $\phi$ is a damping factor that controls the autocorrelation of the
-GP. When $\phi=1$, the Gaussian process effectively applies to the first order
-differences of $R_t$. This is desirable for real-time estimation, as it encodes
-the minimally informed prior assumption that the current transmission dynamics
-will continue unchanged. However the resulting non-stationarity of the time
-series slows down MCMC sampling. For $\phi<1$, we get an AR(1) process that is
-stationary and reverts to $R_t=1$ in the long term. We here use a default of
-$\phi=0.99$, which samples faster than $\phi=1$ due to stationarity but still
-predicts continued transmission dynamics on short-term scales.
+where $\alpha_t$ is the long-term trend, $\delta_t$ is the short-term deviation from the trend, modeled each as independent Gaussian processes with Matérn kernel $k_\nu$ and smoothness parameter $\nu=\frac{3}{2}$. Importantly, we choose priors for the kernel parameters such that the length scale $\ell_\alpha$ and magnitude $\sigma_\alpha$ of the long-term trend are in expectation much larger than those of the short-term deviation, i.e. $\ell_\delta$ and $\sigma_\delta$. By decomposing Rt into long- and short-term components, we obtain desirable behavior in real-time estimation: absent a clear signal, the short-term deviation component will revert to zero, such that Rt will follow the long-term trend.
 
 ##### Option 2: Random walk
 This option smoothes Rt using a simple random walk model, i.e.
