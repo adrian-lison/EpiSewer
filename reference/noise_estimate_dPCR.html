@@ -27,7 +27,7 @@ stage."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EpiSewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -151,8 +151,8 @@ between PCR runs, and is modeled as log-normal distributed in EpiSewer.</p></dd>
 <dt id="arg-partition-variation-prior-sigma">partition_variation_prior_sigma<a class="anchor" aria-label="anchor" href="#arg-partition-variation-prior-sigma"></a></dt>
 <dd><p>Prior (standard deviation) on the
 coefficient of variation of the total number of partitions in the dPCR
-reaction. If this is set to zero, the partition variation will
-be fixed to the prior mean and not estimated.</p></dd>
+reaction. If this is set to zero, the partition variation will be fixed to
+the prior mean and not estimated.</p></dd>
 
 
 <dt id="arg-volume-scaled-prior-mu">volume_scaled_prior_mu<a class="anchor" aria-label="anchor" href="#arg-volume-scaled-prior-mu"></a></dt>
@@ -207,7 +207,7 @@ modeling functions.</p></dd>
 to be fitted. Can be passed on to other <code>EpiSewer</code> modeling functions to
 add further data and model specifications.</p>
 <p>The <code>modeldata</code> object also includes information about parameter
-initialization (<code>init</code>), meta data (<code>.metainfo</code>), and checks to be
+initialization (<code>.init</code>), meta data (<code>.metainfo</code>), and checks to be
 performed before model fitting (<code>.checks</code>).</p>
     </div>
     <div class="section level2">
@@ -242,8 +242,8 @@ preprocessed sample), then <code>cv</code> estimates only unexplained PCR noise
     <div class="dont-index"><p><a href="LOD_estimate_dPCR.html">LOD_estimate_dPCR</a> for a limit of detection model specialised for
 dPCR.</p>
 <p>Other noise models:
-<code><a href="noise_estimate_constant_var.html">noise_estimate_constant_var</a>()</code>,
-<code><a href="noise_estimate.html">noise_estimate</a>()</code></p></div>
+<code><a href="noise_estimate.html">noise_estimate()</a></code>,
+<code><a href="noise_estimate_constant_var.html">noise_estimate_constant_var()</a></code></p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -255,7 +255,7 @@ dPCR.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
     </footer></div>

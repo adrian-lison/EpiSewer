@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,7 +58,10 @@
 
 <dl><dt id="arg-sampler">sampler<a class="anchor" aria-label="anchor" href="#arg-sampler"></a></dt>
 <dd><p>Which type of sampler should be used for model fitting?
-Currently, only <code><a href="sampler_stan_mcmc.html">sampler_stan_mcmc()</a></code> is supported.</p></dd>
+Currently supported are</p><ul><li><p><code><a href="sampler_stan_mcmc.html">sampler_stan_mcmc()</a></code>: default, recommended for inference</p></li>
+<li><p><code><a href="sampler_stan_pathfinder.html">sampler_stan_pathfinder()</a></code>: potentially inaccurate, recommended for
+preview only</p></li>
+</ul></dd>
 
 
 <dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
@@ -103,7 +106,7 @@ customized models.</p></dd>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
     </footer></div>

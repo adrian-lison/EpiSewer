@@ -11,7 +11,7 @@ points in a time series."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EpiSewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,15 +77,21 @@ example points in time).</p></dd>
 matrix that represents the trend coefficient. By multiplying this vector
 with the observed time series values y, you directly get the (weighted
 least squares) estimate of the trend.</p>
-<p>#@examples
-#x = 1:6
-#y = x<em>4 + rnorm(6, 0, 0.1)
-#w &lt;- c(0.1, 0.1, 0.1, 0.2, 0.2, 0.3) # weights
-#trend_reg &lt;- get_regression_linear_trend(x, weights = w)
-#as.vector(trend_reg %</em>% y) # this gives you the trend estimate
-#summary(lm(y ~ x, weights = w))$coefficients"x","Estimate" # should be the same</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">x</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span></span></span>
+<span class="r-in"><span><span class="va">y</span> <span class="op">=</span> <span class="va">x</span><span class="op">*</span><span class="fl">4</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">0</span>, <span class="fl">0.1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.2</span>, <span class="fl">0.3</span><span class="op">)</span> <span class="co"># weights</span></span></span>
+<span class="r-in"><span><span class="va">trend_reg</span> <span class="op">&lt;-</span> <span class="fu">get_regression_linear_trend</span><span class="op">(</span><span class="va">x</span>, weights <span class="op">=</span> <span class="va">w</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in get_regression_linear_trend(x, weights = w):</span> could not find function "get_regression_linear_trend"</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">trend_reg</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">y</span><span class="op">)</span> <span class="co"># this gives you the trend estimate</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'trend_reg' not found</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span>, weights <span class="op">=</span> <span class="va">w</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span><span class="st">"x"</span>,<span class="st">"Estimate"</span><span class="op">]</span> <span class="co"># should be the same</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 3.986604</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
@@ -95,7 +101,7 @@ least squares) estimate of the trend.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
     </footer></div>

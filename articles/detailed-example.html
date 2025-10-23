@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -121,8 +121,8 @@ data.</p>
 collect all observation data via <code><a href="../reference/sewer_data.html">sewer_data()</a></code> and all
 assumptions via <code><a href="../reference/sewer_assumptions.html">sewer_assumptions()</a></code>. These are convenience
 functions to make the <code>EpiSewer</code> command more concise. In
-this example however, we will explicitly supply the data and assumptions
-to the relevant modules and components (see the
+this example, we will explicitly supply the data and assumptions to the
+relevant modules and components (see the
 <code><a href="../articles/model-specification.html">vignette("model-specification")</a></code> vignette).</p>
 <div class="section level4">
 <h4 id="measurements">Measurements<a class="anchor" aria-label="anchor" href="#measurements"></a>
@@ -291,7 +291,7 @@ leading to infected individuals:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_infections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_infections.html">model_infections</a></span><span class="op">(</span></span>
 <span>  generation_dist <span class="op">=</span> <span class="fu"><a href="../reference/generation_dist_assume.html">generation_dist_assume</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_discrete_gamma_shifted.html">get_discrete_gamma_shifted</a></span><span class="op">(</span>gamma_mean <span class="op">=</span> <span class="fl">3</span>, gamma_sd <span class="op">=</span> <span class="fl">2.4</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  R <span class="op">=</span> <span class="fu"><a href="../reference/R_estimate_splines.html">R_estimate_splines</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  R <span class="op">=</span> <span class="fu"><a href="../reference/R_estimate_gp.html">R_estimate_gp</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  seeding <span class="op">=</span> <span class="fu"><a href="../reference/seeding_estimate_rw.html">seeding_estimate_rw</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  infection_noise <span class="op">=</span> <span class="fu"><a href="../reference/infection_noise_estimate.html">infection_noise_estimate</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -302,8 +302,8 @@ leading to infected individuals:</p>
 distribution as before.</li>
 <li>
 <code>R</code>: This the effective reproduction number, our main
-parameter of interest. We here estimate it via smoothing B-splines
-(<code><a href="../reference/R_estimate_splines.html">R_estimate_splines()</a></code>), but there are other smoothing
+parameter of interest. We here estimate it using a Gaussian process
+prior (<code><a href="../reference/R_estimate_gp.html">R_estimate_gp()</a></code>), but there are other smoothing
 approaches available (see <code>component_functions("R")</code>).</li>
 <li>
 <code>seeding</code>: The renewal model used by
@@ -333,11 +333,14 @@ horizon to zero.</p>
 (e.g. 7 days) as follows:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_forecast2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_forecast.html">model_forecast</a></span><span class="op">(</span></span>
-<span>  horizon <span class="op">=</span> <span class="fu"><a href="../reference/horizon_assume.html">horizon_assume</a></span><span class="op">(</span>horizon <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span>
+<span>  horizon <span class="op">=</span> <span class="fu"><a href="../reference/horizon_assume.html">horizon_assume</a></span><span class="op">(</span>horizon <span class="op">=</span> <span class="fl">7</span><span class="op">)</span>,</span>
+<span>  damping <span class="op">=</span> <span class="fu"><a href="../reference/damping_assume.html">damping_assume</a></span><span class="op">(</span><span class="fl">0.95</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The forecast module currently only has a single component to define
-the forecast horizon. In the future, this may be extended to allow users
-to customize how forecasts are obtained.</p>
+<p>The <code>damping</code> component allows to dampen the forecast of
+Rt so that trends in transmission will level off after some time. This
+prevents unrealistic extrapolation of transmission dynamics. The default
+is <code>0.95</code>, meaning that the trend is reduced by 5% each day
+until the Rt forecast is essentially constant.</p>
 </div>
 <div class="section level4">
 <h4 id="side-notes">Side notes<a class="anchor" aria-label="anchor" href="#side-notes"></a>
@@ -453,7 +456,7 @@ from the job object:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; infections</span></span>
 <span><span class="co">#&gt;  |- generation_dist_assume</span></span>
-<span><span class="co">#&gt;  |- R_estimate_splines</span></span>
+<span><span class="co">#&gt;  |- R_estimate_gp</span></span>
 <span><span class="co">#&gt;  |- seeding_estimate_rw</span></span>
 <span><span class="co">#&gt;  |- infection_noise_estimate (overdispersion = TRUE)</span></span></code></pre></div>
 </div>
@@ -498,13 +501,14 @@ documentation is your friend!</p>
 <span></span>
 <span><span class="va">ww_infections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_infections.html">model_infections</a></span><span class="op">(</span></span>
 <span>  generation_dist <span class="op">=</span> <span class="fu"><a href="../reference/generation_dist_assume.html">generation_dist_assume</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_discrete_gamma_shifted.html">get_discrete_gamma_shifted</a></span><span class="op">(</span>gamma_mean <span class="op">=</span> <span class="fl">3</span>, gamma_sd <span class="op">=</span> <span class="fl">2.4</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  R <span class="op">=</span> <span class="fu"><a href="../reference/R_estimate_splines.html">R_estimate_splines</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  R <span class="op">=</span> <span class="fu"><a href="../reference/R_estimate_gp.html">R_estimate_gp</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  seeding <span class="op">=</span> <span class="fu"><a href="../reference/seeding_estimate_rw.html">seeding_estimate_rw</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  infection_noise <span class="op">=</span> <span class="fu"><a href="../reference/infection_noise_estimate.html">infection_noise_estimate</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ww_forecast</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_forecast.html">model_forecast</a></span><span class="op">(</span></span>
-<span>  horizon <span class="op">=</span> <span class="fu"><a href="../reference/horizon_none.html">horizon_none</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  horizon <span class="op">=</span> <span class="fu"><a href="../reference/horizon_none.html">horizon_none</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  damping <span class="op">=</span> <span class="fu"><a href="../reference/damping_assume.html">damping_assume</a></span><span class="op">(</span><span class="fl">0.95</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ww_fit_opts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/set_fit_opts.html">set_fit_opts</a></span><span class="op">(</span></span>
@@ -546,7 +550,7 @@ documentation is your friend!</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
     </footer>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,8 +46,7 @@
 
 
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -58,13 +57,15 @@
 
         </dt>
         <dd>Specify observation data</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="sewer_assumptions.html">sewer_assumptions()</a></code>
 
         </dt>
         <dd>Specify modeling assumptions</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="EpiSewer.html">EpiSewer()</a></code>
 
@@ -75,8 +76,7 @@
 
       <div class="section-desc"><p>Modeling functions for the measurement process</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -87,43 +87,50 @@
 
         </dt>
         <dd>Model the measurement process</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="concentrations_observe.html">concentrations_observe()</a></code>
 
         </dt>
         <dd>Observe concentration measurements</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="noise_estimate.html">noise_estimate()</a></code>
 
         </dt>
         <dd>Estimate measurement noise</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="noise_estimate_constant_var.html">noise_estimate_constant_var()</a></code>
 
         </dt>
         <dd>Estimate measurement noise with constant variance</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="noise_estimate_dPCR.html">noise_estimate_dPCR()</a></code>
 
         </dt>
         <dd>Estimate measurement noise for digital PCR data</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="LOD_assume.html">LOD_assume()</a></code>
 
         </dt>
         <dd>Assume a limit of detection</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="LOD_estimate_dPCR.html">LOD_estimate_dPCR()</a></code>
 
         </dt>
         <dd>Estimate a limit of detection model for digital PCR data</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="LOD_none.html">LOD_none()</a></code>
 
@@ -134,8 +141,7 @@
 
       <div class="section-desc"><p>Modeling functions for the sampling process</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -146,31 +152,36 @@
 
         </dt>
         <dd>Model the sampling process</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="outliers_estimate.html">outliers_estimate()</a></code>
 
         </dt>
         <dd>Model outliers via an extreme value distribution</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="outliers_none.html">outliers_none()</a></code>
 
         </dt>
         <dd>Do not model outliers</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="sample_effects_estimate_matrix.html">sample_effects_estimate_matrix()</a></code>
 
         </dt>
         <dd>Estimate sample effects using a design matrix</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="sample_effects_estimate_weekday.html">sample_effects_estimate_weekday()</a></code>
 
         </dt>
         <dd>Estimate weekday sample effects</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="sample_effects_none.html">sample_effects_none()</a></code>
 
@@ -181,8 +192,7 @@
 
       <div class="section-desc"><p>Modeling functions for the sewage process</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -193,19 +203,22 @@
 
         </dt>
         <dd>Model the sewage process</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="flows_assume.html">flows_assume()</a></code>
 
         </dt>
         <dd>Assume a constant wastewater flow</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="flows_observe.html">flows_observe()</a></code>
 
         </dt>
         <dd>Observe wastewater flows</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="residence_dist_assume.html">residence_dist_assume()</a></code>
 
@@ -216,8 +229,7 @@
 
       <div class="section-desc"><p>Modeling functions for the shedding process</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -228,37 +240,50 @@
 
         </dt>
         <dd>Model the shedding process</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="shedding_dist_assume.html">shedding_dist_assume()</a></code>
 
         </dt>
         <dd>Assume a shedding load distribution</dd>
-      </dl><dl><dt>
+
+        <dt>
+
+          <code><a href="shedding_dist_estimate.html">shedding_dist_estimate()</a></code>
+
+        </dt>
+        <dd>Estimate an uncertain shedding load distribution</dd>
+
+        <dt>
 
           <code><a href="incubation_dist_assume.html">incubation_dist_assume()</a></code>
 
         </dt>
         <dd>Assume an incubation period distribution</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="load_per_case_assume.html">load_per_case_assume()</a></code>
 
         </dt>
         <dd>Assume the average load per case</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="load_per_case_calibrate.html">load_per_case_calibrate()</a></code>
 
         </dt>
         <dd>Calibrate the average load per case using case count data</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="load_variation_estimate.html">load_variation_estimate()</a></code>
 
         </dt>
         <dd>Estimate individual-level load variation</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="load_variation_none.html">load_variation_none()</a></code>
 
@@ -269,8 +294,7 @@
 
       <div class="section-desc"><p>Modeling functions for the infection process</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -281,55 +305,99 @@
 
         </dt>
         <dd>Model the infection process</dd>
-      </dl><dl><dt>
+
+        <dt>
+
+          <code><a href="R_estimate_gp.html">R_estimate_gp()</a></code>
+
+        </dt>
+        <dd>Estimate Rt using Gaussian processes</dd>
+
+        <dt>
 
           <code><a href="R_estimate_splines.html">R_estimate_splines()</a></code>
 
         </dt>
         <dd>Estimate Rt via smoothing splines</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="R_estimate_rw.html">R_estimate_rw()</a></code>
 
         </dt>
         <dd>Estimate Rt via a random walk</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="R_estimate_ets.html">R_estimate_ets()</a></code>
 
         </dt>
         <dd>Estimate Rt via exponential smoothing</dd>
-      </dl><dl><dt>
 
-          <code><a href="R_estimate_approx.html">R_estimate_approx()</a></code>
+        <dt>
+
+          <code><a href="R_estimate_piecewise.html">R_estimate_piecewise()</a></code>
 
         </dt>
+        <dd>Estimate Rt via piecewise constant changepoint model</dd>
+
+        <dt>
+
+          <code><a href="R_estimate_smooth_derivative.html">R_estimate_smooth_derivative()</a></code>
+
+        </dt>
+        <dd>Estimate Rt with a smooth derivative</dd>
+
+        <dt>
+
+          <code><a href="R_estimate_changepoint_splines.html">R_estimate_changepoint_splines()</a></code>
+
+        </dt>
+        <dd>Estimate Rt via a changepoint spline model</dd>
+
+        <dt>
+
+          <code><a href="R_estimate_approx.html">R_estimate_approx()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
+        </dt>
         <dd>Estimate Rt using an approximation of the generative renewal model</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="generation_dist_assume.html">generation_dist_assume()</a></code>
 
         </dt>
         <dd>Assume a generation time distribution</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="seeding_estimate_constant.html">seeding_estimate_constant()</a></code>
 
         </dt>
         <dd>Estimate constant seeding infections</dd>
-      </dl><dl><dt>
+
+        <dt>
+
+          <code><a href="seeding_estimate_growth.html">seeding_estimate_growth()</a></code>
+
+        </dt>
+        <dd>Estimate seeding infections with a time-varying growth rate</dd>
+
+        <dt>
 
           <code><a href="seeding_estimate_rw.html">seeding_estimate_rw()</a></code>
 
         </dt>
         <dd>Estimate seeding infections using a random walk model</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="infection_noise_estimate.html">infection_noise_estimate()</a></code>
 
         </dt>
         <dd>Estimate infection noise</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="infection_noise_none.html">infection_noise_none()</a></code>
 
@@ -340,8 +408,7 @@
 
       <div class="section-desc"><p>Modeling functions for specifying forecasts</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -352,25 +419,40 @@
 
         </dt>
         <dd>Forecasting module</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="horizon_assume.html">horizon_assume()</a></code>
 
         </dt>
         <dd>Specify the forecast horizon</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="horizon_none.html">horizon_none()</a></code>
 
         </dt>
         <dd>Do not produce forecasts</dd>
+
+        <dt>
+
+          <code><a href="damping_assume.html">damping_assume()</a></code>
+
+        </dt>
+        <dd>Dampen forecasts</dd>
+
+        <dt>
+
+          <code><a href="damping_none.html">damping_none()</a></code>
+
+        </dt>
+        <dd>Do not dampen forecasts</dd>
       </dl></div><div class="section level2">
       <h2 id="model-fitting">Model fitting<a class="anchor" aria-label="anchor" href="#model-fitting"></a></h2>
 
       <div class="section-desc"><p>Functions to specify and run the sampling of EpiSewer models</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -381,31 +463,43 @@
 
         </dt>
         <dd>Configure the model fitting</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="sampler_stan_mcmc.html">sampler_stan_mcmc()</a></code>
 
         </dt>
         <dd>Use the stan MCMC sampler</dd>
-      </dl><dl><dt>
+
+        <dt>
+
+          <code><a href="sampler_stan_pathfinder.html">sampler_stan_pathfinder()</a></code>
+
+        </dt>
+        <dd>Use stan's pathfinder variational inference algorithm</dd>
+
+        <dt>
 
           <code><a href="model_stan_opts.html">model_stan_opts()</a></code>
 
         </dt>
         <dd>Specify details of the stan model</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="set_results_opts.html">set_results_opts()</a></code>
 
         </dt>
         <dd>Configure results returned after model fitting</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="sewer_compile.html">sewer_compile()</a></code>
 
         </dt>
         <dd>Compile EpiSewer models</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="run.html">run()</a></code>
 
@@ -416,8 +510,7 @@
 
       <div class="section-desc"><p>Functions for plotting</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -428,55 +521,64 @@
 
         </dt>
         <dd>Plot the effective reproduction number</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_growth_report.html">plot_growth_report()</a></code>
 
         </dt>
         <dd>Plot a growth report</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_growth_rate.html">plot_growth_rate()</a></code>
 
         </dt>
         <dd>Plot the epidemic growth rate</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_doubling_time.html">plot_doubling_time()</a></code>
 
         </dt>
         <dd>Plot the epidemic doubling time</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_infections.html">plot_infections()</a></code>
 
         </dt>
         <dd>Plot infections</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_load.html">plot_load()</a></code>
 
         </dt>
         <dd>Plot the estimated load</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_concentration.html">plot_concentration()</a></code>
 
         </dt>
         <dd>Plot predicted concentration</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_prior_posterior.html">plot_prior_posterior()</a></code>
 
         </dt>
         <dd>Visually compare prior and posterior of a model parameter</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_LOD.html">plot_LOD()</a></code>
 
         </dt>
         <dd>Plot limit of detection</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="plot_sample_effects.html">plot_sample_effects()</a></code>
 
@@ -487,8 +589,7 @@
 
       <div class="section-desc"><p>Helper functions for specifying distributions and other assumptions</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -499,31 +600,40 @@
 
         </dt>
         <dd>Get PMF of a discretized Gamma distribution</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="get_discrete_gamma_shifted.html">get_discrete_gamma_shifted()</a></code>
 
         </dt>
         <dd>Get PMF of a discretized shifted Gamma distribution</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="get_discrete_lognormal.html">get_discrete_lognormal()</a></code>
 
         </dt>
         <dd>Get PMF of a discretized lognormal distribution</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="suggest_load_per_case.html">suggest_load_per_case()</a></code>
 
         </dt>
         <dd>Suggest load per case assumption using wastewater data and case numbers</dd>
+
+        <dt>
+
+          <code><a href="qexpgamma.html">qexpgamma()</a></code>
+
+        </dt>
+        <dd>Exponential-Gamma distribution</dd>
       </dl></div><div class="section level2">
       <h2 id="preprocessing">Preprocessing<a class="anchor" aria-label="anchor" href="#preprocessing"></a></h2>
 
       <div class="section-desc"><p>Functions for preprocessing data</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -539,8 +649,7 @@
 
       <div class="section-desc"><p>Utility functions</p></div>
 
-
-    </div><div class="section level2">
+      <dl></dl></div><div class="section level2">
 
 
 
@@ -551,19 +660,22 @@
 
         </dt>
         <dd>Get a list of modeling functions for a component</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="modeldata_init.html">modeldata_init()</a></code>
 
         </dt>
         <dd>Construct an unspecified EpiSewer model</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="get_checksums.html">get_checksums()</a></code>
 
         </dt>
         <dd>Get checksums that uniquely identify an EpiSewer job.</dd>
-      </dl><dl><dt>
+
+        <dt>
 
           <code><a href="summarize_fit.html">summarize_fit()</a></code>
 
@@ -579,7 +691,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
     </footer></div>

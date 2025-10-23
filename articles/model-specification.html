@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,7 +84,7 @@ generating process behind the wastewater measurements:
 <code>sampling</code>, and <code>measurements</code>. There is a 6th
 module to specify <code>forecast</code> functionality. Each of these
 modules consists of a number of module components, as shown below.</p>
-<p><img src="figures/specification-model-1.png" alt="The 6 modules of the EpiSewer model" width="100%"></p>
+<p><img src="figures/specification-model-1.png" class="r-plt" alt="The 6 modules of the EpiSewer model" width="100%"></p>
 <p>The modules are defined using their corresponding module function,
 i.e. by calling <code><a href="../reference/model_infections.html">model_infections()</a></code>,
 <code><a href="../reference/model_shedding.html">model_shedding()</a></code>, <code><a href="../reference/model_sewage.html">model_sewage()</a></code>,
@@ -133,15 +133,17 @@ component, you can consult the documentation or use the helper
 <h4 id="multiple-modeling-options">💡 Multiple modeling options<a class="anchor" aria-label="anchor" href="#multiple-modeling-options"></a>
 </h4>
 <p>Some components have multiple versions of the same modeling function
-type. For example, there are currently three approaches to estimate the
-reproduction number, namely <code><a href="../reference/R_estimate_splines.html">R_estimate_splines()</a></code> (smoothing
-splines), <code><a href="../reference/R_estimate_rw.html">R_estimate_rw()</a></code> (random walk),
-<code><a href="../reference/R_estimate_ets.html">R_estimate_ets()</a></code> (exponential smoothing), and
-<code><a href="../reference/R_estimate_approx.html">R_estimate_approx()</a></code> (approximation of renewal model).</p>
+type. For example, there are several approaches to estimate the
+reproduction number, such as <code><a href="../reference/R_estimate_gp.html">R_estimate_gp()</a></code> (Gaussian
+process), <code><a href="../reference/R_estimate_rw.html">R_estimate_rw()</a></code> (random walk),
+<code><a href="../reference/R_estimate_ets.html">R_estimate_ets()</a></code> (exponential smoothing),
+<code><a href="../reference/R_estimate_splines.html">R_estimate_splines()</a></code> (smoothing splines) and more.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">EpiSewer</span><span class="fu">::</span><span class="fu"><a href="../reference/component_functions.html">component_functions</a></span><span class="op">(</span><span class="st">"R"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "R_estimate_approx()"  "R_estimate_splines()" "R_estimate_rw()"     </span></span>
-<span><span class="co">#&gt; [4] "R_estimate_ets()"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "R_estimate_gp()"                  "R_estimate_ets()"                </span></span>
+<span><span class="co">#&gt; [3] "R_estimate_smooth_derivative()"   "R_estimate_piecewise()"          </span></span>
+<span><span class="co">#&gt; [5] "R_estimate_changepoint_splines()" "R_estimate_approx()"             </span></span>
+<span><span class="co">#&gt; [7] "R_estimate_rw()"                  "R_estimate_splines()"</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="modeling-restrictions">❗ Modeling restrictions<a class="anchor" aria-label="anchor" href="#modeling-restrictions"></a>
@@ -242,7 +244,7 @@ arguments and throw an error if they differ.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
     </footer>

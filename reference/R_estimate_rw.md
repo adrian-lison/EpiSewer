@@ -1,0 +1,157 @@
+# Estimate Rt via a random walk
+
+This option estimates the effective reproduction number over time using
+a random walk.
+
+## Usage
+
+``` r
+R_estimate_rw(
+  R_start_prior_mu = 1,
+  R_start_prior_sigma = 0.8,
+  sd_base_prior_mu = 0,
+  sd_base_prior_sd = 0.025,
+  sd_change_prior_shape = 0.5,
+  sd_change_prior_scale = 1e-04,
+  sd_change_distance = 7 * 26,
+  link = "inv_softplus",
+  R_max = 6,
+  differenced = FALSE,
+  noncentered = TRUE,
+  modeldata = modeldata_init()
+)
+```
+
+## Arguments
+
+- R_start_prior_mu:
+
+  Prior (mean) on the initial value of Rt.
+
+- R_start_prior_sigma:
+
+  Prior (standard deviation) on the initial value of Rt.
+
+- sd_base_prior_mu:
+
+  Prior (mean) on the baseline standard deviation of the innovations.
+  Please note that for consistency, the overall standard deviation of
+  innovations will always be the baseline plus an additive component
+  from `sd_change_prior` even if no changepoints are modeled (see
+  below).
+
+- sd_base_prior_sd:
+
+  Prior (standard deviation) on the baseline standard deviation of the
+  innovations. See `sd_base_prior_mu` for details.
+
+- sd_change_prior_shape:
+
+  Exponential-Gamma prior (shape) on standard deviation additional to
+  baseline. This prior describes the distribution of the standard
+  deviation of Rt over time. EpiSewer will estimate a baseline standard
+  deviation (see `sd_base_prior_sd`), and model additional variation on
+  top of the baseline using a changepoint model. Please see the details
+  for more explanation.
+
+- sd_change_prior_scale:
+
+  Exponential-Gamma prior (scale) on standard deviation additional to
+  baseline. See `sd_change_prior_shape` and the details for more
+  explanation.
+
+- sd_change_distance:
+
+  Distance between changepoints used to model additional variation in
+  Rt. The default change point distance is 4 weeks. Very short
+  changepoint distances must be chosen with care, as they can make the
+  Rt time series too flexible. If set to zero, no change points are
+  modeled.
+
+- link:
+
+  Link function. Currently supported are `inv_softplus` (default) and
+  `scaled_logit`. Both of these links are configured to behave
+  approximately like the identity function around R=1, but become
+  increasingly non-linear below (and in the case of `scaled_logit` also
+  above) R=1.
+
+- R_max:
+
+  If `link=scaled_logit` is used, a maximum reproduction number must be
+  assumed. This should be higher than any realistic R value for the
+  modeled pathogen. Default is 6.
+
+- differenced:
+
+  If `FALSE` (default), the random walk is applied to the absolute Rt
+  time series. If `TRUE`, it is instead applied to the differenced time
+  series, i.e. now the trend is modeled as a random walk.
+
+- noncentered:
+
+  If `TRUE` (default), a non-centered parameterization is used to model
+  the innovations of the random walk (for better sampling efficiency).
+
+- modeldata:
+
+  A `modeldata` object to which the above model specifications should be
+  added. Default is an empty model given by
+  [`modeldata_init()`](https://adrian-lison.github.io/EpiSewer/reference/modeldata_init.md).
+  Can also be an already partly specified model returned by other
+  `EpiSewer` modeling functions.
+
+## Value
+
+A `modeldata` object containing data and specifications of the model to
+be fitted. Can be passed on to other `EpiSewer` modeling functions to
+add further data and model specifications.
+
+The `modeldata` object also includes information about parameter
+initialization (`.init`), meta data (`.metainfo`), and checks to be
+performed before model fitting (`.checks`).
+
+## Details
+
+The smoothness of Rt estimates is influenced by the prior on the
+standard deviation of the random walk. It also influences the
+uncertainty of Rt estimates towards the present / date of estimation,
+when limited data signal is available. The prior on the intercept of the
+random walk should reflect your expectation of Rt at the beginning of
+the time series. If estimating from the start of an epidemic, you might
+want to use a prior with mean \> 1 for the intercept.
+
+The variability of Rt can change over time. For example, during the
+height of an epidemic wave, countermeasures may lead to much faster
+changes in Rt than observable at other times (baseline). This potential
+additional variability is accounted for using change points placed at
+regular intervals. The additional standard deviation of the state space
+model innovations on top of the baseline then evolves linearly between
+the change points. The additional variation defined at the changepoints
+is modeled as independently distributed and following a Lomax
+distribution, also known as Exponential-Gamma (EG) distribution. This is
+an exponential distribution where the rate is Gamma distributed. The
+prior `sd_change_prior` defines the shape and scale of this Gamma
+distribution. The distribution has a strong peak towards zero and a long
+tail. This regularizes the estimated deviations from the baseline
+standard deviation - most deviations are small, but during special time
+periods, the deviation might also be larger.
+
+The priors of this component have the following functional form:
+
+- intercept of the random walk: `Normal`
+
+- baseline standard deviation of the random walk: `Half-normal`
+
+- additional standard deviation at changepoints: `Exponential-Gamma`
+
+## See also
+
+Other Rt models:
+[`R_estimate_approx()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_approx.md),
+[`R_estimate_changepoint_splines()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_changepoint_splines.md),
+[`R_estimate_ets()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_ets.md),
+[`R_estimate_gp()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_gp.md),
+[`R_estimate_piecewise()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_piecewise.md),
+[`R_estimate_smooth_derivative()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_smooth_derivative.md),
+[`R_estimate_splines()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_splines.md)

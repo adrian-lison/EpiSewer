@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">EpiSewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -86,11 +86,11 @@
 ⭐ Flow normalization<br>
 ⭐ Sewer residence time distributions</p>
 <p><strong>Shedding</strong><br>
-⭐ Incubation period and shedding load distributions<br>
+⭐ Shedding load distributions (with uncertainty)<br>
 ⭐ Individual-level shedding load variation</p>
 <p><strong>Infections</strong><br>
 ⭐ Stochastic infection model with overdispersion<br>
-⭐ Flexible <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math> smoothing (random walk, exponential smoothing, splines)<br>
+⭐ Flexible <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math> smoothing (Gaussian process, random walk, exponential smoothing, splines, changepoint models)<br>
 ⭐ Transmission indicators: <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>, growth rate, doubling time, and more</p>
 <p><strong>Forecast</strong><br>
 ⭐ Probabilistic forecasts of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>, infections, concentrations and more</p>
@@ -149,6 +149,7 @@
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_zurich</span><span class="op">$</span><span class="va">measurements</span></span>
 <span><span class="co">#&gt;            date concentration</span></span>
+<span><span class="co">#&gt;          &lt;Date&gt;         &lt;num&gt;</span></span>
 <span><span class="co">#&gt;   1: 2022-01-01            NA</span></span>
 <span><span class="co">#&gt;   2: 2022-01-02            NA</span></span>
 <span><span class="co">#&gt;   3: 2022-01-03      455.7580</span></span>
@@ -165,6 +166,7 @@
 <code class="sourceCode R"><span><span class="va">measurements_sparse</span> <span class="op">&lt;-</span> <span class="va">data_zurich</span><span class="op">$</span><span class="va">measurements</span><span class="op">[</span>,<span class="va">weekday</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/base/weekday.POSIXt.html" class="external-link">weekdays</a></span><span class="op">(</span><span class="va">data_zurich</span><span class="op">$</span><span class="va">measurements</span><span class="op">$</span><span class="va">date</span><span class="op">)</span><span class="op">]</span><span class="op">[</span><span class="va">weekday</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Monday"</span>,<span class="st">"Thursday"</span><span class="op">)</span>,<span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">measurements_sparse</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt;           date concentration  weekday</span></span>
+<span><span class="co">#&gt;         &lt;Date&gt;         &lt;num&gt;   &lt;char&gt;</span></span>
 <span><span class="co">#&gt;  1: 2022-01-03      455.7580   Monday</span></span>
 <span><span class="co">#&gt;  2: 2022-01-06      330.7298 Thursday</span></span>
 <span><span class="co">#&gt;  3: 2022-01-10      387.6885   Monday</span></span>
@@ -183,6 +185,7 @@
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_zurich</span><span class="op">$</span><span class="va">flows</span></span>
 <span><span class="co">#&gt;            date        flow</span></span>
+<span><span class="co">#&gt;          &lt;Date&gt;       &lt;num&gt;</span></span>
 <span><span class="co">#&gt;   1: 2022-01-01 3.41163e+11</span></span>
 <span><span class="co">#&gt;   2: 2022-01-02 3.41163e+11</span></span>
 <span><span class="co">#&gt;   3: 2022-01-03 1.58972e+11</span></span>
@@ -203,6 +206,7 @@
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_zurich</span><span class="op">$</span><span class="va">cases</span></span>
 <span><span class="co">#&gt;            date     cases</span></span>
+<span><span class="co">#&gt;          &lt;Date&gt;     &lt;num&gt;</span></span>
 <span><span class="co">#&gt;   1: 2022-01-01        NA</span></span>
 <span><span class="co">#&gt;   2: 2022-01-02        NA</span></span>
 <span><span class="co">#&gt;   3: 2022-01-03 1519.5313</span></span>
@@ -255,7 +259,7 @@
 <h3 id="estimation">Estimation<a class="anchor" aria-label="anchor" href="#estimation"></a>
 </h3>
 <p>Now that we have the data and necessary assumptions, we can use <code>EpiSewer</code> to estimate the effective reproduction number. We here use the default model and settings provided by <code>EpiSewer</code>. With the helper function <code><a href="reference/set_fit_opts.html">set_fit_opts()</a></code> we specify our sampling approach: we apply Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and 500 sampling iterations each.</p>
-<p>Stan regularly provides updates about the progress of the sampler. The overall runtime will depend on your hardware resources, the size of the data, the complexity of the model used, and how well the model actually fits the data. On a MacBook Pro (2 GHz Quad-Core Intel Core i5) the example below takes about 5 minutes to run.</p>
+<p>Stan regularly provides updates about the progress of the sampler. The overall runtime will depend on your hardware resources, the size of the data, the complexity of the model used, and how well the model actually fits the data. On a modern laptop the example below should take about 3 minutes to run.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="co"># allow stan to use 4 cores, i.e. one for each chain</span></span>
 <span><span class="va">ww_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/EpiSewer.html">EpiSewer</a></span><span class="op">(</span></span>
@@ -329,7 +333,7 @@
 <div class="section level3">
 <h3 id="more-details">More details<a class="anchor" aria-label="anchor" href="#more-details"></a>
 </h3>
-<p>We can further inspect our results object. It has three attributes:</p>
+<p>We can further inspect our results object. It has the following attributes:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"     </span></span>
@@ -364,7 +368,7 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; infections</span></span>
 <span><span class="co">#&gt;  |- generation_dist_assume</span></span>
-<span><span class="co">#&gt;  |- R_estimate_splines</span></span>
+<span><span class="co">#&gt;  |- R_estimate_gp</span></span>
 <span><span class="co">#&gt;  |- seeding_estimate_rw</span></span>
 <span><span class="co">#&gt;  |- infection_noise_estimate (overdispersion = TRUE)</span></span></code></pre></div>
 <p>➡️ Check out the <a href="https://adrian-lison.github.io/EpiSewer/articles/model-specification.html">model specification</a> and <a href="https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html">detailed example</a> vignettes to better understand the modeling details and customize the <code>EpiSewer</code> model.</p>
@@ -372,21 +376,23 @@
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1] "samples"                  "R"                       </span></span>
-<span><span class="co">#&gt;  [3] "expected_infections"      "infections"              </span></span>
-<span><span class="co">#&gt;  [5] "growth_rate"              "doubling_time"           </span></span>
-<span><span class="co">#&gt;  [7] "days_growing"             "expected_load"           </span></span>
-<span><span class="co">#&gt;  [9] "expected_concentration"   "concentration"           </span></span>
-<span><span class="co">#&gt; [11] "normalized_concentration"</span></span></code></pre></div>
+<span><span class="co">#&gt;  [3] "R_diagnostics"            "expected_infections"     </span></span>
+<span><span class="co">#&gt;  [5] "infections"               "growth_rate"             </span></span>
+<span><span class="co">#&gt;  [7] "doubling_time"            "days_growing"            </span></span>
+<span><span class="co">#&gt;  [9] "expected_load"            "expected_concentration"  </span></span>
+<span><span class="co">#&gt; [11] "concentration"            "normalized_concentration"</span></span></code></pre></div>
 <p>For example, we can access the exact estimates for the reproduction number.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">R</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95</span></span>
-<span><span class="co">#&gt; 1: 2021-12-03 1.036807 1.035745  0.6965128 0.9325218  1.135077   1.380163</span></span>
-<span><span class="co">#&gt; 2: 2021-12-04 1.037644 1.036200  0.7072554 0.9352365  1.131915   1.375141</span></span>
-<span><span class="co">#&gt; 3: 2021-12-05 1.038698 1.035635  0.7225687 0.9409083  1.130870   1.360814</span></span>
-<span><span class="co">#&gt; 4: 2021-12-06 1.039966 1.037090  0.7374740 0.9479347  1.126985   1.354385</span></span>
-<span><span class="co">#&gt; 5: 2021-12-07 1.041443 1.038955  0.7485678 0.9517000  1.126372   1.344230</span></span>
+<span><span class="co">#&gt;        &lt;Date&gt;    &lt;num&gt;    &lt;num&gt;      &lt;num&gt;     &lt;num&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1: 2021-12-02 1.115172 1.110672  0.8615012  1.022565  1.201434   1.401401</span></span>
+<span><span class="co">#&gt; 2: 2021-12-03 1.110969 1.108036  0.8628105  1.020731  1.197291   1.385792</span></span>
+<span><span class="co">#&gt; 3: 2021-12-04 1.107426 1.104952  0.8605573  1.018906  1.192224   1.370607</span></span>
+<span><span class="co">#&gt; 4: 2021-12-05 1.104382 1.102559  0.8669692  1.017617  1.187447   1.361395</span></span>
+<span><span class="co">#&gt; 5: 2021-12-06 1.101656 1.100388  0.8699916  1.016991  1.180810   1.349066</span></span>
 <span><span class="co">#&gt;        type seeding</span></span>
+<span><span class="co">#&gt;      &lt;fctr&gt;  &lt;lgcl&gt;</span></span>
 <span><span class="co">#&gt; 1: estimate    TRUE</span></span>
 <span><span class="co">#&gt; 2: estimate    TRUE</span></span>
 <span><span class="co">#&gt; 3: estimate    TRUE</span></span>
@@ -402,24 +408,24 @@
 <span><span class="co">#&gt; [1] 0 0 0 0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $ebfmi</span></span>
-<span><span class="co">#&gt; [1] 0.9634045 0.9527539 1.0770535 1.0579167</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.9483824 1.0604264 0.9608296 0.8695765</span></span></code></pre></div>
 <p>Finally, the <code>checksums</code> attribute gives us several checksums that uniquely identify the job which was run. These can be used to check whether two job results used the same or different models, input data, fitting options, or inits. If all checksums are identical (and the seed is not <code>NULL</code>), then the results should also be identical.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_result</span><span class="op">$</span><span class="va">checksums</span></span>
 <span><span class="co">#&gt; $model</span></span>
-<span><span class="co">#&gt; [1] "9ab6b8f9db0836e27cf9e9ac6ab1ea02"</span></span>
+<span><span class="co">#&gt; [1] "df1728c80a97f9d14521b5a43bc98a12"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $input</span></span>
-<span><span class="co">#&gt; [1] "c5d9acd8e8877d4ffbb24019996c07f9"</span></span>
+<span><span class="co">#&gt; [1] "a2976b41049451d10be221f31e922835"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $fit_opts</span></span>
-<span><span class="co">#&gt; [1] "5309bbbc3cd1cc109eac60d2fc82de45"</span></span>
+<span><span class="co">#&gt; [1] "bfdedc2ea8d89b577ad57b86ac83e706"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $results_opts</span></span>
 <span><span class="co">#&gt; [1] "e92f83d0ca5d22b3bb5849d62c5412ee"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $init</span></span>
-<span><span class="co">#&gt; [1] "4329118480e9cb86b22d61c739d8c77e"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "03dd9d0e5e02a8b393c5e765de3f79fa"</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -441,6 +447,32 @@
 <span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a>  journal <span class="ot">=</span> {bioRxiv preprint},</span>
 <span id="cb30-6"><a href="#cb30-6" tabindex="-1"></a>  doi <span class="ot">=</span> {<span class="fl">10.1101</span><span class="sc">/</span><span class="dv">2024</span>.<span class="dv">10</span>.<span class="fl">14.618307</span>}</span>
 <span id="cb30-7"><a href="#cb30-7" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="contributors">Contributors<a class="anchor" aria-label="anchor" href="#contributors"></a>
+</h2>
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<p>All contributions to this project are gratefully acknowledged using the <a href="https://github.com/ropensci/allcontributors" class="external-link"><code>allcontributors</code> package</a> following the <a href="https://allcontributors.org" class="external-link">all-contributors</a> specification. Contributions of any kind are welcome!</p>
+<div class="section level3">
+<h3 id="code">Code<a class="anchor" aria-label="anchor" href="#code"></a>
+</h3>
+<p><a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison" class="external-link">adrian-lison</a></p>
+</div>
+<div class="section level3">
+<h3 id="issue-authors">Issue Authors<a class="anchor" aria-label="anchor" href="#issue-authors"></a>
+</h3>
+<p><a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aseabbs" class="external-link">seabbs</a>, <a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aigoldsteinh" class="external-link">igoldsteinh</a>, <a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Ajamesmbaazam" class="external-link">jamesmbaazam</a></p>
+</div>
+<div class="section level3">
+<h3 id="issue-contributors">Issue Contributors<a class="anchor" aria-label="anchor" href="#issue-contributors"></a>
+</h3>
+<p><a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3ASamuelBrand1" class="external-link">SamuelBrand1</a>, <a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3AOrthomyxoviridae" class="external-link">Orthomyxoviridae</a>, <a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3Akaitejohnson" class="external-link">kaitejohnson</a></p>
+<!-- markdownlint-enable -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+</div>
 </div>
 </div>
 
@@ -483,7 +515,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
     </footer>

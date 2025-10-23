@@ -1,0 +1,77 @@
+# Estimate infection noise
+
+This option estimates noise in the infection process, i.e. implements a
+stochastic renewal model. This allows for variation in the number of new
+infections generated at each time step, which can often speed up model
+fitting.
+
+## Usage
+
+``` r
+infection_noise_estimate(
+  overdispersion = TRUE,
+  overdispersion_prior_mu = 0.1,
+  overdispersion_prior_sigma = 0,
+  modeldata = modeldata_init()
+)
+```
+
+## Arguments
+
+- overdispersion:
+
+  If `TRUE` (default), new infections are modeled as Negative Binomial
+  distributed. If `FALSE`, new infections are modeled as Poisson
+  distributed.
+
+- overdispersion_prior_mu:
+
+  Prior (mean) on the overdispersion parameter of the Negative Binomial.
+  The default of 0.1 corresponds to 10% overdispersion. It is also the
+  limit of the coefficient of variation (CV) of infections as the
+  infection incidence becomes large.
+
+- overdispersion_prior_sigma:
+
+  Prior (standard deviation) on the overdispersion parameter of the
+  Negative Binomial. If this is set to zero (default), the
+  overdispersion will be fixed to the prior mean and not estimated.
+
+- modeldata:
+
+  A `modeldata` object to which the above model specifications should be
+  added. Default is an empty model given by
+  [`modeldata_init()`](https://adrian-lison.github.io/EpiSewer/reference/modeldata_init.md).
+  Can also be an already partly specified model returned by other
+  `EpiSewer` modeling functions.
+
+## Value
+
+A `modeldata` object containing data and specifications of the model to
+be fitted. Can be passed on to other `EpiSewer` modeling functions to
+add further data and model specifications.
+
+The `modeldata` object also includes information about parameter
+initialization (`.init`), meta data (`.metainfo`), and checks to be
+performed before model fitting (`.checks`).
+
+## Details
+
+The level of overdispersion is often unidentifiable from a single time
+series of measurements. This is why the overdispersion is fixed by
+default.
+
+For complicated reasons, MCMC sampling of high infection numbers is
+faster with a certain degree of overdispersion. Thus, if modeling large
+waves, assuming some overdispersion can also make sense for
+computational reasons. The effects on the estimated transmission
+dynamics are often minimal.
+
+The priors of this component have the following functional form:
+
+- overdispersion parameter of the Negative Binomial: `Truncated normal`
+
+## See also
+
+Other infection noise models:
+[`infection_noise_none()`](https://adrian-lison.github.io/EpiSewer/reference/infection_noise_none.md)

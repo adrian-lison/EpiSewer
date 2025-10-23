@@ -1,0 +1,513 @@
+# Detailed example
+
+This vignette repeats the introductory example from the
+[README](https://adrian-lison.github.io/EpiSewer/index.md), but shows
+how to specify the different modules and components in `EpiSewer`
+explicitly.
+
+💡 For a conceptual overview over modules and components, we recommend
+to first read the
+[`vignette("model-specification")`](https://adrian-lison.github.io/EpiSewer/articles/model-specification.md)
+vignette.
+
+### Loading the package
+
+We assume that `EpiSewer` is already successfully installed (see
+[README](https://adrian-lison.github.io/EpiSewer/index.md): installing
+the package).
+
+``` r
+library(EpiSewer)
+library(data.table)
+library(ggplot2)
+```
+
+### Data
+
+This is again the wastewater data from Zurich, Switzerland, provided by
+EAWAG (Swiss Federal Institute of Aquatic Science and Technology).
+
+``` r
+data_zurich <- SARS_CoV_2_Zurich
+```
+
+As in the introductory example, we keep only measurements that were made
+on Mondays and Thursdays to test `EpiSewer` on sparse data.
+
+``` r
+measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
+head(measurements_sparse, 10)
+#>           date concentration  weekday
+#>         <Date>         <num>   <char>
+#>  1: 2022-01-03      455.7580   Monday
+#>  2: 2022-01-06      330.7298 Thursday
+#>  3: 2022-01-10      387.6885   Monday
+#>  4: 2022-01-13      791.1111 Thursday
+#>  5: 2022-01-17      551.7701   Monday
+#>  6: 2022-01-20      643.9910 Thursday
+#>  7: 2022-01-24      741.9150   Monday
+#>  8: 2022-01-27      770.1810 Thursday
+#>  9: 2022-01-31      627.1725   Monday
+#> 10: 2022-02-03      561.2913 Thursday
+```
+
+### Modeling
+
+In the [README](https://adrian-lison.github.io/EpiSewer/index.md), we
+used a shortcut to collect all observation data via
+[`sewer_data()`](https://adrian-lison.github.io/EpiSewer/reference/sewer_data.md)
+and all assumptions via
+[`sewer_assumptions()`](https://adrian-lison.github.io/EpiSewer/reference/sewer_assumptions.md).
+These are convenience functions to make the `EpiSewer` command more
+concise. In this example, we will explicitly supply the data and
+assumptions to the relevant modules and components (see the
+[`vignette("model-specification")`](https://adrian-lison.github.io/EpiSewer/articles/model-specification.md)
+vignette).
+
+#### Measurements
+
+We start with the first module, the observed measurements. The module
+can be specified as follows:
+
+``` r
+ww_measurements <- model_measurements(
+  concentrations = concentrations_observe(measurements = measurements_sparse),
+  noise = noise_estimate(),
+  LOD = LOD_none()
+)
+```
+
+As we see, the module is defined using the
+[`model_measurements()`](https://adrian-lison.github.io/EpiSewer/reference/model_measurements.md)
+function. The arguments of this function represent the different module
+components. In this case, there is:
+
+- a `concentrations` component: defines pathogen concentrations in the
+  wastewater
+- a `noise` component: defines measurement noise
+- a `LOD` component: defines a limit of detection in wastewater samples
+
+We used a specific modeling function for each of the components. The
+suffix of each function explains what we modeled:
+
+- `concentrations_observe`: The concentrations are modeled as
+  observation data to which the model can be fitted.
+- `noise_estimate`: The degree of measurement noise is estimated from
+  the data.
+- `LOD_none`: We do not model a limit of detection. This also means that
+  zero measurements are dropped.
+
+We can also print the module object to see what we have modeled:
+
+``` r
+ww_measurements
+#> measurements
+#>  |- concentrations_observe
+#>  |- noise_estimate
+#>  |- LOD_none
+```
+
+❗ Note that the modeling functions above have further arguments, and
+`EpiSewer` will use default settings if they are not specified. For
+example, we could set a custom prior on the measurement noise as
+follows:
+
+``` r
+ww_measurements2 <- model_measurements(
+  concentrations = concentrations_observe(measurements = measurements_sparse),
+  noise = noise_estimate(cv_prior_mu = 0.5, cv_prior_sigma = 0.1), # prior on coefficient of variation
+  LOD = LOD_none()
+)
+```
+
+➡️ To find out which options are available for a given modeling
+function, check out its function documentation.
+
+Before we move to the next module, remember that there can be multiple
+modeling options for a component, and `EpiSewer` offers one modeling
+function for each option. To see all available options, you can use
+[`component_functions()`](https://adrian-lison.github.io/EpiSewer/reference/component_functions.md):
+
+``` r
+component_functions("LOD")
+#> [1] "LOD_none()"          "LOD_assume()"        "LOD_estimate_dPCR()"
+```
+
+For example, we could assume a limit of detection of `2.56 gc/mL` (based
+on a lab experiment by EAWAG, this was the lowest concentration at which
+still 95% of replicates were positive) as follows:
+
+``` r
+ww_measurements3 <- model_measurements(
+  concentrations = concentrations_observe(measurements = measurements_sparse),
+  noise = noise_estimate(cv_prior_mu = 0.5, cv_prior_sigma = 0.1), # prior on coefficient of variation
+  LOD = LOD_assume(limit = 2.56, prob = 0.95)
+)
+```
+
+If our measurements are based on digital PCR (dPCR), we can also model
+the LOD with an explicit model of dPCR noise. Note that we also have to
+adapt the noise component accordingly.
+
+``` r
+ww_measurements4 <- model_measurements(
+  concentrations = concentrations_observe(measurements = measurements_sparse),
+  noise = noise_estimate_dPCR(), # also model dPCR noise
+  LOD = LOD_estimate_dPCR()
+)
+```
+
+#### Sampling
+
+Next is the `sampling` module. It models the process of sampling from
+the wastewater:
+
+``` r
+ww_sampling <- model_sampling(
+  outliers = outliers_none(),
+  sample_effects = sample_effects_none()
+)
+```
+
+The sampling module currently has two component. The outlier component
+allows to automatically detect outlier observations during model
+fitting, making transmission dynamic estimates more robust. The sample
+effects component allows to model the effects of sample characteristics
+(like time from sampling until processing, which can lead to
+degradation) on the detectable pathogen concentrations. In this simple
+example, we do not model outliers or sampling effects.
+
+#### Sewage
+
+The `sewage` module describes aspects of the sewage system:
+
+``` r
+ww_sewage <- model_sewage(
+  flows = flows_observe(flows = data_zurich$flows),
+  residence_dist = residence_dist_assume(residence_dist = c(1))
+)
+```
+
+It includes two components:
+
+- `flows`: Daily flow volumes at the sampling site. Here we use the
+  measured flows at the treatment plant in Zurich, specified using
+  [`flows_observe()`](https://adrian-lison.github.io/EpiSewer/reference/flows_observe.md).
+- `residence_dist`: Sewer residence time distribution for pathogen
+  particles. In large sewage systems, particles may travel longer than a
+  day depending on where and when they were shed into the wastewater.
+  This component allows to model the corresponding delay distribution.
+  We here use the modeling function
+  [`residence_dist_assume()`](https://adrian-lison.github.io/EpiSewer/reference/residence_dist_assume.md)
+  to indicate that we make an assumption about the residence time. In
+  our case, we assume that particles arrive at the sampling site within
+  the same day (indicated by the vector `c(1)`, which puts 100%
+  probability on a residence time of 0 days).
+
+#### Shedding
+
+The `shedding` module describes how infected individuals shed pathogen
+particles into the wastewater:
+
+``` r
+ww_shedding <- model_shedding(
+  shedding_dist = shedding_dist_assume(
+    get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397), shedding_reference = "symptom_onset"),
+  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4)),
+  load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
+  load_variation = load_variation_estimate()
+)
+```
+
+The shedding module requires a number of assumptions (see explanations
+in the [README](https://adrian-lison.github.io/EpiSewer/index.md)):
+
+- `shedding_dist` and `incubation_dist`: We use the same shedding load
+  distribution (by days since symptom onset) as before. We also need to
+  assume an incubation period distribution.
+- `load_per_case`: The load per case assumption is calibrated based on
+  observed case data. In the
+  [README](https://adrian-lison.github.io/EpiSewer/index.md), we
+  supplied the case data via
+  [`sewer_data()`](https://adrian-lison.github.io/EpiSewer/reference/sewer_data.md).
+  Here, we now supply it directly to
+  [`load_per_case_calibrate()`](https://adrian-lison.github.io/EpiSewer/reference/load_per_case_calibrate.md).
+- `load_variation`: `EpiSewer` offers the option to model
+  individual-level variation in shedding, and this is recommended as a
+  default.
+
+#### Infections
+
+The `infections` module describes the underlying process leading to
+infected individuals:
+
+``` r
+ww_infections <- model_infections(
+  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
+  R = R_estimate_gp(),
+  seeding = seeding_estimate_rw(),
+  infection_noise = infection_noise_estimate()
+)
+```
+
+The module has the following epidemiological components:
+
+- `generation_dist`: We use the same generation time distribution as
+  before.
+- `R`: This the effective reproduction number, our main parameter of
+  interest. We here estimate it using a Gaussian process prior
+  ([`R_estimate_gp()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_gp.md)),
+  but there are other smoothing approaches available (see
+  `component_functions("R")`).
+- `seeding`: The renewal model used by `EpiSewer` requires a seeding
+  phase during which the reproduction number cannot be modeled. We thus
+  let the initial infections be estimated using a simple geometric
+  random walk model.
+- `infection_noise`: We also model noise in the infection process,
+  meaning that `EpiSewer` will fit a stochastic infection model. This
+  makes sense in most cases.
+
+#### Forecast
+
+Last but not least, there is the `forecast` module. This module
+describes how the generative model defined by the other modules is used
+to produce forecasts of Rt, infections, concentrations and other
+quantities. By default, as in our
+[README](https://adrian-lison.github.io/EpiSewer/index.md) example, we
+produce no forecasts by effectively setting the forecast horizon to
+zero.
+
+``` r
+ww_forecast <- model_forecast(
+  horizon = horizon_none()
+)
+```
+
+If we want to produce forecasts, we can define the forecast horizon
+(e.g. 7 days) as follows:
+
+``` r
+ww_forecast2 <- model_forecast(
+  horizon = horizon_assume(horizon = 7),
+  damping = damping_assume(0.95)
+)
+```
+
+The `damping` component allows to dampen the forecast of Rt so that
+trends in transmission will level off after some time. This prevents
+unrealistic extrapolation of transmission dynamics. The default is
+`0.95`, meaning that the trend is reduced by 5% each day until the Rt
+forecast is essentially constant.
+
+#### Side notes
+
+We have now specified all six `EpiSewer` modules. While this seems like
+a lot of code, note that the majority of component specifications are
+optional and have sensible defaults. In practice, you only need to
+explicitly write out components that need certain assumptions or that
+you want to customize. In the present example, we also (unnecessarily)
+specified the `EpiSewer` defaults. For example, the `infections` module
+described above could simply be written as
+
+``` r
+ww_infections <- model_infections(
+  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4))
+)
+```
+
+because the `R`, `seeding`, and `infection_noise` component used the
+defaults. No default is given for the generation time distribution,
+since it is pathogen-specific.
+
+💡 An advantage of coding each component explicitly is that your
+modeling decisions are clearly documented.
+
+### Settings
+
+Before starting the estimation, let’s have a quick look at some settings
+for model fitting and post-processing.
+
+The `fit_opts` settings describe how the model is fitted. The first
+argument, `model` tells EpiSewer where to find the `stan` files with the
+model code. The default is the `EpiSewer` package itself, but you can
+also tweak this setting to provide your own customized model files (see
+[`model_stan_opts()`](https://adrian-lison.github.io/EpiSewer/reference/model_stan_opts.md)
+for details). The `sampler` argument specifies the sampling algorithm
+used for model fitting. Currently, only sampling via stan’s MCMC
+algorithm is supported. The function
+[`sampler_stan_mcmc()`](https://adrian-lison.github.io/EpiSewer/reference/sampler_stan_mcmc.md)
+allows you to pass various arguments to stan, including number of
+chains, iterations, and much more.
+
+``` r
+ww_fit_opts <- set_fit_opts(
+  model = model_stan_opts(package = "EpiSewer"),
+  sampler = sampler_stan_mcmc(
+    iter_warmup = 500,
+    iter_sampling = 500,
+    chains = 4,
+    parallel_chains = 4, # run all chains in parallel
+    seed = 42
+  )
+)
+```
+
+The `results_opts` argument specifies what results to return after model
+fitting. We specify `fitted=TRUE`, which means that the whole fitted
+model object will be stored. Setting this to `fitted=FALSE` saves
+memory - but certain things like detailed diagnostics or extracting
+draws of additional parameters will not be possible. We also specify
+that parameters of interest should be summarized with 50% and 95%
+credible intervals (in addition to the mean and median). Moreover, we
+want to explicitly store 50 posterior samples for the Rt and infections
+time series (useful for spaghetti plots etc.).
+
+``` r
+ww_results_opts <- set_results_opts(
+  fitted = TRUE,
+  summary_intervals = c(0.5, 0.95),
+  samples_ndraws = 50
+)
+```
+
+### Estimation
+
+Now we have everything we need. To fit the model, we simply pass all the
+EpiSewer modules and settings defined above to the
+[`EpiSewer()`](https://adrian-lison.github.io/EpiSewer/reference/EpiSewer.md)
+function.
+
+``` r
+ww_result <- EpiSewer(
+  measurements = ww_measurements,
+  sampling = ww_sampling,
+  sewage = ww_sewage,
+  shedding = ww_shedding,
+  infections = ww_infections,
+  forecast = ww_forecast,
+  fit_opts = ww_fit_opts,
+  results_opts = ww_results_opts
+)
+```
+
+Note that this time we don’t need a `data` or `assumptions` argument,
+because we provided all data and assumptions to the respective module
+components.
+
+The above model is identical to the default model fitted in the
+[README](https://adrian-lison.github.io/EpiSewer/index.md), so we don’t
+repeat the results again.
+
+Remember that you can print a summary of the full modeling details from
+the job object:
+
+``` r
+ww_result$job$model
+#> measurements
+#>  |- concentrations_observe
+#>  |- noise_estimate
+#>  |- LOD_none
+#> 
+#> sampling
+#>  |- outliers_none
+#>  |- sample_effects_none
+#> 
+#> sewage
+#>  |- flows_observe
+#>  |- residence_dist_assume
+#> 
+#> shedding
+#>  |- incubation_dist_assume
+#>  |- shedding_dist_assume
+#>  |- load_per_case_calibrate
+#>  |- load_variation_estimate
+#> 
+#> infections
+#>  |- generation_dist_assume
+#>  |- R_estimate_gp
+#>  |- seeding_estimate_rw
+#>  |- infection_noise_estimate (overdispersion = TRUE)
+```
+
+### Full model
+
+For your convenience, we here provide the full model using the explicit
+component specifications in one code block. This can serve as a starting
+point to adapt the specification and try out different modeling options
+(check out the function documentation for the module functions, or try
+out the
+[`component_functions()`](https://adrian-lison.github.io/EpiSewer/reference/component_functions.md)
+helper).
+
+Also, don’t forget that the modeling functions have further arguments to
+customize priors and other modeling details. As always, the function
+documentation is your friend!
+
+``` r
+measurements_sparse <- data_zurich$measurements[
+  , weekday := weekdays(data_zurich$measurements$date)
+  ][weekday %in% c("Monday","Thursday"),]
+
+ww_measurements <- model_measurements(
+  concentrations = concentrations_observe(measurements = measurements_sparse),
+  noise = noise_estimate(),
+  LOD = LOD_none()
+)
+
+ww_sampling <- model_sampling(
+  outliers = outliers_none(),
+  sample_effects = sample_effects_none()
+)
+
+ww_sewage <- model_sewage(
+  flows = flows_observe(flows = data_zurich$flows),
+  residence_dist = residence_dist_assume(residence_dist = c(1))
+)
+
+ww_shedding <- model_shedding(
+  shedding_dist = shedding_dist_assume(get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397), shedding_reference = "symptom_onset"),
+  incubation_dist = incubation_dist_assume(get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4)),
+  load_per_case = load_per_case_calibrate(cases = data_zurich$cases),
+  load_variation = load_variation_estimate()
+)
+
+ww_infections <- model_infections(
+  generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
+  R = R_estimate_gp(),
+  seeding = seeding_estimate_rw(),
+  infection_noise = infection_noise_estimate()
+)
+
+ww_forecast <- model_forecast(
+  horizon = horizon_none(),
+  damping = damping_assume(0.95)
+)
+
+ww_fit_opts <- set_fit_opts(
+  model = model_stan_opts(package = "EpiSewer"),
+  sampler = sampler_stan_mcmc(
+    iter_warmup = 500,
+    iter_sampling = 500,
+    chains = 4,
+    parallel_chains = 4, # run all chains in parallel
+    seed = 42
+  )
+)
+
+ww_results_opts <- set_results_opts(
+  fitted = TRUE,
+  summary_intervals = c(0.5, 0.95),
+  samples_ndraws = 50
+)
+
+ww_result <- EpiSewer(
+  measurements = ww_measurements,
+  sampling = ww_sampling,
+  sewage = ww_sewage,
+  shedding = ww_shedding,
+  infections = ww_infections,
+  forecast = ww_forecast,
+  fit_opts = ww_fit_opts,
+  results_opts = ww_results_opts
+)
+```

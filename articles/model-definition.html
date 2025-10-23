@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSewer</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -173,8 +173,42 @@ smoothness through temporal autocorrelation of the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
 estimates.</p>
 <div class="section level5">
-<h5 id="option-1-random-walk">Option 1: Random walk<a class="anchor" aria-label="anchor" href="#option-1-random-walk"></a>
+<h5 id="option-1-gaussian-process-default">Option 1: Gaussian process (default)<a class="anchor" aria-label="anchor" href="#option-1-gaussian-process-default"></a>
 </h5>
+<p>This option models
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+using Gaussian processes (GPs) with a Matérn kernel, i.e.</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>α</mi><mi>t</mi></msub><mo>+</mo><msub><mi>δ</mi><mi>t</mi></msub><mspace width="1.0em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="1.0em"></mspace><mi>α</mi><mo>∼</mo><mrow><mi>𝒢</mi><mi>𝒫</mi></mrow><mspace width="0.167em"></mspace><mspace width="-0.167em"></mspace><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mspace width="0.167em"></mspace><msub><mi>k</mi><mi>ν</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>τ</mi><mo>;</mo><mspace width="0.167em"></mspace><msub><mo>ℓ</mo><mi>α</mi></msub><mo>,</mo><msubsup><mi>σ</mi><mi>α</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="0.278em"></mspace><mi>δ</mi><mo>∼</mo><mrow><mi>𝒢</mi><mi>𝒫</mi></mrow><mspace width="0.167em"></mspace><mspace width="-0.167em"></mspace><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mspace width="0.167em"></mspace><msub><mi>k</mi><mi>ν</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>τ</mi><mo>;</mo><mspace width="0.167em"></mspace><msub><mo>ℓ</mo><mi>δ</mi></msub><mo>,</mo><msubsup><mi>σ</mi><mi>δ</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">\begin{equation}
+\text{link}(R_t) = \alpha_t + \delta_t\quad |\quad \alpha \sim \mathcal{GP}\,\!\big(1,\, k_\nu(\tau;\,\ell_\alpha,\sigma^2_\alpha)\big),\; \delta \sim \mathcal{GP}\,\!\big(0,\, k_\nu(\tau;\,\ell_\delta,\sigma^2_\delta)\big),
+\end{equation}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>α</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\alpha_t</annotation></semantics></math>
+is the long-term trend,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>δ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\delta_t</annotation></semantics></math>
+is the short-term deviation from the trend, modeled each as independent
+Gaussian processes with Matérn kernel
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>k</mi><mi>ν</mi></msub><annotation encoding="application/x-tex">k_\nu</annotation></semantics></math>
+and smoothness parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ν</mi><mo>=</mo><mfrac><mn>3</mn><mn>2</mn></mfrac></mrow><annotation encoding="application/x-tex">\nu=\frac{3}{2}</annotation></semantics></math>.
+Importantly, we choose priors for the kernel parameters such that the
+length scale
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mo>ℓ</mo><mi>α</mi></msub><annotation encoding="application/x-tex">\ell_\alpha</annotation></semantics></math>
+and magnitude
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>α</mi></msub><annotation encoding="application/x-tex">\sigma_\alpha</annotation></semantics></math>
+of the long-term trend are in expectation much larger than those of the
+short-term deviation,
+i.e. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mo>ℓ</mo><mi>δ</mi></msub><annotation encoding="application/x-tex">\ell_\delta</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>δ</mi></msub><annotation encoding="application/x-tex">\sigma_\delta</annotation></semantics></math>.
+By decomposing Rt into long- and short-term components, we obtain
+desirable behavior in real-time estimation: absent a clear signal, the
+short-term deviation component will revert to zero, such that Rt will
+follow the long-term trend.</p>
+</div>
+<div class="section level5">
+<h5 id="option-2-random-walk">Option 2: Random walk<a class="anchor" aria-label="anchor" href="#option-2-random-walk"></a>
+</h5>
+<p>This option smoothes Rt using a simple random walk model, i.e.</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="0.167em"></mspace><msub><mi>R</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><msup><msub><mi>σ</mi><mrow><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>R</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\begin{equation}
 \text{link}(R_t)\,|\,R_{t-1} \sim N(\text{link}(R_{t-1}),{\sigma_{\text{link}(R)}}^2)
 \end{equation}</annotation></semantics></math></p>
@@ -185,11 +219,11 @@ and a zero-truncated normal prior on the standard deviation
 of the random walk.</p>
 </div>
 <div class="section level5">
-<h5 id="option-2-exponential-smoothing">Option 2: Exponential smoothing<a class="anchor" aria-label="anchor" href="#option-2-exponential-smoothing"></a>
+<h5 id="option-3-exponential-smoothing">Option 3: Exponential smoothing<a class="anchor" aria-label="anchor" href="#option-3-exponential-smoothing"></a>
 </h5>
 <p>This option uses an <strong>innovations state space model</strong>
 with additive errors to implement an exponential smoothing prior (Holt’s
-linear trend method with dampening)<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;Hyndman, R. J. &amp;amp; Athanasopoulos, G. &lt;em&gt;Forecasting:
+linear trend method with damping)<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;Hyndman, R. J. &amp;amp; Athanasopoulos, G. &lt;em&gt;Forecasting:
 principles and practice&lt;/em&gt;. (OTexts, 2018).&lt;/p&gt;"><sup>2</sup></a>. For this,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
 is modeled recursively as</p>
@@ -214,7 +248,7 @@ is a level smoothing parameter,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mi>′</mi></mrow><annotation encoding="application/x-tex">\beta'</annotation></semantics></math>
 a trend smoothing parameter, and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mi>′</mi></mrow><annotation encoding="application/x-tex">\phi'</annotation></semantics></math>
-a dampening parameter. We use normal priors for the intercepts of the
+a damping parameter. We use normal priors for the intercepts of the
 level
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>l</mi><mn>1</mn></msub><annotation encoding="application/x-tex">l_1</annotation></semantics></math>
 and trend
@@ -226,7 +260,7 @@ Beta priors for the smoothing parameters
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mi>′</mi></mrow><annotation encoding="application/x-tex">\alpha'</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mi>′</mi></mrow><annotation encoding="application/x-tex">\beta'</annotation></semantics></math>.</p>
-<p>In theory, the dampening parameter
+<p>In theory, the damping parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mi>′</mi></mrow><annotation encoding="application/x-tex">\phi'</annotation></semantics></math>
 can also be estimated from the data, but usually has to be fixed due to
 identifiability issues. The default is
@@ -235,10 +269,10 @@ i.e. the strength of the trend is assumed to halve approximately every
 week of predicting into the future.</p>
 </div>
 <div class="section level5">
-<h5 id="option-3-penalized-b-splines">Option 3: Penalized B-splines<a class="anchor" aria-label="anchor" href="#option-3-penalized-b-splines"></a>
+<h5 id="option-4-splines">Option 4: Splines<a class="anchor" aria-label="anchor" href="#option-4-splines"></a>
 </h5>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>𝐁</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>t</mi><mo>,</mo><mspace width="0.167em"></mspace><mo stretchy="true" form="postfix">]</mo></mrow></msub><mspace width="0.167em"></mspace><mi>a</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
-\text{link}(R_t) = \boldsymbol{B}_{[t,\,]} \,  a
+\text{link}(R_t) = \boldsymbol{B}_{[t,\,]} \, a
 \end{equation}</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐁</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>t</mi><mo>,</mo><mspace width="0.167em"></mspace><mo stretchy="true" form="postfix">]</mo></mrow></msub><annotation encoding="application/x-tex">\boldsymbol{B}_{[t,\,]}</annotation></semantics></math>
@@ -249,8 +283,8 @@ and
 is a vector of spline coefficients, with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">df</mtext><mo>=</mo><mtext mathvariant="normal">number of knots</mtext><mo>+</mo><mtext mathvariant="normal">spline degree</mtext></mrow><annotation encoding="application/x-tex">\text{df} = \text{number of knots} + \text{spline degree}</annotation></semantics></math>
 being the degrees of freedom.</p>
-<p>We here use <em>penalized</em> B-splines, which we implemented by
-regularizing the spline coefficients via a random walk<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Kharratzadeh, M. &amp;amp; Stan development team. Splines in
+<p>We here use <em>penalized</em> B-splines, implemented by regularizing
+the spline coefficients via a random walk<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Kharratzadeh, M. &amp;amp; Stan development team. Splines in
 Stan. Stan documentation case study. (2017). Available from: &lt;a href="https://mc-stan.org" class="external-link uri"&gt;https://mc-stan.org&lt;/a&gt;.&lt;/p&gt;'><sup>3</sup></a>, i.e.</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>i</mi></msub><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="0.167em"></mspace><msub><mi>a</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>a</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>,</mo><msubsup><mi>σ</mi><mi>a</mi><mn>2</mn></msubsup><mspace width="0.167em"></mspace><msub><mi>δ</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\begin{equation}
 a_{i}\,|\,a_{i-1} \sim N(a_{i-1}, \sigma_{a}^2 \, \delta_i)
@@ -276,6 +310,103 @@ at the beginning of the time series is used.</p>
 distance, however the knot distance is heuristically reduced for dates
 close to the present (which are only partially informed by data) to
 avoid erroneous extrapolation.</p>
+<p>EpiSewer also supports multi-level spline smoothing by decomposing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>t</mi></msub><mo>=</mo><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mn>1</mn></msub><mo>+</mo><msubsup><mi>δ</mi><mi>t</mi><mtext mathvariant="normal">local</mtext></msubsup><mo>+</mo><msubsup><mi>δ</mi><mi>t</mi><mtext mathvariant="normal">global</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\begin{equation}
+R_t = \text{link}(R_1 + \delta_t^\text{local} + \delta_t^\text{global}), 
+\end{equation}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>1</mn></msub><annotation encoding="application/x-tex">R_1</annotation></semantics></math>
+is an intercept,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>δ</mi><mi>t</mi><mtext mathvariant="normal">local</mtext></msubsup><annotation encoding="application/x-tex">\delta_t^\text{local}</annotation></semantics></math>
+a component for smaller, short-term variation, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>δ</mi><mi>t</mi><mtext mathvariant="normal">global</mtext></msubsup><annotation encoding="application/x-tex">\delta_t^\text{global}</annotation></semantics></math>
+a component for larger, long-term variation. The two components are then
+smoothed using penalized cubic splines as described above, i.e.</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>δ</mi><mi>t</mi><mi>ϕ</mi></msubsup><mo>=</mo><msubsup><mi>𝐁</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>t</mi><mo>,</mo><mspace width="0.167em"></mspace><mo stretchy="true" form="postfix">]</mo></mrow><mi>ϕ</mi></msubsup><mspace width="0.167em"></mspace><msup><mi>a</mi><mi>ϕ</mi></msup><mo>,</mo><mspace width="1.0em"></mspace><mi>ϕ</mi><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mtext mathvariant="normal">local</mtext><mo>,</mo><mtext mathvariant="normal">global</mtext><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
+\delta_t^\phi = \boldsymbol{B}^\phi_{[t,\,]} \, a^\phi, \quad \phi \in \{\text{local},\text{global}\}.
+\end{equation}</annotation></semantics></math></p>
+</div>
+<div class="section level5">
+<h5 id="option-5-smooth-derivative">Option 5: Smooth derivative<a class="anchor" aria-label="anchor" href="#option-5-smooth-derivative"></a>
+</h5>
+<p>This option enforces a smooth first derivative of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+by placing cubic splines on the first-order differences of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>,
+</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>δ</mi><mi>t</mi></msub><mo>,</mo><mspace width="1.0em"></mspace><msub><mi>δ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>𝐁</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>t</mi><mo>,</mo><mspace width="0.167em"></mspace><mo stretchy="true" form="postfix">]</mo></mrow></msub><mspace width="0.167em"></mspace><mi>a</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">\begin{equation}
+\text{link}(R_t) = \text{link}(R_{t-1}) + \delta_t,\quad \delta_t = \boldsymbol{B}_{[t,\,]} \, a,
+\end{equation}</annotation></semantics></math></p>
+<p>where the spline coefficients
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>a</mi><mn>0</mn></msub><mo>,</mo><msub><mi>a</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>a</mi><mrow><mi>n</mi><mo>+</mo><mn>2</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">a = (a_0, a_1, \dots, a_{n+2})</annotation></semantics></math>
+are given a sparse Normal-Exponential-Gamma prior
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>i</mi></msub><mo>∼</mo><mtext mathvariant="normal">NEG</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo>=</mo><mn>0</mn><mo>,</mo><mi>λ</mi><mo>=</mo><msub><mi>λ</mi><mi>a</mi></msub><mo>,</mo><mi>γ</mi><mo>=</mo><msub><mi>γ</mi><mi>a</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">a_i \sim \text{NEG}(\mu = 0, \lambda = \lambda_a, \gamma = \gamma_a)</annotation></semantics></math>
+for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>≤</mo><mi>i</mi><mo>≤</mo><mi>n</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1 \leq i \leq n+1</annotation></semantics></math>.
+This prior has a long tail that supports large changes in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>.
+The first and last spline coefficient are fixed to 0 to avoid erroneous
+extrapolation towards the boundaries. This also has the effect that
+trends in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+level off towards the present.</p>
+</div>
+<div class="section level5">
+<h5 id="option-6-piecewise-constant">Option 6: Piecewise constant<a class="anchor" aria-label="anchor" href="#option-6-piecewise-constant"></a>
+</h5>
+<p>This option models
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+as a piecewise constant function. The changepoints of the constant
+pieces are estimated from the data using an approximate changepoint
+model, corresponding roughly to the following model:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mn>1</mn></msub><mo>+</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>K</mi></munderover><msub><mi>a</mi><mi>i</mi></msub><mspace width="0.167em"></mspace><mn>𝟙</mn><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>≥</mo><msub><mi>C</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\begin{equation}
+\text{link}(R_t) = \text{link}(R_1 + \sum_{i=1}^K a_i \, \mathbb{1}(t \geq C_i))
+\end{equation}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>1</mn></msub><annotation encoding="application/x-tex">R_1</annotation></semantics></math>
+is the intercept,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>C</mi><mi>i</mi></msub><annotation encoding="application/x-tex">C_i</annotation></semantics></math>
+are the estimated changepoint times of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
+different changepoints, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mi>i</mi></msub><annotation encoding="application/x-tex">a_i</annotation></semantics></math>
+is the change in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+at changepoint
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>,
+modeled via a sparse Normal-Exponential-Gamma prior
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>i</mi></msub><mo>∼</mo><mtext mathvariant="normal">NEG</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo>=</mo><mn>0</mn><mo>,</mo><mi>λ</mi><mo>=</mo><msub><mi>λ</mi><mi>a</mi></msub><mo>,</mo><mi>γ</mi><mo>=</mo><msub><mi>γ</mi><mi>a</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">a_i \sim \text{NEG}(\mu = 0, \lambda = \lambda_a, \gamma = \gamma_a)</annotation></semantics></math>
+for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>≤</mo><mi>i</mi><mo>≤</mo><mi>K</mi></mrow><annotation encoding="application/x-tex">1 \leq i \leq K</annotation></semantics></math>.
+This prior has a long tail that supports large changes in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>.
+Generally, this option is suitable when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+follows a step-like trajectory with occasional large jumps, e.g. due to
+strong interventions. It is less suitable for modeling gradual changes
+in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+over time.</p>
+</div>
+<div class="section level5">
+<h5 id="addition-changepoint-model-for-variability">Addition: Changepoint model for variability<a class="anchor" aria-label="anchor" href="#addition-changepoint-model-for-variability"></a>
+</h5>
+<p>Options 2-4 also support changes in the variability of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+over time. For example, during the height of an epidemic wave,
+countermeasures may lead to much faster changes in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+than observable at other times (baseline). This potential additional
+variability is modeled using a linear change point model for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mrow><mtext mathvariant="normal">link</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>R</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma_{\text{link}(R)}^2</annotation></semantics></math>
+(or for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>a</mi></msub><annotation encoding="application/x-tex">\sigma_{a}</annotation></semantics></math>
+when using splines). The change points are placed at regular intervals,
+and the additional variation at the changepoints is modeled as
+independently distributed and following an Exponential-Gamma (EG)
+distribution, which has a strong peak towards zero and a long tail.</p>
 </div>
 </div>
 </div>
@@ -296,24 +427,9 @@ infections.</p>
 </h4>
 <p>Variable:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ι</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\iota_t</annotation></semantics></math></p>
-<div class="section level5">
-<h5 id="seeding">Seeding<a class="anchor" aria-label="anchor" href="#seeding"></a>
-</h5>
-<p>We require a seeding phase at the start of the modeled time period,
-when the renewal model cannot be applied yet. Here we use a random walk
-on the log scale to model the expected number of initial infections.</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>ι</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><msup><msub><mi>σ</mi><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>ι</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mo stretchy="true" form="postfix">|</mo></mrow><mspace width="0.167em"></mspace><mi>t</mi><mo>≤</mo><mi>G</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
-\log(\iota_t)|\iota_{t-1} \sim N(\log(\iota_{t-1}),{\sigma_{\log(\iota)}}^2) \,|\, t \leq G
-\end{equation}</annotation></semantics></math></p>
-<p>with a normal prior on intercept
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\log(\iota_1)</annotation></semantics></math>
-and a zero-truncated normal prior on the standard deviation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>ι</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><annotation encoding="application/x-tex">\sigma_{\log(\iota)}</annotation></semantics></math>
-of the random walk.</p>
-</div>
-<div class="section level5">
-<h5 id="renewal-model">Renewal model<a class="anchor" aria-label="anchor" href="#renewal-model"></a>
-</h5>
+<p>We model the expected number of infections
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ι</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\iota_t</annotation></semantics></math>
+via the renewal equation</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ι</mi><mi>t</mi></msub><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>I</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msub><mi>R</mi><mi>t</mi></msub><munderover><mo>∑</mo><mrow><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mi>G</mi></munderover><msubsup><mi>τ</mi><mi>s</mi><mtext mathvariant="normal">gen</mtext></msubsup><mspace width="0.167em"></mspace><msub><mi>I</mi><mrow><mi>t</mi><mo>−</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="0.167em"></mspace><mi>t</mi><mo>&gt;</mo><mi>G</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
 \iota_t = E[I_t] = R_t \sum_{s=1}^G \tau^\text{gen}_s \, I_{t-s} \,|\, t &gt; G
 \end{equation}</annotation></semantics></math></p>
@@ -322,12 +438,13 @@ of the random walk.</p>
 is the number of realized infections that occurred
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
 days before
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
 and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mtext mathvariant="normal">gen</mtext></msup><annotation encoding="application/x-tex">\tau^\text{gen}</annotation></semantics></math>
+is a discrete generation time distribution
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>τ</mi><mtext mathvariant="normal">gen</mtext></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>τ</mi><mn>1</mn><mtext mathvariant="normal">gen</mtext></msubsup><mo>,</mo><msubsup><mi>τ</mi><mn>2</mn><mtext mathvariant="normal">gen</mtext></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>τ</mi><mi>G</mi><mtext mathvariant="normal">gen</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tau^\text{gen} = (\tau^\text{gen}_1, \tau^\text{gen}_2, \dots, \tau^\text{gen}_G)</annotation></semantics></math>
-the discrete generation time distribution with maximum generation time
+with maximum generation time
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>G</mi><annotation encoding="application/x-tex">G</annotation></semantics></math>.</p>
-</div>
 </div>
 <div class="section level4">
 <h4 id="realized-infections">Realized infections<a class="anchor" aria-label="anchor" href="#realized-infections"></a>
@@ -365,6 +482,65 @@ but on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>t</mi></msub><mo stretchy="false" form="prefix">|</mo><msub><mi>ι</mi><mi>t</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mi>t</mi></msub><mo>,</mo><msub><mi>ι</mi><mi>t</mi></msub><mo>+</mo><mfrac><msubsup><mi>ι</mi><mi>t</mi><mn>2</mn></msubsup><mi>ϕ</mi></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">I_t|\iota_t \sim N\left(\iota_t, \iota_t + \frac{\iota_t^2}{\phi}\right)</annotation></semantics></math></p>
 </div>
 </div>
+<div class="section level4">
+<h4 id="seeding">Seeding<a class="anchor" aria-label="anchor" href="#seeding"></a>
+</h4>
+<p>We require a seeding phase at the start of the modeled time period,
+which describes the time evolution of infections when the renewal model
+cannot be applied yet.</p>
+<div class="section level5">
+<h5 id="option-1-constant">Option 1: Constant<a class="anchor" aria-label="anchor" href="#option-1-constant"></a>
+</h5>
+<p>This option assumes a constant number of expected infections
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ι</mi><mrow><mi>s</mi><mi>e</mi><mi>e</mi><mi>d</mi></mrow></msub><annotation encoding="application/x-tex">\iota_{seed}</annotation></semantics></math>
+during the seeding phase, which is modeled via a normal prior on the log
+scale:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mrow><mi>s</mi><mi>e</mi><mi>e</mi><mi>d</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="0.167em"></mspace><mi>t</mi><mo>≤</mo><mi>G</mi><mo>,</mo><mspace width="1.0em"></mspace><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mtext mathvariant="normal">seed</mtext></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mtext mathvariant="normal">seed</mtext></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo>,</mo><msubsup><mi>σ</mi><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mtext mathvariant="normal">seed</mtext></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\begin{equation}
+\log(\iota_t) = \log(\iota_{seed}) \,|\, t \leq G,\quad \log(\iota_\text{seed}) \sim N(\mu_{\log(\iota_\text{seed})},\sigma_{\log(\iota_\text{seed})}^2)
+\end{equation}</annotation></semantics></math></p>
+</div>
+<div class="section level5">
+<h5 id="option-2-random-walk-1">Option 2: Random walk<a class="anchor" aria-label="anchor" href="#option-2-random-walk-1"></a>
+</h5>
+<p>This option models the expected number of infections during the
+seeding phase via random walk on the log scale:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>ι</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><msup><msub><mi>σ</mi><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>ι</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mo stretchy="true" form="postfix">|</mo></mrow><mspace width="0.167em"></mspace><mi>t</mi><mo>≤</mo><mi>G</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
+\log(\iota_t)|\iota_{t-1} \sim N(\log(\iota_{t-1}),{\sigma_{\log(\iota)}}^2) \,|\, t \leq G
+\end{equation}</annotation></semantics></math></p>
+<p>with a normal prior on intercept
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\log(\iota_1)</annotation></semantics></math>
+and a zero-truncated normal prior on the standard deviation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>ι</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><annotation encoding="application/x-tex">\sigma_{\log(\iota)}</annotation></semantics></math>
+of the random walk.</p>
+</div>
+<div class="section level5">
+<h5 id="option-3-growth-rate-model">Option 3: Growth rate model<a class="anchor" aria-label="anchor" href="#option-3-growth-rate-model"></a>
+</h5>
+<p>This option models the expected number of infections during the
+seeding phase as an exponential growth process:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ι</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>r</mi><mi>t</mi></msub><mo>,</mo><mspace width="0.278em"></mspace><mspace width="0.222em"></mspace><msub><mi>r</mi><mi>t</mi></msub><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>r</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>r</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>,</mo><msup><msub><mi>σ</mi><mi>r</mi></msub><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.278em"></mspace><mspace width="0.278em"></mspace><mo stretchy="true" form="postfix">|</mo></mrow><mspace width="0.278em"></mspace><mn>1</mn><mo>&lt;</mo><mi>t</mi><mo>≤</mo><mi>G</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">\begin{equation}
+\log(\iota_t) = \log(\iota_{t-1}) + r_{t},\;\ r_{t} | r_{t+1} \sim N(r_{t+1},{\sigma_{r}}^2) \; \;|\; 1 &lt; t \leq G,
+\end{equation}</annotation></semantics></math></p>
+<p>Here the exponential growth rate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mi>t</mi></msub><annotation encoding="application/x-tex">r_t</annotation></semantics></math>
+follows a backwards-in-time random walk with standard deviation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>r</mi></msub><annotation encoding="application/x-tex">\sigma_{r}</annotation></semantics></math>
+and initial value
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mrow><mi>G</mi><mo>+</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">r_{G+1}</annotation></semantics></math>.
+The value
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mrow><mi>G</mi><mo>+</mo><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">r_{G+1}</annotation></semantics></math>
+corresponds to the last growth rate of the seeding phase, which we set
+to the first estimated reproduction number
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
+at the start of the modeling phase. We achieve this using an approach
+from the EpiAware package<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Brand S &amp;amp; Abbott S, EpiAware.jl: Infectious disease
+situational awareness modelling toolkit for julia. &lt;a href="https://github.com/CDCgov/Rt-without-renewal" class="external-link"&gt;https://github.com/CDCgov/Rt-without-renewal&lt;/a&gt;.&lt;/p&gt;'><sup>7</sup></a>, i.e. by solving the renewal equation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>G</mi><mo>+</mo><mn>1</mn></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mo>∑</mo><mrow><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mi>G</mi></msubsup><msubsup><mi>τ</mi><mi>s</mi><mtext mathvariant="normal">gen</mtext></msubsup><msup><mi>e</mi><mrow><mo>−</mo><mi>s</mi><mspace width="0.167em"></mspace><msub><mi>r</mi><mrow><mi>G</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">R_{G+1} (\sum_{s=1}^G \tau^\text{gen}_s e^{-s\,r_{G+1}}) = 1</annotation></semantics></math>
+within the model. This means that the intercept of the seeding phase
+growth rate depends on the prior provided for the initial reproduction
+number.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="section level2">
@@ -381,7 +557,60 @@ but on
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>τ</mi><mtext mathvariant="normal">inc</mtext></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>τ</mi><mn>0</mn><mtext mathvariant="normal">inc</mtext></msubsup><mo>,</mo><msubsup><mi>τ</mi><mn>1</mn><mtext mathvariant="normal">inc</mtext></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>τ</mi><mi>L</mi><mtext mathvariant="normal">inc</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tau^\text{inc} = (\tau^\text{inc}_0, \tau^\text{inc}_1, \dots, \tau^\text{inc}_L)</annotation></semantics></math>
 is the incubation period distribution with maximum incubation period
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>.
+Note that this model component is only relevant when the shedding load
+distribution is referenced by the date of symptom onset. When the
+shedding load distribution is referenced by the date of infection, this
+component can be subsumed in the shedding load model.</p>
+</div>
+<div class="section level3">
+<h3 id="shedding-load-distribution">Shedding load distribution<a class="anchor" aria-label="anchor" href="#shedding-load-distribution"></a>
+</h3>
+<p>Variable:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mtext mathvariant="normal">shed</mtext></msup><annotation encoding="application/x-tex">\tau^\text{shed}</annotation></semantics></math></p>
+<p>The vector
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>τ</mi><mtext mathvariant="normal">shed</mtext></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>τ</mi><mn>0</mn><mtext mathvariant="normal">shed</mtext></msubsup><mo>,</mo><msubsup><mi>τ</mi><mn>1</mn><mtext mathvariant="normal">shed</mtext></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>τ</mi><mi>S</mi><mtext mathvariant="normal">shed</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S)</annotation></semantics></math>
+represents the distribution of shedding over time, with shedding up to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
+days after infection or after symptom onset (depending on the model
+specification). It can be either assumed (fixed) or estimated (requires
+a prior). When estimating the shedding load distribution, priors are
+placed on the mean
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">shed</mtext></msup><annotation encoding="application/x-tex">\mu^\text{shed}</annotation></semantics></math>
+and coefficient of variation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>ν</mi><mtext mathvariant="normal">shed</mtext></msup><annotation encoding="application/x-tex">\nu^\text{shed}</annotation></semantics></math>
+of a positive continuous distribution (gamma or log-normal), which is
+transformed into a discrete distribution
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mtext mathvariant="normal">shed</mtext></msup><annotation encoding="application/x-tex">\tau^\text{shed}</annotation></semantics></math>
+within the model. This approach is inspired by the modeling of
+epidemiological distributions in the EpiNow2<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Abbott S, et al., Estimating the time-varying
+reproduction number of SARS-CoV-2 using national and subnational case
+counts. Wellcome Open Res. 5, 112 (2020). Package: &lt;a href="https://github.com/epiforecasts/EpiNow2" class="external-link"&gt;https://github.com/epiforecasts/EpiNow2&lt;/a&gt;.&lt;/p&gt;'><sup>8</sup></a> and epinowcast<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Abbott S, Lison A, et al., Epinowcast: Flexible
+hierarchical nowcasting. &lt;a href="https://github.com/epinowcast/epinowcast" class="external-link"&gt;https://github.com/epinowcast/epinowcast&lt;/a&gt;.&lt;/p&gt;'><sup>9</sup></a>
+packages.</p>
+<p>EpiSewer also supports modeling the shedding load distribution from
+multiple priors in order to account for estimates from different studies
+or sensitivity analyses. Using a set of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
+prior pairs, we model
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">shed</mtext></msup><annotation encoding="application/x-tex">\mu^\text{shed}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>ν</mi><mtext mathvariant="normal">shed</mtext></msup><annotation encoding="application/x-tex">\nu^\text{shed}</annotation></semantics></math>
+as the weighted mean of prior parameters
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>μ</mi><mtext mathvariant="normal">shed</mtext></msup><mo>=</mo><msubsup><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></msubsup><msub><mi>𝛉</mi><mi>𝐢</mi></msub><mspace width="0.167em"></mspace><msubsup><mi>μ</mi><mi>i</mi><mtext mathvariant="normal">shed</mtext></msubsup></mrow><annotation encoding="application/x-tex">\mu^\text{shed} = \sum_{i=1}^{n} \boldsymbol{\theta_i}\, \mu^\text{shed}_i</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>ν</mi><mtext mathvariant="normal">shed</mtext></msup><mo>=</mo><msubsup><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></msubsup><msub><mi>𝛉</mi><mi>𝐢</mi></msub><mspace width="0.167em"></mspace><msubsup><mi>ν</mi><mi>i</mi><mtext mathvariant="normal">shed</mtext></msubsup></mrow><annotation encoding="application/x-tex">\nu^\text{shed} = \sum_{i=1}^{n} \boldsymbol{\theta_i}\, \nu^\text{shed}_i</annotation></semantics></math>,
+with the weights
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝛉</mi><annotation encoding="application/x-tex">\boldsymbol{\theta}</annotation></semantics></math>
+drawn from a Dirichlet distribution. By default, we use a symmetric
+Dirichlet prior with concentration parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">a = 1</annotation></semantics></math>,
+corresponding to a uniform distribution over the weight simplex (i.e. we
+interpolate between the provided priors). By choosing a smaller
+concentration parameter, a more isolated support of the individual
+priors provided can be achieved. It is also possible to apply
+differential weighting of results from different studies through the
+parameters of the Dirichlet prior.</p>
 </div>
 <div class="section level3">
 <h3 id="total-load-shed-in-catchment">Total load shed in catchment<a class="anchor" aria-label="anchor" href="#total-load-shed-in-catchment"></a>
@@ -391,31 +620,28 @@ is the incubation period distribution with maximum incubation period
 <div class="section level5">
 <h5 id="option-1-without-individual-level-variation">Option 1: Without individual-level variation<a class="anchor" aria-label="anchor" href="#option-1-without-individual-level-variation"></a>
 </h5>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ω</mi><mi>t</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>s</mi><mo>=</mo><mn>0</mn></mrow><mi>S</mi></munderover><msub><mi>λ</mi><mrow><mi>t</mi><mo>−</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msup><mi>μ</mi><mtext mathvariant="normal">load</mtext></msup><mspace width="0.167em"></mspace><msubsup><mi>τ</mi><mi>s</mi><mtext mathvariant="normal">shed</mtext></msubsup></mrow><annotation encoding="application/x-tex">\begin{equation}
-\omega_t = \sum_{s=0}^S \lambda_{t-s}\, \mu^\text{load}\, \tau^\text{shed}_s
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ω</mi><mi>t</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>s</mi><mo>=</mo><mn>0</mn></mrow><mi>S</mi></munderover><msup><mi>μ</mi><mtext mathvariant="normal">load</mtext></msup><mspace width="0.167em"></mspace><msubsup><mi>τ</mi><mi>s</mi><mtext mathvariant="normal">shed</mtext></msubsup><mspace width="0.167em"></mspace><msub><mi>λ</mi><mrow><mi>t</mi><mo>−</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\begin{equation}
+\omega_t = \sum_{s=0}^S \mu^\text{load}\, \tau^\text{shed}_s\, \lambda_{t-s}
 \end{equation}</annotation></semantics></math> where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">load</mtext></msup><annotation encoding="application/x-tex">\mu^\text{load}</annotation></semantics></math>
+is the average total shedding load per person (see
+<code><a href="../articles/load_per_case.html">vignette("load_per_case")</a></code>),
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mtext mathvariant="normal">shed</mtext></msup><annotation encoding="application/x-tex">\tau^\text{shed}</annotation></semantics></math>
+the shedding load distribution (see above), and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\lambda_{t}</annotation></semantics></math>
 is the expected number of individuals with symptom onset on day
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">load</mtext></msup><annotation encoding="application/x-tex">\mu^\text{load}</annotation></semantics></math>
-is the average total shedding load per person, and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>τ</mi><mtext mathvariant="normal">shed</mtext></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>τ</mi><mn>0</mn><mtext mathvariant="normal">shed</mtext></msubsup><mo>,</mo><msubsup><mi>τ</mi><mn>1</mn><mtext mathvariant="normal">shed</mtext></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>τ</mi><mi>S</mi><mtext mathvariant="normal">shed</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S)</annotation></semantics></math>
-is the distribution of shedding over time, with shedding up to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
-days after symptom onset.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>.</p>
 </div>
 <div class="section level5">
 <h5 id="option-2-with-individual-level-variation">Option 2: With individual-level variation<a class="anchor" aria-label="anchor" href="#option-2-with-individual-level-variation"></a>
 </h5>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ω</mi><mi>t</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>s</mi><mo>=</mo><mn>0</mn></mrow><mi>S</mi></munderover><msub><mi>ζ</mi><mrow><mi>t</mi><mo>−</mo><mi>s</mi></mrow></msub><mspace width="0.167em"></mspace><msup><mi>μ</mi><mtext mathvariant="normal">load</mtext></msup><mspace width="0.167em"></mspace><msubsup><mi>τ</mi><mi>s</mi><mtext mathvariant="normal">shed</mtext></msubsup></mrow><annotation encoding="application/x-tex">\begin{equation}
-\omega_t = \sum_{s=0}^S \zeta_{t-s}\, \mu^\text{load}\, \tau^\text{shed}_s
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ω</mi><mi>t</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>s</mi><mo>=</mo><mn>0</mn></mrow><mi>S</mi></munderover><msup><mi>μ</mi><mtext mathvariant="normal">load</mtext></msup><mspace width="0.167em"></mspace><msubsup><mi>τ</mi><mi>s</mi><mtext mathvariant="normal">shed</mtext></msubsup><mspace width="0.167em"></mspace><msub><mi>ζ</mi><mrow><mi>t</mi><mo>−</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\begin{equation}
+\omega_t = \sum_{s=0}^S \mu^\text{load}\, \tau^\text{shed}_s\, \zeta_{t-s}
 \end{equation}</annotation></semantics></math> where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>μ</mi><mtext mathvariant="normal">load</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\mu^\text{load})</annotation></semantics></math>
-is again the average total shedding load per person and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>τ</mi><mtext mathvariant="normal">shed</mtext></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>τ</mi><mn>0</mn><mtext mathvariant="normal">shed</mtext></msubsup><mo>,</mo><msubsup><mi>τ</mi><mn>1</mn><mtext mathvariant="normal">shed</mtext></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>τ</mi><mi>S</mi><mtext mathvariant="normal">shed</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S))</annotation></semantics></math>
-the distribution of shedding over time, with shedding up to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
-days after symptom onset. This is now multiplied by
+is the average total shedding load per person and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>τ</mi><mtext mathvariant="normal">shed</mtext></msup><annotation encoding="application/x-tex">\tau^\text{shed}</annotation></semantics></math>
+the shedding load distribution (see above). This is now multiplied by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ζ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\zeta_t</annotation></semantics></math>,
 which is defined as the sum of i.i.d. Gamma distributed individual
 relative shedding intensities with mean
@@ -449,13 +675,13 @@ i.e.</p>
 \end{equation}</annotation></semantics></math></p>
 <p>and place a zero-truncated normal prior on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ν</mi><mi>ζ</mi></msub><annotation encoding="application/x-tex">\nu_\zeta</annotation></semantics></math>.</p>
-<p>In the stan implementation, we use a normal approximation of the
-Gamma distribution for
+<p>In the stan implementation, we improve sampling efficiency by using a
+normal approximation of the Gamma distribution for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ζ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\zeta_t</annotation></semantics></math>
-to improve sampling efficiency. This approximation is highly accurate
-for sufficiently large
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\lambda_t</annotation></semantics></math>,
-which will typically be the case.</p>
+when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\lambda_t</annotation></semantics></math>
+is large
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>Λ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>≈</mo><mn>30</mn><mo>×</mo><msubsup><mi>ν</mi><mi>ζ</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">E[\Lambda_t] \approx 30 \times \nu_\zeta^2</annotation></semantics></math>).</p>
 </div>
 </div>
 </div>
@@ -493,12 +719,13 @@ site on day
 <h2 id="sampling-module">Sampling module<a class="anchor" aria-label="anchor" href="#sampling-module"></a>
 </h2>
 <div class="section level3">
-<h3 id="concentration-in-single-day-samples-with-sample-effects">Concentration in single-day samples, with sample effects<a class="anchor" aria-label="anchor" href="#concentration-in-single-day-samples-with-sample-effects"></a>
+<h3 id="concentration-in-single-day-samples-with-sample-effects-and-outliers">Concentration in single-day samples, with sample effects and
+outliers<a class="anchor" aria-label="anchor" href="#concentration-in-single-day-samples-with-sample-effects-and-outliers"></a>
 </h3>
 <p>Variable:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>κ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\kappa_t</annotation></semantics></math></p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>κ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>χ</mi><mi>t</mi></msub><mo>+</mo><mi>𝐗</mi><mspace width="0.167em"></mspace><mi>η</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
-\kappa_t = \chi_t + \boldsymbol{X} \, \eta
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>κ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>χ</mi><mi>t</mi></msub><mo>+</mo><mi>𝐗</mi><mspace width="0.167em"></mspace><mi>η</mi><mo>+</mo><msub><mi>ϵ</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">\begin{equation}
+\kappa_t = \chi_t + \boldsymbol{X} \, \eta + \epsilon_t
 \end{equation}</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐗</mi><annotation encoding="application/x-tex">\boldsymbol{X}</annotation></semantics></math>
@@ -514,11 +741,22 @@ and
 is a vector of coefficients which estimate the association of the sample
 covariates with the concentration. We place independent normal priors on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mn>1</mn></msub><mo>,</mo><msub><mi>η</mi><mn>2</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>η</mi><mi>K</mi></msub></mrow><annotation encoding="application/x-tex">\eta_1, \eta_2, \dots, \eta_K</annotation></semantics></math>.</p>
+<p>Moreover,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ϵ</mi><mi>t</mi></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\epsilon_t&gt;0</annotation></semantics></math>
+represents positive outlier concentrations that violate the uniform
+mixing assumption. We place a heavily right-tailed Type II extreme value
+prior on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ϵ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\epsilon_t</annotation></semantics></math>.
+By default, parameters are chosen such that 99% of the probability mass
+is below a concentration that would be observable from one infection in
+the catchment.</p>
 <p>Note that if on some days no samples were taken, the corresponding
-row of the design matrix
+row of the sample effects design matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐗</mi><annotation encoding="application/x-tex">\boldsymbol{X}</annotation></semantics></math>
 can be filled with arbitrary values, since they will not contribute to
-the likelihood.</p>
+the likelihood. To estimate weekday effects, EpiSewer provides a
+function <code>vignette("sample_effects_estimate_weekday")</code> that
+automatically creates a design matrix for the day of the week.</p>
 </div>
 <div class="section level3">
 <h3 id="concentration-in-multi-day-composite-samples">Concentration in multi-day composite samples<a class="anchor" aria-label="anchor" href="#concentration-in-multi-day-composite-samples"></a>
@@ -540,7 +778,7 @@ is the day of the latest sample.</p>
 <h2 id="measurements-module">Measurements module<a class="anchor" aria-label="anchor" href="#measurements-module"></a>
 </h2>
 <div class="section level3">
-<h3 id="analysed-concentration-before-replication-stage">Analysed concentration before replication stage<a class="anchor" aria-label="anchor" href="#analysed-concentration-before-replication-stage"></a>
+<h3 id="analysed-concentration-before-replication">Analysed concentration before replication<a class="anchor" aria-label="anchor" href="#analysed-concentration-before-replication"></a>
 </h3>
 <p>Variable:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Ψ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\Psi_t</annotation></semantics></math></p>
@@ -561,126 +799,145 @@ is the location and
 is the scale of the Log-Normal distribution. Here,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ν</mi><mi>ψ</mi></msub><annotation encoding="application/x-tex">\nu_\psi</annotation></semantics></math>
 measures the unexplained variation in concentrations before the
-replication stage (for example, if the replication stage is PCR
-quantification, then
+replication stage (for example, if you provide technical PCR replicates,
+then
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ν</mi><mi>ψ</mi></msub><annotation encoding="application/x-tex">\nu_\psi</annotation></semantics></math>
-measures all variation before PCR). We place a zero-truncated normal
+measures all variation before the PCR). We place a zero-truncated normal
 prior on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ν</mi><mi>ψ</mi></msub><annotation encoding="application/x-tex">\nu_\psi</annotation></semantics></math>.</p>
+<p>Note that pre-replication variation is only modeled when providing
+replicate measurements to EpiSewer and specifying
+<code>replicates = TRUE</code> in the <code>noise_estimate_</code>
+component.</p>
 </div>
 <div class="section level3">
-<h3 id="limit-of-detection-lod">Limit of detection (LOD)<a class="anchor" aria-label="anchor" href="#limit-of-detection-lod"></a>
+<h3 id="measured-concentration">Measured concentration<a class="anchor" aria-label="anchor" href="#measured-concentration"></a>
 </h3>
-<p>We implement a hurdle model for the limit of detection, where the
-probability for a zero measurement is described by an exponentially
-decreasing function of the underlying concentration, i.e. </p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><mn>0</mn><mo stretchy="false" form="prefix">|</mo><msub><mi>Ψ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>ψ</mi><mi>t</mi></msub><mspace width="0.167em"></mspace><mi>c</mi><mspace width="0.167em"></mspace><mi>b</mi></mrow></msup></mrow><annotation encoding="application/x-tex">\begin{equation}
-P(\Upsilon_{t,i} = 0 | \Psi_t = \psi_t) = e^{-\psi_t\, c\, b}
+<div class="section level4">
+<h4 id="non-detects">Non-detects<a class="anchor" aria-label="anchor" href="#non-detects"></a>
+</h4>
+<p>EpiSewer implements a hurdle model to account for non-detects
+(i.e. zero measurements). This is closely related to the limit of
+detection (LOD), below which sample concentrations cannot be reliably
+detected (typically defined as less than 95% probability of
+detection).</p>
+<div class="section level5">
+<h5 id="option-1-assumed-lod">Option 1: Assumed LOD<a class="anchor" aria-label="anchor" href="#option-1-assumed-lod"></a>
+</h5>
+<p>This option models the probability of non-detection as an
+exponentially decreasing function of the underlying concentration,
+i.e. </p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><mn>0</mn><mo stretchy="false" form="prefix">|</mo><msub><mi>Ψ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>ψ</mi><mi>t</mi></msub><mspace width="0.167em"></mspace><mi>b</mi></mrow></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">\begin{equation}
+P(\Upsilon_{t,i} = 0 | \Psi_t = \psi_t) = e^{-\psi_t\, b},
 \end{equation}</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><annotation encoding="application/x-tex">\Upsilon_{t,i}</annotation></semantics></math>
 is the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>i</mi><mtext mathvariant="normal">th</mtext></msup><annotation encoding="application/x-tex">i^{\text{th}}</annotation></semantics></math>
 replicate concentration measurement from the (composite) sample on day
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
-and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>.
+The parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>
-are parameters of the PCR. The PCR parameters are either estimated by
-the coefficient of variation model (see below, this may require
-informative priors and/or replicate measurements), or the product
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mspace width="0.167em"></mspace><mi>b</mi></mrow><annotation encoding="application/x-tex">c\, b</annotation></semantics></math>
-can be back-calculated if the user provides an LOD value established
-from a lab experiment. The functional form of the LOD model is based on
-the statistical properties of digital PCR and corresponds to a binomial
-likelihood for zero successes. For non-zero measurements, we conversely
-have</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>&gt;</mo><mn>0</mn><mo stretchy="false" form="prefix">|</mo><msub><mi>Ψ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Υ</mi><mi>t</mi></msub><mo>=</mo><mn>0</mn><mo stretchy="false" form="prefix">|</mo><msub><mi>Ψ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\begin{equation}
-P(\Upsilon_{t,i} &gt; 0 | \Psi_t = \psi_t) = 1 - P(\Upsilon_t = 0 | \Psi_t = \psi_t)
+is calculated from an LOD value provided by the user, typically
+established from a lab experiment. For example, if the LOD was defined
+as the lowest concentration for which the detection probability was
+still above 95%, then
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi><mo>=</mo><mo>−</mo><mtext mathvariant="normal">log</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mn>0.95</mn><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><mtext mathvariant="normal">LOD</mtext></mrow><annotation encoding="application/x-tex">b = -\text{log}(1-0.95)/\text{LOD}</annotation></semantics></math>.</p>
+<p>Given the probability of non-detection, the probability for a
+non-zero measurement is</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>&gt;</mo><mn>0</mn><mo stretchy="false" form="prefix">|</mo><msub><mi>Ψ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Υ</mi><mi>t</mi></msub><mo>=</mo><mn>0</mn><mo stretchy="false" form="prefix">|</mo><msub><mi>Ψ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
+P(\Upsilon_{t,i} &gt; 0 | \Psi_t = \psi_t) = 1 - P(\Upsilon_t = 0 | \Psi_t = \psi_t).
 \end{equation}</annotation></semantics></math></p>
 </div>
-<div class="section level3">
-<h3 id="measured-concentration">Measured concentration<a class="anchor" aria-label="anchor" href="#measured-concentration"></a>
-</h3>
+<div class="section level5">
+<h5 id="option-2-non-detection-in-digital-pcr-dpcr">Option 2: Non-detection in digital PCR (dPCR)<a class="anchor" aria-label="anchor" href="#option-2-non-detection-in-digital-pcr-dpcr"></a>
+</h5>
+<p>This option models the probability of non-detection based on the
+statistical properties of digital PCR assays, using a binomial
+likelihood for zero successes. This depends on several parameters of the
+assay, such as the number and volume of partitions - which can be either
+assumed or estimated. by EpiSewer. Please see <a href="https://doi.org/10.1101/2024.10.14.618307" class="external-link">this preprint</a> for
+details.</p>
+</div>
+</div>
+<div class="section level4">
+<h4 id="non-zero-measurements">Non-zero measurements<a class="anchor" aria-label="anchor" href="#non-zero-measurements"></a>
+</h4>
 <p>Variable:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Υ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\Upsilon_t</annotation></semantics></math></p>
-<p>Non-zero concentration measurements are modeled as truncated normal
-distributed, i.e.</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="0.167em"></mspace><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>&gt;</mo><mn>0</mn><mspace width="0.167em"></mspace><mo>∼</mo><msup><mtext mathvariant="normal">Normal</mtext><mo>+</mo></msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><msub><mi>Υ</mi><mi>t</mi></msub></msub><mo>,</mo><mspace width="0.167em"></mspace><msubsup><mi>σ</mi><msub><mi>Υ</mi><mi>t</mi></msub><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\begin{equation}
-\Upsilon_{t,i} \,|\, \Upsilon_{t,i} &gt; 0 \, \sim \text{Normal}^+\left(\mu_{\Upsilon_{t}},\, \sigma_{\Upsilon_{t}}^2\right)
-\end{equation}</annotation></semantics></math> where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><annotation encoding="application/x-tex">\Upsilon_{t,i}</annotation></semantics></math>
-is the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><annotation encoding="application/x-tex">\Upsilon_{t,i}</annotation></semantics></math></p>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><annotation encoding="application/x-tex">\Upsilon_{t,i}</annotation></semantics></math>
+represents the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>i</mi><mtext mathvariant="normal">th</mtext></msup><annotation encoding="application/x-tex">i^{\text{th}}</annotation></semantics></math>
 replicate concentration measurement from the (composite) sample on day
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>.
-Here,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><msub><mi>Υ</mi><mi>t</mi></msub></msub><mo>=</mo><msub><mi>ψ</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">\mu_{\Upsilon_{t}} = \psi_t</annotation></semantics></math>
-is the mean and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>σ</mi><msub><mi>Υ</mi><mi>t</mi></msub><mn>2</mn></msubsup><mo>=</mo><msub><mi>μ</mi><msub><mi>Υ</mi><mi>t</mi></msub></msub><mspace width="0.167em"></mspace><msub><mi>ν</mi><mi>Υ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><msub><mi>Υ</mi><mi>t</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\sigma_{\Upsilon_{t}}^2 = \mu_{\Upsilon_{t}}\, \nu_\Upsilon(\mu_{\Upsilon_{t}})</annotation></semantics></math>
-the standard deviation of the truncated Normal distribution. Note that
-<code>EpiSewer</code> also offers a Log-Normal likelihood as an
-alternative, however based on the properties of dPCR assays, the
-truncated Normal should be the better approximation for the true
-distribution of measurements.</p>
-<p>Specifically,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ν</mi><mi>Υ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\nu_\Upsilon(\mu)</annotation></semantics></math>
-is the coefficient of variation for the replication stage and modeled as
-a function of the expected concentration
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ν</mi><mi>Υ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mi>b</mi></msqrt></mfrac><mspace width="0.167em"></mspace><mfrac><msqrt><mrow><mi>e</mi><mi>x</mi><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mspace width="0.167em"></mspace><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>–</mi><mn>1</mn></mrow></msqrt><mrow><mi>μ</mi><mspace width="0.167em"></mspace><mi>c</mi></mrow></mfrac><mspace width="0.167em"></mspace><msqrt><mrow><mn>1</mn><mo>+</mo><msup><mi>a</mi><mn>2</mn></msup><mspace width="0.167em"></mspace><mi>b</mi><mspace width="0.167em"></mspace><mi>μ</mi><mspace width="0.167em"></mspace><mi>c</mi></mrow></msqrt></mrow><annotation encoding="application/x-tex">\begin{equation}
-\nu_\Upsilon(\mu) = \frac{1}{\sqrt{b}}\, \frac{\sqrt{exp(\mu\, c) – 1}}{\mu\, c}\, \sqrt{1 + a^2\, b\, \mu\, c}
-\end{equation}</annotation></semantics></math> with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>
-as parameters to be estimated. The functional form is derived from the
-statistical properties of the binomial-distributed positive partition
-counts in the dPCR reaction, where</p>
-<ul>
-<li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><msub><mi>ν</mi><mtext mathvariant="normal">pre</mtext></msub></mrow><annotation encoding="application/x-tex">a=\nu_{\text{pre}}</annotation></semantics></math>
-represents the coefficient of variation for noise in the concentration
-before the dPCR reaction,</li>
-<li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-represents the average number of partitions in the PCR reaction,
-and</li>
-<li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>
-represents the dPCR conversion factor, which is the partition volume
-scaled by the dilution of the wastewater in the PCR reaction. This
-factor converts the wastewater concentration into the expected number of
-gene copies per partition. Note that here the dilution includes all
-extraction and preparation steps. For example, if the partition volume
-is 4.5e-7 mL and the dilution of the wastewater is 100:3 (i.e. 100 gc/mL
-in the original wastewater sample correspond to 3 gc/mL in the PCR
-reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 =
-1.5e-5.</li>
-</ul>
-<p>We place zero-truncated normal priors on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>,
-respectively.</p>
-<p>If replicates are modeled and the replication stage is PCR
-quantification, then
+Non-zero concentration measurements
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\Upsilon_{t,i} &gt; 0</annotation></semantics></math>
+are modeled using a positive continuous distribution (Gamma by default,
+but Log-Normal and Truncated Normal are also available). This
+distribution is parameterized by its mean and coefficient of
+variation.</p>
+<p>For the mean, we assume unbiased measurements, such that in principle
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub></msub><mo>=</mo><msub><mi>ψ</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">\mu_{\Upsilon_{t,i}} = \psi_t</annotation></semantics></math>.
+Nevertheless, the mean of non-zero measurements must be adjusted for the
+conditioning on detection, i.e.</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mrow><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="0.167em"></mspace><msub><mi>Υ</mi><mrow><mi>t</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>&gt;</mo><mn>0</mn></mrow></msub><mo>=</mo><mfrac><msub><mi>ψ</mi><mi>t</mi></msub><mrow><mn>1</mn><mo>−</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Υ</mi><mi>t</mi></msub><mo>=</mo><mn>0</mn><mo stretchy="false" form="prefix">|</mo><msub><mi>Ψ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">\begin{equation}
+\mu_{\Upsilon_{t,i} \,|\, \Upsilon_{t,i} &gt; 0} = \frac{\psi_t}{1 - P(\Upsilon_t = 0 | \Psi_t = \psi_t)},
+\end{equation}</annotation></semantics></math></p>
+<p>For the coefficient of variation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ν</mi><mi>Υ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\nu_\Upsilon(\psi_t)</annotation></semantics></math>,
+EpiSewer currently offers three options (see below). In all cases,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ν</mi><mi>Υ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\nu_\Upsilon(\psi_t)</annotation></semantics></math>
+describes all remaining unexplained variation in the measurements. This
+means that if replicates are provided and variation before the
+replication stage is already accounted for (see above), then
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ν</mi><mi>Υ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\nu_\Upsilon(\psi_t)</annotation></semantics></math>
+describes only the variation between the replicates. Otherwise it will
+also include variation before the replication stage.</p>
+<div class="section level5">
+<h5 id="option-1-constant-cv">Option 1: Constant CV<a class="anchor" aria-label="anchor" href="#option-1-constant-cv"></a>
+</h5>
+<p>This option assumes a constant coefficient of variation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ν</mi><mi>Υ</mi></msub><annotation encoding="application/x-tex">\nu_\Upsilon</annotation></semantics></math>
-measures the noise only from the PCR and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ν</mi><mi>ψ</mi></msub><annotation encoding="application/x-tex">\nu_\psi</annotation></semantics></math>
-all other noise. In this case,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-should typically be very small. In contrast, if no replicates are
-modeled, then
+for all measurements, i.e.
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ν</mi><mi>Υ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>ν</mi><mi>Υ</mi></msub></mrow><annotation encoding="application/x-tex">\begin{equation}
+\nu_\Upsilon(\psi_t) = \nu_\Upsilon
+\end{equation}</annotation></semantics></math></p>
+<p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ν</mi><mi>Υ</mi></msub><annotation encoding="application/x-tex">\nu_\Upsilon</annotation></semantics></math>
-measures the total variation and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ν</mi><mi>ψ</mi></msub><annotation encoding="application/x-tex">\nu_\psi</annotation></semantics></math>
-is not estimated. In this case,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-will be larger.</p>
+is a parameter to be estimated. We place a zero-truncated normal prior
+on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ν</mi><mi>Υ</mi></msub><annotation encoding="application/x-tex">\nu_\Upsilon</annotation></semantics></math>.</p>
+</div>
+<div class="section level5">
+<h5 id="option-2-cv-based-on-digital-pcr-dpcr">Option 2: CV based on digital PCR (dPCR)<a class="anchor" aria-label="anchor" href="#option-2-cv-based-on-digital-pcr-dpcr"></a>
+</h5>
+<p>This option models the CV as a function of the expected concentration
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ψ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\psi_t</annotation></semantics></math>,
+and the functional relationship is derived from the statistical
+properties of digital PCR assays, i.e. based on the binomial-distributed
+positive partition counts in the dPCR reaction. As a result, the CV is
+approximately constant for high concentrations, but increases
+exponentially as concentrations become small (it also increases when
+concentrations become so large that the assay saturates, but this should
+be avoided in lab practice through appropriate dilution). The exact
+functional relationship depends on several parameters of the assay, such
+as the number and volume of partitions - which can be either assumed or
+estimated. by EpiSewer. Please see <a href="https://doi.org/10.1101/2024.10.14.618307" class="external-link">this preprint</a> for
+details.</p>
+</div>
+<div class="section level5">
+<h5 id="option-3-constant-variance">Option 3: Constant variance<a class="anchor" aria-label="anchor" href="#option-3-constant-variance"></a>
+</h5>
+<p>This option models measurements with a constant variance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mi>Υ</mi><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma^2_\Upsilon</annotation></semantics></math>,
+such that</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ν</mi><mi>Υ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ψ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><msub><mi>σ</mi><mi>Υ</mi></msub><msub><mi>ψ</mi><mi>t</mi></msub></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
+\nu_\Upsilon(\psi_t) = \frac{\sigma_\Upsilon}{\psi_t}.
+\end{equation}</annotation></semantics></math></p>
+<p>This option is not recommended for use in practice, as it is likely
+misspecified for most types of measurements.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="section level2">
@@ -701,11 +958,11 @@ replicates in total for date index
 posterior distribution of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>t</mi></msub><annotation encoding="application/x-tex">R_t</annotation></semantics></math>
 and the other parameters</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mo stretchy="false" form="prefix">|</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo></mrow></msub><mo>,</mo><mi>…</mi><mspace width="0.278em"></mspace><mo stretchy="true" form="infix">|</mo><mspace width="0.278em"></mspace><msub><mi>y</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mrow><mo stretchy="true" form="prefix">|</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo stretchy="true" form="postfix">|</mo></mrow><mi>i</mi><mo>≤</mo><msub><mi>n</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∝</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mrow><mo stretchy="true" form="prefix">|</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo stretchy="true" form="postfix">|</mo></mrow><mi>i</mi><mo>≤</mo><msub><mi>n</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow></msub><mspace width="0.278em"></mspace><mo stretchy="true" form="infix">|</mo><mspace width="0.278em"></mspace><msub><mi>R</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mo stretchy="false" form="prefix">|</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo></mrow></msub><mo>,</mo><mi>…</mi><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>…</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\begin{equation}
-P\left(R_{\{t | t \leq T\}}, \dots \;\middle|\; y_{\{t | t \leq T\},\{i | i \leq n_t\}}\right) \propto P\left(y_{\{t | t \leq T\},\{i | i \leq n_t\}} \;\middle|\; R_{\{t | t \leq T\}}, \dots\right) \, P\left(\dots \right),
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mo stretchy="false" form="prefix">|</mo><mn>1</mn><mo>+</mo><mi>G</mi><mo>≤</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo></mrow></msub><mo>,</mo><mi>…</mi><mspace width="0.278em"></mspace><mo stretchy="true" form="infix">|</mo><mspace width="0.278em"></mspace><msub><mi>y</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mrow><mo stretchy="true" form="prefix">|</mo><mn>1</mn><mo>+</mo><mi>L</mi><mo>+</mo><mi>S</mi><mo>≤</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo stretchy="true" form="postfix">|</mo></mrow><mi>i</mi><mo>≤</mo><msub><mi>n</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∝</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mrow><mo stretchy="true" form="prefix">|</mo><mn>1</mn><mo>+</mo><mi>L</mi><mo>+</mo><mi>S</mi><mo>≤</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo stretchy="true" form="postfix">|</mo></mrow><mi>i</mi><mo>≤</mo><msub><mi>n</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow></msub><mspace width="0.278em"></mspace><mo stretchy="true" form="infix">|</mo><mspace width="0.278em"></mspace><msub><mi>R</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mo stretchy="false" form="prefix">|</mo><mn>1</mn><mo>+</mo><mi>G</mi><mo>≤</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo></mrow></msub><mo>,</mo><mi>…</mi><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>…</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\begin{equation}
+P\left(R_{\{t | 1+G \leq t \leq T\}}, \dots \;\middle|\; y_{\{t | 1+L+S \leq t \leq T\},\{i | i \leq n_t\}}\right) \propto P\left(y_{\{t | 1+L+S \leq  t \leq T\},\{i | i \leq n_t\}} \;\middle|\; R_{\{t | 1+G \leq t \leq T\}}, \dots\right) \, P\left(\dots \right),
 \end{equation}</annotation></semantics></math></p>
 <p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mrow><mo stretchy="true" form="prefix">|</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo stretchy="true" form="postfix">|</mo></mrow><mi>i</mi><mo>≤</mo><msub><mi>n</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow></msub><mspace width="0.278em"></mspace><mo stretchy="true" form="infix">|</mo><mspace width="0.278em"></mspace><msub><mi>R</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mo stretchy="false" form="prefix">|</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo></mrow></msub><mo>,</mo><mi>…</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">P\left(y_{\{t | t \leq T\},\{i | i \leq n_t\}} \;\middle|\; R_{\{t | t \leq T\}}, \dots\right)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mrow><mo stretchy="true" form="prefix">|</mo><mn>1</mn><mo>+</mo><mi>L</mi><mo>+</mo><mi>S</mi><mo>≤</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo stretchy="true" form="postfix">|</mo></mrow><mi>i</mi><mo>≤</mo><msub><mi>n</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow></msub><mspace width="0.278em"></mspace><mo stretchy="true" form="infix">|</mo><mspace width="0.278em"></mspace><msub><mi>R</mi><mrow><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mo stretchy="false" form="prefix">|</mo><mn>1</mn><mo>+</mo><mi>G</mi><mo>≤</mo><mi>t</mi><mo>≤</mo><mi>T</mi><mo stretchy="false" form="postfix">}</mo></mrow></msub><mo>,</mo><mi>…</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">P\left(y_{\{t | 1+L+S \leq t \leq T\},\{i | i \leq n_t\}} \;\middle|\; R_{\{t | 1+G \leq t \leq T\}}, \dots\right)</annotation></semantics></math>
 is the likelihood as defined by the 5 modules of our generative model
 (infection, shedding, sewage, sampling, and measurement), and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>…</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">P\left(\dots \right)</annotation></semantics></math>
@@ -745,7 +1002,7 @@ and indices are mapped to each other accordingly.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
     </footer>
