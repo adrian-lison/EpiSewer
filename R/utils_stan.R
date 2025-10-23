@@ -46,10 +46,11 @@ get_stan_model <- function(
         )
       )
     }
-    if (model_metainfo$R_estimate_approach %in% c("splines", "ets", "rw")) {
+    if (model_metainfo$R_estimate_approach %in% c(
+      "splines", "ets", "rw", "piecewise", "changepoint_splines",
+      "smooth_derivative", "gp"
+      )) {
       model_filename <- "EpiSewer_main.stan"
-    } else if (model_metainfo$R_estimate_approach == "approx") {
-      model_filename <- "EpiSewer_approx.stan"
     } else {
       cli::cli_abort(
         paste(
@@ -78,7 +79,10 @@ get_stan_model <- function(
 #' @description Sets model fitting options in `EpiSewer`.
 #'
 #' @param sampler Which type of sampler should be used for model fitting?
-#'   Currently, only [sampler_stan_mcmc()] is supported.
+#'   Currently supported are
+#'    - [sampler_stan_mcmc()]: default, recommended for inference
+#'    - [sampler_stan_pathfinder()]: potentially inaccurate, recommended for
+#'    preview only
 #' @param model Details about the model file to be used, see
 #'   [model_stan_opts()]. This also makes it possible for users to supply
 #'   customized models.
@@ -112,9 +116,13 @@ set_fit_opts <- function(sampler = sampler_stan_mcmc(),
 
 #' Use the stan MCMC sampler
 #'
-#' @description This option will use stan's NUTS sampler via [cmdstanr] for
-#'   Markov Chain Monte Carlo (MCMC) sampling of the `EpiSewer` model.
+#' @description This option uses stan's NUTS sampler via [cmdstanr] for Markov
+#'   Chain Monte Carlo (MCMC) sampling of the `EpiSewer` model.
 #'
+#' @param init_pathfinder Should stan's pathfinder algorihtm be used to
+#'   initialize the MCMC chains?
+#' @param init_pathfinder_max_lbfgs_iters The maximum number of iterations for
+#'   LBFGS during pathfinder initialization.
 #' @param ... Further arguments to pass to [cmdstanr].
 #' @inheritParams cmdstanr::sample
 #'
@@ -133,11 +141,45 @@ sampler_stan_mcmc <- function(
     refresh = 200,
     show_messages = TRUE,
     show_exceptions = FALSE,
+    init_pathfinder = TRUE,
+    init_pathfinder_max_lbfgs_iters = NULL,
     ...) {
   opts <- c(as.list(environment()), list(...))
   if (opts$threads_per_chain == 1) {
     opts$threads_per_chain <- NULL
   }
+  class(opts) <- "mcmc"
+  return(opts)
+}
+
+#' Use stan's pathfinder variational inference algorithm
+#'
+#' @description This option uses stan's pathfinder algorithm via [cmdstanr]
+#'   for variational inference. Sampling is fast but yields potentially
+#'   inaccurate results with unreliable uncertainty information. Currently, this
+#'   sampler is recommended only for preview purposes, not for real-world
+#'   inference.
+#'
+#' @param ... Further arguments to pass to [cmdstanr].
+#' @inheritParams cmdstanr::pathfinder
+#'
+#' @return A `list` with settings for the pathfinder sampler.
+#' @export
+sampler_stan_pathfinder <- function(
+    draws = 4000,
+    num_paths = 4,
+    single_path_draws = NULL,
+    max_lbfgs_iters = NULL,
+    num_elbo_draws = NULL,
+    psis_resample = FALSE,
+    seed = 0,
+    refresh = 1000,
+    show_messages = TRUE,
+    show_exceptions = FALSE,
+    ...
+  ) {
+  opts <- c(as.list(environment()), list(...))
+  class(opts) <- "pathfinder"
   return(opts)
 }
 
@@ -255,34 +297,27 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
 #' @details If one or several models are not successfully compiled, please
 #'   ensure that `cmdstan` is properly set up and try updating it to a newer
 #'   version using [cmdstanr::install_cmdstan()]. If the problem persists,
-#'   please run [sewer_compile(verbose = TRUE)] and post the output in
+#'   please run `sewer_compile(verbose = TRUE)` and post the output in
 #'   a new issue on GitHub, along with your [cmdstanr::cmdstan_version()].
 #'
 #' @export
 sewer_compile <- function(model = NULL, force_recompile = FALSE, verbose = FALSE) {
-  all_models <- c(
-    "EpiSewer_main.stan",
-    "EpiSewer_approx.stan"
-    )
   if (!is.null(model)) {
     if (model %in% c("main", "EpiSewer_main")) {
       model <- "EpiSewer_main.stan"
-    } else if (model %in% c("approx", "EpiSewer_approx")) {
-      model <- "EpiSewer_approx.stan"
+    } else {
+      cli::cli_abort(paste("The model", model, "is not available."))
     }
-    if (!(model %in% all_models)) {
-      cli::cli_abort(paste(
-          "The model", model, "is not available."
-      ))
-    }
-    all_models <- model
+    models_to_compile <- model
+  } else {
+    models_to_compile <- c("EpiSewer_main.stan")
   }
   comp_success <- NULL
 
-  for (i in 1:length(all_models)) {
-    model_name <- all_models[i]
+  for (i in 1:length(models_to_compile)) {
+    model_name <- models_to_compile[i]
     cat("\r                                                      \r", sep = "");
-    cat(sprintf("\r| Compiling model %d/%d ", i, length(all_models)), sep = "")
+    cat(sprintf("\r| Compiling model %d/%d ", i, length(models_to_compile)), sep = "")
     #flush.console()
     success <- tryCatch(
       {
@@ -303,7 +338,7 @@ sewer_compile <- function(model = NULL, force_recompile = FALSE, verbose = FALSE
     )
     cat(paste(sprintf(
       "\r| Compiling model %d/%d",
-      i, length(all_models)), ifelse(success, "(success) ", "(failed) ")
+      i, length(models_to_compile)), ifelse(success, "(success) ", "(failed) ")
       ), sep = "")
     Sys.sleep(0.5)
     comp_success <- c(comp_success, success)
@@ -313,7 +348,7 @@ sewer_compile <- function(model = NULL, force_recompile = FALSE, verbose = FALSE
     cli::cli_warn(
       paste(
         "The following models could not be compiled:",
-        paste(all_models[!comp_success], collapse = ", ")
+        paste(models_to_compile[!comp_success], collapse = ", ")
       )
     )
   } else {
@@ -355,6 +390,119 @@ get_checksum_model <- function(stanmodel, only_functions = FALSE) {
     serialize = FALSE
   )
   return(final_checksum)
+}
+
+#' Run stan's pathfinder algorithm to obtain improved inits.
+#'
+#' @description Helper function that runs the pathfinder algorithm with default
+#'   inits and returns the result to be used as inits in mcmc sampling.
+#'
+#' @param stanmodel_instance A CmdStanModel object of the EpiSewer model
+#'   constructed using `cmdstanr::cmdstan_model()`.
+#' @param job An EpiSewer job object with data and default inits.
+#' @param max_iters The maximum number of iterations for LBFGS during pathfinder
+#'  initialization.
+#'
+#' @return Fitted model, a CmdStanPathfinder object. Can be used as arguments
+#'   for the inits of the `CmdStanModel$sample()` method.
+#'
+#' @keywords internal
+get_pathfinder_inits <- function(stanmodel_instance, job, max_iters = NULL) {
+  arguments <- c(
+    list(data = job$data),
+    init = function() job$init,
+    list(
+      num_paths = 1, draws = 100, seed = 0, max_lbfgs_iters = max_iters,
+      psis_resample = FALSE, sig_figs = 14,
+      show_messages = FALSE, show_exceptions = FALSE
+      )
+  )
+  return(fit_stan(
+    stanmodel_instance, arguments, fit_method = "pathfinder", silent = TRUE
+  ))
+}
+
+#' Fit model via stan
+#'
+#' @description Helper function to fit an EpiSewer model using one of stan's
+#'   algorithms.
+#'
+#' @param stanmodel_instance A CmdStanModel object of the EpiSewer model
+#'   constructed using `cmdstanr::cmdstan_model()`.
+#' @param arguments Arguments to be passed to stan, including the data and the
+#'   sampler options.
+#' @param fit_method The algorithm used for sampling, currently supported are
+#'   "mcmc" and "pathfinder".
+#' @param silent Should the sampling be completely silent or should status
+#'   updates and warnings be shown?
+#'
+#' @return Either a fitted stan model with draws, or a list with error messages
+#'   and sampler outputs.
+#'
+#' @keywords internal
+fit_stan <- function(stanmodel_instance, arguments, fit_method, silent = FALSE) {
+  if (silent) {
+    arguments$show_messages <- FALSE
+    arguments$show_exceptions <- FALSE
+    sink(tempfile(), type = "out")
+    on.exit(sink())
+  }
+  return(tryCatch(
+    {
+      fit_res <- withWarnings(suppress_messages_warnings(
+        {
+          if (fit_method == "mcmc") {
+            do.call(stanmodel_instance$sample, arguments)
+          } else if (fit_method == "pathfinder") {
+            do.call(stanmodel_instance$pathfinder, arguments)
+          } else {
+            cli::cli_abort("Unknown sampler type")
+          }
+        },
+        c(
+          "Registered S3 method overwritten by 'data.table'",
+          "Cannot parse stat file, cannot read file: No such file or directory",
+          "cannot open file '/proc/stat': No such file or directory",
+          "Mean does not exist"
+        )
+      ))
+      if (length(fit_res$warnings) == 0) {
+        fit_res <- fit_res$value
+        # ensure that data is read in
+        fit_res$draws("R")
+      } else {
+        if (!silent) {
+          cat("\n")
+          cli::cli_warn(
+            paste(
+              "There was an error while fitting the model.",
+              "Only the model input is returned."
+            )
+          )
+        }
+        fit_res <- list(
+          errors = unlist(lapply(
+            fit_res$warnings, function(x) stringr::str_remove(x$message, "\n")
+          )),
+          sampler_output = invisible(force(fit_res$value$output()))
+        )
+      }
+      return(fit_res)
+    },
+    error = function(err) {
+      if (!silent) {
+        cat("\n")
+        cli::cli_warn(c(
+          paste(
+            "There was an error while fitting the model.",
+            "Only the model input is returned."
+          ),
+          err$message
+        ))
+      }
+      return(list(errors = err, sampler_output = NULL))
+    }
+  ))
 }
 
 

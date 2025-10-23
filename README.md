@@ -44,13 +44,13 @@ configurable modeling components.
 ⭐ Sewer residence time distributions
 
 **Shedding**  
-⭐ Incubation period and shedding load distributions  
+⭐ Shedding load distributions (with uncertainty)  
 ⭐ Individual-level shedding load variation
 
 **Infections**  
 ⭐ Stochastic infection model with overdispersion  
-⭐ Flexible $R_t$ smoothing (random walk, exponential smoothing,
-splines)  
+⭐ Flexible $R_t$ smoothing (Gaussian process, random walk, exponential
+smoothing, splines, changepoint models)  
 ⭐ Transmission indicators: $R_t$, growth rate, doubling time, and more
 
 **Forecast**  
@@ -144,6 +144,7 @@ in Zurich. Some days have missing measurements, but this is no problem:
 ``` r
 data_zurich$measurements
 #>            date concentration
+#>          <Date>         <num>
 #>   1: 2022-01-01            NA
 #>   2: 2022-01-02            NA
 #>   3: 2022-01-03      455.7580
@@ -166,6 +167,7 @@ per week.
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
 head(measurements_sparse, 10)
 #>           date concentration  weekday
+#>         <Date>         <num>   <char>
 #>  1: 2022-01-03      455.7580   Monday
 #>  2: 2022-01-06      330.7298 Thursday
 #>  3: 2022-01-10      387.6885   Monday
@@ -189,6 +191,7 @@ volume unit as the concentration (mL here in both cases).
 ``` r
 data_zurich$flows
 #>            date        flow
+#>          <Date>       <num>
 #>   1: 2022-01-01 3.41163e+11
 #>   2: 2022-01-02 3.41163e+11
 #>   3: 2022-01-03 1.58972e+11
@@ -218,6 +221,7 @@ of cases.
 ``` r
 data_zurich$cases
 #>            date     cases
+#>          <Date>     <num>
 #>   1: 2022-01-01        NA
 #>   2: 2022-01-02        NA
 #>   3: 2022-01-03 1519.5313
@@ -299,8 +303,8 @@ Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
 data, the complexity of the model used, and how well the model actually
-fits the data. On a MacBook Pro (2 GHz Quad-Core Intel Core i5) the
-example below takes about 5 minutes to run.
+fits the data. On a modern laptop the example below should take about 3
+minutes to run.
 
 ``` r
 options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
@@ -472,7 +476,8 @@ data.
 
 ### More details
 
-We can further inspect our results object. It has three attributes:
+We can further inspect our results object. It has the following
+attributes:
 
 ``` r
 names(ww_result)
@@ -518,7 +523,7 @@ ww_result$job$model
 #> 
 #> infections
 #>  |- generation_dist_assume
-#>  |- R_estimate_splines
+#>  |- R_estimate_gp
 #>  |- seeding_estimate_rw
 #>  |- infection_noise_estimate (overdispersion = TRUE)
 ```
@@ -536,11 +541,11 @@ parameters from the model.
 ``` r
 names(ww_result$summary)
 #>  [1] "samples"                  "R"                       
-#>  [3] "expected_infections"      "infections"              
-#>  [5] "growth_rate"              "doubling_time"           
-#>  [7] "days_growing"             "expected_load"           
-#>  [9] "expected_concentration"   "concentration"           
-#> [11] "normalized_concentration"
+#>  [3] "R_diagnostics"            "expected_infections"     
+#>  [5] "infections"               "growth_rate"             
+#>  [7] "doubling_time"            "days_growing"            
+#>  [9] "expected_load"            "expected_concentration"  
+#> [11] "concentration"            "normalized_concentration"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -549,12 +554,14 @@ number.
 ``` r
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 1.036807 1.035745  0.6965128 0.9325218  1.135077   1.380163
-#> 2: 2021-12-04 1.037644 1.036200  0.7072554 0.9352365  1.131915   1.375141
-#> 3: 2021-12-05 1.038698 1.035635  0.7225687 0.9409083  1.130870   1.360814
-#> 4: 2021-12-06 1.039966 1.037090  0.7374740 0.9479347  1.126985   1.354385
-#> 5: 2021-12-07 1.041443 1.038955  0.7485678 0.9517000  1.126372   1.344230
+#>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>
+#> 1: 2021-12-02 1.115172 1.110672  0.8615012  1.022565  1.201434   1.401401
+#> 2: 2021-12-03 1.110969 1.108036  0.8628105  1.020731  1.197291   1.385792
+#> 3: 2021-12-04 1.107426 1.104952  0.8605573  1.018906  1.192224   1.370607
+#> 4: 2021-12-05 1.104382 1.102559  0.8669692  1.017617  1.187447   1.361395
+#> 5: 2021-12-06 1.101656 1.100388  0.8699916  1.016991  1.180810   1.349066
 #>        type seeding
+#>      <fctr>  <lgcl>
 #> 1: estimate    TRUE
 #> 2: estimate    TRUE
 #> 3: estimate    TRUE
@@ -577,7 +584,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.9634045 0.9527539 1.0770535 1.0579167
+#> [1] 0.9483824 1.0604264 0.9608296 0.8695765
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -589,19 +596,19 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "9ab6b8f9db0836e27cf9e9ac6ab1ea02"
+#> [1] "df1728c80a97f9d14521b5a43bc98a12"
 #> 
 #> $input
-#> [1] "c5d9acd8e8877d4ffbb24019996c07f9"
+#> [1] "a2976b41049451d10be221f31e922835"
 #> 
 #> $fit_opts
-#> [1] "5309bbbc3cd1cc109eac60d2fc82de45"
+#> [1] "bfdedc2ea8d89b577ad57b86ac83e706"
 #> 
 #> $results_opts
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "4329118480e9cb86b22d61c739d8c77e"
+#> [1] "03dd9d0e5e02a8b393c5e765de3f79fa"
 ```
 
 ## Citing the package
@@ -627,3 +634,38 @@ please also cite:
       journal = {bioRxiv preprint},
       doi = {10.1101/2024.10.14.618307}
     }
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+
+<!-- prettier-ignore-start -->
+
+<!-- markdownlint-disable -->
+
+All contributions to this project are gratefully acknowledged using the
+[`allcontributors` package](https://github.com/ropensci/allcontributors)
+following the [all-contributors](https://allcontributors.org)
+specification. Contributions of any kind are welcome!
+
+### Code
+
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>
+
+### Issue Authors
+
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aigoldsteinh">igoldsteinh</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Ajamesmbaazam">jamesmbaazam</a>
+
+### Issue Contributors
+
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3ASamuelBrand1">SamuelBrand1</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3AOrthomyxoviridae">Orthomyxoviridae</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3Akaitejohnson">kaitejohnson</a>
+
+<!-- markdownlint-enable -->
+
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->

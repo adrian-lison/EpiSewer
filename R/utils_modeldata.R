@@ -20,7 +20,7 @@ template_model_helpers <- function(modeldata) { }
 #'   add further data and model specifications.
 #'
 #' @return The `modeldata` object also includes information about parameter
-#'   initialization (`init`), meta data (`.metainfo`), and checks to be
+#'   initialization (`.init`), meta data (`.metainfo`), and checks to be
 #'   performed before model fitting (`.checks`).
 #' @export
 modeldata_init <- function() {
@@ -270,7 +270,7 @@ set_prior_normal_log <- function(param,
 #' @keywords internal
 init_from_location_scale_prior <- function(prior) {
   prior_data_select <- !stringr::str_detect(names(prior), pattern = "_text$")
-  if (sum(prior_data_select) != 1) {
+  if (length(which(prior_data_select)) != 1) {
     cli::cli_warn(paste(
       "Could not init from location scale prior:",
       "Non-ambiguous prior format. Using 1e-2 as fallback."

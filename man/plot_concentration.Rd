@@ -118,8 +118,8 @@ checks).}
 forecasted values. Default is 8.}
 }
 \value{
-A ggplot object showing predicted and observed concentrations over
-time. Can be further manipulated using \link{ggplot2} functions to adjust themes
+A \code{ggplot} object showing predicted and observed concentrations over
+time. Can be further manipulated using \code{ggplot2} functions to adjust themes
 and scales, and to add further geoms.
 }
 \description{

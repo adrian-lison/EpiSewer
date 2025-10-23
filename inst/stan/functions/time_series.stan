@@ -69,10 +69,10 @@ Time series process functions
         trend[1] = 0; // b_0, assume no trend for y_0 -> y_1 (so that y_1 corresponds to the supplied intercept without trend)
         trend[2] = start_values[2]; // b_1, assume that trend starts for step y_1 -> y_2
         if (phi == 1) {
-          // special case: trend, no dampening (vectorized)
+          // special case: trend, no damping (vectorized)
           trend[3:n] = trend[2] + beta * cumulative_sum(epsilons[2:(n-1)]); // b_2:b_n-1, note index shift for epsilon
         } else {
-          // general case: trend and dampening
+          // general case: trend and damping
           for (t in 3:n) { trend[t] = phi * trend[t - 1] + beta * epsilons[t-1]; } // b_2:b_n-1, note index shift for epsilon
         }
         // update level: l_t = l_{t-1} + b{t-1} + alpha * epsilon_t
@@ -96,6 +96,28 @@ Time series process functions
     }
   }
 
+  vector ar1_process(real phi, vector noise) {
+    int n = num_elements(noise);
+    vector[n] y; // observations (from 1:n)
+    y[1] = noise[1];
+    for (t in 2:n) {
+      y[t] = phi * y[t-1] + noise[t];
+    }
+    return(y);
+  }
+
+
+  vector ar1_process(real start_value, real phi, vector noise) {
+    int n = num_elements(noise) + 1; // n = 1 (for start value) + length of noise
+    vector[n] y; // observations (from 1:n)
+    vector[n] epsilons = append_row(0, noise); // innovations (from 1:n)
+    y[1] = start_value;
+    for (t in 2:n) {
+      y[t] = phi * y[t-1] + epsilons[t];
+    }
+    return(y);
+  }
+
   real ets_coefficient_priors_lp(
     array[] real ets_alpha, array[] real ets_alpha_prior,
     array[] real ets_beta, array[] real ets_beta_prior,
@@ -104,6 +126,27 @@ Time series process functions
     real tar = 0;
     tar += beta2_prior_lpdf(ets_alpha | ets_alpha_prior);
     tar += beta2_prior_lpdf(ets_beta | ets_beta_prior);
-    tar += beta2_prior_lpdf(ets_phi | ets_phi_prior); // dampening needs a tight prior, roughly between 0.8 and 0.98
+    tar += beta2_prior_lpdf(ets_phi | ets_phi_prior); // damping needs a tight prior, roughly between 0.8 and 0.98
     return(tar);
+  }
+
+  /**
+  * Dampen the trend of a time series
+  *
+  * @param start The start value of the time series. This is used to compute
+  *   the trend of the first value.
+  * @param values The actual values of the time series that should be dampened.
+  * @param damping The exponential damping parameter to apply. A value
+  *   of 1 means no damping, a value of 0 means no trend (flat time series).
+  *
+  * @return A vector of the dampened time series, same length as `values`.
+  */
+  vector dampen_trend(real start, vector values, real damping) {
+    int n = num_elements(values);
+    vector[n] dampened_trend;
+    dampened_trend[1] = damping * (values[1] - start);
+    for (i in 2:n) {
+      dampened_trend[i] = damping^i * (values[i]-values[i-1]);
+    }
+    return(start + cumulative_sum(dampened_trend));
   }

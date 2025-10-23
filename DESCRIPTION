@@ -1,6 +1,6 @@
 Package: EpiSewer
 Title: Estimate Epidemiological Parameters from Wastewater Measurements
-Version: 0.0.3
+Version: 0.0.4
 Authors@R: 
     person(given = "Adrian",
            family = "Lison",
@@ -11,10 +11,11 @@ Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
 Depends:
     R (>= 3.5.0)
 Imports: 
+    cli,
     cmdstanr,
     curl,
     data.table,
@@ -25,17 +26,19 @@ Imports:
     ggplot2,
     ggpattern,
     lazyeval,
+    lifecycle,
     lubridate,
     Matrix (>= 1.5-1),
+    purrr (>= 1.0.1),
+    posterior (>= 1.6.0),
     rlang,
-    cli,
     rstan,
     scales,
     splines,
     stats,
     stringr,
     vctrs,
-    purrr (>= 1.0.1)
+    withr
 Suggests:
     testthat (>= 3.0.0),
     zoo

@@ -57,8 +57,8 @@ between PCR runs, and is modeled as log-normal distributed in EpiSewer.}
 
 \item{partition_variation_prior_sigma}{Prior (standard deviation) on the
 coefficient of variation of the total number of partitions in the dPCR
-reaction. If this is set to zero, the partition variation will
-be fixed to the prior mean and not estimated.}
+reaction. If this is set to zero, the partition variation will be fixed to
+the prior mean and not estimated.}
 
 \item{volume_scaled_prior_mu}{Prior (mean) on the conversion factor
 (partition volume scaled by the dilution of wastewater in the assay) for
@@ -98,7 +98,7 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
@@ -156,7 +156,7 @@ The priors of this component have the following functional form:
 dPCR.
 
 Other {noise models}: 
-\code{\link{noise_estimate_constant_var}()},
-\code{\link{noise_estimate}()}
+\code{\link{noise_estimate}()},
+\code{\link{noise_estimate_constant_var}()}
 }
 \concept{{noise models}}

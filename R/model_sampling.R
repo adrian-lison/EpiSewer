@@ -229,7 +229,7 @@ outliers_none <- function(modeldata = modeldata_init()) {
 #'   sampling day. The spikes follow a generalized extreme value distribution
 #'   (GEV) that is scaled by the average load per case. The default prior for
 #'   the GEV is chosen such that distribution of spikes is extremely
-#'   right-tailed, and the 95% quantile of spikes is below the load equivalent
+#'   right-tailed, and the 99% quantile of spikes is below the load equivalent
 #'   of 1 case, i.e. has minimal impact on estimated infection dynamics. Note
 #'   that because of the properties of the GEV, the mean posterior estimates of
 #'   loads and concentrations will be theoretically infinite if this modeling
@@ -239,8 +239,8 @@ outliers_none <- function(modeldata = modeldata_init()) {
 #' @inherit modeldata_init return
 #' @export
 #' @family {outlier models}
-outliers_estimate <- function(gev_prior_mu = 0.0025, gev_prior_sigma = 0.005,
-                              gev_prior_xi = 2, modeldata = modeldata_init()) {
+outliers_estimate <- function(gev_prior_mu = 0, gev_prior_sigma = 2e-8,
+                              gev_prior_xi = 4, modeldata = modeldata_init()) {
   modeldata$outliers <- TRUE
   modeldata$epsilon_prior <- set_prior(
     "epsilon", dist = "gev", mu = gev_prior_mu,

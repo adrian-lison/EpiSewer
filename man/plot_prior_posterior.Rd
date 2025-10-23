@@ -21,7 +21,7 @@ specified in \code{EpiSewer} are supported.}
 }
 \value{
 A plot showing the density of the prior (grey) and posterior (blue)
-for the respective parameter. Can be further manipulated using \link{ggplot2}
+for the respective parameter. Can be further manipulated using \code{ggplot2}
 functions to adjust themes and scales, and to add further geoms.
 }
 \description{

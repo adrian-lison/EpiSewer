@@ -38,15 +38,26 @@ Here, $c$ defines the maximum possible $R_t$ (default $R_\max=6$). This link fun
 #### Smoothing
 $R_t$ is modeled via a time series or smoothing spline prior which ensure smoothness through temporal autocorrelation of the $R_t$ estimates.
 
-##### Option 1: Random walk
+##### Option 1: Gaussian process (default)
+This option models $R_t$ using Gaussian processes (GPs) with a Matérn kernel, i.e.
+
+\begin{equation}
+\text{link}(R_t) = \alpha_t + \delta_t\quad |\quad \alpha \sim \mathcal{GP}\,\!\big(1,\, k_\nu(\tau;\,\ell_\alpha,\sigma^2_\alpha)\big),\; \delta \sim \mathcal{GP}\,\!\big(0,\, k_\nu(\tau;\,\ell_\delta,\sigma^2_\delta)\big),
+\end{equation}
+
+where $\alpha_t$ is the long-term trend, $\delta_t$ is the short-term deviation from the trend, modeled each as independent Gaussian processes with Matérn kernel $k_\nu$ and smoothness parameter $\nu=\frac{3}{2}$. Importantly, we choose priors for the kernel parameters such that the length scale $\ell_\alpha$ and magnitude $\sigma_\alpha$ of the long-term trend are in expectation much larger than those of the short-term deviation, i.e. $\ell_\delta$ and $\sigma_\delta$. By decomposing Rt into long- and short-term components, we obtain desirable behavior in real-time estimation: absent a clear signal, the short-term deviation component will revert to zero, such that Rt will follow the long-term trend.
+
+##### Option 2: Random walk
+This option smoothes Rt using a simple random walk model, i.e.
+
 \begin{equation}
 \text{link}(R_t)\,|\,R_{t-1} \sim N(\text{link}(R_{t-1}),{\sigma_{\text{link}(R)}}^2)
 \end{equation}
 
 with a normal prior on the intercept $R_1$ and a zero-truncated normal prior on the standard deviation $\sigma_{\text{link}(R)}$ of the random walk.
 
-##### Option 2: Exponential smoothing
-This option uses an **innovations state space model** with additive errors to implement an exponential smoothing prior (Holt's linear trend method with dampening)[^hyndman]. For this, $R_t$ is modeled recursively as
+##### Option 3: Exponential smoothing
+This option uses an **innovations state space model** with additive errors to implement an exponential smoothing prior (Holt's linear trend method with damping)[^hyndman]. For this, $R_t$ is modeled recursively as
 
 \begin{align*}
     \text{link}(R_t) &= l_{t-1} + \phi' \, b_{t-1} + \epsilon_t \\
@@ -57,18 +68,18 @@ This option uses an **innovations state space model** with additive errors to im
 
 where $l_t$ is the level, $b_t$ the trend, and $\epsilon_t$ the additive error at time $t$, respectively. 
 
-Moreover, $\alpha'$ is a level smoothing parameter, $\beta'$ a trend smoothing parameter, and $\phi'$ a dampening parameter. We use normal priors for the intercepts of the level $l_1$ and trend $b_1$, and a zero-truncated normal prior for the variance ${\sigma_{\text{link}(R)}}^2$ of the innovations, allowing these to be estimated from the data. We use Beta priors for the smoothing parameters $\alpha'$ and $\beta'$.
+Moreover, $\alpha'$ is a level smoothing parameter, $\beta'$ a trend smoothing parameter, and $\phi'$ a damping parameter. We use normal priors for the intercepts of the level $l_1$ and trend $b_1$, and a zero-truncated normal prior for the variance ${\sigma_{\text{link}(R)}}^2$ of the innovations, allowing these to be estimated from the data. We use Beta priors for the smoothing parameters $\alpha'$ and $\beta'$.
 
-In theory, the dampening parameter $\phi'$ can also be estimated from the data, but usually has to be fixed due to identifiability issues. The default is $\phi'=0.9$, i.e. the strength of the trend is assumed to halve approximately every week of predicting into the future.
+In theory, the damping parameter $\phi'$ can also be estimated from the data, but usually has to be fixed due to identifiability issues. The default is $\phi'=0.9$, i.e. the strength of the trend is assumed to halve approximately every week of predicting into the future.
 
-##### Option 3: Penalized B-splines
+##### Option 4: Splines
 \begin{equation}
-\text{link}(R_t) = \boldsymbol{B}_{[t,\,]} \,  a
+\text{link}(R_t) = \boldsymbol{B}_{[t,\,]} \, a
 \end{equation}
 
 where $\boldsymbol{B}_{[t,\,]}$ is a (by default cubic) B-spline basis evaluated at date index $t$, and $a = (a_1, a_2, \dots, a_\text{df})$ is a vector of spline coefficients, with $\text{df} = \text{number of knots} + \text{spline degree}$ being the degrees of freedom.
 
-We here use *penalized* B-splines, which we implemented by regularizing the spline coefficients via a random walk[^Kharratzadeh], i.e.
+We here use *penalized* B-splines, implemented by regularizing the spline coefficients via a random walk[^Kharratzadeh], i.e.
 
 \begin{equation}
 a_{i}\,|\,a_{i-1} \sim N(a_{i-1}, \sigma_{a}^2 \, \delta_i)
@@ -78,27 +89,55 @@ where the random walk variance $\sigma_{a}^2$ is scaled by $\delta_i$, the dista
 
 Knots are placed uniformly according to a user-specified knot distance, however the knot distance is heuristically reduced for dates close to the present (which are only partially informed by data) to avoid erroneous extrapolation.
 
+EpiSewer also supports multi-level spline smoothing by decomposing $R_t$ as
+
+\begin{equation}
+R_t = \text{link}(R_1 + \delta_t^\text{local} + \delta_t^\text{global}), 
+\end{equation}
+
+where $R_1$ is an intercept, $\delta_t^\text{local}$ a component for smaller, short-term variation, and $\delta_t^\text{global}$ a component for larger, long-term variation.
+The two components are then smoothed using penalized cubic splines as described above, i.e.
+
+\begin{equation}
+\delta_t^\phi = \boldsymbol{B}^\phi_{[t,\,]} \, a^\phi, \quad \phi \in \{\text{local},\text{global}\}.
+\end{equation}
+
+##### Option 5: Smooth derivative
+This option enforces a smooth first derivative of $R_t$ by placing cubic splines on the first-order differences of $R_t$, \ie
+
+\begin{equation}
+\text{link}(R_t) = \text{link}(R_{t-1}) + \delta_t,\quad \delta_t = \boldsymbol{B}_{[t,\,]} \, a,
+\end{equation}
+
+where the spline coefficients $a = (a_0, a_1, \dots, a_{n+2})$ are given a sparse Normal-Exponential-Gamma prior $a_i \sim \text{NEG}(\mu = 0, \lambda = \lambda_a, \gamma = \gamma_a)$ for $1 \leq i \leq n+1$. This prior has a long tail that supports large changes in $R_t$. The first and last spline coefficient are fixed to 0 to avoid erroneous extrapolation towards the boundaries. This also has the effect that trends in $R_t$ level off towards the present.
+
+##### Option 6: Piecewise constant
+This option models $R_t$ as a piecewise constant function. The changepoints of the constant pieces are estimated from the data using an approximate changepoint model, corresponding roughly to the following model:
+
+\begin{equation}
+\text{link}(R_t) = \text{link}(R_1 + \sum_{i=1}^K a_i \, \mathbb{1}(t \geq C_i))
+\end{equation}
+
+where $R_1$ is the intercept, $C_i$ are the estimated changepoint times of $K$ different changepoints, and $a_i$ is the change in $R_t$ at changepoint $i$, modeled via a sparse Normal-Exponential-Gamma prior $a_i \sim \text{NEG}(\mu = 0, \lambda = \lambda_a, \gamma = \gamma_a)$ for $1 \leq i \leq K$. This prior has a long tail that supports large changes in $R_t$.
+Generally, this option is suitable when $R_t$ follows a step-like trajectory with occasional large jumps, e.g. due to strong interventions. It is less suitable for modeling gradual changes in $R_t$ over time.
+
+##### Addition: Changepoint model for variability
+Options 2-4 also support changes in the variability of $R_t$ over time.
+For example, during the height of an epidemic wave, countermeasures may lead to much faster changes in $R_t$ than observable at other times (baseline). This potential additional variability is modeled using a linear change point model for $\sigma_{\text{link}(R)}^2$ (or for $\sigma_{a}$ when using splines). The change points are placed at regular intervals, and the additional variation at the changepoints is modeled as independently distributed and following an Exponential-Gamma (EG) distribution, which has a strong peak towards zero and a long tail.
+
 ### Infections
 `EpiSewer` uses a stochastic renewal model as described in earlier work[^semimechanistic][^generative_nowcasting] to model both expected and realized infections.
 
 #### Expected infections
 Variable: $\iota_t$
 
-##### Seeding
-We require a seeding phase at the start of the modeled time period, when the renewal model cannot be applied yet. Here we use a random walk on the log scale to model the expected number of initial infections.
+We model the expected number of infections $\iota_t$ via the renewal equation
 
-\begin{equation}
-\log(\iota_t)|\iota_{t-1} \sim N(\log(\iota_{t-1}),{\sigma_{\log(\iota)}}^2) \,|\, t \leq G
-\end{equation}
-
-with a normal prior on intercept $\log(\iota_1)$ and a zero-truncated normal prior on the standard deviation $\sigma_{\log(\iota)}$ of the random walk.
-
-##### Renewal model
 \begin{equation}
 \iota_t = E[I_t] = R_t \sum_{s=1}^G \tau^\text{gen}_s \, I_{t-s} \,|\, t > G
 \end{equation}
 
-where $I_{t-s}$ is the number of realized infections that occurred $s$ days before $t$, and $\tau^\text{gen} = (\tau^\text{gen}_1, \tau^\text{gen}_2, \dots, \tau^\text{gen}_G)$ the discrete generation time distribution with maximum generation time $G$.
+where $I_{t-s}$ is the number of realized infections that occurred $s$ days before $t$ and $\tau^\text{gen}$ is a discrete generation time distribution $\tau^\text{gen} = (\tau^\text{gen}_1, \tau^\text{gen}_2, \dots, \tau^\text{gen}_G)$ with maximum generation time $G$.
 
 #### Realized infections
 Variable: $I_t$
@@ -121,6 +160,35 @@ with expected infections $\iota_t$ and inverse overdispersion parameter $\phi$ .
 
 In the stan implementation, this is approximated as $I_t|\iota_t \sim N\left(\iota_t, \iota_t + \frac{\iota_t^2}{\phi}\right)$
 
+#### Seeding
+We require a seeding phase at the start of the modeled time period, which describes the time evolution of infections when the renewal model cannot be applied yet.
+
+##### Option 1: Constant
+This option assumes a constant number of expected infections $\iota_{seed}$ during the seeding phase, which is modeled via a normal prior on the log scale:
+
+\begin{equation}
+\log(\iota_t) = \log(\iota_{seed}) \,|\, t \leq G,\quad \log(\iota_\text{seed}) \sim N(\mu_{\log(\iota_\text{seed})},\sigma_{\log(\iota_\text{seed})}^2)
+\end{equation}
+
+##### Option 2: Random walk
+This option models the expected number of infections during the seeding phase via random walk on the log scale:
+
+\begin{equation}
+\log(\iota_t)|\iota_{t-1} \sim N(\log(\iota_{t-1}),{\sigma_{\log(\iota)}}^2) \,|\, t \leq G
+\end{equation}
+
+with a normal prior on intercept $\log(\iota_1)$ and a zero-truncated normal prior on the standard deviation $\sigma_{\log(\iota)}$ of the random walk.
+
+##### Option 3: Growth rate model
+This option models the expected number of infections during the seeding phase as an exponential growth process:
+
+\begin{equation}
+\log(\iota_t) = \log(\iota_{t-1}) + r_{t},\;\ r_{t} | r_{t+1} \sim N(r_{t+1},{\sigma_{r}}^2) \; \;|\; 1 < t \leq G,
+\end{equation}
+
+Here the exponential growth rate $r_t$ follows a backwards-in-time random walk with standard deviation $\sigma_{r}$ and initial value $r_{G+1}$. The value $r_{G+1}$ corresponds to the last growth rate of the seeding phase, which we set to the first estimated reproduction number $R_t$ at the start of the modeling phase. We achieve this using an approach from the EpiAware package[^EpiAware], i.e. by solving the renewal equation $R_{G+1} (\sum_{s=1}^G \tau^\text{gen}_s e^{-s\,r_{G+1}}) = 1$ within the model.
+This means that the intercept of the seeding phase growth rate depends on the prior provided for the initial reproduction number.
+
 ## Shedding module
 
 ### Expected symptom onsets
@@ -130,7 +198,14 @@ Variable: $\lambda_t$
 \lambda_t = \sum_{s=0}^L I_{t-s}\, \tau^\text{inc}_s
 \end{equation}
 
-where $\tau^\text{inc} = (\tau^\text{inc}_0, \tau^\text{inc}_1, \dots, \tau^\text{inc}_L)$ is the incubation period distribution with maximum incubation period $L$.
+where $\tau^\text{inc} = (\tau^\text{inc}_0, \tau^\text{inc}_1, \dots, \tau^\text{inc}_L)$ is the incubation period distribution with maximum incubation period $L$. Note that this model component is only relevant when the shedding load distribution is referenced by the date of symptom onset. When the shedding load distribution is referenced by the date of infection, this component can be subsumed in the shedding load model.
+
+### Shedding load distribution
+Variable: $\tau^\text{shed}$
+
+The vector $\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S)$ represents the distribution of shedding over time, with shedding up to $S$ days after infection or after symptom onset (depending on the model specification). It can be either assumed (fixed) or estimated (requires a prior). When estimating the shedding load distribution, priors are placed on the mean $\mu^\text{shed}$ and coefficient of variation $\nu^\text{shed}$ of a positive continuous distribution (\eg gamma or log-normal), which is transformed into a discrete distribution $\tau^\text{shed}$ within the model. This approach is inspired by the modeling of epidemiological distributions in the EpiNow2[^EpiNow2] and epinowcast[^epinowcast] packages.
+
+EpiSewer also supports modeling the shedding load distribution from multiple priors in order to account for estimates from different studies or sensitivity analyses. Using a set of $n$ prior pairs, we model $\mu^\text{shed}$ and $\nu^\text{shed}$ as the weighted mean of prior parameters $\mu^\text{shed} = \sum_{i=1}^{n} \boldsymbol{\theta_i}\, \mu^\text{shed}_i$ and $\nu^\text{shed} = \sum_{i=1}^{n} \boldsymbol{\theta_i}\, \nu^\text{shed}_i$, with the weights $\boldsymbol{\theta}$ drawn from a Dirichlet distribution. By default, we use a symmetric Dirichlet prior with concentration parameter $a = 1$, corresponding to a uniform distribution over the weight simplex (i.e. we interpolate between the provided priors). By choosing a smaller concentration parameter, a more isolated support of the individual priors provided can be achieved. It is also possible to apply differential weighting of results from different studies through the parameters of the Dirichlet prior.
 
 ### Total load shed in catchment
 Variable: $\omega_t$
@@ -138,21 +213,21 @@ Variable: $\omega_t$
 ##### Option 1: Without individual-level variation
 
 \begin{equation}
-\omega_t = \sum_{s=0}^S \lambda_{t-s}\, \mu^\text{load}\, \tau^\text{shed}_s
+\omega_t = \sum_{s=0}^S \mu^\text{load}\, \tau^\text{shed}_s\, \lambda_{t-s}
 \end{equation}
-where $\lambda_{t}$ is the expected number of individuals with symptom onset on day $t$, $\mu^\text{load}$ is the average total shedding load per person, and $\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S)$ is the distribution of shedding over time, with shedding up to $S$ days after symptom onset. 
+where $\mu^\text{load}$ is the average total shedding load per person (see `vignette("load_per_case")`), $\tau^\text{shed}$ the shedding load distribution (see above), and $\lambda_{t}$ is the expected number of individuals with symptom onset on day $t$.
 
 ##### Option 2: With individual-level variation
 \begin{equation}
-\omega_t = \sum_{s=0}^S \zeta_{t-s}\, \mu^\text{load}\, \tau^\text{shed}_s
+\omega_t = \sum_{s=0}^S \mu^\text{load}\, \tau^\text{shed}_s\, \zeta_{t-s}
 \end{equation}
-where $(\mu^\text{load})$ is again the average total shedding load per person and $(\tau^\text{shed} = (\tau^\text{shed}_0, \tau^\text{shed}_1, \dots, \tau^\text{shed}_S))$ the distribution of shedding over time, with shedding up to $S$ days after symptom onset. This is now multiplied by $\zeta_t$, which is defined as the sum of i.i.d. Gamma distributed individual relative shedding intensities with mean $1$ and coefficient of variation $\nu_\zeta$:
+where $(\mu^\text{load})$ is the average total shedding load per person and $\tau^\text{shed}$ the shedding load distribution (see above). This is now multiplied by $\zeta_t$, which is defined as the sum of i.i.d. Gamma distributed individual relative shedding intensities with mean $1$ and coefficient of variation $\nu_\zeta$:
 
 \begin{equation}
 \zeta_t \sim \sum_{i=1}^{\Lambda_t} \, \text{Gamma}(\text{mean} = 1, \text{cv} = \nu_\zeta) = \text{Gamma}(\alpha = \frac{\Lambda_t}{\nu_\zeta^2}, \beta = \frac{1}{\nu_\zeta^2})
 \end{equation}
 
-where $\Lambda_t$ is the realized number of symptom onsets. That is, $\zeta_t$ describes the number of individuals with symptom onset on day $t$, weighted by their shedding intensity, where an intensity $<1$ indicates below-average shedding, and an intensity $>1$ indicates above-average shedding. The coefficient of variation  $\nu_\zeta$ describes how much the shedding intensity varies between individuals.
+where $\Lambda_t$ is the realized number of symptom onsets. That is, $\zeta_t$ describes the number of individuals with symptom onset on day $t$, weighted by their shedding intensity, where an intensity $<1$ indicates below-average shedding, and an intensity $>1$ indicates above-average shedding. The coefficient of variation $\nu_\zeta$ describes how much the shedding intensity varies between individuals.
 
 We here approximate $\Lambda_t$ with its expectation $\lambda_t = E[\Lambda_t]$, i.e.
 
@@ -162,7 +237,7 @@ We here approximate $\Lambda_t$ with its expectation $\lambda_t = E[\Lambda_t]$,
 
 and place a zero-truncated normal prior on $\nu_\zeta$.
 
-In the stan implementation, we use a normal approximation of the Gamma distribution for $\zeta_t$ to improve sampling efficiency. This approximation is highly accurate for sufficiently large $\lambda_t$, which will typically be the case.
+In the stan implementation, we improve sampling efficiency by using a normal approximation of the Gamma distribution for $\zeta_t$ when $\lambda_t$ is large ($E[\Lambda_t] \approx 30 \times \nu_\zeta^2$).
 
 ## Sewage module
 
@@ -186,16 +261,18 @@ where $\text{flow}_t$ is a measure of the total wastewater volume upstream from 
 
 ## Sampling module
 
-### Concentration in single-day samples, with sample effects
+### Concentration in single-day samples, with sample effects and outliers
 Variable: $\kappa_t$
 
 \begin{equation}
-\kappa_t = \chi_t + \boldsymbol{X} \, \eta
+\kappa_t = \chi_t + \boldsymbol{X} \, \eta + \epsilon_t
 \end{equation}
 
 where $\boldsymbol{X}$ is a $T \times K$ design matrix of $K$ different covariates describing the characteristics of samples on days 1 to $T$, and $\eta = (\eta_1, \eta_2, \dots, \eta_K)$ is a vector of coefficients which estimate the association of the sample covariates with the concentration. We place independent normal priors on $\eta_1, \eta_2, \dots, \eta_K$.
 
-Note that if on some days no samples were taken, the corresponding row of the design matrix $\boldsymbol{X}$ can be filled with arbitrary values, since they will not contribute to the likelihood.
+Moreover, $\epsilon_t>0$ represents positive outlier concentrations that violate the uniform mixing assumption. We place a heavily right-tailed Type II extreme value prior on $\epsilon_t$. By default, parameters are chosen such that 99\% of the probability mass is below a concentration that would be observable from one infection in the catchment.
+
+Note that if on some days no samples were taken, the corresponding row of the sample effects design matrix $\boldsymbol{X}$ can be filled with arbitrary values, since they will not contribute to the likelihood. To estimate weekday effects, EpiSewer provides a function `vignette("sample_effects_estimate_weekday")` that automatically creates a design matrix for the day of the week.
 
 ### Concentration in multi-day composite samples
 Variable: $\rho_t$
@@ -208,7 +285,7 @@ where $w$ is the composite window size, i.e. the number of consecutive single-da
 
 ## Measurements module
 
-### Analysed concentration before replication stage
+### Analysed concentration before replication
 Variable: $\Psi_t$
 
 We model $\Psi_t$ as Log-Normal distributed with unit-scale mean $\rho_t$ (sample concentration) and unit-scale coefficient of variation $\nu_\psi$, i.e.
@@ -217,44 +294,72 @@ We model $\Psi_t$ as Log-Normal distributed with unit-scale mean $\rho_t$ (sampl
 \Psi_t \sim \text{Log-Normal}\left(\mu_\Psi,\, \sigma_\Psi^2\right)
 \end{equation}
 
-where $\mu_\Psi = \log(\rho_t) - \frac{1}{2}\sigma_\Psi^2$ is the location and $\sigma_\Psi^2 = \log(1 + \nu_\Psi^2)$ is the scale of the Log-Normal distribution. Here, $\nu_\psi$ measures the unexplained variation in concentrations before the replication stage (for example, if the replication stage is PCR quantification, then $\nu_\psi$ measures all variation before PCR). We place a zero-truncated normal prior on $\nu_\psi$.
+where $\mu_\Psi = \log(\rho_t) - \frac{1}{2}\sigma_\Psi^2$ is the location and $\sigma_\Psi^2 = \log(1 + \nu_\Psi^2)$ is the scale of the Log-Normal distribution. Here, $\nu_\psi$ measures the unexplained variation in concentrations before the replication stage (for example, if you provide technical PCR replicates, then $\nu_\psi$ measures all variation before the PCR). We place a zero-truncated normal prior on $\nu_\psi$.
 
-### Limit of detection (LOD)
-We implement a hurdle model for the limit of detection, where the probability for a zero measurement is described by an exponentially decreasing function of the underlying concentration, i.e. 
-
-\begin{equation}
-P(\Upsilon_{t,i} = 0 | \Psi_t = \psi_t) = e^{-\psi_t\, c\, b}
-\end{equation}
-
-where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$, and $b$ and $c$ are parameters of the PCR. The PCR parameters are either estimated by the coefficient of variation model (see below, this may require informative priors and/or replicate measurements), or the product $c\, b$ can be back-calculated if the user provides an LOD value established from a lab experiment. The functional form of the LOD model is based on the statistical properties of digital PCR and corresponds to a binomial likelihood for zero successes. For non-zero measurements, we conversely have
-
-\begin{equation}
-P(\Upsilon_{t,i} > 0 | \Psi_t = \psi_t) = 1 - P(\Upsilon_t = 0 | \Psi_t = \psi_t)
-\end{equation}
+Note that pre-replication variation is only modeled when providing replicate measurements to EpiSewer and specifying `replicates = TRUE` in the `noise_estimate_` component.
 
 ### Measured concentration
-Variable: $\Upsilon_t$
 
-Non-zero concentration measurements are modeled as truncated normal distributed, i.e.
+#### Non-detects
+EpiSewer implements a hurdle model to account for non-detects (i.e. zero measurements).
+This is closely related to the limit of detection (LOD), below which sample concentrations cannot be reliably detected (typically defined as less than 95% probability of detection).
+
+##### Option 1: Assumed LOD
+This option models the probability of non-detection as an exponentially decreasing function of the underlying concentration, i.e. 
 
 \begin{equation}
-\Upsilon_{t,i} \,|\, \Upsilon_{t,i} > 0 \, \sim \text{Normal}^+\left(\mu_{\Upsilon_{t}},\, \sigma_{\Upsilon_{t}}^2\right)
+P(\Upsilon_{t,i} = 0 | \Psi_t = \psi_t) = e^{-\psi_t\, b},
 \end{equation}
-where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$. Here, $\mu_{\Upsilon_{t}} = \psi_t$ is the mean and $\sigma_{\Upsilon_{t}}^2 = \mu_{\Upsilon_{t}}\, \nu_\Upsilon(\mu_{\Upsilon_{t}})$ the standard deviation of the truncated Normal distribution. Note that `EpiSewer` also offers a Log-Normal likelihood as an alternative, however based on the properties of dPCR assays, the truncated Normal should be the better approximation for the true distribution of measurements.
 
-Specifically, $\nu_\Upsilon(\mu)$ is the coefficient of variation for the replication stage and modeled as a function of the expected concentration $\mu$:
+where $\Upsilon_{t,i}$ is the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$. The parameter $b$ is calculated from an LOD value provided by the user, typically established from a lab experiment. For example, if the LOD was defined as the lowest concentration for which the detection probability was still above 95%, then $b = -\text{log}(1-0.95)/\text{LOD}$.
+
+Given the probability of non-detection, the probability for a non-zero measurement is
+
 \begin{equation}
-\nu_\Upsilon(\mu) = \frac{1}{\sqrt{b}}\, \frac{\sqrt{exp(\mu\, c) – 1}}{\mu\, c}\, \sqrt{1 + a^2\, b\, \mu\, c}
+P(\Upsilon_{t,i} > 0 | \Psi_t = \psi_t) = 1 - P(\Upsilon_t = 0 | \Psi_t = \psi_t).
 \end{equation}
-with $a$, $b$ and $c$ as parameters to be estimated. The functional form is derived from the statistical properties of the binomial-distributed positive partition counts in the dPCR reaction, where
 
-- $a=\nu_{\text{pre}}$ represents the coefficient of variation for noise in the concentration before the dPCR reaction,
-- $b$ represents the average number of partitions in the PCR reaction, and
-- $c$ represents the dPCR conversion factor, which is the partition volume scaled by the dilution of the wastewater in the PCR reaction. This factor converts the wastewater concentration into the expected number of gene copies per partition. Note that here the dilution includes all extraction and preparation steps. For example, if the partition volume is 4.5e-7 mL and the dilution of the wastewater is 100:3 (i.e. 100 gc/mL in the original wastewater sample correspond to 3 gc/mL in the PCR reaction), then the overall scaling factor is 4.5e-7 * 100 / 3 = 1.5e-5.
+##### Option 2: Non-detection in digital PCR (dPCR)
+This option models the probability of non-detection based on the statistical properties of digital PCR assays, using a binomial likelihood for zero successes. This depends on several parameters of the assay, such as the number and volume of partitions - which can be either assumed or estimated. by EpiSewer.
+Please see [this preprint](https://doi.org/10.1101/2024.10.14.618307) for details.
 
-We place zero-truncated normal priors on $a$, $b$, and $c$, respectively.
+#### Non-zero measurements
+Variable: $\Upsilon_{t,i}$
 
-If replicates are modeled and the replication stage is PCR quantification, then $\nu_\Upsilon$ measures the noise only from the PCR and $\nu_\psi$ all other noise. In this case, $a$ should typically be very small. In contrast, if no replicates are modeled, then $\nu_\Upsilon$ measures the total variation and $\nu_\psi$ is not estimated. In this case, $a$ will be larger.
+$\Upsilon_{t,i}$ represents the $i^{\text{th}}$ replicate concentration measurement from the (composite) sample on day $t$.
+Non-zero concentration measurements $\Upsilon_{t,i} > 0$ are modeled using a positive continuous distribution (Gamma by default, but Log-Normal and Truncated Normal are also available). This distribution is parameterized by its mean and coefficient of variation.
+
+For the mean, we assume unbiased measurements, such that in principle $\mu_{\Upsilon_{t,i}} = \psi_t$.
+Nevertheless, the mean of non-zero measurements must be adjusted for the conditioning on detection, i.e.
+
+\begin{equation}
+\mu_{\Upsilon_{t,i} \,|\, \Upsilon_{t,i} > 0} = \frac{\psi_t}{1 - P(\Upsilon_t = 0 | \Psi_t = \psi_t)},
+\end{equation}
+
+For the coefficient of variation $\nu_\Upsilon(\psi_t)$, EpiSewer currently offers three options (see below).
+In all cases, $\nu_\Upsilon(\psi_t)$ describes all remaining unexplained variation in the measurements. This means that if replicates are provided and variation before the replication stage is already accounted for (see above), then $\nu_\Upsilon(\psi_t)$ describes only the variation between the replicates. Otherwise it will also include variation before the replication stage.
+
+##### Option 1: Constant CV
+This option assumes a constant coefficient of variation $\nu_\Upsilon$ for all measurements, i.e.
+\begin{equation}
+\nu_\Upsilon(\psi_t) = \nu_\Upsilon
+\end{equation}
+
+where $\nu_\Upsilon$ is a parameter to be estimated. We place a zero-truncated normal prior on $\nu_\Upsilon$.
+
+##### Option 2: CV based on digital PCR (dPCR)
+This option models the CV as a function of the expected concentration $\psi_t$, and the functional relationship is derived from the statistical properties of digital PCR assays, i.e. based on the binomial-distributed positive partition counts in the dPCR reaction. As a result, the CV is approximately constant for high concentrations, but increases exponentially as concentrations become small (it also increases when concentrations become so large that the assay saturates, but this should be avoided in lab practice through appropriate dilution).
+The exact functional relationship depends on several parameters of the assay, such as the number and volume of partitions - which can be either assumed or estimated. by EpiSewer.
+Please see [this preprint](https://doi.org/10.1101/2024.10.14.618307) for details.
+
+##### Option 3: Constant variance
+This option models measurements with a constant variance $\sigma^2_\Upsilon$, such that
+
+\begin{equation}
+\nu_\Upsilon(\psi_t) = \frac{\sigma_\Upsilon}{\psi_t}.
+\end{equation}
+
+This option is not recommended for use in practice, as it is likely misspecified for most types of measurements.
 
 ## Estimation
 `EpiSewer` is directly fitted to observed concentration measurements $y_{t,i}$ (where $t \leq T$ is the index of the sample date and $i$ the index of the replicate out of $n_t$ replicates in total for date index $t$).
@@ -262,10 +367,10 @@ If replicates are modeled and the replication stage is PCR quantification, then 
 Using Markov Chain Monte Carlo (MCMC), we draw samples from the joint posterior distribution of $R_t$ and the other parameters 
 
 \begin{equation}
-P\left(R_{\{t | t \leq T\}}, \dots \;\middle|\; y_{\{t | t \leq T\},\{i | i \leq n_t\}}\right) \propto P\left(y_{\{t | t \leq T\},\{i | i \leq n_t\}} \;\middle|\; R_{\{t | t \leq T\}}, \dots\right) \, P\left(\dots \right),
+P\left(R_{\{t | 1+G \leq t \leq T\}}, \dots \;\middle|\; y_{\{t | 1+L+S \leq t \leq T\},\{i | i \leq n_t\}}\right) \propto P\left(y_{\{t | 1+L+S \leq  t \leq T\},\{i | i \leq n_t\}} \;\middle|\; R_{\{t | 1+G \leq t \leq T\}}, \dots\right) \, P\left(\dots \right),
 \end{equation}
 
-where $P\left(y_{\{t | t \leq T\},\{i | i \leq n_t\}} \;\middle|\; R_{\{t | t \leq T\}}, \dots\right)$ is the likelihood as defined by the 5 modules of our generative model (infection, shedding, sewage, sampling, and measurement), and $P\left(\dots \right)$ represents the priors on the non-hierarchical parameters of the model (e.g. intercepts and variances of random walks).
+where $P\left(y_{\{t | 1+L+S \leq t \leq T\},\{i | i \leq n_t\}} \;\middle|\; R_{\{t | 1+G \leq t \leq T\}}, \dots\right)$ is the likelihood as defined by the 5 modules of our generative model (infection, shedding, sewage, sampling, and measurement), and $P\left(\dots \right)$ represents the priors on the non-hierarchical parameters of the model (e.g. intercepts and variances of random walks).
 
 Note that many variables in the generative model (including $R_t$!) are in fact only transformations of other variables and therefore do not count as model parameters in a strict sense.
 
@@ -278,3 +383,6 @@ For ease of notation, we have here used a unified time index $t \in \{1, 2, \dot
 [^prior_recommendations]: Stan development team. Prior Choice Recommendations. (2020). Available from: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations.
 [^generative_nowcasting]: Lison, A., Abbott, S., Huisman, J. & Stadler, T. Generative Bayesian modeling to nowcast the effective reproduction number from line list data with missing symptom onset dates. Preprint at [https://doi.org/10.48550/arXiv.2308.13262](https://doi.org/10.48550/arXiv.2308.13262) (2023).
 [^semimechanistic]: Bhatt, S. _et al._ Semi-Mechanistic Bayesian Modeling of COVID-19 with Renewal Processes. _arXiv:2012.00394_ (2020).
+[^EpiAware]: Brand S & Abbott S, EpiAware.jl: Infectious disease situational awareness modelling toolkit for julia. [https://github.com/CDCgov/Rt-without-renewal](https://github.com/CDCgov/Rt-without-renewal).
+[^epinowcast]: Abbott S, Lison A, et al., Epinowcast: Flexible hierarchical nowcasting. [https://github.com/epinowcast/epinowcast](https://github.com/epinowcast/epinowcast).
+[^EpiNow2]: Abbott S, et al., Estimating the time-varying reproduction number of SARS-CoV-2 using national and subnational case counts. Wellcome Open Res. 5, 112 (2020). Package: [https://github.com/epiforecasts/EpiNow2](https://github.com/epiforecasts/EpiNow2).

@@ -5,9 +5,9 @@
 \title{Model outliers via an extreme value distribution}
 \usage{
 outliers_estimate(
-  gev_prior_mu = 0.0025,
-  gev_prior_sigma = 0.005,
-  gev_prior_xi = 2,
+  gev_prior_mu = 0,
+  gev_prior_sigma = 2e-08,
+  gev_prior_xi = 4,
   modeldata = modeldata_init()
 )
 }
@@ -29,7 +29,7 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
@@ -53,7 +53,7 @@ Outliers are modeled as independent spikes in the load on a given
 sampling day. The spikes follow a generalized extreme value distribution
 (GEV) that is scaled by the average load per case. The default prior for
 the GEV is chosen such that distribution of spikes is extremely
-right-tailed, and the 95\% quantile of spikes is below the load equivalent
+right-tailed, and the 99\% quantile of spikes is below the load equivalent
 of 1 case, i.e. has minimal impact on estimated infection dynamics. Note
 that because of the properties of the GEV, the mean posterior estimates of
 loads and concentrations will be theoretically infinite if this modeling

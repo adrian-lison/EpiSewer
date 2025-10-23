@@ -8,7 +8,12 @@ set_fit_opts(sampler = sampler_stan_mcmc(), model = model_stan_opts())
 }
 \arguments{
 \item{sampler}{Which type of sampler should be used for model fitting?
-Currently, only \code{\link[=sampler_stan_mcmc]{sampler_stan_mcmc()}} is supported.}
+Currently supported are
+\itemize{
+\item \code{\link[=sampler_stan_mcmc]{sampler_stan_mcmc()}}: default, recommended for inference
+\item \code{\link[=sampler_stan_pathfinder]{sampler_stan_pathfinder()}}: potentially inaccurate, recommended for
+preview only
+}}
 
 \item{model}{Details about the model file to be used, see
 \code{\link[=model_stan_opts]{model_stan_opts()}}. This also makes it possible for users to supply

@@ -61,21 +61,22 @@ knitr::include_graphics("man/figures/weekly_zurich_animated.gif")
 `r emo::ji("star")` Sewer residence time distributions  
 
 **Shedding**  
-`r emo::ji("star")` Incubation period and shedding load distributions  
+`r emo::ji("star")` Shedding load distributions (with uncertainty)  
 `r emo::ji("star")` Individual-level shedding load variation
 
 **Infections**  
 `r emo::ji("star")` Stochastic infection model with overdispersion  
-`r emo::ji("star")` Flexible $R_t$ smoothing (random walk, exponential smoothing, splines)  
-`r emo::ji("star")` Transmission indicators: $R_t$, growth rate, doubling time, and
-more  
+`r emo::ji("star")` Flexible $R_t$ smoothing (Gaussian process, random walk, exponential smoothing, splines, changepoint models)  
+`r emo::ji("star")` Transmission indicators: $R_t$, growth rate, doubling time, and more  
 
 **Forecast**  
 `r emo::ji("star")` Probabilistic forecasts of $R_t$, infections, concentrations and more
 
 ## Installing the package
 
-The development version of `EpiSewer` can be installed from GitHub as shown below. Please note that the package is still in early development and may be subject to breaking changes. 
+The development version of `EpiSewer` can be installed from GitHub as shown
+below. Please note that the package is still in early development and may be
+subject to breaking changes.
 
 ```{r, eval = FALSE}
 remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
@@ -220,12 +221,16 @@ in *days since infection*. In that case, you can use `shedding_reference =
 
 ### Estimation
 
-Now that we have the data and necessary assumptions, we can use `EpiSewer` to estimate the effective reproduction number. We here use the default model and settings provided by `EpiSewer`. With the helper function `set_fit_opts()` we specify our sampling approach: we apply Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and 500 sampling iterations each.
+Now that we have the data and necessary assumptions, we can use `EpiSewer` to
+estimate the effective reproduction number. We here use the default model and
+settings provided by `EpiSewer`. With the helper function `set_fit_opts()` we
+specify our sampling approach: we apply Hamiltonian MCMC sampling via stan,
+using 4 chains with 500 warmup and 500 sampling iterations each.
 
 Stan regularly provides updates about the progress of the sampler. The overall 
 runtime will depend on your hardware resources, the size of the data, 
 the complexity of the model used, and how well the model actually fits the data.
-On a MacBook Pro (2 GHz Quad-Core Intel Core i5) the example below takes about 5 minutes to run.
+On a modern laptop the example below should take about 3 minutes to run.
 ```{r, eval = FALSE}
 options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
@@ -366,7 +371,7 @@ plot_prior_posterior(ww_result, "measurement_noise_cv")
 As we can see, the prior (in grey) and posterior (in blue) differ substantially, indicating that this parameter is well informed by the data.
 
 ### More details
-We can further inspect our results object. It has three attributes:
+We can further inspect our results object. It has the following attributes:
 ```{r}
 names(ww_result)
 ```
@@ -434,3 +439,39 @@ If you use the dPCR-specific model of `EpiSewer` (see [noise_estimate_dPCR](http
   doi = {10.1101/2024.10.14.618307}
 }
 ```
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+All contributions to this project are gratefully acknowledged using the [`allcontributors` package](https://github.com/ropensci/allcontributors) following the [all-contributors](https://allcontributors.org) specification. Contributions of any kind are welcome!
+
+### Code
+
+
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>
+
+
+
+### Issue Authors
+
+
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aseabbs">seabbs</a>, 
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Aigoldsteinh">igoldsteinh</a>, 
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+author%3Ajamesmbaazam">jamesmbaazam</a>
+
+
+
+### Issue Contributors
+
+
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3ASamuelBrand1">SamuelBrand1</a>, 
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3AOrthomyxoviridae">Orthomyxoviridae</a>, 
+<a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3Akaitejohnson">kaitejohnson</a>
+
+
+<!-- markdownlint-enable -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+

@@ -172,7 +172,7 @@ suggest_load_per_case <- function(measurements, cases,
   }
   measurements = as.data.table(measurements)[, .SD, .SDcols = required_data_cols]
   setnames(measurements, old = required_data_cols, new = c("date", "concentration"))
-  measurements[, date := as.Date(date)]
+  measurements <- check_date_column(measurements, date_col)
   measurements <- measurements[
     , .(concentration = mean(concentration, na.rm=T)), by = date
     ]
@@ -191,7 +191,7 @@ suggest_load_per_case <- function(measurements, cases,
   }
   cases = as.data.table(cases)[, .SD, .SDcols = required_data_cols]
   setnames(cases, old = required_data_cols, new = c("date", "case_numbers"))
-  cases[, date := as.Date(date)]
+  cases <- check_date_column(cases, date_col)
   cases <- cases[
     , .(case_numbers = mean(case_numbers, na.rm=T)), by = date
   ]
@@ -233,7 +233,7 @@ suggest_load_per_case <- function(measurements, cases,
     }
     flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]
     setnames(flows, old = required_data_cols, new = c("date", "flow"))
-    flows[, date := as.Date(date)]
+    flows <- check_date_column(flows, date_col)
     flows <- flows[
       , .(flow = mean(flow, na.rm=T)), by = date
     ]

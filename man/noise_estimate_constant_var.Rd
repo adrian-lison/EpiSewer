@@ -42,7 +42,7 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
@@ -61,7 +61,7 @@ stage.
 \details{
 Note that although this model keeps the variance constant, the prior
 for the measurement noise is still in terms of the (average) coefficient of
-variation (CV). This makes prior specification easier since it the CV is
+variation (CV). This makes prior specification easier since the CV is
 unitless.
 
 The priors of this component have the following functional form:
@@ -73,7 +73,7 @@ The priors of this component have the following functional form:
 }
 \seealso{
 Other {noise models}: 
-\code{\link{noise_estimate_dPCR}()},
-\code{\link{noise_estimate}()}
+\code{\link{noise_estimate}()},
+\code{\link{noise_estimate_dPCR}()}
 }
 \concept{{noise models}}

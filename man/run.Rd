@@ -4,7 +4,7 @@
 \alias{run}
 \title{Fit an EpiSewer model.}
 \usage{
-run(job)
+run(job, ...)
 }
 \arguments{
 \item{job}{An EpiSewerJob object as returned by \code{\link[=EpiSewer]{EpiSewer()}}.}

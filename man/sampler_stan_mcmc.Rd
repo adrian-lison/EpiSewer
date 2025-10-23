@@ -17,6 +17,8 @@ sampler_stan_mcmc(
   refresh = 200,
   show_messages = TRUE,
   show_exceptions = FALSE,
+  init_pathfinder = TRUE,
+  init_pathfinder_max_lbfgs_iters = NULL,
   ...
 )
 }
@@ -84,12 +86,18 @@ numerical error. If the messages are silenced then the
 \code{\link[cmdstanr:fit-method-output]{$output()}} method of the resulting fit object can be
 used to display the silenced messages.}
 
-\item{...}{Further arguments to pass to \link{cmdstanr}.}
+\item{init_pathfinder}{Should stan's pathfinder algorihtm be used to
+initialize the MCMC chains?}
+
+\item{init_pathfinder_max_lbfgs_iters}{The maximum number of iterations for
+LBFGS during pathfinder initialization.}
+
+\item{...}{Further arguments to pass to \link[cmdstanr:cmdstanr-package]{cmdstanr::cmdstanr}.}
 }
 \value{
 A \code{list} with settings for the MCMC sampler.
 }
 \description{
-This option will use stan's NUTS sampler via \link{cmdstanr} for
-Markov Chain Monte Carlo (MCMC) sampling of the \code{EpiSewer} model.
+This option uses stan's NUTS sampler via \link[cmdstanr:cmdstanr-package]{cmdstanr::cmdstanr} for Markov
+Chain Monte Carlo (MCMC) sampling of the \code{EpiSewer} model.
 }

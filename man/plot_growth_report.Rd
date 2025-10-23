@@ -28,7 +28,7 @@ shed.}
 \value{
 A growth report plot showing the probability that infections have
 been growing without interruption for at least 3, 7, 14, 21, and 28 days,
-respectively. Can be further manipulated using \link{ggplot2} functions to
+respectively. Can be further manipulated using \code{ggplot2} functions to
 adjust themes and scales, and to add further geoms.
 }
 \description{

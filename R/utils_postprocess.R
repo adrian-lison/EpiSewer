@@ -135,6 +135,50 @@ get_summary_1d_date_log <- function(fit, var, T_shift, .metainfo,
   return(var_summary)
 }
 
+# T_shift: how much does the variable lead or lag the time from 1:T?
+get_diagnostics_1d_date <- function(fit, var, T_shift, .metainfo,
+                                var_forecast = NULL,
+                                intervals = c(0.5, 0.95)) {
+  vars <- list(
+    var = var
+  )
+  date_mappings <- list(
+    date_mapping = seq.Date(
+      .metainfo$T_start_date - T_shift, .metainfo$T_end_date,
+      by = "1 day"
+    ))
+  types <- list(
+    type = factor("estimate", levels = c("estimate", "forecast"))
+  )
+
+  if (.metainfo$forecast_horizon > 0 && !is.null(var_forecast)) {
+    vars$var_forecast <- var_forecast
+    date_mappings$date_mapping_forecast <- seq.Date(
+      .metainfo$T_end_date + 1,
+      .metainfo$T_end_date + .metainfo$forecast_horizon,
+      by = "1 day"
+    )
+    types$type_forecast <- factor("forecast", levels = c("estimate", "forecast"))
+  }
+
+  var_summary <- rbindlist(mapply(function(variable, dates, type) {
+    if (is.null(variable)) {return(NULL)}
+    var_summary <- fit$summary(
+      variable,
+      posterior::default_convergence_measures()
+    )
+    var_summary <- map_dates_1d_df(var_summary, dates)
+    var_summary[, type := type]
+  },
+  variable = vars,
+  dates = date_mappings,
+  type = types,
+  SIMPLIFY = FALSE
+  ))
+  setDT(var_summary)
+  return(var_summary)
+}
+
 get_draws_1d_date <- function(fit, variable, ndraws = NULL, draw_ids = NULL) {
   fit_draws <- fit$draws(variable, format = "df")
   setDT(fit_draws)
@@ -162,7 +206,7 @@ get_latent_trajectories <- function(fit, var, T_shift, .metainfo,
     by = "1 day"
   )
   fit_draws[, date := date_mapping[as.integer(date)]]
-  fit_draws[, c(".chain", ".iteration", "variable") := NULL]
+  fit_draws[, c(".iteration", "variable") := NULL]
   fit_draws[, type := "estimate"]
 
   if (.metainfo$forecast_horizon > 0) {
@@ -176,7 +220,7 @@ get_latent_trajectories <- function(fit, var, T_shift, .metainfo,
       by = "1 day"
     )
     fit_draws_forecast[, date := date_mapping_forecast[as.integer(date)]]
-    fit_draws_forecast[, c(".chain", ".iteration", "variable") := NULL]
+    fit_draws_forecast[, c(".iteration", "variable") := NULL]
     fit_draws_forecast[, type := "forecast"]
   } else {
     fit_draws_forecast <- NULL
@@ -260,7 +304,7 @@ combine_samples <- function(
     result_list, variable_name, draws = FALSE, ndraws = NULL) {
   summary_list <- lapply(result_list, function(x) {
     res <- x$summary$samples[
-      , .SD, .SDcols = c("date", "type", "seeding", ".draw", variable_name)
+      , .SD, .SDcols = c("date", "type", "seeding", ".draw", ".chain", variable_name)
       ]
     if (!is.null(ndraws)) {
       draw_ids <- unique(res$.draw)

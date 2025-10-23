@@ -27,6 +27,7 @@ shed by an individual is distributed over time (and therefore sums to 1).
 Modeling options:
 \itemize{
 \item \code{\link[=shedding_dist_assume]{shedding_dist_assume()}}
+\item \code{\link[=shedding_dist_estimate]{shedding_dist_estimate()}}
 }}
 
 \item{load_per_case}{Average total load per case. This is a scaling factor

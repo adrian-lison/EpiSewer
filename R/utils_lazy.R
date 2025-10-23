@@ -202,6 +202,7 @@ print.tbp <- function(x) {
   print(paste("Requires", paste(c(req_data, req_assumptions), collapse = " and ")))
 }
 
+#' @keywords internal
 solve.tbp <- function(x, modeldata, data = list(), assumptions = list()) {
   provided <- x$check_provided(
     data = data, assumptions = assumptions,
@@ -245,6 +246,7 @@ print.tbe <- function(x) {
   print(paste("Waiting for information:", rlang::expr_text(x$lazy_r$expr)))
 }
 
+#' @keywords internal
 solve.tbe <- function(x, modeldata, throw_error = TRUE) {
   evaluate <- modeldata_check(
     modeldata, x$required, calling_env = x$calling_f, throw_error = throw_error
@@ -326,6 +328,7 @@ print.tbc <- function(x) {
   ))
 }
 
+#' @keywords internal
 solve.tbc <- function(x, modeldata, throw_error = TRUE) {
   computable <- modeldata_check(
     modeldata, x$required, required_values = x$required_values,

@@ -12,7 +12,7 @@ plot_LOD(modeldata)
 \value{
 A plot showing the probability of non-detection (i.e. zero
 measurement) for different concentrations below and above the assumed LOD.
-Can be further manipulated using \link{ggplot2} functions to adjust themes and
+Can be further manipulated using \code{ggplot2} functions to adjust themes and
 scales, and to add further geoms.
 }
 \description{

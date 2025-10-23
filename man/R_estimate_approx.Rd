@@ -53,7 +53,7 @@ the beta parameter. Default is 0.5, \emph{smaller} values will lead to
 and \emph{larger} values to \emph{less} smoothing of the trend (useful for shorter
 generation times).}
 
-\item{inf_trend_dampen}{Trend dampening parameter (phi) for infections. The
+\item{inf_trend_dampen}{Trend damping parameter (phi) for infections. The
 exponential trend in infections is dampened over time (exponential growth
 will not continue for ever). This mainly influences the trend towards the
 present. For the default value (0.9), the trend will only roughly half as
@@ -93,15 +93,20 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
+
+This function is deprecated. Please use \code{\link[=R_estimate_gp]{R_estimate_gp()}} or other
+fully generative methods instead.
+
 This option estimates the effective reproduction number Rt using
 an approximation of the generative renewal model. It can be considerably
 faster than the fully generative options, but is often less exact. It is
 recommended to check the results of this method against a fully generative
-version like \code{\link[=R_estimate_splines]{R_estimate_splines()}} before using it for real-time R
+version like \code{\link[=R_estimate_gp]{R_estimate_gp()}} before using it for real-time R
 estimation. See the details for an explanation of the method and its
 limitations.
 }
@@ -142,8 +147,12 @@ the smoothing hyperparameters if needed.
 }
 \seealso{
 Other {Rt models}: 
+\code{\link{R_estimate_changepoint_splines}()},
 \code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_gp}()},
+\code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
+\code{\link{R_estimate_smooth_derivative}()},
 \code{\link{R_estimate_splines}()}
 }
 \concept{{Rt models}}

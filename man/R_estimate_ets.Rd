@@ -5,14 +5,15 @@
 \title{Estimate Rt via exponential smoothing}
 \usage{
 R_estimate_ets(
-  level_prior_mu = 1,
-  level_prior_sigma = 0.8,
+  R_start_prior_mu = 1,
+  R_start_prior_sigma = 0.8,
   trend_prior_mu = 0,
   trend_prior_sigma = 0.1,
-  sd_prior_mu = 0,
-  sd_prior_sigma = 0.1,
-  sd_changepoint_dist = 7 * 26,
-  sd_changepoint_sd = 0.025,
+  sd_base_prior_mu = 0,
+  sd_base_prior_sd = 0.025,
+  sd_change_prior_shape = 0.5,
+  sd_change_prior_scale = 1e-04,
+  sd_change_distance = 7 * 26,
   link = "inv_softplus",
   R_max = 6,
   smooth_prior_mu = 0.5,
@@ -27,39 +28,41 @@ R_estimate_ets(
 )
 }
 \arguments{
-\item{level_prior_mu}{Prior (mean) on the initial level of Rt.}
+\item{R_start_prior_mu}{Prior (mean) on the initial value of Rt (level).}
 
-\item{level_prior_sigma}{Prior (standard deviation) on the initial level of
-Rt.}
+\item{R_start_prior_sigma}{Prior (standard deviation) on the initial value of
+Rt (level).}
 
 \item{trend_prior_mu}{Prior (mean) on the initial trend of Rt.}
 
 \item{trend_prior_sigma}{Prior (standard deviation) on the initial trend of
 Rt.}
 
-\item{sd_prior_mu}{Prior (mean) on the standard deviation of the innovations.}
+\item{sd_base_prior_mu}{Prior (mu) on the baseline standard deviation of the
+innovations. Please note that for consistency, the overall standard
+deviation of innovations will always be the baseline plus an additive
+component from \code{sd_change_prior} - even if no changepoints are modeled (see
+below).}
 
-\item{sd_prior_sigma}{Prior (standard deviation) on the standard deviation of
-the innovations. Please note that for consistency the overall prior on the
-standard deviation of innovations will have a standard deviation of
-\code{sd_prior_sigma + sd_changepoint_sd} even if no changepoints are modeled
-(see below).}
+\item{sd_base_prior_sd}{Prior (standard deviation) on the baseline standard
+deviation of the innovations. See \code{sd_base_prior_mu} for details.}
 
-\item{sd_changepoint_dist}{The variability of Rt can change over time, e.g.
-during the height of an epidemic wave, countermeasures may lead to much
-faster changes in Rt than observable at other times. This potential
-variability is accounted for using change points placed at regular
-intervals. The standard deviation of the state space model innovations then
-evolves linearly between the change points. The default change point
-distance is 26 weeks (182 days). Short changepoint distances (e.g. 4 weeks
-or less) must be chosen with care, as they can make the Rt time series too
-flexible. If set to zero, no change points are modeled.}
+\item{sd_change_prior_shape}{Exponential-Gamma prior (shape) on standard
+deviation additional to baseline. This prior describes the distribution of
+the standard deviation of Rt over time. EpiSewer will estimate a baseline
+standard deviation (see \code{sd_base_prior_mu}), and model additional variation
+on top of the baseline using a changepoint model. Please see the details for
+more explanation.}
 
-\item{sd_changepoint_sd}{This parameter controls the variability of the change
-points. When change points are modeled, EpiSewer will estimate a baseline
-standard deviation (see \code{sd_prior_mu} and \code{sd_prior_sigma}), and model
-change point values as independently distributed with mean equal to this
-baseline and standard deviation \code{sd_changepoint_sd}.}
+\item{sd_change_prior_scale}{Exponential-Gamma prior (scale) on standard
+deviation additional to baseline. See \code{sd_change_prior_shape} and the
+details for more explanation.}
+
+\item{sd_change_distance}{Distance between changepoints used to model
+additional variation in Rt. The default change point distance is 4 weeks.
+Very short changepoint distances must be chosen with care, as they can make
+the Rt time series too flexible. If set to zero, no change points are
+modeled.}
 
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
@@ -86,11 +89,11 @@ smoothing parameter. If this is set to zero, the trend smoothing parameter
 will be fixed to \code{trend_smooth_prior_mu} and not estimated. If positive, a
 beta prior with the corresponding mean and standard deviation is used.}
 
-\item{dampen_prior_mu}{Prior (mean) on the dampening parameter. Must be
+\item{dampen_prior_mu}{Prior (mean) on the damping parameter. Must be
 between 0 and 1.}
 
-\item{dampen_prior_sigma}{Prior (standard deviation) on the dampening
-parameter. If this is set to zero, the dampening parameter will be fixed to
+\item{dampen_prior_sigma}{Prior (standard deviation) on the damping
+parameter. If this is set to zero, the damping parameter will be fixed to
 \code{dampen_prior_mu} and not estimated. If positive, a beta prior with the
 corresponding mean and standard deviation is used.}
 
@@ -114,18 +117,18 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
 This option estimates the effective reproduction number over time
 using exponential smoothing. It implements Holt's linear trend method with
-dampening through an innovations state space model with a level, trend, and
-dampening component.
+damping through an innovations state space model with a level, trend, and
+damping component.
 }
 \details{
 The innovations state space model consists of three components: a
-level, a trend, and a dampening component.
+level, a trend, and a damping component.
 \itemize{
 \item The level is smoothed based on the levels from earlier time steps,
 with exponentially decaying weights, as controlled by a smoothing parameter
@@ -137,12 +140,12 @@ with exponentially decaying weights, as controlled by a trend smoothing
 parameter (often called beta). Note that \emph{smaller} values of \code{beta} indicate
 \emph{stronger} smoothing. In particular, \code{beta = 1} means that only the last
 trend is used.
-\item The dampening determines how long a previous trend continues into the
+\item The damping determines how long a previous trend continues into the
 future before it levels of to a stationary time series. The strength of
-dampening is controlled by a dampening parameter (often called phi). Note
-that \emph{smaller} values of \code{phi} indicate \emph{stronger} dampening. In particular,
-\code{phi = 1} means no dampening. Values below \code{phi = 0.8} are seldom in
-practice as the dampening becomes very strong.
+damping is controlled by a damping parameter (often called phi). Note
+that \emph{smaller} values of \code{phi} indicate \emph{stronger} damping. In particular,
+\code{phi = 1} means no damping. Values below \code{phi = 0.8} are seldom in
+practice as the damping becomes very strong.
 }
 
 Often, \code{alpha}, \code{beta}, and \code{phi} are jointly unidentifiable. It may
@@ -156,20 +159,40 @@ have an influence on estimates close to the present / date of estimation,
 when limited data signal is available. Here, the standard deviation of the
 innovations influences how uncertain Rt estimates are close to the present.
 
+The variability of Rt can change over time. For example, during the
+height of an epidemic wave, countermeasures may lead to much faster changes
+in Rt than observable at other times (baseline). This potential additional
+variability is accounted for using change points placed at regular
+intervals. The additional standard deviation of the state space model
+innovations on top of the baseline then evolves linearly between the change
+points. The additional variation defined at the changepoints is modeled as
+independently distributed and following a Lomax distribution, also known as
+Exponential-Gamma (EG) distribution. This is an exponential distribution
+where the rate is Gamma distributed. The prior \code{sd_change_prior} defines the
+shape and scale of this Gamma distribution. The distribution has a strong
+peak towards zero and a long tail. This regularizes the estimated deviations
+from the baseline standard deviation - most deviations are small, but during
+special time periods, the deviation might also be larger.
+
 The priors of this component have the following functional form:
 \itemize{
 \item initial level of Rt: \code{Normal}
 \item initial trend of Rt: \code{Normal}
-\item standard deviation of innovations: \verb{Truncated normal}
+\item baseline standard deviation of innovations: \code{Half-normal}
+\item additional standard deviation at changepoints: \code{Exponential-Gamma}
 \item smoothing parameter: \code{Beta}
 \item trend smoothing parameter: \code{Beta}
-\item dampening parameter: \code{Beta}
+\item damping parameter: \code{Beta}
 }
 }
 \seealso{
 Other {Rt models}: 
 \code{\link{R_estimate_approx}()},
+\code{\link{R_estimate_changepoint_splines}()},
+\code{\link{R_estimate_gp}()},
+\code{\link{R_estimate_piecewise}()},
 \code{\link{R_estimate_rw}()},
+\code{\link{R_estimate_smooth_derivative}()},
 \code{\link{R_estimate_splines}()}
 }
 \concept{{Rt models}}

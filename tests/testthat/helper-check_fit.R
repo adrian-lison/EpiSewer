@@ -8,8 +8,13 @@ check_result_valid <- function(result) {
   if ("errors" %in% names(result)) {
     stop("Errors in result.")
   }
-  if (!all(c("summary", "diagnostics", "runtime") %in% names(result))) {
-    stop("Result is missing summary, diagnostics or runtime.")
+  if (class(result$job$fit_opts$sampler) == "mcmc") {
+    if (!all(c("diagnostics", "runtime") %in% names(result))) {
+      stop("Result is missing diagnostics and/or runtime.")
+    }
+  }
+  if (!"summary" %in% names(result)) {
+    stop("Result is missing summary.")
   }
   if (length(result$summary) == 0) {
     stop("Summary is empty.")

@@ -25,14 +25,14 @@ of cases (see details).}
 \item{extend}{Should the seeding phase be extended when concentrations are
 very low at the start of the measurement time series? If \code{TRUE}, then the
 seeding phase will be extended to the first date with three consecutive
-detects (i.e. non-zero measurements). The reproduction number will only be
-modeled from that date onward. This option often makes sense, as infection
-numbers are typically very low during a period with many non-detects, which
-can lead to sampling problems when estimating Rt. If you nevertheless want
-Rt estimates also for this period, you can use \code{extend = FALSE}. Note
-though that estimated reproduction numbers are not necessarily meaningful
-during periods with very low infection numbers, as transmission dynamics
-may be dominated by chance events and importations.}
+detects (i.e. non-zero measurements). Before that date, the reproduction
+number will be retrospectively computed based on the seeded infections.
+Explicit modeling of the Rt time series will only begin after the seeding
+phase. This option avoids sampling problems when estimating Rt from very
+low infection numbers during a period with many non-detects. Note that
+estimated reproduction numbers are not necessarily meaningful during
+periods with very low infection numbers, as transmission dynamics may be
+dominated by chance events and importations.}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -45,7 +45,7 @@ to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
 add further data and model specifications.
 
 The \code{modeldata} object also includes information about parameter
-initialization (\code{init}), meta data (\code{.metainfo}), and checks to be
+initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
@@ -61,7 +61,7 @@ seeding refers to the first few (potentially imported) infections of an
 epidemic, depending on what time period the model is fitted to, it may also
 cover a different phase with stronger growth dynamics. Thus, if your data
 starts in the middle of an epidemic wave, it is recommended to use
-\code{\link[=seeding_estimate_rw]{seeding_estimate_rw()}} instead of \code{\link[=seeding_estimate_constant]{seeding_estimate_constant()}}.
+\code{\link[=seeding_estimate_growth]{seeding_estimate_growth()}} instead of \code{\link[=seeding_estimate_constant]{seeding_estimate_constant()}}.
 
 If \code{intercept_prior_q5} or \code{intercept_prior_q95} are not specified
 by the user, \code{EpiSewer} will compute a rough median empirical estimate of

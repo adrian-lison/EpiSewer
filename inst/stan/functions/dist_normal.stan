@@ -1,3 +1,7 @@
+// --------------------------------------------------------
+// normal: mean, sd
+// --------------------------------------------------------
+
 /**
   * Generate truncated normal variate given mean and sd
   * and lower truncation
@@ -60,6 +64,20 @@ vector normal_lb_rng(vector mean, vector sd, real lb) {
   return mean + sd .* inv_Phi(u);
 }
 
+/**
+  * Generate n standard normal variates
+  *
+  * @param n Number of i.i.d. samples
+  *
+  * @return Vector of standard normal variates
+  */
+vector std_normal_n_rng(int n) {
+  return(to_vector(normal_rng(rep_vector(0, n), 1)));
+}
+
+// --------------------------------------------------------
+// normal2: mean, cv
+// --------------------------------------------------------
 
 /**
   * The log of a normal density given mean and coefficient of variation (cv)
@@ -145,6 +163,10 @@ vector normal2_rng(vector mean, vector cv, real lb) {
   return mean + sigma .* inv_Phi(u);
 }
 
+// --------------------------------------------------------
+// normal prior: mean, sd
+// --------------------------------------------------------
+
 /**
   * Normal prior on a parameter, with the option to fix the parameter
   * (i.e. no sampling) by providing a prior with zero variance.
@@ -195,6 +217,35 @@ real normal_prior_lpdf(array[] real y, real mean, real sd, real lb) {
 }
 
 /**
+  * Truncated normal prior on a parameter, with the option to fix the parameter
+  * (i.e. no sampling) by providing a prior with zero variance.
+  *
+  * @param y Array with the parameter. If the prior has zero variance, the no
+  * parameter will be sampled, hence the array has length 0. Otherwise, the
+  * array has length 1.
+  *
+  * @param mean Mean of the prior.
+  *
+  * @param sd Standard deviation of the prior. If this is zero, then no
+  * parameter will be sampled and the mean of the prior will be used instead.
+  *
+  * @param lb lower bound
+  *
+  * @param ub upper bound
+  *
+  * @return The log of the prior probability of y
+  */
+real normal_prior_lb_ub_lpdf(array[] real y, real mean, real sd, real lb, real ub) {
+  if (sd == 0) {
+    return(0); // parameter fixed, not sampled
+  } else {
+    int n = num_elements(y);
+    real normalization = log_diff_exp(normal_lcdf(ub | mean, sd), normal_lcdf(lb | mean, sd));
+    return (normal_lpdf(y | mean, sd) - n * normalization);
+  }
+}
+
+/**
   * Normal prior on a parameter, with the option to fix the parameter
   * (i.e. no sampling) by providing a prior with zero variance.
   *
@@ -232,6 +283,24 @@ real normal_prior_lpdf(array[] real y, array[] real prior, real lb) {
   return (normal_prior_lpdf(y | prior[1], prior[2], lb));
 }
 
-vector std_normal_n_rng(int n) {
-  return(to_vector(normal_rng(rep_vector(0, n), 1)));
+/**
+  * Truncated normal prior on a parameter, with the option to fix the parameter
+  * (i.e. no sampling) by providing a prior with zero variance.
+  *
+  * @param y Array with the parameter. If the prior has zero variance, the no
+  * parameter will be sampled, hence the array has length 0. Otherwise, the
+  * array has length 1.
+  *
+  * @param prior The prior for the parameter. This assumes that the prior is
+  * stored in an array of length 2, where the first element contains the mean
+  * and the second element the standard deviation of the prior.
+  *
+  * @param lb lower bound
+  *
+  * @param ub upper bound
+  *
+  * @return The log of the prior probability of y
+  */
+real normal_prior_lb_ub_lpdf(array[] real y, array[] real prior, real lb, real ub) {
+  return (normal_prior_lb_ub_lpdf(y | prior[1], prior[2], lb, ub));
 }
