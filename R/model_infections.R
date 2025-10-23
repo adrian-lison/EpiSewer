@@ -724,11 +724,16 @@ R_estimate_splines <- function(
 
 #' Estimate Rt using an approximation of the generative renewal model
 #'
-#' @description This option estimates the effective reproduction number Rt using
+#' @description `r lifecycle::badge("deprecated")`
+#'
+#'   This function is deprecated. Please use [R_estimate_gp()] or other
+#'   fully generative methods instead.
+#'
+#'   This option estimates the effective reproduction number Rt using
 #'   an approximation of the generative renewal model. It can be considerably
 #'   faster than the fully generative options, but is often less exact. It is
 #'   recommended to check the results of this method against a fully generative
-#'   version like [R_estimate_splines()] before using it for real-time R
+#'   version like [R_estimate_gp()] before using it for real-time R
 #'   estimation. See the details for an explanation of the method and its
 #'   limitations.
 #'
@@ -838,69 +843,11 @@ R_estimate_approx <- function(
     spline_degree = 3,
     R_window = 1,
     modeldata = modeldata_init()) {
-  modeldata$.metainfo$R_estimate_approach <- "approx"
-
-  modeldata <- tbc(
-    "spline_definition",
-    {
-      knots <- place_knots(
-        length_R = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
-        forecast_horizon = 0,
-        knot_distance = knot_distance,
-        partial_generation = 0,
-        partial_window = with(modeldata$.metainfo, partial_window + forecast_horizon)
-      )
-      modeldata$.metainfo$R_knots <- knots
-      modeldata$bs_dists <- c(
-        rep( # left boundary basis functions
-          knots$interior[1]-knots$boundary[1], spline_degree - 1
-        ),
-        diff( # interior basis functions
-          knots$interior
-        ),
-        rep( # right boundary basis function
-          knots$boundary[2]-knots$interior[length(knots$interior)], 1
-        )
-      )
-
-      modeldata <- use_basis_splines(
-        spline_length = with(modeldata$.metainfo, length_I - length_seeding + forecast_horizon),
-        knots = knots,
-        degree = spline_degree,
-        modeldata = modeldata
-      )
-      modeldata$.init$bs_coeff_noise_raw <- rep(0, sum(modeldata$bs_dists))
-    },
-    required = c(
-      ".metainfo$length_I",
-      ".metainfo$length_seeding",
-      ".metainfo$partial_window",
-      ".metainfo$forecast_horizon"
-      ),
-    modeldata = modeldata
+  lifecycle::deprecate_stop(
+    when = "v0.0.4",
+    what = "R_estimate_approx()",
+    with = "R_estimate_gp()"
   )
-
-  modeldata$inf_ar_sd_prior <- set_prior(
-    "inf_ar_sd",
-    "truncated normal",
-    mu = inf_sd_prior_mu,
-    sigma = inf_sd_prior_sigma
-  )
-  modeldata$.init$inf_ar_sd <- init_from_location_scale_prior(
-    modeldata$inf_ar_sd_prior
-  )
-
-  modeldata$inf_smooth <- inf_smooth
-  modeldata$inf_trend_smooth <- inf_trend_smooth
-  modeldata$inf_trend_dampen <- inf_trend_dampen
-
-  modeldata$R_w <- R_window
-
-  modeldata$.str$infections[["R"]] <- list(
-    R_estimate_approx = c()
-  )
-
-  return(modeldata)
 }
 
 #' Estimate Rt via piecewise constant changepoint model

@@ -26,6 +26,7 @@ Imports:
     ggplot2,
     ggpattern,
     lazyeval,
+    lifecycle,
     lubridate,
     Matrix (>= 1.5-1),
     purrr (>= 1.0.1),

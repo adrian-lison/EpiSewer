@@ -97,11 +97,16 @@ initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
+
+This function is deprecated. Please use \code{\link[=R_estimate_gp]{R_estimate_gp()}} or other
+fully generative methods instead.
+
 This option estimates the effective reproduction number Rt using
 an approximation of the generative renewal model. It can be considerably
 faster than the fully generative options, but is often less exact. It is
 recommended to check the results of this method against a fully generative
-version like \code{\link[=R_estimate_splines]{R_estimate_splines()}} before using it for real-time R
+version like \code{\link[=R_estimate_gp]{R_estimate_gp()}} before using it for real-time R
 estimation. See the details for an explanation of the method and its
 limitations.
 }

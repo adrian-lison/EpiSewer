@@ -51,8 +51,6 @@ get_stan_model <- function(
       "smooth_derivative", "gp"
       )) {
       model_filename <- "EpiSewer_main.stan"
-    } else if (model_metainfo$R_estimate_approach == "approx") {
-      model_filename <- "EpiSewer_approx.stan"
     } else {
       cli::cli_abort(
         paste(
@@ -307,8 +305,6 @@ sewer_compile <- function(model = NULL, force_recompile = FALSE, verbose = FALSE
   if (!is.null(model)) {
     if (model %in% c("main", "EpiSewer_main")) {
       model <- "EpiSewer_main.stan"
-    } else if (model %in% c("approx", "EpiSewer_approx")) {
-      model <- "EpiSewer_approx.stan"
     } else {
       cli::cli_abort(paste("The model", model, "is not available."))
     }
