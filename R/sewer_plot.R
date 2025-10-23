@@ -489,6 +489,17 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
     required_data_cols <- c(date_col, concentration_col)
     data_col_names <- c("date", "concentration")
     if (mark_outliers) {
+      if (!outlier_col %in% names(measurements)) {
+        cli::cli_abort(
+          c(paste(
+            "To mark outliers in the plot, a column indicating outliers is needed",
+            "in the provided measurements `data.frame`."
+          ),
+          i = paste0("Please add a logical column identifying outliers (e.g., using ",
+                cli_help("mark_outlier_spikes_median"), ") and specify its name via the ",
+                "`outlier_col` argument (default: 'is_outlier')."))
+        )
+      }
       required_data_cols <- c(required_data_cols, outlier_col)
       data_col_names <- c(data_col_names, ".outlier")
     }
