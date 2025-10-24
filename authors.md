@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/adrian-lison/EpiSewer/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/adrian-lison/EpiSewer/blob/v0.0.4/DESCRIPTION)
 
 Lison A (2025). *EpiSewer: Estimate Epidemiological Parameters from
 Wastewater Measurements*. R package version 0.0.4,
