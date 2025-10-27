@@ -640,12 +640,12 @@ ww_result$checksums
 To cite `EpiSewer` in a publication, please use:
 
 ``` R
-@misc{lisonAdrianEpiSewerPackage,
-  title = {{EpiSewer: Estimate Epidemiological Parameters from Wastewater Measurements}},
-  author = {Lison, Adrian},
-  year = {2024},
-  doi = {10.5281/zenodo.10569101},
-  howpublished = {Zenodo}
+@article{lisonRobustRealtimeEstimation2025,
+  title = {Robust Real-Time Estimation of Pathogen Transmission Dynamics from Wastewater},
+  author = {Lison, Adrian and McLeod, Rachel and Huisman, Jana S. and Munday, James D. and Ort, Christoph and Julian, Timothy R. and Stadler, Tanja},
+  year = {2025},
+  journal = {medRxiv preprint},
+  doi = {10.1101/2025.10.23.25338640}
 }
 ```
 
