@@ -247,8 +247,8 @@ outliers_estimate <- function(gev_prior_mu = 0, gev_prior_sigma = 2e-8,
     sigma = gev_prior_sigma, xi = gev_prior_xi
     )
   modeldata$.init$epsilon <- tbe(
-    rep(1e-4, modeldata$T + modeldata$D),
-    required = c("T", "D")
+    rep(1e-4, modeldata$T),
+    required = c("T")
   )
 
   modeldata$.str$sampling[["outliers"]] <- list(

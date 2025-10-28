@@ -444,7 +444,7 @@ qexpgamma <- function(p, shape, scale) {
 
 # Distribution validation ----
 
-check_dist <- function(dist, name = "probability distribution") {
+check_dist <- function(dist, name = "probability distribution", min_length = 1) {
   if (!is.numeric(dist)) {
     cli::cli_abort(paste("Supplied", name, "is not a numeric vector."))
   }
@@ -462,9 +462,9 @@ check_dist <- function(dist, name = "probability distribution") {
     dist <- dist / sum(dist)
   }
 
-  # artificially extend dist if it has length 1 (avoids indexing issues)
-  if (length(dist) == 1 && dist == c(1)) {
-    dist <- c(1,0)
+  # artificially extend dist if it is shorter than min_length
+  if (length(dist) < min_length) {
+    dist <- c(dist, rep(0, min_length - length(dist)))
   }
 
   return(dist)

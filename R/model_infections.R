@@ -71,8 +71,7 @@ generation_dist_assume <-
     modeldata <- tbp("generation_dist_assume",
       {
         generation_dist <- check_dist(
-          generation_dist,
-          "generation time distribution"
+          generation_dist, "generation time distribution", min_length = 2
         )
         modeldata$G <- length(generation_dist)
         modeldata$generation_dist <- generation_dist
