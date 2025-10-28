@@ -25,7 +25,7 @@
 #' @export
 #' @family {module functions}
 model_sampling <- function(
-    outliers = outliers_none(),
+    outliers = outliers_estimate(),
     sample_effects = sample_effects_none()
     ) {
   verify_is_modeldata(outliers, "outliers")
