@@ -396,7 +396,7 @@ parameters {
   vector[(cv_type == 1) && total_partitions_observe!=1 ? n_measured : 0] nu_upsilon_b_noise_raw;
   array[(cv_type == 1) && nu_upsilon_c_prior[2] > 0 ? 1 : 0] real<lower=0> nu_upsilon_c;
 
-  vector<lower=0>[outliers ? D + T : 0] epsilon; // external noise at low concentrations;
+  vector<lower=0>[outliers ? T : 0] epsilon; // external noise at low concentrations;
 }
 transformed parameters {
   // Effective reproduction number parameters ----

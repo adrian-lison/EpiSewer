@@ -25,7 +25,7 @@
 #' @export
 #' @family {module functions}
 model_sampling <- function(
-    outliers = outliers_none(),
+    outliers = outliers_estimate(),
     sample_effects = sample_effects_none()
     ) {
   verify_is_modeldata(outliers, "outliers")
@@ -247,8 +247,8 @@ outliers_estimate <- function(gev_prior_mu = 0, gev_prior_sigma = 2e-8,
     sigma = gev_prior_sigma, xi = gev_prior_xi
     )
   modeldata$.init$epsilon <- tbe(
-    rep(1e-4, modeldata$T + modeldata$D),
-    required = c("T", "D")
+    rep(1e-4, modeldata$T),
+    required = c("T")
   )
 
   modeldata$.str$sampling[["outliers"]] <- list(
