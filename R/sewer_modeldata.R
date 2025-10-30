@@ -247,13 +247,16 @@ modeldata_update_metainfo <- function(modeldata) {
     if (is.null(modeldata[["se"]]) && seed_extension > 0) {
       cli::cli_inform(c("i" = paste0(
         "Due to non-detects at the start of the measurement time series, ",
-        "Rt can only be accurately estimated from ",
+        "Rt will only be estimated from ",
         modeldata$.metainfo$date_triple_detect, " onwards. ",
-        "Measurements and Rt before that date are modeled ",
-        "using a simple seeding process (see ",
-        cli_help("model_infections"), ")."
+        "Measurements and Rt before that date are still modeled, but using ",
+        "an extended seeding phase. Set 'seeding = ",
+        names(modeldata$.str$infections$seeding), "(extend = FALSE)' ",
+        "to deactivate this behaviour."
       )))
     }
+
+    paste0()
 
     modeldata$se <- seed_extension
     modeldata$.metainfo$length_seeding <- modeldata$G + seed_extension
