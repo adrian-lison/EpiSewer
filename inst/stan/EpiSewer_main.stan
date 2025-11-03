@@ -353,11 +353,11 @@ parameters {
 
   // Gaussian process (gp)
   // gp
-  vector<lower=0>[R_model == 5 ? gp_m[1] : 0] gp_noise_raw; // non-centered noise for basis functions
+  vector[R_model == 5 ? gp_m[1] : 0] gp_noise_raw; // non-centered noise for basis functions
   array[R_use_gp && gp_sigma_prior[2] > 0 ? 1 : 0] real<lower=0> gp_sigma; // magnitude
   array[R_use_gp && gp_length_prior[2] > 0 ? 1 : 0] real<lower=0, upper=(R_use_gp ? gp_length_max[1] : 0)> gp_length; // length scale
   // gp2
-  vector<lower=0>[R_model == 5 ? gp2_m[1] : 0] gp2_noise_raw; // non-centered noise for basis functions
+  vector[R_model == 5 ? gp2_m[1] : 0] gp2_noise_raw; // non-centered noise for basis functions
   array[R_use_gp && gp2_sigma_prior[2] > 0 ? 1 : 0] real<lower=0> gp2_sigma; // magnitude
   array[R_use_gp && gp2_length_prior[2] > 0 ? 1 : 0] real<lower=0, upper=(R_use_gp ? gp2_length_max[1] : 0)> gp2_length; // length scale
 
