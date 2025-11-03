@@ -303,7 +303,7 @@ Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
 data, the complexity of the model used, and how well the model actually
-fits the data. On a modern laptop the example below should take about 5
+fits the data. On a modern laptop the example below should take about 3
 minutes to run.
 
 ``` r
@@ -553,11 +553,11 @@ number.
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95     type seeding
 #>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>   <fctr>  <lgcl>
-#> 1: 2021-12-03 1.033064 1.035552  0.6782225 0.9140223  1.148916   1.389457 estimate    TRUE
-#> 2: 2021-12-04 1.034980 1.036922  0.6919654 0.9195647  1.147927   1.376373 estimate    TRUE
-#> 3: 2021-12-05 1.037122 1.040870  0.7085076 0.9249555  1.145450   1.365958 estimate    TRUE
-#> 4: 2021-12-06 1.039499 1.043329  0.7231940 0.9314532  1.145225   1.353303 estimate    TRUE
-#> 5: 2021-12-07 1.042118 1.044984  0.7333114 0.9367882  1.144956   1.346645 estimate    TRUE
+#> 1: 2021-12-03 1.065800 1.062111  0.7804628 0.9704949  1.155865   1.347606 estimate    TRUE
+#> 2: 2021-12-04 1.066615 1.063386  0.7873830 0.9718353  1.156192   1.344718 estimate    TRUE
+#> 3: 2021-12-05 1.067446 1.064492  0.7978542 0.9745666  1.156663   1.336939 estimate    TRUE
+#> 4: 2021-12-06 1.068285 1.066127  0.8056717 0.9769387  1.156550   1.334001 estimate    TRUE
+#> 5: 2021-12-07 1.069128 1.068549  0.8120417 0.9798131  1.155093   1.329651 estimate    TRUE
 ```
 
 The `fitted` attribute provides access to all details of the fitted stan
@@ -575,7 +575,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.8463008 0.9022849 0.9323316 0.8552178
+#> [1] 0.9432026 0.9982946 0.8426807 0.8658058
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -590,7 +590,7 @@ ww_result$checksums
 #> [1] "c8484e1d5725559d91a98baaf86c86b6"
 #> 
 #> $input
-#> [1] "1e89be907d2c1fa73d08bf9053bda7e1"
+#> [1] "dc28609580eb6ab527edcd5301ff20a8"
 #> 
 #> $fit_opts
 #> [1] "bfdedc2ea8d89b577ad57b86ac83e706"
@@ -599,7 +599,7 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "6986f5c37eaa6c9911bb9bbcdf52398c"
+#> [1] "ce0d2af60f2ac0fce8bb6b9c26adb59e"
 ```
 
 ## Citing the package
