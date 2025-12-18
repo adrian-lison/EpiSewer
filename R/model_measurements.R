@@ -110,6 +110,7 @@ measurements_observe_ <- function(
       "log-normal" = 1,
       "truncated normal" = 2,
       "normal" = 3,
+      "binomial" = 4,
       "digital PCR" = 5
     )
 
@@ -1109,7 +1110,8 @@ noise_estimate_dPCR <-
            volume_scaled = 1e-5,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
-           prePCR_noise_type = "log-normal") {
+           prePCR_noise_type = "log-normal",
+           modeldata = modeldata_init()) {
     return(noise_estimate_(
         replicates = replicates,
         cv_prior_mu = cv_prior_mu,
