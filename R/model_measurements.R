@@ -97,13 +97,77 @@ measurements_observe_ <- function(
     total_partitions_col = NULL,
     modeldata = modeldata_init()) {
 
-    observation_type <- rlang::arg_match(observation_type)
-
     if (!(composite_window %% 1 == 0 && composite_window > 0)) {
       cli::cli_abort(
         "The argument `composite_window` must be a positive integer."
       )
     }
+
+    observation_type <- rlang::arg_match(observation_type)
+
+    available_distributions <- c(
+      "gamma" = 0,
+      "log-normal" = 1,
+      "truncated normal" = 2,
+      "normal" = 3,
+      "digital PCR" = 5
+    )
+
+    distribution_aliases <- c(
+      "lnorm" = "log-normal",
+      "lognormal" = "log-normal",
+      "truncated_normal" = "truncated normal",
+      "truncated-normal" = "truncated normal",
+      "norm" = "normal",
+      "dpcr" = "digital PCR",
+      "ddpcr" = "digital PCR"
+    )
+
+    distribution <- stringr::str_to_lower(distribution)
+    distribution <- do.call(
+      switch, c(distribution, as.list(c(distribution_aliases,distribution)))
+    )
+
+    if (!distribution %in% names(available_distributions)) {
+      cli::cli_abort(
+        c(
+          "Only the following distributions are supported:",
+          setNames(names(available_distributions), rep("*", length(available_distributions)))
+        )
+      )
+    }
+
+    if (distribution == "truncated normal") {
+      cli::cli_inform(c(
+        "!" = paste(
+          "The Truncated Normal distribution is supported for model",
+          "comparison purposes -",
+          "but it is not recommended in practice due to misspecification, i.e.",
+          "biased mean at low concentrations.",
+          "Consider using a Gamma or Log-Normal distribution instead."
+        )))
+    }
+    if (distribution == "normal") {
+      cli::cli_inform(c(
+        "!" = paste(
+          "The Normal distribution is supported for model",
+          "comparison purposes -",
+          "but it is not recommended in practice due to misspecification, i.e.",
+          "prediction of negative concentrations.",
+          "Consider using a Gamma or Log-Normal distribution instead."
+        )))
+    }
+    if (distribution == "binomial" && observation_type != "partitions") {
+      cli::cli_abort(paste0(
+        "The Binomial distribution is only supported for positive partitions ",
+        "counts in dPCR assays. Please use `concentrations_observe_partitions()` ",
+        "to specify this distribution type."
+      ))
+    }
+
+    modeldata$obs_dist = do.call(
+      switch, c(distribution, as.list(c(available_distributions,-1)))
+    )
 
     modeldata <- tbp("measurements_observe",
       {
@@ -201,6 +265,7 @@ measurements_observe_ <- function(
         modeldata$.metainfo$composite_window <- composite_window
 
         modeldata$n_measured <- nrow(measurements)
+        modeldata$n_nonzero <- sum(measurements[["concentration"]]>0, na.rm = T)
         modeldata$n_samples <- length(unique(measurements[["date"]]))
         measured_dates <- as.integer(
           measurements[["date"]] - modeldata$.metainfo$T_start_date + 1
@@ -214,7 +279,11 @@ measurements_observe_ <- function(
         modeldata$measured_concentrations <- measurements[["concentration"]]
         if (observation_type == "concentrations") {
           modeldata$positive_partitions <- numeric(0)
-          modeldata$.init$concentration_with_noise_raw <- numeric(0)
+          if (modeldata$obs_dist == 5) {
+            modeldata$.init$concentration_with_noise_raw <- rep(1, modeldata$n_measured)
+          } else {
+            modeldata$.init$concentration_with_noise_raw <- numeric(0)
+          }
         } else if (observation_type == "partitions") {
           modeldata$positive_partitions <- measurements[["positive_partitions"]]
           modeldata$.init$concentration_with_noise_raw <- rep(1, modeldata$n_measured)
@@ -307,68 +376,6 @@ measurements_observe_ <- function(
       )
     }
 
-    available_distributions <- c(
-      "gamma" = 0,
-      "log-normal" = 1,
-      "truncated normal" = 2,
-      "normal" = 3,
-      "binomial" = 4
-    )
-
-    distribution_aliases <- c(
-      "lnorm" = "log-normal",
-      "lognormal" = "log-normal",
-      "truncated_normal" = "truncated normal",
-      "truncated-normal" = "truncated normal",
-      "norm" = "normal"
-    )
-
-    distribution <- stringr::str_to_lower(distribution)
-    distribution <- do.call(
-      switch, c(distribution, as.list(c(distribution_aliases,distribution)))
-    )
-
-    if (!distribution %in% names(available_distributions)) {
-      cli::cli_abort(
-        c(
-          "Only the following distributions are supported:",
-          setNames(names(available_distributions), rep("*", length(available_distributions)))
-        )
-      )
-    }
-
-    if (distribution == "truncated normal") {
-      cli::cli_inform(c(
-        "!" = paste(
-          "The Truncated Normal distribution is supported for model",
-          "comparison purposes -",
-          "but it is not recommended in practice due to misspecification, i.e.",
-          "biased mean at low concentrations.",
-          "Consider using a Gamma or Log-Normal distribution instead."
-      )))
-    }
-    if (distribution == "normal") {
-      cli::cli_inform(c(
-        "!" = paste(
-          "The Normal distribution is supported for model",
-          "comparison purposes -",
-          "but it is not recommended in practice due to misspecification, i.e.",
-          "prediction of negative concentrations.",
-          "Consider using a Gamma or Log-Normal distribution instead."
-      )))
-    }
-    if (distribution == "binomial" && observation_type != "partitions") {
-      cli::cli_abort(paste0(
-        "The Binomial distribution is only supported for positive partitions ",
-        "counts in dPCR assays. Please use `concentrations_observe_partitions()` ",
-        "to specify this distribution type."
-      ))
-    }
-
-    modeldata$obs_dist = do.call(
-      switch, c(distribution, as.list(c(available_distributions,-1)))
-      )
-
     return(modeldata)
 }
 
@@ -449,7 +456,23 @@ concentrations_observe_partitions <- function(
         n_averaged_col = n_averaged_col,
         total_partitions_col = total_partitions_col,
         modeldata = modeldata))
-  }
+}
+
+#' Calculate concentration step size from number of partitions and volume of a
+#' digital PCR (dPCR) assay
+#'
+#' @description This helper function calculates the concentration step
+#'  size implied by a certain number of partitions and the scaled volume of each
+#'  partition.
+#'
+#' @param partitions The number of partitions in the dPCR assay.
+#' @param volume_scaled The scaled volume of each partition (partition volume
+#'  multiplied with the scaling of concentration in the assay).
+#'
+#' @return The concentration step size.
+dPCR_concentration_stepsize <- function(partitions, volume_scaled) {
+  return(-log(1-1/partitions)*1/volume_scaled)
+}
 
 #' Estimate measurement noise (internal helper function)
 #'
@@ -460,10 +483,10 @@ concentrations_observe_partitions <- function(
 #'
 #' @description This helper function is called from other noise modeling
 #'   functions. [noise_estimate()] is a constant coefficient of variation model,
-#'   [noise_estimate_dPCR()] is a noise model specialized for digital PCR
-#'   (`cv_type = "dPCR"`), which may however also work with other quantification
-#'   methods such as qPCR, and [noise_estimate_constant_var()] is a constant
-#'   variance model.
+#'   [noise_estimate_dPCR()] and [noise_estimate_dPCR_params()] are noise models
+#'   specialized for digital PCR (`cv_type = "dPCR"`), which may however also
+#'   work with other quantification methods such as qPCR, and
+#'   [noise_estimate_constant_var()] is a constant variance model.
 #'
 #' @param replicates Should replicates be used to explicitly model variation
 #'   before the replication stage?
@@ -484,7 +507,7 @@ concentrations_observe_partitions <- function(
 #' @param total_partitions_observe If TRUE, the total number of partitions is
 #'   taken from the supplied measurements `data.frame`. This requires that the
 #'   argument `total_partitions_col` is specified in [concentrations_observe()].
-#' @param max_partitions_prior_lower Prior (5% quantile) for the maximum total
+#' @param max_partitions_prior_lower Prior (lower bound) for the maximum total
 #'   number of dPCR partitions. This is usually defined by the manufacturer of
 #'   the dPCR system/chip used, which supports a certain maximum number of
 #'   partitions. If you know the exact dPCR system and its maximum partition
@@ -492,7 +515,7 @@ concentrations_observe_partitions <- function(
 #'   `max_partitions_prior_upper` to this value. Otherwise, this prior can be
 #'   used to set a broad lower and upper bound for the maximum number of
 #'   partitions, to reflect a range of popular dPCR systems/chips.
-#' @param max_partitions_prior_upper Prior (95% quantile) for the maximum total
+#' @param max_partitions_prior_upper Prior (upper bound) for the maximum total
 #'   number of dPCR partitions (see `max_partitions_prior_lower` for details.)
 #' @param partition_loss_mean_prior_lower Prior (5% quantile) for the mean
 #'   relative partition loss. A certain proportion of partitions in a dPCR run
@@ -522,13 +545,13 @@ concentrations_observe_partitions <- function(
 #'   lost in a valid dPCR run. During quality control, runs where the proportion
 #'   of invalid partitions is above some threshold (e.g. 50%) are often
 #'   discarded. This parameter can be used to represent such a QC threshold.
-#' @param volume_scaled_prior_mu Prior (mean) on the conversion factor
+#' @param volume_scaled_prior_lower Prior (lower bound) on the conversion factor
 #'   (partition volume scaled by the dilution of wastewater in the assay) for
 #'   the dPCR reaction. See details for further explanation.
-#' @param volume_scaled_prior_sigma Prior (standard deviation) on the conversion
-#'   factor (partition volume scaled by the dilution of wastewater in the assay)
-#'   for the dPCR reaction. If this is set to zero, the conversion factor will
-#'   be fixed to the prior mean and not estimated.
+#' @param volume_scaled_prior_upper Prior (upper bound) on the conversion factor
+#'   (partition volume scaled by the dilution of wastewater in the assay) for
+#'   the dPCR reaction. If this is identical to `volume_scaled_prior_lower`, the
+#'   conversion factor will be fixed and not estimated.
 #' @param pre_replicate_cv_prior_mu Prior (mean) on the coefficient of variation
 #'   of concentrations *before* the replication stage.
 #' @param pre_replicate_cv_prior_sigma Prior (standard deviation) on the
@@ -544,6 +567,20 @@ concentrations_observe_partitions <- function(
 #'   approximation is very accurate, unless concentrations are extremely high
 #'   (so high that the quality of the measurements from dPCR would anyway be
 #'   questionable).
+#'
+#' @param conc_reporting_noise Reported concentrations may deviate from the
+#'   exact concentration estimate implied by the partition counts, e.g. due to
+#'   rounding, limited precision etc. This is here modeled by Gaussian noise
+#'   around the concentration estimate with standard deviation
+#'   `conc_reporting_noise`. A value of 0.4 roughly restricts variations within
+#'   an interval of 1 concentration unit (e.g. copies/µL) around the true
+#'   concentration. Smaller values lead to more accurate estimation but can slow
+#'   down sampling, especially if you provide broad priors for the assay
+#'   parameters. As a rule of thumb, `conc_reporting_noise` should be smaller
+#'   than half the smallest difference between two reported concentrations,
+#'   which can be computed using
+#'   `dPCR_concentration_stepsize(partitions, volume_scaled)` for an assumed
+#'   number of partitions and conversion factor / scaled volume.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -561,17 +598,18 @@ noise_estimate_ <-
            partition_loss_variation_prior_lower = NULL,
            partition_loss_variation_prior_upper = NULL,
            partition_loss_max = NULL,
-           volume_scaled_prior_mu = NULL,
-           volume_scaled_prior_sigma = NULL,
+           volume_scaled_prior_lower = NULL,
+           volume_scaled_prior_upper = NULL,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            prePCR_noise_type = "log-normal",
+           conc_reporting_noise = 0.4,
            use_taylor_approx = TRUE,
            modeldata = modeldata_init()) {
 
-    if (!is.null(modeldata$obs_dist) && (modeldata$obs_dist == 4 && cv_type != "dPCR")) {
+    if (!is.null(modeldata$obs_dist) && (modeldata$obs_dist %in% c(4, 5) && cv_type != "dPCR")) {
       cli::cli_abort(paste0(
-        "You specified positive partitions from a dPCR assay as measurements, ",
+        "You specified a dPCR measurement model, ",
         "but the noise model is not compatible with this observation type. ",
         "Please use `noise_estimate_dPCR()` instead."
       ))
@@ -600,6 +638,8 @@ noise_estimate_ <-
       modeldata$.init$nu_upsilon_c <- numeric(0)
       modeldata$cv_pre_type <- numeric(0)
       modeldata$cv_pre_approx_taylor <- numeric(0)
+      modeldata$integrate_counts <- numeric(0)
+      modeldata$rep_sigma <- numeric(0)
     } else if (cv_type == "dPCR") {
       # 1: continuous model of measured concentrations
       # 3: binomial model of positive partitions
@@ -632,14 +672,18 @@ noise_estimate_ <-
         modeldata$total_partitions_observe <- FALSE
 
         # maximum number of partitions
-        modeldata$max_partitions_prior <- set_prior_trunc_normal(
-          "max_partitions", "truncated normal",
-          q5 = max_partitions_prior_lower * 1e-4, # scale by 1e-4 for numerical efficiency
-          q95 = max_partitions_prior_upper * 1e-4
+        modeldata$max_partitions_prior <- set_prior(
+          "max_partitions", "uniform",
+          a = max_partitions_prior_lower,
+          b = max_partitions_prior_upper
         )
-        modeldata$.init$max_partitions <- init_from_location_scale_prior(
-          modeldata$max_partitions_prior, enforce_positive = TRUE
-        )
+        if (max_partitions_prior_upper > max_partitions_prior_lower) {
+          modeldata$.init$max_partitions <- 1/2 * (
+            max_partitions_prior_lower + max_partitions_prior_upper
+          )
+        } else {
+          modeldata$.init$max_partitions <- numeric(0)
+        }
 
         # mean partition loss
         modeldata$partition_loss_mu_prior <- set_prior_normal(
@@ -674,13 +718,17 @@ noise_estimate_ <-
 
       # conversion factor for dPCR
       modeldata$nu_upsilon_c_prior <- set_prior(
-        "nu_upsilon_c", "truncated normal",
-        mu = volume_scaled_prior_mu * 1e+5, # scaling by 1e+5 for numerical reasons
-        sigma = volume_scaled_prior_sigma * 1e+5
+        "nu_upsilon_c", "uniform",
+        a = volume_scaled_prior_lower,
+        b = volume_scaled_prior_upper
       )
-      modeldata$.init$nu_upsilon_c <- init_from_location_scale_prior(
-        modeldata$nu_upsilon_c_prior, enforce_positive = TRUE
+      if (volume_scaled_prior_upper > volume_scaled_prior_lower) {
+        modeldata$.init$nu_upsilon_c <- 1/2 * (
+          volume_scaled_prior_lower+volume_scaled_prior_upper
         )
+      } else {
+        modeldata$.init$nu_upsilon_c <- numeric(0)
+      }
 
       if (prePCR_noise_type == "gamma") {
         modeldata$cv_pre_type <- 0
@@ -693,6 +741,46 @@ noise_estimate_ <-
           ))
       }
       modeldata$cv_pre_approx_taylor <- use_taylor_approx
+
+      modeldata <- tbc(
+        "integrate_counts_dPCR",
+        {
+          if (modeldata$obs_dist == 5) {
+            max_partitions_is_fixed <- (
+              max_partitions_prior_upper == max_partitions_prior_lower
+            )
+            partition_loss_mu_is_fixed <- (
+              partition_loss_mean_prior_upper == partition_loss_mean_prior_lower
+            )
+            partition_loss_sigma_is_fixed_zero <- (
+              partition_loss_variation_prior_upper == 0 &
+                partition_loss_variation_prior_lower == 0
+            )
+            partitions_fixed <- (
+              max_partitions_is_fixed &&
+                partition_loss_mu_is_fixed &&
+                partition_loss_sigma_is_fixed_zero
+            ) || modeldata$total_partitions_observe
+            nu_upsilon_c_is_fixed <- (
+              volume_scaled_prior_upper == volume_scaled_prior_lower
+            )
+            if (partitions_fixed && nu_upsilon_c_is_fixed) {
+              modeldata$integrate_counts <- 0
+              modeldata$rep_sigma <- numeric(0)
+            } else {
+              modeldata$integrate_counts <- 1
+              modeldata$rep_sigma <- conc_reporting_noise
+            }
+          } else {
+            modeldata$integrate_counts <- numeric(0)
+            modeldata$rep_sigma <- numeric(0)
+          }
+        },
+        required = c(
+          "obs_dist"
+        ),
+        modeldata = modeldata
+      )
 
     } else if (cv_type == "constant_var") {
       modeldata$total_partitions_observe <- FALSE
@@ -709,6 +797,8 @@ noise_estimate_ <-
       modeldata$.init$nu_upsilon_c <- numeric(0)
       modeldata$cv_pre_type <- numeric(0)
       modeldata$cv_pre_approx_taylor <- numeric(0)
+      modeldata$integrate_counts <- numeric(0)
+      modeldata$rep_sigma <- numeric(0)
     } else {
       cli::cli_abort(
         paste0(
@@ -822,15 +912,17 @@ noise_estimate <-
       ))
   }
 
-#' Estimate measurement noise for digital PCR data
+
+#' Estimate measurement noise for digital PCR data with priors for assay
+#' parameters
 #'
-#' @description This option estimates the unexplained variation in wastewater
-#'   measurements using a coefficient of variation model specialized for digital
-#'   PCR (e.g. digital droplet PCR). Specifically, the coefficient of variation
-#'   is modeled as a function of the expected concentration according to the
-#'   statistical properties of dPCR.
+#' @description This option models concentration measurements using an error
+#'   model specialized for digital PCR (e.g. digital droplet PCR). This option
+#'   also jointly estimates the uncertain parameters of the dPCR assay. For a
+#'   faster approximation assuming fixed assay parameters, see
+#'   [noise_estimate_dPCR()].
 #'
-#' @description This model predicts a higher coefficient of variation at smaller
+#' @description This model predicts more relative variation at smaller
 #'   concentrations, which often leads to a better model fit, even for
 #'   measurements from other quantification methods such as qPCR.
 #'
@@ -838,16 +930,18 @@ noise_estimate <-
 #'   `EpiSewer` can also explicitly model variation before the replication
 #'   stage.
 #'
-#' @param cv_prior_mu Prior (mean) on the coefficient of variation of
-#'   concentration measurements. Note that in contrast to using
-#'   [noise_estimate()], this does *not* include the technical noise of the
-#'   digital PCR. This is because the dPCR noise is explicitly modeled (using
-#'   the total number of partitions and conversion factor). Moreover, when
-#'   `replicates=TRUE`, this is only the CV after the replication stage (see
-#'   details for more explanation).
+#' @param cv_prior_mu Prior (mean) on the coefficient of variation of analyzed
+#'   concentrations (pre-PCR noise). Note that this does *not* include the
+#'   technical noise of the digital PCR. This is because the dPCR noise is
+#'   explicitly modeled (using the total number of partitions and conversion
+#'   factor). Moreover, when `replicates=TRUE`, noise before the replication
+#'   stage is separately modeled, so `cv_prior_mu` only describes any
+#'   remaining pre-PCR noise (see details for more explanation).
+#' @param cv_prior_sigma Prior (standard deviation) on the coefficient of
+#'   variation of analyzed concentrations.
 #'
-#' @details The conversion factor (see `volume_scaled_prior_mu`,
-#'   `volume_scaled_prior_sigma`) is the partition volume v multiplied with a
+#' @details The conversion factor (see `volume_scaled_prior_lower`,
+#'   `volume_scaled_prior_upper`) is the partition volume v multiplied with a
 #'   scaling factor s. The scaling factor accounts for concentration differences
 #'   between the sample and the reaction mix, for example due to extraction or
 #'   adding of reagents. For example, if the partition volume is 4.5e-7 mL and
@@ -871,10 +965,10 @@ noise_estimate <-
 #'
 #' @details The priors of this component have the following functional form:
 #' - coefficient of variation of concentration measurements (`cv`): `Truncated normal`
-#' - maximum number of total partitions in dPCR: `Truncated normal`
+#' - maximum number of total partitions in dPCR: `Uniform`
 #' - mean proportion of lost partitions in dPCR: `Normal (logit-level)`
 #' - variation of proportion of lost partitions: `Truncated normal (logit-level)`
-#' - conversion factor for dPCR: `Truncated normal`
+#' - conversion factor for dPCR: `Uniform`
 #' - coefficient of variation of concentration before the replication stage (`pre_replicate_cv`):
 #'   `Truncated normal`
 #'
@@ -885,23 +979,26 @@ noise_estimate <-
 #' @family {noise models}
 #' @seealso [LOD_estimate_dPCR] for a limit of detection model specialised for
 #'   dPCR.
-noise_estimate_dPCR <-
+#' @seealso [noise_estimate_dPCR] for a faster dPCR noise model with fixed assay
+#'   parameters.
+noise_estimate_dPCR_params <-
   function(replicates = FALSE,
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
            total_partitions_observe = FALSE,
-           max_partitions_prior_lower = 5000,
+           max_partitions_prior_lower = 10000,
            max_partitions_prior_upper = 30000,
-           partition_loss_mean_prior_lower = 0.01,
+           partition_loss_mean_prior_lower = 0.1,
            partition_loss_mean_prior_upper = 0.3,
            partition_loss_variation_prior_lower = 0.5,
            partition_loss_variation_prior_upper = 2,
            partition_loss_max = 0.5,
-           volume_scaled_prior_mu = 1e-5,
-           volume_scaled_prior_sigma = 4e-5,
+           volume_scaled_prior_lower = 1e-5,
+           volume_scaled_prior_upper = 1e-3,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            prePCR_noise_type = "log-normal",
+           conc_reporting_noise = 0.4,
            use_taylor_approx = TRUE,
            modeldata = modeldata_init()) {
     return(noise_estimate_(
@@ -917,14 +1014,122 @@ noise_estimate_dPCR <-
       partition_loss_variation_prior_upper = partition_loss_variation_prior_upper,
       partition_loss_max = partition_loss_max,
       total_partitions_observe = total_partitions_observe,
-      volume_scaled_prior_mu = volume_scaled_prior_mu,
-      volume_scaled_prior_sigma = volume_scaled_prior_sigma,
+      volume_scaled_prior_lower = volume_scaled_prior_lower,
+      volume_scaled_prior_upper = volume_scaled_prior_upper,
       pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
       pre_replicate_cv_prior_sigma = pre_replicate_cv_prior_sigma,
       prePCR_noise_type = prePCR_noise_type,
+      conc_reporting_noise = conc_reporting_noise,
       use_taylor_approx = use_taylor_approx,
       modeldata = modeldata
     ))
+  }
+
+#' Estimate measurement noise for digital PCR data
+#'
+#' @description This option models concentration measurements using an error
+#'   model specialized for digital PCR (e.g. digital droplet PCR). This is a
+#'   fast approximation assuming a fixed number of valid total partitions in the
+#'   dPCR assay and a known conversion factor. For a model that jointly
+#'   estimates uncertain assay parameters, see [noise_estimate_dPCR_params()].
+#'
+#' @description This model predicts more relative variation at smaller
+#'   concentrations, which often leads to a better model fit, even for
+#'   measurements from other quantification methods such as qPCR.
+#'
+#' @description If multiple measurements (replicates) per sample are provided,
+#'   `EpiSewer` can also explicitly model variation before the replication
+#'   stage.
+#'
+#' @param cv_prior_mu Prior (mean) on the coefficient of variation of analyzed
+#'   concentrations (pre-PCR noise). Note that this does *not* include the
+#'   technical noise of the digital PCR. This is because the dPCR noise is
+#'   explicitly modeled (using the total number of partitions and conversion
+#'   factor). Moreover, when `replicates=TRUE`, noise before the replication
+#'   stage is separately modeled, so `cv_prior_mu` only describes any
+#'   remaining pre-PCR noise (see details for more explanation).
+#' @param cv_prior_sigma Prior (standard deviation) on the coefficient of
+#'   variation of analyzed concentrations.
+#'
+#' @param max_partitions The maximum total number of dPCR partitions. This is
+#'   usually defined by the manufacturer of the dPCR system/chip used, which
+#'   supports a certain maximum number of partitions.
+#'
+#' @param partition_loss_mean The mean relative partition loss. A certain
+#'   proportion of partitions in a dPCR run is typically invalid and discarded
+#'   from the concentration estimate.
+#'
+#' @param volume_scaled The conversion factor (partition volume multiplied with
+#'   the scaling of concentration in the assay) for the dPCR reaction. See
+#'   details for further explanation.
+#'
+#' @details The conversion factor (see `volume_scaled`) is the partition volume
+#'   v multiplied with a scaling factor s. The scaling factor accounts for
+#'   concentration differences between the sample and the reaction mix, for
+#'   example due to extraction or adding of reagents. For example, if the
+#'   partition volume is 4.5e-7 mL and the scaling factor is 100:3 (i.e. 100
+#'   gc/mL in the original sample correspond to 3 gc/mL in the PCR reaction),
+#'   then the overall conversion factor is 4.5e-7 * 100 / 3 = 1.5e-5.
+#'
+#' @details When `replicates=TRUE`, two coefficients of variation are estimated:
+#' - the CV before the replication stage (see `pre_replicate_cv_prior_mu`)
+#' - the CV after the replication stage (see `cv_prior_mu`)
+#'
+#'   The meaning of these CV estimates depends on the type of replicates. If the
+#'   replicates are biological replicates (i.e. independently processed), then
+#'   `cv` estimates the noise in the preprocessing before the PCR, and
+#'   `pre_replicate_cv` estimates the noise from anything before preprocessing
+#'   (e.g. sampling noise and all other unexplained variation). In contrast, if
+#'   the replicates are technical replicates (i.e. several PCR runs of the same
+#'   preprocessed sample), then `cv` estimates only unexplained PCR noise
+#'   (should be close to zero), and `pre_replicate_cv` estimates all other noise
+#'   (including preprocessing noise.)
+#'
+#' @details The priors of this component have the following functional form:
+#' - coefficient of variation of concentration measurements (`cv`): `Truncated normal`
+#' - coefficient of variation of concentration before the replication stage (`pre_replicate_cv`):
+#'   `Truncated normal`
+#'
+#' @inheritParams noise_estimate_
+#' @inheritParams template_model_helpers
+#' @inherit modeldata_init return
+#' @export
+#' @family {noise models}
+#' @seealso [LOD_estimate_dPCR] for a limit of detection model specialised for
+#'   dPCR.
+#' @seealso [noise_estimate_dPCR_params] for jointly estimating uncertain
+#'   parameters of the assay.
+noise_estimate_dPCR <-
+  function(replicates = FALSE,
+           cv_prior_mu = 0,
+           cv_prior_sigma = 1,
+           total_partitions_observe = FALSE,
+           max_partitions = 30000,
+           partition_loss_mean = 0.1,
+           volume_scaled = 1e-5,
+           pre_replicate_cv_prior_mu = 0,
+           pre_replicate_cv_prior_sigma = 1,
+           prePCR_noise_type = "log-normal") {
+    return(noise_estimate_(
+        replicates = replicates,
+        cv_prior_mu = cv_prior_mu,
+        cv_prior_sigma = cv_prior_sigma,
+        cv_type = "dPCR",
+        max_partitions_prior_lower = max_partitions,
+        max_partitions_prior_upper = max_partitions,
+        partition_loss_mean_prior_lower = partition_loss_mean,
+        partition_loss_mean_prior_upper = partition_loss_mean,
+        partition_loss_variation_prior_lower = 0,
+        partition_loss_variation_prior_upper = 0,
+        partition_loss_max = 0.5,
+        total_partitions_observe = total_partitions_observe,
+        volume_scaled_prior_lower = volume_scaled,
+        volume_scaled_prior_upper = volume_scaled,
+        pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
+        pre_replicate_cv_prior_sigma = pre_replicate_cv_prior_sigma,
+        prePCR_noise_type = prePCR_noise_type,
+        modeldata = modeldata
+      ))
   }
 
 #' Estimate measurement noise with constant variance
@@ -1058,10 +1263,11 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #'   not cover a large fraction of the preprocessing noise to find an optimal
 #'   configuration for the exponential model.
 #'
-#' @details If used together with [noise_estimate_dPCR()], EpiSewer will also
-#'   model the effect of pre-PCR noise on the LOD. This means that the modeled
-#'   LOD could be slightly higher than specified under `limit`, depending on the
-#'   estimated pre-PCR noise.
+#' @details If used together with [noise_estimate_dPCR()] or
+#'   [noise_estimate_dPCR_params()], EpiSewer will also model the effect of
+#'   pre-PCR noise on the LOD. This means that the modeled LOD could be slightly
+#'   higher than specified under `limit`, depending on the estimated pre-PCR
+#'   noise.
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -1122,8 +1328,8 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
 #' @details The limit of detection is modeled using a hurdle model. The model
 #'   uses the number of partitions in the dPCR reaction and the conversion
 #'   factor as defined and estimated by [noise_estimate_dPCR()]. It can
-#'   therefore only be used together with `noise = noise_estimate_dPCR()` in
-#'   [model_measurements()].
+#'   therefore only be used together with `noise = noise_estimate_dPCR()` or
+#'   `noise = noise_estimate_dPCR_params()` in [model_measurements()].
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
@@ -1138,7 +1344,8 @@ LOD_estimate_dPCR <- function(drop_prob = 1e-10, modeldata = modeldata_init()) {
         cli::cli_abort(paste0(
           "To use LOD = ",
           cli_help("LOD_estimate_dPCR"), ", you must specify noise = ",
-          cli_help("noise_estimate_dPCR"), ' in ',
+          cli_help("noise_estimate_dPCR"), " or ",
+          cli_help("noise_estimate_dPCR_params"), ' in ',
           cli_help("model_measurements"), "."
         ))
       }

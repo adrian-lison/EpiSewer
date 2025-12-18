@@ -165,6 +165,24 @@ Helper functions for primitive operations
     }
   }
 
+  // for priors where the location is on the log scale
+  real param_or_fixed_log(array[] real param, array[] real prior) {
+    if (prior[2] > 0) {
+      return(param[1]);
+    } else {
+      return(exp(prior[1]));
+    }
+  }
+
+  // for lower and upper bound priors (e.g. uniform)
+  real param_or_fixed_lu(array[] real param, array[] real prior) {
+    if (prior[2] > prior[1]) {
+      return(param[1]);
+    } else {
+      return(prior[1]);
+    }
+  }
+
   /**
   * Check if a vector contains NaN values
   */

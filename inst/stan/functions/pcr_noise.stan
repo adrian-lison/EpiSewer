@@ -127,7 +127,6 @@ vector log_E_exp_gamma(vector lambda, real nu_pre, real t) {
   return(log_E_exp_gamma(lambda, nu_pre, rep_vector(t, num_elements(lambda))));
 }
 
-
 /**
   * Compute the expected value of exp(lambda * c), i.e. evaluate the MGF of the
   * concentration in the PCR at the point c (conversion factor), assuming
@@ -170,4 +169,146 @@ vector log_E_exp_lnorm(vector lambda, real nu_pre, vector t) {
 }
 vector log_E_exp_lnorm(vector lambda, real nu_pre, real t) {
   return(log_E_exp_lnorm(lambda, nu_pre, rep_vector(t, num_elements(lambda))));
+}
+
+// --------------------------------------------------------
+// dPCR likelihood based on generalized binomial coefficient
+// --------------------------------------------------------
+
+real dPCR_lpdf(real y, real lambda, real m, real c, int norm_l, int norm_u) {
+  real p = 1 - exp(-lambda * c);
+  real norm_mass_log = 0;
+  int norm_n = norm_u - norm_l + 1;
+  if (norm_n >= 0) {
+    vector[norm_n] all_counts = linspaced_vector(norm_n, norm_l, norm_u);
+    vector[norm_n] all_mass = binom_approx_lpdfs(all_counts, m, p);
+    norm_mass_log = log_sum_exp(all_mass);
+  }
+  real obs_mass = binom_approx_lpdf(m * (1 - exp(-y * c)) | m, p);
+  return obs_mass - norm_mass_log;
+}
+
+real dPCR_lpdf(vector y, vector lambda, vector m, real c, int norm_l, int norm_u) {
+  int N = num_elements(y);
+  real lp = 0;
+  for (i in 1:N) {
+    lp += dPCR_lpdf(y[i] | lambda[i], m[i], c, norm_l, norm_u);
+  }
+  return lp;
+}
+
+// vectorized version without normalization
+real dPCR_lpdf(vector y, vector lambda, vector m, real c) {
+  int N = num_elements(y);
+  vector[N] p = 1 - exp(-lambda * c);
+  real obs_mass = binom_approx_lpdf(m .* (1 - exp(-y * c)) | m, p);
+  return obs_mass;
+}
+
+vector dPCR_rng(vector lambda, array[] int m, real c) {
+  int N = num_elements(lambda);
+  vector[N] p = 1 - exp(-lambda * c);
+  array[N] int counts = binomial_rng(m, p);
+  vector[N] concs = -log1m(to_vector(counts) ./ to_vector(m)) * (1 / c);
+  return concs;
+}
+
+// --------------------------------------------------------
+// dPCR likelihood based on generalized binomial coefficient
+// (conditioned on non-zero measurements)
+// --------------------------------------------------------
+
+real dPCR_nonzero_lpdf(vector y, vector lambda, vector m, real c) {
+  int N = num_elements(y);
+  vector[N] p = 1 - exp(-lambda * c);
+  real obs_mass = binom_approx_lpdf(m .* (1 - exp(-y * c)) | m, p);
+  // normalize
+  obs_mass += -sum(log1m_exp(binom_approx_lpdfs(rep_vector(0.0, N), m, p)));
+  return obs_mass;
+}
+
+// --------------------------------------------------------
+// dPCR likelihood based on generalized binomial coefficient.
+// Integration over counts and matching to observed concentrations
+// --------------------------------------------------------
+
+/**
+  * Squared exponential kernel with magnitude 1.
+  *
+  * @param y Reference point.
+  *
+  * @param x Vector with comparison points.
+  *
+  * @param sigma Length scale parameter.
+  *
+  * @return A vector with the kernel evaluated for the differences
+  * between y and the elements of x.
+  */
+vector log_se_kernel(real y, vector x, real sigma) {
+    return -0.5 * square(y - x) / square(sigma);
+  }
+
+/**
+  * Normalized squared exponential kernel. This corresponds to a gaussian
+  * density conditioned on y>0.
+  *
+  * @param y Reference point.
+  *
+  * @param x Vector with comparison points.
+  *
+  * @param sigma Length scale parameter.
+  *
+  * @return A vector with the kernel evaluated for the differences
+  * between y and the elements of x.
+  */
+vector log_se_kernel_norm(real y, vector x, real sigma) {
+  return -0.5 * square(y - x) / square(sigma)
+         - log(sigma)
+         - 0.5 * log(2 * pi())
+         - log1m(Phi((0 - x) / sigma));
+}
+
+/**
+  * Integrate over possible integer counts of positive partitions and compare
+  * the implied concentration to the observed concentration via a kernel
+  *
+  * @param y Observed concentration.
+  *
+  * @param lambda Expected concentration.
+  *
+  * @param m Number of valid partitions.
+  *
+  * @param c Conversion factor.
+  *
+  * @param int_l Lower boundary for number of positive partitions.
+  *
+  * @param int_u Upper boundary for number of positive partitions.
+  *
+  * @param sigma Length scale of kernel for comparison between implied
+  * concentrations and observed concentrations. Smaller values lead to stricter
+  * matching (and slower sampling).
+  *
+  * @return Probability integrated over all positive partitions counts between
+  * int_l and int_u.
+  */
+real dPCR_int_counts_lpdf(real y, real lambda, real m, real c, int int_l, int int_u, real sigma) {
+  real p = 1 - exp(-lambda * c);
+  int int_n = int_u - int_l + 1;
+  vector[int_n] all_counts = linspaced_vector(int_n, int_l, int_u);
+  vector[int_n] all_count_mass = binom_approx_lpdfs(all_counts, m, p);
+  vector[int_n] all_match_mass = log_se_kernel_norm(
+    y, -1/c * log(soft_lower(1-all_counts/m, 1e-10, 1e10)), sigma
+    );
+  return log_sum_exp(all_count_mass + all_match_mass);
+}
+
+real dPCR_int_counts_lpdf(vector y, vector lambda, vector m, real c, array[] int int_l, array[] int int_u, real sigma) {
+  int N = num_elements(y);
+  real lp = 0;
+  for (i in 1:N) {
+    lp += dPCR_int_counts_lpdf(y[i] | lambda[i], m[i], c, int_l[i], int_u[i], sigma);
+  }
+  // conditioning on non-zero measurements
+  lp += -sum(log1m_exp(binom_approx_lpdfs(rep_vector(0.0, N), m, 1 - exp(-lambda * c))));
+  return lp;
 }
