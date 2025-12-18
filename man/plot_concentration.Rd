@@ -119,7 +119,7 @@ forecasted values. Default is 8.}
 }
 \value{
 A ggplot object showing predicted and observed concentrations over
-time. Can be further manipulated using \link{ggplot2} functions to adjust themes
+time. Can be further manipulated using \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} functions to adjust themes
 and scales, and to add further geoms.
 }
 \description{

@@ -89,5 +89,5 @@ performed before model fitting (\code{.checks}).
 \description{
 This helper function is called from other measurement modeling
 functions. Currently supported are \code{\link[=concentrations_observe]{concentrations_observe()}} and
-\code{\link[=partitions_observe]{partitions_observe()}}.
+\code{\link[=concentrations_observe_partitions]{concentrations_observe_partitions()}}.
 }

@@ -42,8 +42,8 @@ detection, but we don't know what the exact concentration was.
 The limit of detection is modeled using a hurdle model. The model
 uses the number of partitions in the dPCR reaction and the conversion
 factor as defined and estimated by \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}. It can
-therefore only be used together with \code{noise = noise_estimate_dPCR()} in
-\code{\link[=model_measurements]{model_measurements()}}.
+therefore only be used together with \code{noise = noise_estimate_dPCR()} or
+\code{noise = noise_estimate_dPCR_params()} in \code{\link[=model_measurements]{model_measurements()}}.
 }
 \seealso{
 Other {LOD models}: 

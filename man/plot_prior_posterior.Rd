@@ -21,7 +21,7 @@ specified in \code{EpiSewer} are supported.}
 }
 \value{
 A plot showing the density of the prior (grey) and posterior (blue)
-for the respective parameter. Can be further manipulated using \link{ggplot2}
+for the respective parameter. Can be further manipulated using \link[ggplot2:ggplot2-package]{ggplot2::ggplot2}
 functions to adjust themes and scales, and to add further geoms.
 }
 \description{
@@ -31,8 +31,9 @@ Visually compare prior and posterior of a model parameter
 The following parameters can be visualized (if in the model):
 \itemize{
 \item \code{measurement_noise_cv} (nu_upsilon_a): Coefficient of variation (measurement noise)
-\item \code{dPCR_total_partitions} (nu_upsilon_b_mu): Average total number of partitions in dPCR
-\item \code{dPCR_partition_variation} (nu_upsilon_b_cv): Partition number variation in dPCR
+\item \code{dPCR_maximum_partitions} (max_partitions): Maximum number of partitions in dPCR
+\item \code{dPCR_partition_loss_mean} (partition_loss_mu): Mean relative partition loss in dPCR
+\item \code{dPCR_partition_loss_variation} (partition_loss_sigma): Partition number variation in dPCR
 \item \code{dPCR_conversion_factor} (nu_upsilon_c): Conversion factor in dPCR
 \item \code{pre_replicate_cv} (nu_psi): Coefficient of variation (pre-PCR noise)
 \item \code{load_variation_cv} (nu_zeta): Individual-level coefficient of load variation

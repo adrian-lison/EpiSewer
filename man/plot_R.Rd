@@ -74,7 +74,7 @@ single model.}
 \value{
 A ggplot object showing the time series of estimated Rt, either with
 credible intervals or as "spaghetti plot". Can be further manipulated using
-\link{ggplot2} functions to adjust themes and scales, and to add further geoms.
+\link[ggplot2:ggplot2-package]{ggplot2::ggplot2} functions to adjust themes and scales, and to add further geoms.
 }
 \description{
 Plots the effective reproduction number over time from one or

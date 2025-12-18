@@ -66,13 +66,13 @@ numerical error. If the messages are silenced then the
 \code{\link[cmdstanr:fit-method-output]{$output()}} method of the resulting fit object can be
 used to display the silenced messages.}
 
-\item{...}{Further arguments to pass to \link{cmdstanr}.}
+\item{...}{Further arguments to pass to \link[cmdstanr:cmdstanr-package]{cmdstanr::cmdstanr}.}
 }
 \value{
 A \code{list} with settings for the pathfinder sampler.
 }
 \description{
-This option uses stan's pathfinder algorithm via \link{cmdstanr}
+This option uses stan's pathfinder algorithm via \link[cmdstanr:cmdstanr-package]{cmdstanr::cmdstanr}
 for variational inference. Sampling is fast but yields potentially
 inaccurate results with unreliable uncertainty information. Currently, this
 sampler is recommended only for preview purposes, not for real-world
