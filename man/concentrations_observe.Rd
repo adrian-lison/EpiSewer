@@ -7,7 +7,6 @@
 concentrations_observe(
   measurements = NULL,
   composite_window = 1,
-  distribution = "gamma",
   date_col = "date",
   concentration_col,
   replicate_col = NULL,
@@ -27,11 +26,6 @@ collected? If 1 (default), samples represent single days. If larger than 1,
 samples are assumed to be equivolumetric composites over several dates. In
 this case, the supplied dates represent the last day included in each
 sample.}
-
-\item{distribution}{Parametric distribution for concentration measurements.
-Currently supported are "gamma" (default and recommended), "log-normal",
-"truncated normal", and "normal". The "truncated normal" and "normal"
-options are not recommended for use in practice.}
 
 \item{date_col}{Name of the column containing the dates.}
 

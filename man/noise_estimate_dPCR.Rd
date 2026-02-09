@@ -14,7 +14,8 @@ noise_estimate_dPCR(
   volume_scaled = 1e-05,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
-  prePCR_noise_type = "log-normal"
+  prePCR_noise_type = "log-normal",
+  modeldata = modeldata_init()
 )
 }
 \arguments{
@@ -59,6 +60,11 @@ before the PCR assay. Currently supported are "log-normal" and "gamma". The
 choice of the parametric distribution typically makes no relevant
 difference for the noise model, but can make a relevant difference for the
 LOD model if \code{\link[=LOD_estimate_dPCR]{LOD_estimate_dPCR()}} is used.}
+
+\item{modeldata}{A \code{modeldata} object to which the above model specifications
+should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
+also be an already partly specified model returned by other \code{EpiSewer}
+modeling functions.}
 }
 \value{
 A \code{modeldata} object containing data and specifications of the model

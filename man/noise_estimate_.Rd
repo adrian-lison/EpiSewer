@@ -6,6 +6,7 @@
 \usage{
 noise_estimate_(
   replicates = FALSE,
+  distribution,
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
   cv_type = "constant",
@@ -22,7 +23,6 @@ noise_estimate_(
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   prePCR_noise_type = "log-normal",
-  conc_reporting_noise = 0.4,
   use_taylor_approx = TRUE,
   modeldata = modeldata_init()
 )
@@ -117,20 +117,6 @@ before the PCR assay. Currently supported are "log-normal" and "gamma". The
 choice of the parametric distribution typically makes no relevant
 difference for the noise model, but can make a relevant difference for the
 LOD model if \code{\link[=LOD_estimate_dPCR]{LOD_estimate_dPCR()}} is used.}
-
-\item{conc_reporting_noise}{Reported concentrations may deviate from the
-exact concentration estimate implied by the partition counts, e.g. due to
-rounding, limited precision etc. This is here modeled by Gaussian noise
-around the concentration estimate with standard deviation
-\code{conc_reporting_noise}. A value of 0.4 roughly restricts variations within
-an interval of 1 concentration unit (e.g. copies/µL) around the true
-concentration. Smaller values lead to more accurate estimation but can slow
-down sampling, especially if you provide broad priors for the assay
-parameters. As a rule of thumb, \code{conc_reporting_noise} should be smaller
-than half the smallest difference between two reported concentrations,
-which can be computed using
-\code{dPCR_concentration_stepsize(partitions, volume_scaled)} for an assumed
-number of partitions and conversion factor / scaled volume.}
 
 \item{use_taylor_approx}{If TRUE (default), a Taylor expansion approximation
 is used to estimate the CV of measurements under pre-PCR noise. The
