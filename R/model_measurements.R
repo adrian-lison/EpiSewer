@@ -589,9 +589,9 @@ noise_estimate_ <-
     modeldata$.init$nu_upsilon_a <- 0.1 # 10% coefficient of variation
 
     if (cv_type == "constant") {
+      modeldata$cv_type <- 0
       modeldata$obs_dist = match_obs_dist(distribution)
       modeldata$total_partitions_observe <- FALSE
-      modeldata$cv_type <- 0
       modeldata$max_partitions_prior <- numeric(0)
       modeldata$partition_loss_mu_prior <- numeric(0)
       modeldata$partition_loss_sigma_prior <- numeric(0)
@@ -606,6 +606,7 @@ noise_estimate_ <-
       modeldata$cv_pre_approx_taylor <- numeric(0)
       modeldata$.init$concentration_with_noise_raw <- numeric(0)
     } else if (cv_type == "dPCR") {
+      modeldata$cv_type <- 1
       if (total_partitions_observe) {
         modeldata$total_partitions_observe <- TRUE
         modeldata$max_partitions_prior <- numeric(0)
@@ -707,7 +708,6 @@ noise_estimate_ <-
         {
           if (modeldata$.metainfo$observation_type == "partitions") {
             # binomial model of positive partitions
-            modeldata$cv_type <- 3
             modeldata$obs_dist = match_obs_dist("binomial")
             modeldata$.init$concentration_with_noise_raw <- tbe(
               rep(1, modeldata$n_measured), "n_measured"
@@ -733,14 +733,12 @@ noise_estimate_ <-
             )
             if (partitions_fixed && nu_upsilon_c_is_fixed) {
               # binomial model of implied positive partitions
-              modeldata$cv_type <- 1
               modeldata$obs_dist = match_obs_dist("binomial (implied)")
               modeldata$.init$concentration_with_noise_raw <- tbe(
                 rep(1, modeldata$n_measured), "n_measured"
               )
             } else {
               # continuous model of concentrations
-              modeldata$cv_type <- 1
               modeldata$obs_dist = match_obs_dist("gamma") # approximation
               modeldata$.init$concentration_with_noise_raw <- numeric(0)
             }
@@ -749,9 +747,9 @@ noise_estimate_ <-
         required = c(".metainfo$observation_type"), modeldata = modeldata
       )
     } else if (cv_type == "constant_var") {
+      modeldata$cv_type <- 2
       modeldata$obs_dist = match_obs_dist(distribution)
       modeldata$total_partitions_observe <- FALSE
-      modeldata$cv_type <- 2
       modeldata$max_partitions_prior <- numeric(0)
       modeldata$partition_loss_mu_prior <- numeric(0)
       modeldata$partition_loss_sigma_prior <- numeric(0)
@@ -1329,7 +1327,7 @@ LOD_estimate_dPCR <- function(drop_prob = 1e-10, modeldata = modeldata_init()) {
 
   modeldata <- tbc("LOD_estimate_dPCR",
     {
-      if (is.null(modeldata$cv_type) || !(modeldata$cv_type %in% c(1,3))) {
+      if (is.null(modeldata$cv_type) || !(modeldata$cv_type == 1)) {
         cli::cli_abort(paste0(
           "To use LOD = ",
           cli_help("LOD_estimate_dPCR"), ", you must specify noise = ",
