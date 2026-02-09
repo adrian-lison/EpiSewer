@@ -255,9 +255,12 @@ transformed data {
           partition_loss_sigma_prior[1] + 2 * partition_loss_sigma_prior[2]
           );
         total_partitions_lower = max_partitions_lower *
-        (1 - partition_loss_max[1] * inv_logit(
-          partition_loss_mu_upper + 2 * partition_loss_sigma_upper
-          ));
+        (1 - inv_logit(
+          fmin(
+            logit(partition_loss_max[1]),
+            partition_loss_mu_upper + 2 * partition_loss_sigma_upper
+          )
+        ));
       }
       LOD_scale_lower = (
         total_partitions_lower * nu_upsilon_c_prior[1] * n_averaged_median
@@ -409,7 +412,7 @@ parameters {
   array[cv_type == 1 && total_partitions_observe!=1 && (max_partitions_prior[2] > max_partitions_prior[1]) ? 1 : 0] real<lower= (cv_type == 1 && total_partitions_observe!=1 ? max_partitions_prior[1] : negative_infinity()), upper= (cv_type == 1 && total_partitions_observe!=1 ? max_partitions_prior[2] : positive_infinity())> max_partitions; // maximum number of partitions of dPCR system
   array[cv_type == 1 && total_partitions_observe!=1 && (partition_loss_mu_prior[2] > 0) ? 1 : 0] real partition_loss_mu; // mean proportion of lost partitions
   array[cv_type == 1 && total_partitions_observe!=1 && (partition_loss_sigma_prior[2] > 0) ? 1 : 0] real<lower=0> partition_loss_sigma; // logit-level standard deviation of proportion of lost partitions
-  vector[cv_type == 1 && total_partitions_observe!=1 ? sum(n_averaged) : 0] partition_loss_raw; // non-centered partition loss noise
+  vector<lower=0, upper=1>[cv_type == 1 && total_partitions_observe!=1 ? sum(n_averaged) : 0] partition_loss_raw; // non-centered partition loss noise
   array[cv_type == 1 && nu_upsilon_c_prior[2] > nu_upsilon_c_prior[1] ? 1 : 0] real<lower=(cv_type == 1 ? nu_upsilon_c_prior[1] : negative_infinity()), upper = (cv_type == 1 ? nu_upsilon_c_prior[2] : positive_infinity())> nu_upsilon_c; // conversion factor (scaled partition volume)
   vector<lower=(cv_type == 1 && cv_pre_type[1]==0 ? 0 : negative_infinity())>[obs_dist == 4 || obs_dist == 5 ? n_measured : 0] concentration_with_noise_raw;
 
@@ -665,11 +668,13 @@ transformed parameters {
     } else {
       nu_upsilon_b = sum_partial_vector_n(
         param_or_fixed_lu(max_partitions, max_partitions_prior) *
-        (1 - partition_loss_max[1] * inv_logit(
-          param_or_fixed(partition_loss_mu, partition_loss_mu_prior) +
-          param_or_fixed(partition_loss_sigma, partition_loss_sigma_prior) *
-          partition_loss_raw
-          )), n_averaged
+          (1 - inv_logit(normal_ub_noncentered(
+            param_or_fixed(partition_loss_mu, partition_loss_mu_prior),
+            param_or_fixed(partition_loss_sigma, partition_loss_sigma_prior),
+            logit(partition_loss_max[1]), // upper bound
+            partition_loss_raw // uniform non-centered noise
+            ))),
+          n_averaged
         );
     }
   }
@@ -789,7 +794,7 @@ model {
       target += uniform_prior_lpdf(max_partitions | max_partitions_prior); // uniform
       target += normal_prior_lpdf(partition_loss_mu | partition_loss_mu_prior); // normal
       target += normal_prior_lb_lpdf(partition_loss_sigma | partition_loss_sigma_prior, 0); // truncated normal
-      partition_loss_raw ~ std_normal(); // non-centered noise
+      partition_loss_raw ~ uniform(0, 1); // non-centered noise
     }
 
     // conversion factor prior
@@ -1077,12 +1082,13 @@ generated quantities {
       if (total_partitions_observe) {
         nu_upsilon_b_all = total_partitions_all .* to_vector(n_averaged_all);
       } else {
-        vector[sum(n_averaged_all)] partition_loss_all = partition_loss_max[1] *
-        inv_logit(
-          param_or_fixed(partition_loss_mu, partition_loss_mu_prior) +
-          param_or_fixed(partition_loss_sigma, partition_loss_sigma_prior) *
-          std_normal_n_rng(sum(n_averaged_all))
-          );
+        vector[sum(n_averaged_all)] partition_loss_all = inv_logit(
+          normal_ub_noncentered(
+            param_or_fixed(partition_loss_mu, partition_loss_mu_prior),
+            param_or_fixed(partition_loss_sigma, partition_loss_sigma_prior),
+            logit(partition_loss_max[1]), // upper bound
+            uniform_n_rng(0, 1, sum(n_averaged_all)) // non-centered noise
+          ));
         nu_upsilon_b_all = sum_partial_vector_n(
           param_or_fixed_lu(max_partitions, max_partitions_prior) *
           (1 - partition_loss_all), n_averaged_all

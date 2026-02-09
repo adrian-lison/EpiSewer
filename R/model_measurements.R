@@ -490,7 +490,7 @@ match_obs_dist <- function(distribution) {
 #'   prior can be used to set a lower and upper bound for the mean proportion of
 #'   partitions lost. Note that for proportions close to 0 or to
 #'   `partition_loss_max` (see below), the resulting mean partition loss can
-#'   slightly differ from what is specified here, because we internally
+#'   differ from what is specified here, because we internally
 #'   translate this prior to the logit scale.
 #' @param partition_loss_mean_prior_upper Prior (95% quantile) for the mean
 #'   relative partition loss (see `partition_loss_mean_prior_lower` for
@@ -648,8 +648,8 @@ noise_estimate_ <-
         # mean partition loss
         modeldata$partition_loss_mu_prior <- set_prior_normal(
           "partition_loss_mu", "truncated normal",
-          q5 = qlogis(partition_loss_mean_prior_lower/partition_loss_max),
-          q95 = qlogis(partition_loss_mean_prior_upper/partition_loss_max)
+          q5 = qlogis(partition_loss_mean_prior_lower),
+          q95 = qlogis(partition_loss_mean_prior_upper)
         )
         modeldata$.init$partition_loss_mu <- init_from_location_scale_prior(
           modeldata$partition_loss_mu_prior
@@ -666,11 +666,11 @@ noise_estimate_ <-
         )
 
         # maximum partition loss (threshold)
-        modeldata$partition_loss_max <- partition_loss_max
+        modeldata$partition_loss_max <- min(partition_loss_max, 1-1e-6)
 
         # non-centered noise for partition loss
         modeldata$.init$partition_loss_raw <- tbe(
-          rep(-1e-4, sum(modeldata$n_averaged)),
+          rep(0.5, sum(modeldata$n_averaged)),
           "n_averaged"
         )
       }

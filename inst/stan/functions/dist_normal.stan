@@ -6,6 +6,9 @@
   * Generate truncated normal variate given mean and sd
   * and lower truncation
   *
+  * @details Note that the mean and standard deviation depend on the bound and
+  * may differ from the supplied mean and sd parameters.
+  *
   * @param mean mean
   *
   * @param sd standard deviation
@@ -23,6 +26,9 @@ real normal_lb_rng(real mean, real sd, real lb) {
 /**
   * Generate truncated normal variate given mean and sd
   * and lower truncation
+  *
+  * @details Note that the mean and standard deviation depend on the bound and
+  * may differ from the supplied mean and sd parameters.
   *
   * @param mean vector of means
   *
@@ -46,6 +52,9 @@ vector normal_lb_rng(vector mean, real sd, real lb) {
   * Generate truncated normal variate given mean and sd
   * and lower truncation
   *
+  * @details Note that the mean and standard deviation depend on the bound and
+  * may differ from the supplied mean and sd parameters.
+  *
   * @param mean vector of means
   *
   * @param sd vector of standard deviations
@@ -62,6 +71,48 @@ vector normal_lb_rng(vector mean, vector sd, real lb) {
   }
   vector[n] u = to_vector(uniform_rng(p, 1));
   return mean + sd .* inv_Phi(u);
+}
+
+/**
+  * Non-centered lower-truncated normal via inverse-CDF transform.
+  *
+  * @details Note that the mean and standard deviation depend on the bound and
+  * may differ from the supplied mean and sd parameters.
+  *
+  * @param mean the mean
+  *
+  * @param sd the standard deviation
+  *
+  * @param lb lower bound
+  *
+  * @param z vector with uniform raw noise
+  *
+  * @return Vector of truncated normal variates
+  */
+vector normal_lb_noncentered(real mean, real sd, real lb, vector z) {
+  int N = num_elements(z);
+  real alpha = (lb - mean) / sd; // lower bound in z-space
+  real phi_alpha = Phi(alpha);
+  vector[N] p = phi_alpha + z .* (1 - phi_alpha);
+  return mean + sd * inv_Phi(p);
+}
+
+/**
+ * Non-centered upper-truncated normal via inverse-CDF transform.
+ *
+ * @param mean the mean
+ * @param sd the standard deviation
+ * @param ub upper bound
+ * @param z vector with uniform raw noise
+ *
+ * @return Vector of truncated normal variates
+ */
+vector normal_ub_noncentered(real mean, real sd, real ub, vector z) {
+  int N = num_elements(z);
+  real beta = (ub - mean) / sd; // upper bound in z-space
+  real phi_beta = Phi(beta);
+  vector[N] p = z .* phi_beta; // uniform on (0, Phi(beta))
+  return mean + sd * inv_Phi(p);
 }
 
 /**
