@@ -128,7 +128,7 @@ flows_observe <-
           flow_col = flow_col
         )
 
-        flows[, date := lubridate::as_date(date)]
+        flows <- check_date_column(flows, date_col)
 
         if (any(duplicated(flows, by = "date"))) {
           flows <- unique(flows, by = c("date", "flow"))
@@ -256,8 +256,10 @@ residence_dist_assume <-
   function(residence_dist = NULL, modeldata = modeldata_init()) {
     modeldata <- tbp("residence_dist_assume",
       {
+        residence_dist <- check_dist(
+          residence_dist, "residence time distribution", min_length = 1
+          )
         modeldata$D <- length(residence_dist) - 1
-        residence_dist <- check_dist(residence_dist, "residence time distribution")
         modeldata$residence_dist <- residence_dist
         return(modeldata)
       },

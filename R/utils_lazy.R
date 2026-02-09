@@ -203,6 +203,7 @@ print.tbp <- function(x) {
 }
 
 #' @export
+#' @keywords internal
 solve.tbp <- function(x, modeldata, data = list(), assumptions = list()) {
   provided <- x$check_provided(
     data = data, assumptions = assumptions,
@@ -247,6 +248,7 @@ print.tbe <- function(x) {
 }
 
 #' @export
+#' @keywords internal
 solve.tbe <- function(x, modeldata, throw_error = TRUE) {
   evaluate <- modeldata_check(
     modeldata, x$required, calling_env = x$calling_f, throw_error = throw_error
@@ -329,6 +331,7 @@ print.tbc <- function(x) {
 }
 
 #' @export
+#' @keywords internal
 solve.tbc <- function(x, modeldata, throw_error = TRUE) {
   computable <- modeldata_check(
     modeldata, x$required, required_values = x$required_values,

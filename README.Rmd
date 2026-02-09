@@ -66,7 +66,7 @@ knitr::include_graphics("man/figures/weekly_zurich_animated.gif")
 
 **Infections**  
 `r emo::ji("star")` Stochastic infection model with overdispersion  
-`r emo::ji("star")` Flexible $R_t$ smoothing (random walk, exponential smoothing, splines, changepoint models)  
+`r emo::ji("star")` Flexible $R_t$ smoothing (Gaussian process, random walk, exponential smoothing, splines, changepoint models)  
 `r emo::ji("star")` Transmission indicators: $R_t$, growth rate, doubling time, and more  
 
 **Forecast**  
@@ -230,7 +230,7 @@ using 4 chains with 500 warmup and 500 sampling iterations each.
 Stan regularly provides updates about the progress of the sampler. The overall 
 runtime will depend on your hardware resources, the size of the data, 
 the complexity of the model used, and how well the model actually fits the data.
-On a modern laptop the example below should take about 6 minutes to run.
+On a modern laptop the example below should take about 3 minutes to run.
 ```{r, eval = FALSE}
 options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
@@ -371,7 +371,7 @@ plot_prior_posterior(ww_result, "measurement_noise_cv")
 As we can see, the prior (in grey) and posterior (in blue) differ substantially, indicating that this parameter is well informed by the data.
 
 ### More details
-We can further inspect our results object. It has three attributes:
+We can further inspect our results object. It has the following attributes:
 ```{r}
 names(ww_result)
 ```
@@ -419,12 +419,12 @@ ww_result$checksums
 To cite `EpiSewer` in a publication, please use:
 
 ```
-@misc{lisonAdrianEpiSewerPackage,
-  title = {{EpiSewer: Estimate Epidemiological Parameters from Wastewater Measurements}},
-  author = {Lison, Adrian},
-  year = {2024},
-  doi = {10.5281/zenodo.10569101},
-  howpublished = {Zenodo}
+@article{lisonRobustRealtimeEstimation2025,
+  title = {Robust Real-Time Estimation of Pathogen Transmission Dynamics from Wastewater},
+  author = {Lison, Adrian and McLeod, Rachel and Huisman, Jana S. and Munday, James D. and Ort, Christoph and Julian, Timothy R. and Stadler, Tanja},
+  year = {2025},
+  journal = {medRxiv preprint},
+  doi = {10.1101/2025.10.23.25338640}
 }
 ```
 
@@ -441,6 +441,7 @@ If you use the dPCR-specific model of `EpiSewer` (see [noise_estimate_dPCR](http
 ```
 ## Contributors
 
+
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
@@ -450,7 +451,8 @@ All contributions to this project are gratefully acknowledged using the [`allcon
 ### Code
 
 
-<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>, 
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=bamueh">bamueh</a>
 
 
 
@@ -474,4 +476,5 @@ All contributions to this project are gratefully acknowledged using the [`allcon
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+
 

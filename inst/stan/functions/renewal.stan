@@ -176,11 +176,11 @@ vector log_convolve(vector f, vector g) {
 */
 real get_growth_rate(real R, vector g) {
     real r = 0.1;  // initial guess
-    int K = num_elements(g);
-    vector[K] ks = linspaced_vector(K, 1, K);  // time indices
+    int G = num_elements(g);
+    vector[G] ks = linspaced_vector(G, 1, G);  // time indices
 
     for (i in 1:5) {
-      vector[K] ek = exp(-r * ks);
+      vector[G] ek = exp(-r * ks);
       real S = dot_product(ek, g);
       real S_prime = -dot_product(ks .* ek, g);
       real f = inv(S) - R;                // f(r) = 1/S - R
@@ -188,4 +188,12 @@ real get_growth_rate(real R, vector g) {
       r -= f / f_prime;  // Newton-Raphson update
     }
     return r;
+  }
+
+real get_R_from_growth_rate(real r, vector g) {
+    int G = num_elements(g);
+    vector[G] ks = linspaced_vector(G, 1, G);
+    vector[G] ek = exp(-r * ks);
+    real S = dot_product(ek, g);
+    return inv(S);
   }

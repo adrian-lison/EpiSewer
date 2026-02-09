@@ -410,7 +410,7 @@ find_mu_sigma_truncnorm <- function(q5_target, q95_target) {
 #' @keywords internal
 init_from_location_scale_prior <- function(prior, enforce_positive = FALSE) {
   prior_data_select <- !stringr::str_detect(names(prior), pattern = "_text$")
-  if (sum(prior_data_select) != 1) {
+  if (length(which(prior_data_select)) != 1) {
     cli::cli_warn(paste(
       "Could not init from location scale prior:",
       "Non-ambiguous prior format. Using 1e-2 as fallback."

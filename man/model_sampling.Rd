@@ -5,7 +5,7 @@
 \title{Model the sampling process}
 \usage{
 model_sampling(
-  outliers = outliers_none(),
+  outliers = outliers_estimate(),
   sample_effects = sample_effects_none()
 )
 }

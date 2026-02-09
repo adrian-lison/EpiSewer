@@ -456,6 +456,8 @@ check_beta_alternative <- function(beta_mean, beta_sd) {
 #' @param p Vector of probabilities.
 #' @param shape Shape of the Exponential-Gamma distribution.
 #' @param scale Scale of the Exponential-Gamma distribution.
+#'
+#' @export
 qexpgamma <- function(p, shape, scale) {
   names(p) <- paste0(100*p,"%")
   round(sapply(p, extraDistr::qlomax, kappa = shape, lambda = 1/scale),3)
@@ -463,7 +465,7 @@ qexpgamma <- function(p, shape, scale) {
 
 # Distribution validation ----
 
-check_dist <- function(dist, name = "probability distribution") {
+check_dist <- function(dist, name = "probability distribution", min_length = 1) {
   if (!is.numeric(dist)) {
     cli::cli_abort(paste("Supplied", name, "is not a numeric vector."))
   }
@@ -473,13 +475,19 @@ check_dist <- function(dist, name = "probability distribution") {
       "All probabilities must be positive."
     ))
   }
-  if (sum(dist) != 1) {
+  if (!all.equal(sum(dist), 1)) {
     cli::cli_warn(paste(
       "Supplied", name, "does not sum to 1.",
       "EpiSewer will normalize the probabilities such that they sum to 1.\n"
     ))
     dist <- dist / sum(dist)
   }
+
+  # artificially extend dist if it is shorter than min_length
+  if (length(dist) < min_length) {
+    dist <- c(dist, rep(0, min_length - length(dist)))
+  }
+
   return(dist)
 }
 

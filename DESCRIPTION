@@ -1,6 +1,6 @@
 Package: EpiSewer
 Title: Estimate Epidemiological Parameters from Wastewater Measurements
-Version: 0.0.3
+Version: 0.0.4
 Authors@R: 
     person(given = "Adrian",
            family = "Lison",
@@ -26,6 +26,7 @@ Imports:
     ggplot2,
     ggpattern,
     lazyeval,
+    lifecycle,
     lubridate,
     Matrix (>= 1.5-1),
     purrr (>= 1.0.1),

@@ -49,8 +49,8 @@ configurable modeling components.
 
 **Infections**  
 ⭐ Stochastic infection model with overdispersion  
-⭐ Flexible $R_t$ smoothing (random walk, exponential smoothing,
-splines, changepoint models)  
+⭐ Flexible $R_t$ smoothing (Gaussian process, random walk, exponential
+smoothing, splines, changepoint models)  
 ⭐ Transmission indicators: $R_t$, growth rate, doubling time, and more
 
 **Forecast**  
@@ -144,6 +144,7 @@ in Zurich. Some days have missing measurements, but this is no problem:
 ``` r
 data_zurich$measurements
 #>            date concentration
+#>          <Date>         <num>
 #>   1: 2022-01-01            NA
 #>   2: 2022-01-02            NA
 #>   3: 2022-01-03      455.7580
@@ -166,6 +167,7 @@ per week.
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
 head(measurements_sparse, 10)
 #>           date concentration  weekday
+#>         <Date>         <num>   <char>
 #>  1: 2022-01-03      455.7580   Monday
 #>  2: 2022-01-06      330.7298 Thursday
 #>  3: 2022-01-10      387.6885   Monday
@@ -189,6 +191,7 @@ volume unit as the concentration (mL here in both cases).
 ``` r
 data_zurich$flows
 #>            date        flow
+#>          <Date>       <num>
 #>   1: 2022-01-01 3.41163e+11
 #>   2: 2022-01-02 3.41163e+11
 #>   3: 2022-01-03 1.58972e+11
@@ -218,6 +221,7 @@ of cases.
 ``` r
 data_zurich$cases
 #>            date     cases
+#>          <Date>     <num>
 #>   1: 2022-01-01        NA
 #>   2: 2022-01-02        NA
 #>   3: 2022-01-03 1519.5313
@@ -299,7 +303,7 @@ Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 Stan regularly provides updates about the progress of the sampler. The
 overall runtime will depend on your hardware resources, the size of the
 data, the complexity of the model used, and how well the model actually
-fits the data. On a modern laptop the example below should take about 6
+fits the data. On a modern laptop the example below should take about 3
 minutes to run.
 
 ``` r
@@ -472,12 +476,13 @@ data.
 
 ### More details
 
-We can further inspect our results object. It has three attributes:
+We can further inspect our results object. It has the following
+attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"     
-#> [6] "diagnostics" "runtime"
+#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"      "diagnostics"
+#> [7] "runtime"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -487,9 +492,8 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "data"          "model"        
-#>  [5] "init"          "fit_opts"      "results_opts"  "priors_text"  
-#>  [9] "metainfo"      "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"         
+#>  [6] "fit_opts"      "results_opts"  "priors_text"   "metainfo"      "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
@@ -503,7 +507,7 @@ ww_result$job$model
 #>  |- LOD_none
 #> 
 #> sampling
-#>  |- outliers_none
+#>  |- outliers_estimate
 #>  |- sample_effects_none
 #> 
 #> sewage
@@ -518,7 +522,7 @@ ww_result$job$model
 #> 
 #> infections
 #>  |- generation_dist_assume
-#>  |- R_estimate_splines
+#>  |- R_estimate_gp
 #>  |- seeding_estimate_rw
 #>  |- infection_noise_estimate (overdispersion = TRUE)
 ```
@@ -535,12 +539,11 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#>  [1] "samples"                  "R"                       
-#>  [3] "R_diagnostics"            "expected_infections"     
-#>  [5] "infections"               "growth_rate"             
-#>  [7] "doubling_time"            "days_growing"            
-#>  [9] "expected_load"            "expected_concentration"  
-#> [11] "concentration"            "normalized_concentration"
+#>  [1] "samples"                  "R"                        "R_diagnostics"           
+#>  [4] "expected_infections"      "infections"               "growth_rate"             
+#>  [7] "doubling_time"            "days_growing"             "expected_load"           
+#> [10] "expected_concentration"   "concentration"            "normalized_concentration"
+#> [13] "outliers"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -548,18 +551,13 @@ number.
 
 ``` r
 head(ww_result$summary$R, 5)
-#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
-#> 1: 2021-12-03 1.033961 1.036185  0.6736519 0.9383015  1.135603   1.363244
-#> 2: 2021-12-04 1.034428 1.036025  0.6824790 0.9389188  1.132238   1.352063
-#> 3: 2021-12-05 1.035141 1.035805  0.6894310 0.9424300  1.128025   1.337265
-#> 4: 2021-12-06 1.036031 1.037465  0.7101947 0.9459913  1.125225   1.330535
-#> 5: 2021-12-07 1.037028 1.035575  0.7226779 0.9492257  1.123778   1.325589
-#>        type seeding
-#> 1: estimate    TRUE
-#> 2: estimate    TRUE
-#> 3: estimate    TRUE
-#> 4: estimate    TRUE
-#> 5: estimate    TRUE
+#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95     type seeding
+#>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>   <fctr>  <lgcl>
+#> 1: 2021-12-03 1.065800 1.062111  0.7804628 0.9704949  1.155865   1.347606 estimate    TRUE
+#> 2: 2021-12-04 1.066615 1.063386  0.7873830 0.9718353  1.156192   1.344718 estimate    TRUE
+#> 3: 2021-12-05 1.067446 1.064492  0.7978542 0.9745666  1.156663   1.336939 estimate    TRUE
+#> 4: 2021-12-06 1.068285 1.066127  0.8056717 0.9769387  1.156550   1.334001 estimate    TRUE
+#> 5: 2021-12-07 1.069128 1.068549  0.8120417 0.9798131  1.155093   1.329651 estimate    TRUE
 ```
 
 The `fitted` attribute provides access to all details of the fitted stan
@@ -571,13 +569,13 @@ each chain:
 ``` r
 ww_result$fitted$diagnostic_summary()
 #> $num_divergent
-#> [1] 0 0 3 2
+#> [1] 0 0 0 0
 #> 
 #> $num_max_treedepth
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.8911642 0.9440131 1.0275218 0.9908777
+#> [1] 0.9432026 0.9982946 0.8426807 0.8658058
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -589,31 +587,31 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "d86228897b135d42f2390763b0504b70"
+#> [1] "c8484e1d5725559d91a98baaf86c86b6"
 #> 
 #> $input
-#> [1] "1b3ade9eb69f4488767b0e60ca79ef14"
+#> [1] "dc28609580eb6ab527edcd5301ff20a8"
 #> 
 #> $fit_opts
-#> [1] "4f5f052ce14fd6ff0a4eabd438e5f794"
+#> [1] "bfdedc2ea8d89b577ad57b86ac83e706"
 #> 
 #> $results_opts
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "0250741cfad014f7ace289267fc7762f"
+#> [1] "ce0d2af60f2ac0fce8bb6b9c26adb59e"
 ```
 
 ## Citing the package
 
 To cite `EpiSewer` in a publication, please use:
 
-    @misc{lisonAdrianEpiSewerPackage,
-      title = {{EpiSewer: Estimate Epidemiological Parameters from Wastewater Measurements}},
-      author = {Lison, Adrian},
-      year = {2024},
-      doi = {10.5281/zenodo.10569101},
-      howpublished = {Zenodo}
+    @article{lisonRobustRealtimeEstimation2025,
+      title = {Robust Real-Time Estimation of Pathogen Transmission Dynamics from Wastewater},
+      author = {Lison, Adrian and McLeod, Rachel and Huisman, Jana S. and Munday, James D. and Ort, Christoph and Julian, Timothy R. and Stadler, Tanja},
+      year = {2025},
+      journal = {medRxiv preprint},
+      doi = {10.1101/2025.10.23.25338640}
     }
 
 If you use the dPCR-specific model of `EpiSewer` (see
@@ -631,7 +629,9 @@ please also cite:
 ## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+
 <!-- prettier-ignore-start -->
+
 <!-- markdownlint-disable -->
 
 All contributions to this project are gratefully acknowledged using the
@@ -641,7 +641,8 @@ specification. Contributions of any kind are welcome!
 
 ### Code
 
-<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=adrian-lison">adrian-lison</a>,
+<a href="https://github.com/adrian-lison/EpiSewer/commits?author=bamueh">bamueh</a>
 
 ### Issue Authors
 
@@ -656,5 +657,7 @@ specification. Contributions of any kind are welcome!
 <a href="https://github.com/adrian-lison/EpiSewer/issues?q=is%3Aissue+commenter%3Akaitejohnson">kaitejohnson</a>
 
 <!-- markdownlint-enable -->
+
 <!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->

@@ -62,9 +62,13 @@ reference:
   desc: Modeling functions for the infection process
   contents:
   - model_infections
+  - R_estimate_gp
   - R_estimate_splines
   - R_estimate_rw
   - R_estimate_ets
+  - R_estimate_piecewise
+  - R_estimate_smooth_derivative
+  - R_estimate_changepoint_splines
   - R_estimate_approx
   - starts_with("generation_dist_")
   - starts_with("seeding_")
@@ -74,11 +78,13 @@ reference:
   contents:
   - model_forecast
   - starts_with("horizon_")
+  - starts_with("damping_")
 - title: Model fitting
   desc: Functions to specify and run the sampling of EpiSewer models
   contents:
   - set_fit_opts
   - sampler_stan_mcmc
+  - sampler_stan_pathfinder
   - model_stan_opts
   - set_results_opts
   - sewer_compile
@@ -101,6 +107,7 @@ reference:
   contents:
   - starts_with("get_discrete_")
   - suggest_load_per_case
+  - qexpgamma
 - title: Preprocessing
   desc: Functions for preprocessing data
   contents: mark_outlier_spikes_median

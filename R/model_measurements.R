@@ -158,7 +158,7 @@ measurements_observe_ <- function(
 
         # housekeeping
         measurements <- measurements[!is.na(concentration) & !is.na(date), ]
-        measurements[, date := as.Date(date)]
+        measurements <- check_date_column(measurements, date_col)
         measurements[, concentration := as.numeric(concentration)]
         if (observation_type == "partitions") {
           measurements[, positive_partitions := as.numeric(positive_partitions)]

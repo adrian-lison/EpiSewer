@@ -38,9 +38,9 @@
 #'   respect to the estimated trajectories. Only available when plotting a
 #'   single model.
 #'
-#' @return A ggplot object showing the time series of estimated infections,
+#' @return A `ggplot` object showing the time series of estimated infections,
 #'   either with credible intervals or as "spaghetti plot". Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and to
+#'   manipulated using `ggplot2` functions to adjust themes and scales, and to
 #'   add further geoms.
 #' @export
 #' @import ggplot2
@@ -132,7 +132,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
         geom_line(
           data = data_base_model[type == "estimate",],
           aes(y = I, group = .draw),
-          size = 0.1, alpha = 0.9, color = "black"
+          linewidth = 0.1, alpha = 0.9, color = "black"
         )
       }
       } +
@@ -144,14 +144,14 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
               data_base_model[type == "forecast"]
             ),
             aes(y = I, group = .draw),
-            size = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
+            linewidth = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
           )
         }
       } +
       geom_line(
         data = data_to_plot[model!=base_model & type == "estimate",],
         aes(y = I, group = paste0(.draw, model), color = model),
-        size = 0.1, alpha = 0.9
+        linewidth = 0.1, alpha = 0.9
       ) +
       {
         if (has_forecast) {
@@ -161,7 +161,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
               data_to_plot[model!=base_model & type == "forecast",]
             ),
             aes(y = I, group = paste0(.draw, model), color = model),
-            size = 0.3, alpha = 0.9, linetype = "dashed"
+            linewidth = 0.3, alpha = 0.9, linetype = "dashed"
           )
         }
       }
@@ -216,9 +216,9 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
 #'   [model_forecast()].
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the time series of estimated Rt, either with
+#' @return A `ggplot` object showing the time series of estimated Rt, either with
 #'   credible intervals or as "spaghetti plot". Can be further manipulated using
-#'   [ggplot2] functions to adjust themes and scales, and to add further geoms.
+#'   `ggplot2` functions to adjust themes and scales, and to add further geoms.
 #' @export
 plot_R <- function(results, draws = FALSE, ndraws = NULL,
                    median = FALSE, seeding = FALSE,
@@ -321,7 +321,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
         geom_line(
           data = data_base_model[type == "estimate",],
           aes(y = R, group = .draw),
-          size = 0.1, alpha = 0.9, color = "black"
+          linewidth = 0.1, alpha = 0.9, color = "black"
           )
         }
       } +
@@ -333,14 +333,14 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
               data_base_model[type == "forecast"]
             ),
             aes(y = R, group = .draw),
-            size = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
+            linewidth = 0.3, alpha = 0.9, color = "black", linetype = "dashed"
           )
         }
       } +
       geom_line(
         data = data_to_plot[model!=base_model & type == "estimate",],
         aes(y = R, group = paste0(.draw, model), color = model),
-        size = 0.1, alpha = 0.9
+        linewidth = 0.1, alpha = 0.9
         ) +
       {
         if (has_forecast) {
@@ -350,7 +350,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
               data_to_plot[model!=base_model & type == "forecast",]
               ),
             aes(y = R, group = paste0(.draw, model), color = model),
-            size = 0.3, alpha = 0.9, linetype = "dashed"
+            linewidth = 0.3, alpha = 0.9, linetype = "dashed"
           )
         }
       }
@@ -451,8 +451,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   observations are ordered by concentration, which helps to visualize bias
 #'   and variance of the predictions as a function of the concentration.
 #'
-#' @return A ggplot object showing predicted and observed concentrations over
-#'   time. Can be further manipulated using [ggplot2] functions to adjust themes
+#' @return A `ggplot` object showing predicted and observed concentrations over
+#'   time. Can be further manipulated using `ggplot2` functions to adjust themes
 #'   and scales, and to add further geoms.
 #' @export
 plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL,
@@ -489,6 +489,17 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
     required_data_cols <- c(date_col, concentration_col)
     data_col_names <- c("date", "concentration")
     if (mark_outliers) {
+      if (!outlier_col %in% names(measurements)) {
+        cli::cli_abort(
+          c(paste(
+            "To mark outliers in the plot, a column indicating outliers is needed",
+            "in the provided measurements `data.frame`."
+          ),
+          i = paste0("Please add a logical column identifying outliers (e.g., using ",
+                cli_help("mark_outlier_spikes_median"), ") and specify its name via the ",
+                "`outlier_col` argument (default: 'is_outlier')."))
+        )
+      }
       required_data_cols <- c(required_data_cols, outlier_col)
       data_col_names <- c(data_col_names, ".outlier")
     }
@@ -528,8 +539,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
 
         flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]
         flows <- setnames(flows, old = c(date_col, flow_col), new = c("date", "flow"))
-
-        flows[, date := lubridate::as_date(date)]
+        flows <- check_date_column(flows, date_col)
 
         if (any(duplicated(flows, by = "date"))) {
           flows <- unique(flows, by = c("date", "flow"))
@@ -900,8 +910,8 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
 #'
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the estimated load over time. Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and to
+#' @return A `ggplot` object showing the estimated load over time. Can be further
+#'   manipulated using `ggplot2` functions to adjust themes and scales, and to
 #'   add further geoms.
 #'
 #' @export
@@ -941,8 +951,8 @@ plot_load <- function(results, median = FALSE,
 #'
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the estimated growth rate over time. Can be
-#'   further manipulated using [ggplot2] functions to adjust themes and scales,
+#' @return A `ggplot` object showing the estimated growth rate over time. Can be
+#'   further manipulated using `ggplot2` functions to adjust themes and scales,
 #'   and to add further geoms.
 #'
 #' @export
@@ -982,8 +992,8 @@ plot_growth_rate <- function(results, median = FALSE, seeding = FALSE,
 #'
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the estimated time-varying doubling time. Can
-#'   be further manipulated using [ggplot2] functions to adjust themes and
+#' @return A `ggplot` object showing the estimated time-varying doubling time. Can
+#'   be further manipulated using `ggplot2` functions to adjust themes and
 #'   scales, and to add further geoms.
 #'
 #' @export
@@ -1124,8 +1134,8 @@ plot_time_series <- function(results, variable, variable_name = variable,
 #'
 #' @inheritParams plot_infections
 #'
-#' @return A ggplot object showing the estimated effect sizes. Can be further
-#'   manipulated using [ggplot2] functions to adjust themes and scales, and to
+#' @return A `ggplot` object showing the estimated effect sizes. Can be further
+#'   manipulated using `ggplot2` functions to adjust themes and scales, and to
 #'   add further geoms.
 #' @export
 plot_sample_effects <- function(results,
@@ -1190,7 +1200,7 @@ plot_sample_effects <- function(results,
 #'
 #' @return A plot showing the probability of non-detection (i.e. zero
 #'   measurement) for different concentrations below and above the assumed LOD.
-#'   Can be further manipulated using [ggplot2] functions to adjust themes and
+#'   Can be further manipulated using `ggplot2` functions to adjust themes and
 #'   scales, and to add further geoms.
 #' @export
 #'
@@ -1198,10 +1208,29 @@ plot_sample_effects <- function(results,
 #' modeldata <- LOD_assume(limit = 2.56, prob = 0.95)
 #' plot_LOD(modeldata)
 plot_LOD <- function(modeldata) {
+  lod_model <- modeldata$.str$measurements$LO
+  if (is.null(lod_model)) {
+    cli::cli_abort(
+      "No LOD model is currently included in the modeldata."
+    )
+  } else if (names(lod_model) == "LOD_none") {
+    cli::cli_abort(
+      "LOD cannot be plotted when using LOD_none()."
+    )
+  } else if (names(lod_model) != "LOD_assume") {
+    cli::cli_abort(
+      paste0(
+        "LOD plotting is currently only supported for LOD_assume(). ",
+        "The provided model uses ", names(lod_model), "() instead."
+      )
+    )
+  }
+
   if (!all(c("LOD_model", "LOD_scale") %in% names(modeldata))) {
-    cli::cli_abort(c(
-      "The following variables must be present in model data:",
-      "LOD_model", "LOD_scale"
+    cli::cli_abort(paste(
+      "To plot the LOD, variables `LOD_model` and `LOD_scale` must",
+      "be present in model data. Maybe you have not provided a limit to",
+      "LOD_assume() yet?"
     ))
   }
   LOD_f <- function(x) {
@@ -1240,7 +1269,7 @@ plot_LOD <- function(modeldata) {
 #' `r all_parameters(TRUE)`
 #'
 #' @return A plot showing the density of the prior (grey) and posterior (blue)
-#'   for the respective parameter. Can be further manipulated using [ggplot2]
+#'   for the respective parameter. Can be further manipulated using `ggplot2`
 #'   functions to adjust themes and scales, and to add further geoms.
 #' @export
 plot_prior_posterior <- function(result, param_name) {
@@ -1293,15 +1322,16 @@ plot_prior_posterior <- function(result, param_name) {
     }
   )
 
+  set.seed(0)
   if (prior_dist_type == "normal") {
-    prior_draws <- rnorm(2000, mean = prior_params[1], sd = prior_params[2])
+    prior_draws <- rnorm(4000, mean = prior_params[1], sd = prior_params[2])
   } else if (prior_dist_type %in% c("truncated normal", "truncated-normal")) {
     prior_draws <- extraDistr::rtnorm(
-      2000, mean = prior_params[1], sd = prior_params[2], a = 0
+      4000, mean = prior_params[1], sd = prior_params[2], a = 0
       )
   } else if (prior_dist_type == "beta") {
     prior_draws <- rbeta(
-      2000, shape1 = prior_params[1], shape2 = prior_params[2]
+      4000, shape1 = prior_params[1], shape2 = prior_params[2]
       )
   } else {
     cli::cli_abort(paste0(
@@ -1358,7 +1388,7 @@ plot_prior_posterior <- function(result, param_name) {
 #'
 #' @return A growth report plot showing the probability that infections have
 #'   been growing without interruption for at least 3, 7, 14, 21, and 28 days,
-#'   respectively. Can be further manipulated using [ggplot2] functions to
+#'   respectively. Can be further manipulated using `ggplot2` functions to
 #'   adjust themes and scales, and to add further geoms.
 #' @export
 plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
