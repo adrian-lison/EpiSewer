@@ -58,10 +58,6 @@ data {
   array[cv_type == 1 || cv_type == 3 ? 1 : 0] int <lower=0, upper=1> cv_pre_type; // 0 for gamma, 1 for log-normal
   array[cv_type == 1 || cv_type == 3 ? 1 : 0] int <lower=0, upper=1> cv_pre_approx_taylor; // 0 for no Taylor expansion approximation, 1 for Taylor expansion approximation
 
-  // settings for binomial integration (obs_dist==5)
-  array[obs_dist == 5 ? 1 : 0] int<lower=0, upper=1> integrate_counts;
-  array[obs_dist == 5 && integrate_counts[1] ? 1 : 0] real<lower=0> rep_sigma;
-
   // Limit of detection ----
   // LOD_model = 0: no LOD
   // LOD_model = 1: assumed LOD, LOD_scale provided
@@ -285,8 +281,6 @@ transformed data {
   array[n_measured - n_zero] int<lower=0> i_nonzero;
   array[n_measured - n_dropLOD] int<lower=0> i_LOD;
   array[n_measured - n_zero - n_dropLOD] int<lower=0> i_nonzero_LOD;
-  array[n_measured - n_zero - n_dropLOD] int i_nonzero_low;
-  array[n_dropLOD] int i_nonzero_high;
   int i_z = 0;
   int i_nz = 0;
   int i_lod = 0;
@@ -305,15 +299,6 @@ transformed data {
         i_nzs += 1;
         i_nonzero_LOD[i_nzs] = n;
       }
-      if (obs_dist == 5 && integrate_counts[1]) {
-          if (measured_concentrations[n] < conc_drop_prob) {
-            i_nzl += 1;
-            i_nonzero_low[i_nzl] = i_nz;
-          } else {
-            i_nzh += 1;
-            i_nonzero_high[i_nzh] = i_nz;
-          }
-        }
     }
     if (measured_concentrations[n] < conc_drop_prob) {
         i_lod += 1;
@@ -321,69 +306,47 @@ transformed data {
     }
   }
 
-
   int n_continuous, n_counts;
-  if (obs_dist == 3) {
-    // also include zeros for non-truncated normal
-    n_continuous = n_measured;
-    n_counts = 0;
-  } else if (obs_dist == 5) {
-    if (integrate_counts[1] == 1) {
-      // only model high concentrations as continuous
-      n_continuous = n_dropLOD;
-      n_counts = n_measured - n_zero - n_dropLOD;
-    } else {
-      // all obs are modeled via approximate binomial distribution
-      n_continuous = 0;
-      n_counts = n_measured - n_zero;
-    }
-  } else {
+  if (obs_dist == 0) { // gamma
     n_continuous = n_measured - n_zero;
     n_counts = 0;
+  } else if (obs_dist == 1) { // log-normal
+    n_continuous = n_measured - n_zero;
+    n_counts = 0;
+  } else if (obs_dist == 2) { // truncated normal
+    n_continuous = n_measured - n_zero;
+    n_counts = 0;
+  } else if (obs_dist == 3) { // non-truncated normal
+    n_continuous = n_measured; // include zeros in continuous part
+    n_counts = 0;
+  } else if (obs_dist == 4) { // observed partition counts
+    n_continuous = 0;
+    n_counts = n_measured - n_zero;
+  } else if (obs_dist == 5) { // implied partition counts
+    n_continuous = 0;
+    n_counts = n_measured - n_zero;
   }
 
   array[n_continuous] int<lower=0> i_continuous;
   array[n_counts] int<lower=0> i_counts;
-  if (obs_dist == 3) {
-    // also include zeros for non-truncated normal
-    i_continuous = i_all;
-    i_counts = rep_array(0, 0);
-  } else if (obs_dist == 5) {
-    if (integrate_counts[1] == 1) {
-      // only model high concentrations as continuous
-      i_continuous = i_nonzero[i_nonzero_high];
-      i_counts = i_nonzero[i_nonzero_low];
-    } else {
-      // all obs are modeled via approximate binomial distribution
-      i_continuous = rep_array(0, 0);
-      i_counts = i_nonzero;
-    }
-  } else {
+  if (obs_dist == 0) { // gamma
     i_continuous = i_nonzero;
     i_counts = rep_array(0, 0);
-  }
-
-  array[obs_dist == 5 && integrate_counts[1] == 1 ? n_counts : 0] int<lower=0> partitions_int_l;
-  array[obs_dist == 5 && integrate_counts[1] == 1 ? n_counts : 0] int<lower=0> partitions_int_u;
-  if (obs_dist == 5 && integrate_counts[1] == 1) {
-    vector[n_counts] lower_m, upper_m;
-    if (total_partitions_observe) {
-      lower_m = (dPCR_total_partitions .* to_vector(n_averaged))[i_counts];
-      upper_m = lower_m;
-    } else {
-      lower_m = partition_loss_max[1] * (
-        max_partitions_prior[1] .* to_vector(n_averaged[i_counts])
-        );
-      upper_m = max_partitions_prior[2] .* to_vector(n_averaged[i_counts]);
-    }
-    real lower_c = nu_upsilon_c_prior[1];
-    real upper_c = nu_upsilon_c_prior[2];
-    partitions_int_l = to_int(to_array_1d(fmax(1,floor(
-      lower_m .* (1 - exp(-measured_concentrations[i_counts] * lower_c))
-      ) - 1)));
-    partitions_int_u = to_int(to_array_1d(fmax(1,ceil(
-      upper_m .* (1 - exp(-measured_concentrations[i_counts] * upper_c))
-      ) + 1)));
+  } else if (obs_dist == 1) { // log-normal
+    i_continuous = i_nonzero;
+    i_counts = rep_array(0, 0);
+  } else if (obs_dist == 2) { // truncated normal
+    i_continuous = i_nonzero;
+    i_counts = rep_array(0, 0);
+  } else if (obs_dist == 3) { // non-truncated normal
+    i_continuous = i_all; // include zeros in continuous part
+    i_counts = rep_array(0, 0);
+  } else if (obs_dist == 4) { // observed partition counts
+      i_continuous = rep_array(0, 0);
+      i_counts = i_nonzero;
+  } else if (obs_dist == 5) { // implied partition counts
+      i_continuous = rep_array(0, 0);
+      i_counts = i_nonzero;
   }
 
   if (R_link[1] < 0 || R_link[1] > 1) {
@@ -910,7 +873,7 @@ model {
 
     // mean and cv for continuous likelihood (conditioned on detection)
     vector[n_continuous] mean_continuous;
-    if (obs_dist != 4) {
+    if (obs_dist != 4 && obs_dist != 5) {
       mean_continuous = concentration[i_continuous] ./ (1-p_zero[i_continuous]);
       cv_continuous = sqrt(trim_or_reject_lb(
         cv_continuous^2 .* (1-p_zero[i_continuous]) - p_zero[i_continuous],
@@ -952,33 +915,12 @@ model {
         1 - exp(-concentration * param_or_fixed_lu(nu_upsilon_c, nu_upsilon_c_prior)) // expected value
       );
     } else if (obs_dist == 5) {
-        if (integrate_counts[1] == 1) {
-          if (n_measured - n_dropLOD - n_zero > 0) {
-            target += dPCR_int_counts_lpdf(
-              measured_concentrations[i_counts] |
-              concentration[i_counts],
-              nu_upsilon_b[i_counts], // m (number of partitions across replicates)
-              param_or_fixed_lu(nu_upsilon_c, nu_upsilon_c_prior), // c
-              partitions_int_l,
-              partitions_int_u,
-              rep_sigma[1]
-            );
-          }
-          if (n_dropLOD > 0) {
-            target += gamma3_lpdf(
-              measured_concentrations[i_continuous] |
-              mean_continuous, // expectation
-              cv_continuous // CV
-            );
-          }
-        } else {
-          target += dPCR_nonzero_lpdf(
-            measured_concentrations[i_counts] |
-            concentration[i_counts],
-            nu_upsilon_b[i_counts], // m (number of partitions across replicates)
-            param_or_fixed_lu(nu_upsilon_c, nu_upsilon_c_prior) // c
-          );
-        }
+        target += dPCR_conc_nonzero_lpdf(
+          measured_concentrations[i_counts] |
+          concentration[i_counts],
+          nu_upsilon_b[i_counts], // m (number of partitions across replicates)
+          param_or_fixed_lu(nu_upsilon_c, nu_upsilon_c_prior) // c
+        );
       } else {
       reject("Distribution not supported.");
     }
@@ -1234,7 +1176,7 @@ generated quantities {
           ));
       }
     } else if (obs_dist == 5) {
-        meas_conc = dPCR_rng(
+        meas_conc = dPCR_conc_rng(
           concentration,
           to_int(to_array_1d(round(nu_upsilon_b_all))), // m
           param_or_fixed_lu(nu_upsilon_c, nu_upsilon_c_prior) // c

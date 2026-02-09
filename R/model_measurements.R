@@ -46,10 +46,6 @@ model_measurements <- function(
 #'   samples are assumed to be equivolumetric composites over several dates. In
 #'   this case, the supplied dates represent the last day included in each
 #'   sample.
-#' @param distribution Parametric distribution for concentration measurements.
-#'   Currently supported are "gamma" (default and recommended), "log-normal",
-#'   "truncated normal", and "normal". The "truncated normal" and "normal"
-#'   options are not recommended for use in practice.
 #' @param date_col Name of the column containing the dates.
 #' @param concentration_col Name of the column containing the measured
 #'   concentrations.
@@ -87,7 +83,6 @@ measurements_observe_ <- function(
     measurements = NULL,
     observation_type = c("concentrations", "partitions"),
     composite_window = 1,
-    distribution = "gamma",
     date_col = "date",
     concentration_col = NULL,
     positive_partitions_col = NULL,
@@ -103,72 +98,7 @@ measurements_observe_ <- function(
       )
     }
 
-    observation_type <- rlang::arg_match(observation_type)
-
-    available_distributions <- c(
-      "gamma" = 0,
-      "log-normal" = 1,
-      "truncated normal" = 2,
-      "normal" = 3,
-      "binomial" = 4,
-      "digital PCR" = 5
-    )
-
-    distribution_aliases <- c(
-      "lnorm" = "log-normal",
-      "lognormal" = "log-normal",
-      "truncated_normal" = "truncated normal",
-      "truncated-normal" = "truncated normal",
-      "norm" = "normal",
-      "dpcr" = "digital PCR",
-      "ddpcr" = "digital PCR"
-    )
-
-    distribution <- stringr::str_to_lower(distribution)
-    distribution <- do.call(
-      switch, c(distribution, as.list(c(distribution_aliases,distribution)))
-    )
-
-    if (!distribution %in% names(available_distributions)) {
-      cli::cli_abort(
-        c(
-          "Only the following distributions are supported:",
-          setNames(names(available_distributions), rep("*", length(available_distributions)))
-        )
-      )
-    }
-
-    if (distribution == "truncated normal") {
-      cli::cli_inform(c(
-        "!" = paste(
-          "The Truncated Normal distribution is supported for model",
-          "comparison purposes -",
-          "but it is not recommended in practice due to misspecification, i.e.",
-          "biased mean at low concentrations.",
-          "Consider using a Gamma or Log-Normal distribution instead."
-        )))
-    }
-    if (distribution == "normal") {
-      cli::cli_inform(c(
-        "!" = paste(
-          "The Normal distribution is supported for model",
-          "comparison purposes -",
-          "but it is not recommended in practice due to misspecification, i.e.",
-          "prediction of negative concentrations.",
-          "Consider using a Gamma or Log-Normal distribution instead."
-        )))
-    }
-    if (distribution == "binomial" && observation_type != "partitions") {
-      cli::cli_abort(paste0(
-        "The Binomial distribution is only supported for positive partitions ",
-        "counts in dPCR assays. Please use `concentrations_observe_partitions()` ",
-        "to specify this distribution type."
-      ))
-    }
-
-    modeldata$obs_dist = do.call(
-      switch, c(distribution, as.list(c(available_distributions,-1)))
-    )
+    modeldata$.metainfo$observation_type <- rlang::arg_match(observation_type)
 
     modeldata <- tbp("measurements_observe",
       {
@@ -280,14 +210,8 @@ measurements_observe_ <- function(
         modeldata$measured_concentrations <- measurements[["concentration"]]
         if (observation_type == "concentrations") {
           modeldata$positive_partitions <- numeric(0)
-          if (modeldata$obs_dist == 5) {
-            modeldata$.init$concentration_with_noise_raw <- rep(1, modeldata$n_measured)
-          } else {
-            modeldata$.init$concentration_with_noise_raw <- numeric(0)
-          }
         } else if (observation_type == "partitions") {
           modeldata$positive_partitions <- measurements[["positive_partitions"]]
-          modeldata$.init$concentration_with_noise_raw <- rep(1, modeldata$n_measured)
         }
 
         if (!is.null(replicate_col)) {
@@ -396,7 +320,6 @@ measurements_observe_ <- function(
 concentrations_observe <- function(
     measurements = NULL,
     composite_window = 1,
-    distribution = "gamma",
     date_col = "date",
     concentration_col,
     replicate_col = NULL,
@@ -408,7 +331,6 @@ concentrations_observe <- function(
     measurements = measurements,
     observation_type = "concentrations",
     composite_window = composite_window,
-    distribution = distribution,
     date_col = date_col,
     concentration_col = concentration_col,
     positive_partitions_col = NULL,
@@ -448,7 +370,6 @@ concentrations_observe_partitions <- function(
         measurements = measurements,
         observation_type = "partitions",
         composite_window = composite_window,
-        distribution = "binomial",
         date_col = date_col,
         concentration_col = concentration_col,
         positive_partitions_col = positive_partitions_col,
@@ -459,20 +380,65 @@ concentrations_observe_partitions <- function(
         modeldata = modeldata))
 }
 
-#' Calculate concentration step size from number of partitions and volume of a
-#' digital PCR (dPCR) assay
+#' Check the supplied observation distribution type and return the internal id
 #'
-#' @description This helper function calculates the concentration step
-#'  size implied by a certain number of partitions and the scaled volume of each
-#'  partition.
-#'
-#' @param partitions The number of partitions in the dPCR assay.
-#' @param volume_scaled The scaled volume of each partition (partition volume
-#'  multiplied with the scaling of concentration in the assay).
-#'
-#' @return The concentration step size.
-dPCR_concentration_stepsize <- function(partitions, volume_scaled) {
-  return(-log(1-1/partitions)*1/volume_scaled)
+#' @keywords internal
+match_obs_dist <- function(distribution) {
+  available_distributions <- c(
+    "gamma" = 0,
+    "log-normal" = 1,
+    "truncated normal" = 2,
+    "normal" = 3,
+    "binomial" = 4,
+    "binomial (implied)" = 5
+  )
+
+  distribution_aliases <- c(
+    "lnorm" = "log-normal",
+    "lognormal" = "log-normal",
+    "truncated_normal" = "truncated normal",
+    "truncated-normal" = "truncated normal",
+    "norm" = "normal"
+  )
+
+  distribution <- stringr::str_to_lower(distribution)
+  distribution <- do.call(
+    switch, c(distribution, as.list(c(distribution_aliases, distribution)))
+  )
+
+  if (!distribution %in% names(available_distributions)) {
+    cli::cli_abort(
+      c(
+        "Only the following distributions are supported:",
+        setNames(names(available_distributions), rep("*", length(available_distributions)))
+      )
+    )
+  }
+
+  if (distribution == "truncated normal") {
+    cli::cli_inform(c(
+      "!" = paste(
+        "The truncated normal distribution is supported for model",
+        "comparison purposes -",
+        "but it is not recommended in practice due to misspecification, i.e.",
+        "biased mean at low concentrations.",
+        "Consider using a Gamma or Log-Normal distribution instead."
+      )))
+  }
+  if (distribution == "normal") {
+    cli::cli_inform(c(
+      "!" = paste(
+        "The normal distribution is supported for model",
+        "comparison purposes -",
+        "but it is not recommended in practice due to misspecification, i.e.",
+        "prediction of negative concentrations.",
+        "Consider using a Gamma or Log-Normal distribution instead."
+      )))
+  }
+
+  return(do.call(
+    switch, c(distribution, as.list(c(available_distributions,-1)))
+  ))
 }
 
 #' Estimate measurement noise (internal helper function)
@@ -569,25 +535,12 @@ dPCR_concentration_stepsize <- function(partitions, volume_scaled) {
 #'   (so high that the quality of the measurements from dPCR would anyway be
 #'   questionable).
 #'
-#' @param conc_reporting_noise Reported concentrations may deviate from the
-#'   exact concentration estimate implied by the partition counts, e.g. due to
-#'   rounding, limited precision etc. This is here modeled by Gaussian noise
-#'   around the concentration estimate with standard deviation
-#'   `conc_reporting_noise`. A value of 0.4 roughly restricts variations within
-#'   an interval of 1 concentration unit (e.g. copies/µL) around the true
-#'   concentration. Smaller values lead to more accurate estimation but can slow
-#'   down sampling, especially if you provide broad priors for the assay
-#'   parameters. As a rule of thumb, `conc_reporting_noise` should be smaller
-#'   than half the smallest difference between two reported concentrations,
-#'   which can be computed using
-#'   `dPCR_concentration_stepsize(partitions, volume_scaled)` for an assumed
-#'   number of partitions and conversion factor / scaled volume.
-#'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @keywords internal
 noise_estimate_ <-
   function(replicates = FALSE,
+           distribution,
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
            cv_type = "constant",
@@ -604,17 +557,28 @@ noise_estimate_ <-
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            prePCR_noise_type = "log-normal",
-           conc_reporting_noise = 0.4,
            use_taylor_approx = TRUE,
            modeldata = modeldata_init()) {
 
-    if (!is.null(modeldata$obs_dist) && (modeldata$obs_dist %in% c(4, 5) && cv_type != "dPCR")) {
-      cli::cli_abort(paste0(
-        "You specified a dPCR measurement model, ",
-        "but the noise model is not compatible with this observation type. ",
-        "Please use `noise_estimate_dPCR()` instead."
-      ))
-    }
+    modeldata <- tbc(
+      "check_observation_type",
+      {
+        if (modeldata$.metainfo$observation_type == "partitions") {
+          if (cv_type != "dPCR") {
+            cli::cli_abort(paste(
+              "You specified partition counts from dPCR as observations,",
+              "but the noise model is not compatible with this observation type.",
+              "Please use `noise_estimate_dPCR()` or",
+              "`noise_estimate_dPCR_params()` instead."
+            ))
+          }
+          if (total_partitions_observe == FALSE) {
+            total_partitions_observe <- TRUE # overwrite
+          }
+        }
+      },
+      required = ".metainfo$observation_type", modeldata = modeldata
+    )
 
     modeldata$pr_noise <- replicates
 
@@ -625,6 +589,7 @@ noise_estimate_ <-
     modeldata$.init$nu_upsilon_a <- 0.1 # 10% coefficient of variation
 
     if (cv_type == "constant") {
+      modeldata$obs_dist = match_obs_dist(distribution)
       modeldata$total_partitions_observe <- FALSE
       modeldata$cv_type <- 0
       modeldata$max_partitions_prior <- numeric(0)
@@ -639,16 +604,9 @@ noise_estimate_ <-
       modeldata$.init$nu_upsilon_c <- numeric(0)
       modeldata$cv_pre_type <- numeric(0)
       modeldata$cv_pre_approx_taylor <- numeric(0)
-      modeldata$integrate_counts <- numeric(0)
-      modeldata$rep_sigma <- numeric(0)
+      modeldata$.init$concentration_with_noise_raw <- numeric(0)
     } else if (cv_type == "dPCR") {
-      # 1: continuous model of measured concentrations
-      # 3: binomial model of positive partitions
-      modeldata$cv_type <- tbe(
-        ifelse(modeldata$obs_dist == 4, 3, 1), "obs_dist"
-      )
-
-      if (total_partitions_observe || (!is.null(modeldata$obs_dist) && modeldata$obs_dist == 4)) {
+      if (total_partitions_observe) {
         modeldata$total_partitions_observe <- TRUE
         modeldata$max_partitions_prior <- numeric(0)
         modeldata$partition_loss_mu_prior <- numeric(0)
@@ -714,7 +672,6 @@ noise_estimate_ <-
           rep(-1e-4, sum(modeldata$n_averaged)),
           "n_averaged"
         )
-
       }
 
       # conversion factor for dPCR
@@ -731,6 +688,7 @@ noise_estimate_ <-
         modeldata$.init$nu_upsilon_c <- numeric(0)
       }
 
+      # pre-PCR noise
       if (prePCR_noise_type == "gamma") {
         modeldata$cv_pre_type <- 0
       } else if (prePCR_noise_type %in% c("log-normal", "lognormal")) {
@@ -743,10 +701,18 @@ noise_estimate_ <-
       }
       modeldata$cv_pre_approx_taylor <- use_taylor_approx
 
+      # observation distribution
       modeldata <- tbc(
-        "integrate_counts_dPCR",
+        "get_obs_dist",
         {
-          if (modeldata$obs_dist == 5) {
+          if (modeldata$.metainfo$observation_type == "partitions") {
+            # binomial model of positive partitions
+            modeldata$cv_type <- 3
+            modeldata$obs_dist = match_obs_dist("binomial")
+            modeldata$.init$concentration_with_noise_raw <- tbe(
+              rep(1, modeldata$n_measured), "n_measured"
+            )
+          } else if (modeldata$.metainfo$observation_type == "concentrations") {
             max_partitions_is_fixed <- (
               max_partitions_prior_upper == max_partitions_prior_lower
             )
@@ -766,24 +732,24 @@ noise_estimate_ <-
               volume_scaled_prior_upper == volume_scaled_prior_lower
             )
             if (partitions_fixed && nu_upsilon_c_is_fixed) {
-              modeldata$integrate_counts <- 0
-              modeldata$rep_sigma <- numeric(0)
+              # binomial model of implied positive partitions
+              modeldata$cv_type <- 1
+              modeldata$obs_dist = match_obs_dist("binomial (implied)")
+              modeldata$.init$concentration_with_noise_raw <- tbe(
+                rep(1, modeldata$n_measured), "n_measured"
+              )
             } else {
-              modeldata$integrate_counts <- 1
-              modeldata$rep_sigma <- conc_reporting_noise
+              # continuous model of concentrations
+              modeldata$cv_type <- 1
+              modeldata$obs_dist = match_obs_dist("gamma") # approximation
+              modeldata$.init$concentration_with_noise_raw <- numeric(0)
             }
-          } else {
-            modeldata$integrate_counts <- numeric(0)
-            modeldata$rep_sigma <- numeric(0)
           }
         },
-        required = c(
-          "obs_dist"
-        ),
-        modeldata = modeldata
+        required = c(".metainfo$observation_type"), modeldata = modeldata
       )
-
     } else if (cv_type == "constant_var") {
+      modeldata$obs_dist = match_obs_dist(distribution)
       modeldata$total_partitions_observe <- FALSE
       modeldata$cv_type <- 2
       modeldata$max_partitions_prior <- numeric(0)
@@ -798,8 +764,7 @@ noise_estimate_ <-
       modeldata$.init$nu_upsilon_c <- numeric(0)
       modeldata$cv_pre_type <- numeric(0)
       modeldata$cv_pre_approx_taylor <- numeric(0)
-      modeldata$integrate_counts <- numeric(0)
-      modeldata$rep_sigma <- numeric(0)
+      modeldata$.init$concentration_with_noise_raw <- numeric(0)
     } else {
       cli::cli_abort(
         paste0(
@@ -871,6 +836,11 @@ noise_estimate_ <-
 #' @description For a non-constant coefficient of variation model, see
 #'   [noise_estimate_dPCR()].
 #'
+#' @param distribution Parametric distribution for concentration measurements.
+#'   Currently supported are "gamma" (default and recommended), "log-normal",
+#'   "truncated normal", and "normal". The "truncated normal" and "normal"
+#'   options are not recommended for use in practice.
+#'
 #' @details When `replicates=TRUE`, two coefficients of variation are estimated:
 #' - the CV before the replication stage (see `pre_replicate_cv_prior_mu`)
 #' - the CV after the replication stage (see `cv_prior_mu`)
@@ -897,13 +867,19 @@ noise_estimate_ <-
 #' @family {noise models}
 noise_estimate <-
   function(replicates = FALSE,
+           distribution = "gamma",
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            modeldata = modeldata_init()) {
+
+    possible_dists <- c("gamma", "log-normal", "truncated normal", "normal")
+    distribution <- rlang::arg_match(distribution, possible_dists)
+
     return(noise_estimate_(
       replicates = replicates,
+      distribution = distribution,
       cv_prior_mu = cv_prior_mu,
       cv_prior_sigma = cv_prior_sigma,
       cv_type = "constant",
@@ -999,11 +975,11 @@ noise_estimate_dPCR_params <-
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            prePCR_noise_type = "log-normal",
-           conc_reporting_noise = 0.4,
            use_taylor_approx = TRUE,
            modeldata = modeldata_init()) {
     return(noise_estimate_(
       replicates = replicates,
+      distribution = "dPCR",
       cv_prior_mu = cv_prior_mu,
       cv_prior_sigma = cv_prior_sigma,
       cv_type = "dPCR",
@@ -1020,7 +996,6 @@ noise_estimate_dPCR_params <-
       pre_replicate_cv_prior_mu = pre_replicate_cv_prior_mu,
       pre_replicate_cv_prior_sigma = pre_replicate_cv_prior_sigma,
       prePCR_noise_type = prePCR_noise_type,
-      conc_reporting_noise = conc_reporting_noise,
       use_taylor_approx = use_taylor_approx,
       modeldata = modeldata
     ))
@@ -1114,6 +1089,7 @@ noise_estimate_dPCR <-
            modeldata = modeldata_init()) {
     return(noise_estimate_(
         replicates = replicates,
+        distribution = "dPCR",
         cv_prior_mu = cv_prior_mu,
         cv_prior_sigma = cv_prior_sigma,
         cv_type = "dPCR",
@@ -1148,6 +1124,11 @@ noise_estimate_dPCR <-
 #'   `EpiSewer` can also explicitly model variation before the replication
 #'   stage.
 #'
+#' @param distribution Parametric distribution for measurement noise.
+#'   Currently supported are "gamma" (default and recommended), "log-normal",
+#'   "truncated normal", and "normal". The "truncated normal" and "normal"
+#'   options are not recommended for use in practice.
+#'
 #' @details Note that although this model keeps the variance constant, the prior
 #'   for the measurement noise is still in terms of the (average) coefficient of
 #'   variation (CV). This makes prior specification easier since the CV is
@@ -1165,12 +1146,17 @@ noise_estimate_dPCR <-
 #' @family {noise models}
 noise_estimate_constant_var <-
   function(replicates = FALSE,
+           distribution = "gamma",
            cv_prior_mu = 0,
            cv_prior_sigma = 1,
            pre_replicate_cv_prior_mu = 0,
            pre_replicate_cv_prior_sigma = 1,
            warn = TRUE,
            modeldata = modeldata_init()) {
+
+    possible_dists <- c("gamma", "log-normal", "truncated normal", "normal")
+    distribution <- rlang::arg_match(distribution, possible_dists)
+
     if (warn) {
       cli::cli_inform(c("!" = paste0(
       "You have specified ",
@@ -1186,6 +1172,7 @@ noise_estimate_constant_var <-
     }
     return(noise_estimate_(
       replicates = replicates,
+      distribution = distribution,
       cv_prior_mu = cv_prior_mu,
       cv_prior_sigma = cv_prior_sigma,
       cv_type = "constant_var",

@@ -4,7 +4,7 @@
 
 /**
   * The log of the binomial density given size and probability, with an
-  approximation for approximate
+  approximation for continuous y and n (generalized binomial coefficient)
   *
   * @param y observed data
   *
