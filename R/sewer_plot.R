@@ -1418,11 +1418,8 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
 
 #' Plot prior distributions for total number of partitions
 #'
-#' @param max_partitions_prior Prior for the maximum number of partitions.
-#' @param partition_loss_mu_prior Prior for the mean of the partition loss.
-#' @param partition_loss_sigma_prior Prior for the standard deviation of the
-#'   partition loss.
-#' @param partition_loss_max Maximum value for the partition loss.
+#' @param modeldata A `modeldata` object as returned by
+#' [noise_estimate_dPCR_params()].
 #' @param n_draws Number of draws to simulate from the prior distributions.
 #' @param show_draws Number of example draws to show in the plots.
 #' @param seed Seed for random number generation to ensure reproducibility.
@@ -1431,10 +1428,30 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
 #'   intervals for valid partitions, and distributions of mean and standard
 #'   deviation of valid partitions.
 #' @keywords internal
-plot_prior_partitions <- function(max_partitions_prior, partition_loss_mu_prior,
-                                  partition_loss_sigma_prior, partition_loss_max,
-                                  n_draws = 1000, show_draws = 50, seed = 0) {
+plot_prior_partitions <- function(modeldata, n_draws = 1000, show_draws = 50, seed = 0) {
+  if ("job" %in% names(modeldata)) {
+    modeldata <- modeldata$job$data
+  }
+
+  required_params <- c(
+    "max_partitions_prior",
+    "partition_loss_mu_prior",
+    "partition_loss_sigma_prior",
+    "partition_loss_max"
+    )
+  if (!all(required_params %in% names(modeldata))) {
+    cli::cli_abort(paste(c(
+      "Plotting the prior for the total number of partitions in dPCR only works",
+      "for modeldata objects returned by `noise_estimate_dPCR_params()`."
+    )))
+  }
+
   set.seed(seed)
+  max_partitions_prior = modeldata$max_partitions_prior
+  partition_loss_mu_prior = modeldata$partition_loss_mu_prior
+  partition_loss_sigma_prior = modeldata$partition_loss_sigma_prior
+  partition_loss_max = modeldata$partition_loss_max
+
   if (max_partitions_prior[2] > max_partitions_prior[1]) {
     max_partitions <- runif(
       n_draws,
@@ -1447,7 +1464,9 @@ plot_prior_partitions <- function(max_partitions_prior, partition_loss_mu_prior,
 
   if (partition_loss_mu_prior[2] > 0) {
     partition_loss_mu <- rnorm(
-      n_draws, mean = partition_loss_mu_prior[1], sd = partition_loss_mu_prior[2]
+      n_draws,
+      mean = partition_loss_mu_prior[1],
+      sd = partition_loss_mu_prior[2]
     )
   } else {
     partition_loss_mu <- rep(partition_loss_mu_prior[1], n_draws)
@@ -1463,8 +1482,11 @@ plot_prior_partitions <- function(max_partitions_prior, partition_loss_mu_prior,
   }
 
   partition_number_draws <- rbindlist(lapply(1:n_draws, function(i) {
-    partition_loss <- partition_loss_max * plogis(
-      rnorm(1000, partition_loss_mu[i], partition_loss_sigma[i])
+    partition_loss <- plogis(
+      extraDistr::rtnorm(
+        1000, partition_loss_mu[i], partition_loss_sigma[i],
+        a = -Inf, b = qlogis(partition_loss_max)
+        )
     )
     partition_numbers <- max_partitions[i] * (1 - partition_loss)
     data.table(id = i, loss = partition_loss, partitions = partition_numbers)
