@@ -6,6 +6,9 @@
   * Generate truncated normal variate given mean and sd
   * and lower truncation
   *
+  * @details Note that the mean and standard deviation depend on the bound and
+  * may differ from the supplied mean and sd parameters.
+  *
   * @param mean mean
   *
   * @param sd standard deviation
@@ -23,6 +26,9 @@ real normal_lb_rng(real mean, real sd, real lb) {
 /**
   * Generate truncated normal variate given mean and sd
   * and lower truncation
+  *
+  * @details Note that the mean and standard deviation depend on the bound and
+  * may differ from the supplied mean and sd parameters.
   *
   * @param mean vector of means
   *
@@ -46,6 +52,9 @@ vector normal_lb_rng(vector mean, real sd, real lb) {
   * Generate truncated normal variate given mean and sd
   * and lower truncation
   *
+  * @details Note that the mean and standard deviation depend on the bound and
+  * may differ from the supplied mean and sd parameters.
+  *
   * @param mean vector of means
   *
   * @param sd vector of standard deviations
@@ -62,6 +71,48 @@ vector normal_lb_rng(vector mean, vector sd, real lb) {
   }
   vector[n] u = to_vector(uniform_rng(p, 1));
   return mean + sd .* inv_Phi(u);
+}
+
+/**
+  * Non-centered lower-truncated normal via inverse-CDF transform.
+  *
+  * @details Note that the mean and standard deviation depend on the bound and
+  * may differ from the supplied mean and sd parameters.
+  *
+  * @param mean the mean
+  *
+  * @param sd the standard deviation
+  *
+  * @param lb lower bound
+  *
+  * @param z vector with uniform raw noise
+  *
+  * @return Vector of truncated normal variates
+  */
+vector normal_lb_noncentered(real mean, real sd, real lb, vector z) {
+  int N = num_elements(z);
+  real alpha = (lb - mean) / sd; // lower bound in z-space
+  real phi_alpha = Phi(alpha);
+  vector[N] p = phi_alpha + z .* (1 - phi_alpha);
+  return mean + sd * inv_Phi(p);
+}
+
+/**
+ * Non-centered upper-truncated normal via inverse-CDF transform.
+ *
+ * @param mean the mean
+ * @param sd the standard deviation
+ * @param ub upper bound
+ * @param z vector with uniform raw noise
+ *
+ * @return Vector of truncated normal variates
+ */
+vector normal_ub_noncentered(real mean, real sd, real ub, vector z) {
+  int N = num_elements(z);
+  real beta = (ub - mean) / sd; // upper bound in z-space
+  real phi_beta = Phi(beta);
+  vector[N] p = z .* phi_beta; // uniform on (0, Phi(beta))
+  return mean + sd * inv_Phi(p);
 }
 
 /**
@@ -191,8 +242,8 @@ real normal_prior_lpdf(array[] real y, real mean, real sd) {
 }
 
 /**
-  * Truncated normal prior on a parameter, with the option to fix the parameter
-  * (i.e. no sampling) by providing a prior with zero variance.
+  * Lower truncated normal prior on a parameter, with the option to fix the
+  * parameter (i.e. no sampling) by providing a prior with zero variance.
   *
   * @param y Array with the parameter. If the prior has zero variance, the no
   * parameter will be sampled, hence the array has length 0. Otherwise, the
@@ -207,12 +258,38 @@ real normal_prior_lpdf(array[] real y, real mean, real sd) {
   *
   * @return The log of the prior probability of y
   */
-real normal_prior_lpdf(array[] real y, real mean, real sd, real lb) {
+real normal_prior_lb_lpdf(array[] real y, real mean, real sd, real lb) {
   if (sd == 0) {
     return(0); // parameter fixed, not sampled
   } else {
     int n = num_elements(y);
     return (normal_lpdf(y | mean, sd) - n * normal_lccdf(lb | mean, sd));
+  }
+}
+
+/**
+  * Upper truncated normal prior on a parameter, with the option to fix the
+  * parameter (i.e. no sampling) by providing a prior with zero variance.
+  *
+  * @param y Array with the parameter. If the prior has zero variance, the no
+  * parameter will be sampled, hence the array has length 0. Otherwise, the
+  * array has length 1.
+  *
+  * @param mean Mean of the prior.
+  *
+  * @param sd Standard deviation of the prior. If this is zero, then no
+  * parameter will be sampled and the mean of the prior will be used instead.
+  *
+  * @param ub upper bound
+  *
+  * @return The log of the prior probability of y
+  */
+real normal_prior_ub_lpdf(array[] real y, real mean, real sd, real ub) {
+  if (sd == 0) {
+    return(0); // parameter fixed, not sampled
+  } else {
+    int n = num_elements(y);
+    return (normal_lpdf(y | mean, sd) - n * normal_lcdf(ub | mean, sd));
   }
 }
 
@@ -245,6 +322,11 @@ real normal_prior_lb_ub_lpdf(array[] real y, real mean, real sd, real lb, real u
   }
 }
 
+// --------------------------------------------------------
+// normal prior: mean, sd
+// --> prior provided via array
+// --------------------------------------------------------
+
 /**
   * Normal prior on a parameter, with the option to fix the parameter
   * (i.e. no sampling) by providing a prior with zero variance.
@@ -264,8 +346,8 @@ real normal_prior_lpdf(array[] real y, array[] real prior) {
 }
 
 /**
-  * Truncated normal prior on a parameter, with the option to fix the parameter
-  * (i.e. no sampling) by providing a prior with zero variance.
+  * Lower truncated normal prior on a parameter, with the option to fix the
+  * parameter (i.e. no sampling) by providing a prior with zero variance.
   *
   * @param y Array with the parameter. If the prior has zero variance, the no
   * parameter will be sampled, hence the array has length 0. Otherwise, the
@@ -279,8 +361,28 @@ real normal_prior_lpdf(array[] real y, array[] real prior) {
   *
   * @return The log of the prior probability of y
   */
-real normal_prior_lpdf(array[] real y, array[] real prior, real lb) {
-  return (normal_prior_lpdf(y | prior[1], prior[2], lb));
+real normal_prior_lb_lpdf(array[] real y, array[] real prior, real lb) {
+  return (normal_prior_lb_lpdf(y | prior[1], prior[2], lb));
+}
+
+/**
+  * Upper truncated normal prior on a parameter, with the option to fix the
+  * parameter (i.e. no sampling) by providing a prior with zero variance.
+  *
+  * @param y Array with the parameter. If the prior has zero variance, the no
+  * parameter will be sampled, hence the array has length 0. Otherwise, the
+  * array has length 1.
+  *
+  * @param prior The prior for the parameter. This assumes that the prior is
+  * stored in an array of length 2, where the first element contains the mean
+  * and the second element the standard deviation of the prior.
+  *
+  * @param ub upper bound
+  *
+  * @return The log of the prior probability of y
+  */
+real normal_prior_ub_lpdf(array[] real y, array[] real prior, real ub) {
+  return (normal_prior_ub_lpdf(y | prior[1], prior[2], ub));
 }
 
 /**
@@ -303,4 +405,29 @@ real normal_prior_lpdf(array[] real y, array[] real prior, real lb) {
   */
 real normal_prior_lb_ub_lpdf(array[] real y, array[] real prior, real lb, real ub) {
   return (normal_prior_lb_ub_lpdf(y | prior[1], prior[2], lb, ub));
+}
+
+// --------------------------------------------------------
+// Further helpers
+// --------------------------------------------------------
+
+/**
+  * Calculate the mean of a truncated normal distribution (truncated below zero)
+  * with mean mu and standard deviation sigma.
+  *
+  * @param mu Mean of the untruncated normal distribution
+  *
+  * @param sigma Standard deviation of the untruncated normal distribution
+  *
+  * @return The mean of the truncated normal distribution
+  */
+real trunc_normal_mean(real mu, real sigma) {
+  if (sigma == 0) {
+    return mu;
+  } else {
+    real alpha = -mu / sigma;
+    real phi_alpha = exp(std_normal_lpdf(alpha));
+    real Phi_alpha = Phi_approx(alpha);
+    return mu + sigma * phi_alpha / (1 - Phi_alpha);
+  }
 }

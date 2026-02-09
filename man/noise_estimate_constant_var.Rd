@@ -6,6 +6,7 @@
 \usage{
 noise_estimate_constant_var(
   replicates = FALSE,
+  distribution = "gamma",
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
   pre_replicate_cv_prior_mu = 0,
@@ -17,6 +18,11 @@ noise_estimate_constant_var(
 \arguments{
 \item{replicates}{Should replicates be used to explicitly model variation
 before the replication stage?}
+
+\item{distribution}{Parametric distribution for measurement noise.
+Currently supported are "gamma" (default and recommended), "log-normal",
+"truncated normal", and "normal". The "truncated normal" and "normal"
+options are not recommended for use in practice.}
 
 \item{cv_prior_mu}{Prior (mean) on the coefficient of variation of
 concentration measurements. Note that when \code{replicates=TRUE}, this is only
@@ -74,6 +80,7 @@ The priors of this component have the following functional form:
 \seealso{
 Other {noise models}: 
 \code{\link{noise_estimate}()},
-\code{\link{noise_estimate_dPCR}()}
+\code{\link{noise_estimate_dPCR}()},
+\code{\link{noise_estimate_dPCR_params}()}
 }
 \concept{{noise models}}

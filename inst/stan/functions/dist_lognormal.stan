@@ -228,6 +228,27 @@ vector lognormal5_rng(vector mean, vector cv) {
   return to_vector(lognormal_rng(mu, sqrt(sigma2)));
 }
 
+vector lognormal5_noncentered(real mean, real cv, vector noise) {
+  int n = num_elements(noise);
+  real sigma2 = log1p(cv^2);
+  real mu = log(mean) - sigma2/2;
+  return(exp(mu + sqrt(sigma2) * noise));
+}
+
+vector lognormal5_noncentered(vector mean, real cv, vector noise) {
+  int n = num_elements(noise);
+  real sigma2 = log1p(cv^2);
+  vector[n] mu = log(mean) - sigma2/2;
+  return(exp(mu + sqrt(sigma2) .* noise));
+}
+
+vector lognormal5_noncentered(vector mean, vector cv, vector noise) {
+  int n = num_elements(noise);
+  vector[n] sigma2 = log1p(cv^2);
+  vector[n] mu = log(mean) - sigma2/2;
+  return(exp(mu + sqrt(sigma2) .* noise));
+}
+
 // --------------------------------------------------------
 // lognormal6: mean, sd
 // --------------------------------------------------------

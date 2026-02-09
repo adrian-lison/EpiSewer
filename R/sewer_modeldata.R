@@ -79,23 +79,34 @@ modeldata_update_metainfo <- function(modeldata) {
                       required = c(
                         "LOD_model", "n_averaged",
                         "dPCR_total_partitions", "total_partitions_observe",
-                         "nu_upsilon_b_mu_prior", "nu_upsilon_c_prior"
+                        "max_partitions_prior",
+                        "partition_loss_mu_prior"
                         ),
                       throw_error = FALSE
   )) {
     if (modeldata$LOD_model == 2) {
     total_partitions_median = median(modeldata$dPCR_total_partitions)
     n_averaged_median = median(modeldata$n_averaged)
-    total_partitions_expected <- ifelse(
-      modeldata$total_partitions_observe,
-      total_partitions_median,
-      modeldata$nu_upsilon_b_mu_prior$nu_upsilon_b_mu_prior[1] * 1e4
-      )
-    conversion_expected <- modeldata$nu_upsilon_c_prior$nu_upsilon_c_prior[1] * 1e-5
 
-    modeldata$.metainfo$LOD_expected_scale <- total_partitions_expected *
-      conversion_expected *
-      n_averaged_median
+    if (modeldata$total_partitions_observe) {
+      total_partitions_expected = total_partitions_median;
+    } else {
+      max_partitions_expected = 1/2 * with(modeldata$max_partitions_prior,
+        max_partitions_prior[1] + max_partitions_prior[2]
+      );
+      total_partitions_expected = max_partitions_expected *
+        (1 - plogis(
+          modeldata$partition_loss_mu_prior$partition_loss_mu_prior[1]
+          ));
+    }
+
+    conversion_expected <- 1/2 * with(modeldata$nu_upsilon_c_prior,
+      nu_upsilon_c_prior[1] + nu_upsilon_c_prior[2]
+    )
+
+    modeldata$.metainfo$LOD_expected_scale <- (
+      total_partitions_expected * conversion_expected * n_averaged_median
+    )
     }
   }
 
@@ -343,8 +354,9 @@ all_components <- function() {
 all_parameters <- function(print = FALSE) {
   params <- as.data.frame(matrix(c(
     'measurement_noise_cv','nu_upsilon_a','Coefficient of variation (measurement noise)',1,identity,
-    'dPCR_total_partitions','nu_upsilon_b_mu','Average total number of partitions in dPCR',1e4,identity,
-    'dPCR_partition_variation','nu_upsilon_b_cv','Partition number variation in dPCR',1,identity,
+    'dPCR_maximum_partitions','max_partitions','Maximum number of partitions in dPCR',1e4,identity,
+    'dPCR_partition_loss_mean','partition_loss_mu','Mean relative partition loss in dPCR',function(x) x$job$data$partition_loss_max,function(x) plogis(x),
+    'dPCR_partition_loss_variation','partition_loss_sigma','Partition number variation in dPCR',1,identity,
     'dPCR_conversion_factor','nu_upsilon_c','Conversion factor in dPCR',1e-5,identity,
     'pre_replicate_cv','nu_psi','Coefficient of variation (pre-PCR noise)',1,identity,
     'load_variation_cv','nu_zeta','Individual-level coefficient of load variation',1,identity,

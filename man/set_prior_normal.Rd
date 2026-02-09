@@ -4,7 +4,14 @@
 \alias{set_prior_normal}
 \title{Define a normal prior in modeldata}
 \usage{
-set_prior_normal(param, mu, sigma = NULL, two_sigma = NULL)
+set_prior_normal(
+  param,
+  mu = NULL,
+  sigma = NULL,
+  two_sigma = NULL,
+  q5 = NULL,
+  q95 = NULL
+)
 }
 \arguments{
 \item{param}{Name of the parameter for which the prior is defined.}
@@ -15,6 +22,10 @@ set_prior_normal(param, mu, sigma = NULL, two_sigma = NULL)
 
 \item{two_sigma}{Two times the standard deviation. Useful for defining priors
 via the two-sigma rule-of-thumb (approximately 95\% of probability mass).}
+
+\item{q5}{Lower quantile (5\%).}
+
+\item{q95}{Upper quantile (95\%).}
 }
 \value{
 Prior specification for modeldata.
