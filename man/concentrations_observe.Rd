@@ -8,7 +8,7 @@ concentrations_observe(
   measurements = NULL,
   composite_window = 1,
   date_col = "date",
-  concentration_col,
+  concentration_col = "concentration",
   replicate_col = NULL,
   n_averaged = 1,
   n_averaged_col = NULL,
