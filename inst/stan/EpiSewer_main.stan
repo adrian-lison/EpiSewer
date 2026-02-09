@@ -819,11 +819,11 @@ model {
     );
   } else if (R_model == 5) {
     // gp
-    target += normal_prior_lpdf(gp_sigma | gp_sigma_prior, 0); // truncated normal
+    target += normal_prior_lb_lpdf(gp_sigma | gp_sigma_prior, 0); // truncated normal
     target += normal_prior_lb_ub_lpdf(gp_length | gp_length_prior, 0, gp_length_max[1]); // truncated normal
     gp_noise_raw ~ std_normal(); // Gaussian noise
     // gp2
-    target += normal_prior_lpdf(gp2_sigma | gp2_sigma_prior, 0); // truncated normal
+    target += normal_prior_lb_lpdf(gp2_sigma | gp2_sigma_prior, 0); // truncated normal
     target += normal_prior_lb_ub_lpdf(gp2_length | gp2_length_prior, 0, gp2_length_max[1]); // truncated normal
     gp2_noise_raw ~ std_normal(); // Gaussian noise
   }
