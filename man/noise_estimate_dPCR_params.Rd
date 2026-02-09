@@ -63,7 +63,7 @@ is typically invalid and discarded from the concentration estimate. This
 prior can be used to set a lower and upper bound for the mean proportion of
 partitions lost. Note that for proportions close to 0 or to
 \code{partition_loss_max} (see below), the resulting mean partition loss can
-slightly differ from what is specified here, because we internally
+differ from what is specified here, because we internally
 translate this prior to the logit scale.}
 
 \item{partition_loss_mean_prior_upper}{Prior (95\% quantile) for the mean

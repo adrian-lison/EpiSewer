@@ -4,25 +4,11 @@
 \alias{plot_prior_partitions}
 \title{Plot prior distributions for total number of partitions}
 \usage{
-plot_prior_partitions(
-  max_partitions_prior,
-  partition_loss_mu_prior,
-  partition_loss_sigma_prior,
-  partition_loss_max,
-  n_draws = 1000,
-  show_draws = 50,
-  seed = 0
-)
+plot_prior_partitions(modeldata, n_draws = 1000, show_draws = 50, seed = 0)
 }
 \arguments{
-\item{max_partitions_prior}{Prior for the maximum number of partitions.}
-
-\item{partition_loss_mu_prior}{Prior for the mean of the partition loss.}
-
-\item{partition_loss_sigma_prior}{Prior for the standard deviation of the
-partition loss.}
-
-\item{partition_loss_max}{Maximum value for the partition loss.}
+\item{modeldata}{A \code{modeldata} object as returned by
+\code{\link[=noise_estimate_dPCR_params]{noise_estimate_dPCR_params()}}.}
 
 \item{n_draws}{Number of draws to simulate from the prior distributions.}
 
