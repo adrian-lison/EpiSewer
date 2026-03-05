@@ -238,7 +238,7 @@ measurements_observe_ <- function(
         }
 
         # total valid partitions in PCR run
-        modeldata <- tbc("dPCR_total_partitions", {
+        modeldata <- tbc("get_dPCR_total_partitions", {
           if (modeldata$total_partitions_observe) {
             if (!is.null(total_partitions_col)) {
               modeldata$dPCR_total_partitions <- as.integer(
@@ -572,8 +572,8 @@ noise_estimate_ <-
               "`noise_estimate_dPCR_params()` instead."
             ))
           }
-          if (total_partitions_observe == FALSE) {
-            total_partitions_observe <- TRUE # overwrite
+          if (modeldata$total_partitions_observe == FALSE) {
+            modeldata$total_partitions_observe <- TRUE # overwrite
           }
         }
       },
