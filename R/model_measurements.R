@@ -647,7 +647,7 @@ noise_estimate_ <-
 
         # mean partition loss
         modeldata$partition_loss_mu_prior <- set_prior_normal(
-          "partition_loss_mu", "truncated normal",
+          "partition_loss_mu", "normal",
           q5 = qlogis(partition_loss_mean_prior_lower),
           q95 = qlogis(partition_loss_mean_prior_upper)
         )
