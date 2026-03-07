@@ -968,7 +968,7 @@ model {
         concentration[i_LOD],
         LOD_hurdle_scale[1][i_LOD], // LOD scale (c * m * n)
         nu_pre,
-        cv_pre_type[1]
+        (cv_type == 1 ? cv_pre_type[1] : 0)
         );
       target += sum(p_zero_log[i_zero]); // below-LOD probabilities
       target += sum(log1m_exp(p_zero_log[i_nonzero_LOD])); // above-LOD probabilities
