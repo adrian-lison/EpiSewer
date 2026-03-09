@@ -2,11 +2,8 @@
 #'
 #' @description Loads a specific stan model for model fitting in `EpiSewer`.
 #'
-#' @param model_metainfo A `list` containing meta information about the
-#'   specified model to be fitted. The required stan model is automatically
-#'   inferred from the `model_metainfo`.
-#' @param model_filename File name of a specific stan model to load. This is an
-#'   alternative to supplying `model_metainfo`.
+#' @param model_filename File name of a specific stan model to load. If NULL,
+#'   the default model will be loaded.
 #' @param model_folder Path to the folder containing the stan models for
 #'   `EpiSewer`.
 #' @param profile Should profiling be run during model fitting? Default is
@@ -27,7 +24,6 @@
 #' @export
 #' @keywords internal
 get_stan_model <- function(
-    model_metainfo = NULL,
     model_filename = NULL,
     model_folder = "stan",
     profile = TRUE,
@@ -37,29 +33,7 @@ get_stan_model <- function(
   model_stan <- list()
 
   if (is.null(model_filename)) {
-    if (is.null(model_metainfo)) {
-      cli::cli_abort(
-        c(
-          "Please either provide ",
-          "`model_filename` and `model_folder` (i.e. path to a stan model) or",
-          "`model_metainfo` (to infer a suitable stan model)."
-        )
-      )
-    }
-    if (model_metainfo$R_estimate_approach %in% c(
-      "splines", "ets", "rw", "piecewise", "changepoint_splines",
-      "smooth_derivative", "gp"
-      )) {
-      model_filename <- "EpiSewer_main.stan"
-    } else {
-      cli::cli_abort(
-        paste(
-          "No suitable model available,",
-          "please supply a stan model yourself",
-          "in `model_stan_opts`, or open an issue."
-        )
-      )
-    }
+    model_filename <- "EpiSewer_main.stan"
   }
 
   model_stan[["model_filename"]] <- model_filename
@@ -228,8 +202,8 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
         package = model_stan$package
       )
     }
-
   })
+
   include_paths_list <- lapply(1:n_models, function(i) {
     if (is.null(model_stan$package)) {
       file.path(
@@ -241,7 +215,7 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
         package = model_stan$package
       )
     }
-  }) # identical
+  })
 
   if (!model_stan$profile) {
     stan_no_profiling_list <- lapply(1:n_models, function(i) {
@@ -273,9 +247,7 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
   })
 
   model_stan[["load_model"]] <- lapply(1:n_models, function(i) {
-    function() {
-      return(stanmodel_list[[i]])
-    }
+    function() {return(stanmodel_list[[i]])}
   })
 
   return(model_stan)
