@@ -82,7 +82,9 @@ subject to breaking changes.
 remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
 ```
 
-`EpiSewer` also requires CmdStan to be installed on your system. This can be done using the `install_cmdstan()` function from `cmdstanr`. If you experience any problems installing CmdStan, see the [cmdstanr vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for help. 
+`EpiSewer` also requires CmdStan to be installed on your system. This can be done using the `install_cmdstan()` function from `cmdstanr`. If you experience any problems installing CmdStan, see the [cmdstanr vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for help.
+
+`r emo::ji("exclamation_mark")` Note: If you cannot install CmdStan on your system, you can alternatively run the EpiSewer model in a docker container. See the [docker vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html) for instructions.
 
 ```{r, eval = FALSE}
 cmdstanr::check_cmdstan_toolchain()

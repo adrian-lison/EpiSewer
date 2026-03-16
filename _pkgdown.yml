@@ -20,6 +20,7 @@ articles:
   contents:
   - model-specification
   - detailed-example
+  - docker-backend
 - title: Modeling details
   navbar: Modeling details
   contents:

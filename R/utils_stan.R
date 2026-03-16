@@ -634,6 +634,26 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
   return(fit_res)
 }
 
+#' Pull the latest EpiSewer docker image
+#'
+#' @description This function pulls the latest EpiSewer docker image from the
+#'   github container registry. This is necessary to use the docker backend for
+#'   model fitting.
+#'
+#' @export
+sewer_pull_docker <- function() {
+  cli::cli_alert("Pulling latest EpiSewer docker image...")
+  exit_code <- system("docker pull ghcr.io/adrian-lison/episewer:main")
+  if (exit_code != 0) {
+    cli::cli_warn(paste(
+      "Pulling the EpiSewer docker image failed.",
+      "Check that Docker is running and you have access to the image."
+    ))
+  } else {
+    cli::cli_alert("Docker image pulled successfully.")
+  }
+}
+
 fit_model_docker <- function(job) {
   # create temporary files
   temp_input <- tempfile(fileext = ".rds")
@@ -650,20 +670,20 @@ fit_model_docker <- function(job) {
     "docker run --rm",
     "-v", paste0(temp_input, ":/data/EpiSewer-docker-job.rds"),
     "-v", paste0(temp_output, ":/data/EpiSewer-docker-results"),
-    "ghcr.io/adrian-lison/EpiSewer:main /opt/fit_EpiSewer.R",
+    "ghcr.io/adrian-lison/episewer:main /opt/fit_EpiSewer.R",
     "/data/EpiSewer-docker-job.rds", "/data/EpiSewer-docker-results/fit.rds"
   ))
 
   # check docker exit code
   if (exit_code != 0) {
     cli::cli_warn(paste(
-      "Fitting via docker container failed.",
-      "Check that the 'episewer' image exists and Docker is running."
+      "Fitting via docker container failed (or was cancelled by user).",
+      "Check that the 'episewer' image exists and Docker is running.",
+      "You can pull the latest image using `sewer_pull_docker()`."
     ))
     return(list(
       errors = paste0(
-        "Fitting via docker container failed with exit code ", exit_code,
-        ". Check that the 'episewer' image exists and Docker is running."
+        "Fitting via docker container failed with exit code ", exit_code, "."
       )
     ))
   }
@@ -676,8 +696,7 @@ fit_model_docker <- function(job) {
     )
     return(list(
       errors = paste(
-        "Fitting via docker container failed.",
-        "No result file was produced."
+        "Fitting via docker container failed. No result file was produced."
       )
     ))
   }
