@@ -650,7 +650,7 @@ fit_model_docker <- function(job) {
     "docker run --rm",
     "-v", paste0(temp_input, ":/data/EpiSewer-docker-job.rds"),
     "-v", paste0(temp_output, ":/data/EpiSewer-docker-results"),
-    "episewer /opt/fit_EpiSewer.R",
+    "ghcr.io/adrian-lison/EpiSewer:main /opt/fit_EpiSewer.R",
     "/data/EpiSewer-docker-job.rds", "/data/EpiSewer-docker-results/fit.rds"
   ))
 
