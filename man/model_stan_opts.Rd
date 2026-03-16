@@ -9,6 +9,7 @@ model_stan_opts(
   model_folder = "stan",
   profile = TRUE,
   threads = FALSE,
+  use_docker = FALSE,
   force_recompile = FALSE,
   package = "EpiSewer"
 )
