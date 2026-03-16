@@ -53,7 +53,7 @@ ww_result <- EpiSewer(
 ```
 
 ```{r, eval = TRUE, include = FALSE}
-ww_result <- readRDS(file.path("../", "data", "result_example.rds"))
+ww_result <- ww_result_SARS_CoV_2_Zurich
 ```
 
 ### Step 6: Inspect results as usual
