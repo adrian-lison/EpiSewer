@@ -5,22 +5,18 @@
 \title{Load stan model}
 \usage{
 get_stan_model(
-  model_metainfo = NULL,
   model_filename = NULL,
   model_folder = "stan",
   profile = TRUE,
   threads = FALSE,
   force_recompile = FALSE,
-  package = "EpiSewer"
+  package = "EpiSewer",
+  use_docker = FALSE
 )
 }
 \arguments{
-\item{model_metainfo}{A \code{list} containing meta information about the
-specified model to be fitted. The required stan model is automatically
-inferred from the \code{model_metainfo}.}
-
-\item{model_filename}{File name of a specific stan model to load. This is an
-alternative to supplying \code{model_metainfo}.}
+\item{model_filename}{File name of a specific stan model to load. If NULL,
+the default model will be loaded.}
 
 \item{model_folder}{Path to the folder containing the stan models for
 \code{EpiSewer}.}
@@ -40,6 +36,10 @@ having made changes to the stan code.}
 \item{package}{Name of the package in which to search for stan files
 (defaults to EpiSewer). If NULL, will search in the normal working
 directory.}
+
+\item{use_docker}{Use the model compiled in a docker container? Note that if
+TRUE, all other arguments are ignored and the precompiled model in the
+container will be used. Default is FALSE.}
 }
 \value{
 A \code{list} containing the model definition and a link to the compiled

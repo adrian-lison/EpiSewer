@@ -104,6 +104,7 @@ EpiSewerJob <- function(job_name,
   data_arguments_raw <- data_arguments[
     stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
   ]
+
   job[["data"]] <- data_arguments_raw
   job[["model"]] <- modeldata$.str
   job[["init"]] <- modeldata$.init
@@ -147,55 +148,29 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
   result$job <- job
 
   result$stan_model <- get_stan_model(
-    model_metainfo = job$metainfo,
     model_filename = job$fit_opts$model$model_filename,
     model_folder = job$fit_opts$model$model_folder,
     profile = job$fit_opts$model$profile,
     threads = job$fit_opts$model$threads,
     force_recompile = job$fit_opts$model$force_recompile,
-    package = job$fit_opts$model$package
-  )
-  stanmodel_instance <- result$stan_model$load_model[[1]]()
-
-  result$checksums <- get_checksums(job, stanmodel_instance)
-
-  arguments <- c(
-    list(data = job$data),
-    init = function() job$init,
-    job$fit_opts$sampler
+    package = job$fit_opts$model$package,
+    use_docker = job$fit_opts$model$use_docker
   )
 
-  if (run_silent) {
-    sink(tempfile(), type = "out")
-    on.exit(sink())
+  if (job$fit_opts$model$use_docker) {
+    result$checksums <- get_checksums(job)
+    fit_res <- try(fit_model_docker(job = job))
+  } else {
+    model_instance <- result$stan_model$load_model[[1]]()
+    result$checksums <- get_checksums(job, model_instance)
+    fit_res <- try(fit_model(
+      job = job,
+      model = result$stan_model,
+      model_instance = model_instance,
+      run_silent = run_silent
+    ))
   }
 
-  # pathfinder initialization for mcmc
-  if (class(job$fit_opts$sampler) == "mcmc" && job$fit_opts$sampler$init_pathfinder) {
-    tryCatch(
-      {
-        cat("Initializing chains via pathfinder...\n")
-        pathfind_init <- get_pathfinder_inits(
-          stanmodel_instance, job,
-          max_iters = job$fit_opts$sampler$init_pathfinder_max_lbfgs_iters
-          )
-        stopifnot(!"errors" %in% names(pathfind_init))
-        options(cmdstanr_warn_inits = FALSE)
-        arguments$init <- pathfind_init$draws()
-      },
-      error = function(e) {
-        cat(paste(
-          "\nPathfinder initialization failed.",
-          "\nFalling back to default initialization.\n\n"
-        ))
-      }
-    )
-  }
-  arguments[["init_pathfinder"]] <- NULL
-  arguments[["init_pathfinder_max_lbfgs_iters"]] <- NULL
-
-  fit_res <- fit_stan(stanmodel_instance, arguments, fit_method = class(job$fit_opts$sampler))
-  options(cmdstanr_warn_inits = TRUE)
 
   if (!"errors" %in% names(fit_res)) {
     result$summary <- try(summarize_fit(
@@ -206,12 +181,6 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
       ndraws = job$results_opts$samples_ndraws
     ))
     if (job$results_opts$fitted) {
-      try(fit_res$draws(), silent = TRUE)
-      if (class(job$fit_opts$sampler) == "mcmc") {
-        try(fit_res$sampler_diagnostics(), silent = TRUE)
-      }
-      try(fit_res$init(), silent = TRUE)
-      try(fit_res$profiles(), silent = TRUE)
       result$fitted <- fit_res
     }
     if (class(job$fit_opts$sampler) == "mcmc") {

@@ -2,11 +2,8 @@
 #'
 #' @description Loads a specific stan model for model fitting in `EpiSewer`.
 #'
-#' @param model_metainfo A `list` containing meta information about the
-#'   specified model to be fitted. The required stan model is automatically
-#'   inferred from the `model_metainfo`.
-#' @param model_filename File name of a specific stan model to load. This is an
-#'   alternative to supplying `model_metainfo`.
+#' @param model_filename File name of a specific stan model to load. If NULL,
+#'   the default model will be loaded.
 #' @param model_folder Path to the folder containing the stan models for
 #'   `EpiSewer`.
 #' @param profile Should profiling be run during model fitting? Default is
@@ -21,55 +18,49 @@
 #' @param package Name of the package in which to search for stan files
 #'   (defaults to EpiSewer). If NULL, will search in the normal working
 #'   directory.
+#' @param use_docker Use the model compiled in a docker container? Note that if
+#'   TRUE, all other arguments are ignored and the precompiled model in the
+#'   container will be used. Default is FALSE.
 #'
 #' @return A `list` containing the model definition and a link to the compiled
 #'   stan model.
 #' @export
 #' @keywords internal
 get_stan_model <- function(
-    model_metainfo = NULL,
     model_filename = NULL,
     model_folder = "stan",
     profile = TRUE,
     threads = FALSE,
     force_recompile = FALSE,
-    package = "EpiSewer") {
+    package = "EpiSewer",
+    use_docker = FALSE) {
+
   model_stan <- list()
 
   if (is.null(model_filename)) {
-    if (is.null(model_metainfo)) {
-      cli::cli_abort(
-        c(
-          "Please either provide ",
-          "`model_filename` and `model_folder` (i.e. path to a stan model) or",
-          "`model_metainfo` (to infer a suitable stan model)."
-        )
-      )
-    }
-    if (model_metainfo$R_estimate_approach %in% c(
-      "splines", "ets", "rw", "piecewise", "changepoint_splines",
-      "smooth_derivative", "gp"
-      )) {
-      model_filename <- "EpiSewer_main.stan"
-    } else {
-      cli::cli_abort(
-        paste(
-          "No suitable model available,",
-          "please supply a stan model yourself",
-          "in `model_stan_opts`, or open an issue."
-        )
-      )
-    }
+    model_stan[["model_filename"]] <- "EpiSewer_main.stan"
+  } else {
+    model_stan[["model_filename"]] <- model_filename
   }
 
-  model_stan[["model_filename"]] <- model_filename
-  model_stan[["model_folder"]] <- model_folder
-  model_stan[["force_recompile"]] <- force_recompile
-  model_stan[["threads"]] <- threads
-  model_stan[["profile"]] <- profile
-  model_stan[["package"]] <- package
-
-  model_stan <- update_compiled_stanmodel(model_stan, force_recompile)
+  if (use_docker) {
+    model_stan[["model_folder"]] <- "/opt/models"
+    model_stan[["package"]] <- "EpiSewer-docker"
+    model_filepath <- file.path(
+      model_stan[["model_folder"]], model_stan[["model_filename"]]
+    )
+    model_stan[["load_model"]] <- list(function() {cmdstanr::cmdstan_model(
+      exe_file = tools::file_path_sans_ext(model_filepath),
+      compile = FALSE
+      )})
+  } else {
+    model_stan[["model_folder"]] <- model_folder
+    model_stan[["force_recompile"]] <- force_recompile
+    model_stan[["threads"]] <- threads
+    model_stan[["profile"]] <- profile
+    model_stan[["package"]] <- package
+    model_stan <- update_compiled_stanmodel(model_stan, force_recompile)
+  }
 
   return(model_stan)
 }
@@ -206,7 +197,7 @@ sampler_stan_pathfinder <- function(
 #' @return A list with details of the stan model
 #' @export
 model_stan_opts <- function(model_filename = NULL, model_folder = "stan",
-                            profile = TRUE, threads = FALSE,
+                            profile = TRUE, threads = FALSE, use_docker = FALSE,
                             force_recompile = FALSE, package = "EpiSewer") {
   opts <- as.list(environment())
   return(opts)
@@ -228,8 +219,8 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
         package = model_stan$package
       )
     }
-
   })
+
   include_paths_list <- lapply(1:n_models, function(i) {
     if (is.null(model_stan$package)) {
       file.path(
@@ -241,7 +232,7 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
         package = model_stan$package
       )
     }
-  }) # identical
+  })
 
   if (!model_stan$profile) {
     stan_no_profiling_list <- lapply(1:n_models, function(i) {
@@ -273,9 +264,7 @@ update_compiled_stanmodel <- function(model_stan, force_recompile = FALSE) {
   })
 
   model_stan[["load_model"]] <- lapply(1:n_models, function(i) {
-    function() {
-      return(stanmodel_list[[i]])
-    }
+    function() {return(stanmodel_list[[i]])}
   })
 
   return(model_stan)
@@ -447,6 +436,7 @@ fit_stan <- function(stanmodel_instance, arguments, fit_method, silent = FALSE) 
     sink(tempfile(), type = "out")
     on.exit(sink())
   }
+
   return(tryCatch(
     {
       fit_res <- withWarnings(suppress_messages_warnings(
@@ -505,4 +495,270 @@ fit_stan <- function(stanmodel_instance, arguments, fit_method, silent = FALSE) 
   ))
 }
 
+#' Convert draws from a previous stan model fit to inits for MCMC sampling
+#'
+#' @description Helper function that converts the draws obtained (e.g. from
+#'   pathfinder) to a list of inits that can be used for MCMC sampling.
+#'
+#' @param fit A fitted model object (e.g. obtained from pathfinder).
+#' @param model The model specification, used to identify scalar parameters.
+#' @param num_chains The number of chains for which to generate inits.
+#'
+#' @return A list of inits for MCMC sampling, with one entry per chain.
+#'
+#' @keywords internal
+draws_to_init <- function(fit, model, num_chains = 4) {
+  rvars <- posterior::as_draws_rvars(fit$draws())
+  # Get parameter names (exclude diagnostics ending in __)
+  param_names <- names(rvars)[!grepl("__$", names(rvars))]
+  scalar_params <- read_scalar_params(model)
+  lapply(seq_len(num_chains), function(i) {
+    draw_idx <- sample(posterior::ndraws(rvars), 1)
+    lapply(setNames(param_names, param_names), function(p) {
+      val <- posterior::draws_of(
+        posterior::subset_draws(rvars[p], draw = draw_idx)[[1]]
+      )
+      # Remove only the first (draw) dimension
+      dim_without_draw <- dim(val)[-1]
+      val <- array(val, dim = dim_without_draw)
+      if (length(val) == 1 && (p %in% scalar_params)) {
+        val <- as.numeric(val)
+      }
+      return(val)
+    })
+  })
+}
 
+#' Fit the EpiSewer model
+#'
+#' @description Helper function that fits the EpiSewer model using the specified
+#'   sampler and model instance, with the data and inits from the job object.
+#'
+#' @param job An EpiSewer job object containing the data, inits, and fitting
+#'   options.
+#' @param model The model specification, used to identify parameters.
+#' @param model_instance A compiled model object.
+#' @param run_silent Should the fitting be run silently? Default is FALSE.
+#'
+#' @return A fitted model object if successful, or a list with error messages
+#'   and sampler output if there was an error during fitting.
+#'
+#' @keywords internal
+fit_model <- function(job, model, model_instance, run_silent = FALSE) {
+  # check if data, init and fit_opts are available in the job object
+  if (!"data" %in% names(job)) {
+    cli::cli_abort("The job object must contain a 'data' element.")
+  }
+  if (!"init" %in% names(job)) {
+    cli::cli_abort("The job object must contain an 'init' element.")
+  }
+  if (!"fit_opts" %in% names(job)) {
+    cli::cli_abort("The job object must contain a 'fit_opts' element.")
+  }
+
+  scalar_vars <- read_scalar_vars(model)
+  for (var in names(job[["data"]])) {
+    val <- job[["data"]][[var]]
+    if (length(val) == 1 && is.null(dim(val)) && !(var %in% scalar_vars)) {
+      job[["data"]][[var]] <- as.array(val)
+    }
+  }
+
+  scalar_params <- read_scalar_params(model)
+  for (param in names(job[["init"]])) {
+    val <- job[["init"]][[param]]
+    if (length(val) == 1 && is.null(dim(val)) && !(param %in% scalar_params)) {
+      job[["init"]][[param]] <- as.array(val)
+    }
+  }
+
+  arguments <- c(
+    list(data = job$data),
+    init = function() job$init,
+    job$fit_opts$sampler
+  )
+
+  if (run_silent) {
+    sink(tempfile(), type = "out")
+    on.exit(sink())
+  }
+
+  # pathfinder initialization for mcmc
+  use_mcmc <- class(job$fit_opts$sampler) == "mcmc"
+  init_pathfinder <- job$fit_opts$sampler$init_pathfinder
+  fitting_method <- class(job$fit_opts$sampler)
+  if (use_mcmc && init_pathfinder) {
+    tryCatch(
+      {
+        cat("Initializing chains via pathfinder...\n")
+        pathfind_init <- get_pathfinder_inits(
+          model_instance, job,
+          max_iters = job$fit_opts$sampler$init_pathfinder_max_lbfgs_iters
+        )
+        stopifnot(!"errors" %in% names(pathfind_init))
+        options(cmdstanr_warn_inits = FALSE)
+        arguments$init <- draws_to_init(
+          pathfind_init, model,
+          num_chains = job$fit_opts$sampler$chains
+          )
+      },
+      error = function(e) {
+        cat(paste(
+          "\nPathfinder initialization failed.",
+          "\nFalling back to default initialization.\n\n"
+        ))
+      }
+    )
+  } else {
+    options(cmdstanr_warn_inits = TRUE)
+  }
+
+  arguments[["init_pathfinder"]] <- NULL
+  arguments[["init_pathfinder_max_lbfgs_iters"]] <- NULL
+
+  fit_res <- fit_stan(model_instance, arguments, fitting_method)
+
+  if (!"errors" %in% names(fit_res)) {
+    if (job$results_opts$fitted) {
+      try(fit_res$draws(), silent = TRUE)
+      try(fit_res$init(), silent = TRUE)
+      try(fit_res$profiles(), silent = TRUE)
+    }
+    if (class(job$fit_opts$sampler) == "mcmc") {
+      try(suppressMessages(fit_res$diagnostic_summary()), silent = TRUE)
+      try(fit_res$sampler_diagnostics(), silent = TRUE)
+    }
+    try(fit_res$time())
+  }
+
+  return(fit_res)
+}
+
+fit_model_docker <- function(job) {
+  # create temporary files
+  temp_input <- tempfile(fileext = ".rds")
+  on.exit({
+    unlink(temp_input)
+    unlink(file.path(temp_output, "fit.rds"))
+  }, add = TRUE)
+
+  saveRDS(job, temp_input)
+  temp_output <- tempdir()
+
+  # run model inside docker container
+  exit_code <- system(paste(
+    "docker run --rm",
+    "-v", paste0(temp_input, ":/data/EpiSewer-docker-job.rds"),
+    "-v", paste0(temp_output, ":/data/EpiSewer-docker-results"),
+    "ghcr.io/adrian-lison/EpiSewer:main /opt/fit_EpiSewer.R",
+    "/data/EpiSewer-docker-job.rds", "/data/EpiSewer-docker-results/fit.rds"
+  ))
+
+  # check docker exit code
+  if (exit_code != 0) {
+    cli::cli_warn(paste(
+      "Fitting via docker container failed.",
+      "Check that the 'episewer' image exists and Docker is running."
+    ))
+    return(list(
+      errors = paste0(
+        "Fitting via docker container failed with exit code ", exit_code,
+        ". Check that the 'episewer' image exists and Docker is running."
+      )
+    ))
+  }
+
+  # check output file was actually created
+  result_path <- file.path(temp_output, "fit.rds")
+  if (!file.exists(result_path)) {
+    cli::cli_warn(
+      "Fitting via docker container failed (no result file produced)."
+    )
+    return(list(
+      errors = paste(
+        "Fitting via docker container failed.",
+        "No result file was produced."
+      )
+    ))
+  }
+
+  # read and return result
+  fit_res <- readRDS(result_path)
+  return(fit_res)
+}
+
+#' Identify scalar variables in a stan model and write them to a text file
+#'
+#' @param modelfolder The folder containing the stan model file.
+#' @param modelname The name of the stan model file.
+#'
+#' @keywords internal
+write_scalar_vars <- function(modelfolder = "inst/stan", modelname = "EpiSewer_main.stan") {
+  mod <- cmdstanr::cmdstan_model(file.path(modelfolder, modelname))
+  vars <- mod$variables()$data
+  scalar_vars <- names(vars)[sapply(vars, function(v) v$dimensions == 0)]
+  writeLines(scalar_vars, file.path(modelfolder, "scalar_data_vars.txt"))
+}
+
+#' Read scalar variables from a text file
+#'
+#' @param model The model specification, used to identify the correct text file.
+#'
+#' @return A character vector with the names of the scalar variables.
+#'
+#' @keywords internal
+read_scalar_vars <- function(model) {
+  if (model$package == "EpiSewer-docker") {
+    filepath <- file.path(
+      model$model_folder,
+      "scalar_data_vars.txt"
+    )
+  } else {
+    filepath <- system.file(
+      model$model_folder,
+      "scalar_data_vars.txt",
+      package = model$package
+    )
+  }
+
+  scalar_vars <- readLines(filepath)
+  return(scalar_vars)
+}
+
+#' Identify scalar parameters in a stan model and write them to a text file
+#'
+#' @param modelfolder The folder containing the stan model file.
+#' @param modelname The name of the stan model file.
+#'
+#' @keywords internal
+write_scalar_params <- function(modelfolder = "inst/stan", modelname = "EpiSewer_main.stan") {
+  mod <- cmdstanr::cmdstan_model(file.path(modelfolder, modelname))
+  vars <- mod$variables()$parameters
+  scalar_params <- names(vars)[sapply(vars, function(v) v$dimensions == 0)]
+  writeLines(scalar_params, file.path(modelfolder, "scalar_param_vars.txt"))
+}
+
+#' Read scalar parameters from a text file
+#'
+#' @param model The model specification, used to identify the correct text file.
+#'
+#' @return A character vector with the names of the scalar parameters.
+#'
+#' @keywords internal
+read_scalar_params <- function(model) {
+  if (model$package == "EpiSewer-docker") {
+    filepath <- file.path(
+      model$model_folder,
+      "scalar_param_vars.txt"
+    )
+  } else {
+    filepath <- system.file(
+      model$model_folder,
+      "scalar_param_vars.txt",
+      package = model$package
+    )
+  }
+
+  scalar_params <- readLines(filepath)
+  return(scalar_params)
+}
