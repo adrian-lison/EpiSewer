@@ -71,6 +71,12 @@ can be done using the `install_cmdstan()` function from `cmdstanr`. If
 you experience any problems installing CmdStan, see the [cmdstanr
 vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for help.
 
+❗ Note: If you cannot install CmdStan on your system, you can
+alternatively run the EpiSewer model in a docker container. See the
+[docker
+vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html)
+for instructions.
+
 ``` r
 cmdstanr::check_cmdstan_toolchain()
 cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up
@@ -492,8 +498,8 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"         
-#>  [6] "fit_opts"      "results_opts"  "priors_text"   "metainfo"      "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"     
+#>  [7] "results_opts"  "priors_text"   "metainfo"      "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
