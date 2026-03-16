@@ -1,4 +1,4 @@
-name: Create and publish EpiSewer Docker image
+name: Publish docker backend
 
 on:
   workflow_dispatch:
