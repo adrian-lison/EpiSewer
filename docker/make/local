@@ -1,0 +1,2 @@
+STAN_THREADS=true
+TBB_CXX_TYPE=gcc
