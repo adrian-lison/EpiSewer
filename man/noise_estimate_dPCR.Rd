@@ -8,17 +8,13 @@ noise_estimate_dPCR(
   replicates = FALSE,
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
-  total_partitions_prior_mu = 20000,
-  total_partitions_prior_sigma = 5000,
   total_partitions_observe = FALSE,
-  partition_variation_prior_mu = 0,
-  partition_variation_prior_sigma = 0.05,
-  volume_scaled_prior_mu = 1e-05,
-  volume_scaled_prior_sigma = 4e-05,
+  max_partitions = 30000,
+  partition_loss_mean = 0.1,
+  volume_scaled = 1e-05,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   prePCR_noise_type = "log-normal",
-  use_taylor_approx = TRUE,
   modeldata = modeldata_init()
 )
 }
@@ -26,48 +22,32 @@ noise_estimate_dPCR(
 \item{replicates}{Should replicates be used to explicitly model variation
 before the replication stage?}
 
-\item{cv_prior_mu}{Prior (mean) on the coefficient of variation of
-concentration measurements. Note that in contrast to using
-\code{\link[=noise_estimate]{noise_estimate()}}, this does \emph{not} include the technical noise of the
-digital PCR. This is because the dPCR noise is explicitly modeled (using
-the number of partitions and conversion factor). Moreover, when
-\code{replicates=TRUE}, this is only the CV after the replication stage (see
-details for more explanation).}
+\item{cv_prior_mu}{Prior (mean) on the coefficient of variation of analyzed
+concentrations (pre-PCR noise). Note that this does \emph{not} include the
+technical noise of the digital PCR. This is because the dPCR noise is
+explicitly modeled (using the total number of partitions and conversion
+factor). Moreover, when \code{replicates=TRUE}, noise before the replication
+stage is separately modeled, so \code{cv_prior_mu} only describes any
+remaining pre-PCR noise (see details for more explanation).}
 
 \item{cv_prior_sigma}{Prior (standard deviation) on the coefficient of
-variation of concentration measurements.}
-
-\item{total_partitions_prior_mu}{Prior (mean) on the total number of
-partitions in the dPCR reaction.}
-
-\item{total_partitions_prior_sigma}{Prior (standard deviation) on the total
-number of partitions in the dPCR reaction. If this is set to zero, the
-total number of partitions will be fixed to the prior mean and not
-estimated.}
+variation of analyzed concentrations.}
 
 \item{total_partitions_observe}{If TRUE, the total number of partitions is
 taken from the supplied measurements \code{data.frame}. This requires that the
 argument \code{total_partitions_col} is specified in \code{\link[=concentrations_observe]{concentrations_observe()}}.}
 
-\item{partition_variation_prior_mu}{Prior (mean) on the coefficient of
-variation of the total number of partitions in the dPCR reaction. Usually,
-the maximum number of partitions possible for a given dPCR chip is not
-reached, i.e. a certain number of partitions is lost. This loss varies
-between PCR runs, and is modeled as log-normal distributed in EpiSewer.}
+\item{max_partitions}{The maximum total number of dPCR partitions. This is
+usually defined by the manufacturer of the dPCR system/chip used, which
+supports a certain maximum number of partitions.}
 
-\item{partition_variation_prior_sigma}{Prior (standard deviation) on the
-coefficient of variation of the total number of partitions in the dPCR
-reaction. If this is set to zero, the partition variation will be fixed to
-the prior mean and not estimated.}
+\item{partition_loss_mean}{The mean relative partition loss. A certain
+proportion of partitions in a dPCR run is typically invalid and discarded
+from the concentration estimate.}
 
-\item{volume_scaled_prior_mu}{Prior (mean) on the conversion factor
-(partition volume scaled by the dilution of wastewater in the assay) for
-the dPCR reaction. See details for further explanation.}
-
-\item{volume_scaled_prior_sigma}{Prior (standard deviation) on the conversion
-factor (partition volume scaled by the dilution of wastewater in the assay)
-for the dPCR reaction. If this is set to zero, the conversion factor will
-be fixed to the prior mean and not estimated.}
+\item{volume_scaled}{The conversion factor (partition volume multiplied with
+the scaling of concentration in the assay) for the dPCR reaction. See
+details for further explanation.}
 
 \item{pre_replicate_cv_prior_mu}{Prior (mean) on the coefficient of variation
 of concentrations \emph{before} the replication stage.}
@@ -80,12 +60,6 @@ before the PCR assay. Currently supported are "log-normal" and "gamma". The
 choice of the parametric distribution typically makes no relevant
 difference for the noise model, but can make a relevant difference for the
 LOD model if \code{\link[=LOD_estimate_dPCR]{LOD_estimate_dPCR()}} is used.}
-
-\item{use_taylor_approx}{If TRUE (default), a Taylor expansion approximation
-is used to estimate the CV of measurements under pre-PCR noise. The
-approximation is very accurate, unless concentrations are extremely high
-(so high that the quality of the measurements from dPCR would anyway be
-questionable).}
 
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
@@ -102,13 +76,13 @@ initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
 performed before model fitting (\code{.checks}).
 }
 \description{
-This option estimates the unexplained variation in wastewater
-measurements using a coefficient of variation model specialized for digital
-PCR (e.g. digital droplet PCR). Specifically, the coefficient of variation
-is modeled as a function of the expected concentration according to the
-statistical properties of dPCR.
+This option models concentration measurements using an error
+model specialized for digital PCR (e.g. digital droplet PCR). This is a
+fast approximation assuming a fixed number of valid total partitions in the
+dPCR assay and a known conversion factor. For a model that jointly
+estimates uncertain assay parameters, see \code{\link[=noise_estimate_dPCR_params]{noise_estimate_dPCR_params()}}.
 
-This model predicts a higher coefficient of variation at smaller
+This model predicts more relative variation at smaller
 concentrations, which often leads to a better model fit, even for
 measurements from other quantification methods such as qPCR.
 
@@ -117,12 +91,12 @@ If multiple measurements (replicates) per sample are provided,
 stage.
 }
 \details{
-The conversion factor (see \code{volume_scaled_prior_mu},
-\code{volume_scaled_prior_sigma}) is the partition volume scaled by the dilution
-of the wastewater in the assay. The dilution accounts for all
-extraction and preparation steps. For example, if the partition volume is
-4.5e-7 mL and the dilution of the wastewater is 100:3 (i.e. 100 gc/mL in
-the original wastewater sample correspond to 3 gc/mL in the PCR reaction),
+The conversion factor (see \code{volume_scaled}) is the partition volume
+v multiplied with a scaling factor s. The scaling factor accounts for
+concentration differences between the sample and the reaction mix, for
+example due to extraction or adding of reagents. For example, if the
+partition volume is 4.5e-7 mL and the scaling factor is 100:3 (i.e. 100
+gc/mL in the original sample correspond to 3 gc/mL in the PCR reaction),
 then the overall conversion factor is 4.5e-7 * 100 / 3 = 1.5e-5.
 
 When \code{replicates=TRUE}, two coefficients of variation are estimated:
@@ -144,9 +118,6 @@ preprocessed sample), then \code{cv} estimates only unexplained PCR noise
 The priors of this component have the following functional form:
 \itemize{
 \item coefficient of variation of concentration measurements (\code{cv}): \verb{Truncated normal}
-\item mean number of partitions in dPCR: \verb{Truncated normal}
-\item coefficient of variation of number of partitions in dPCR: \verb{Truncated normal}
-\item conversion factor for dPCR: \verb{Truncated normal}
 \item coefficient of variation of concentration before the replication stage (\code{pre_replicate_cv}):
 \verb{Truncated normal}
 }
@@ -155,8 +126,12 @@ The priors of this component have the following functional form:
 \link{LOD_estimate_dPCR} for a limit of detection model specialised for
 dPCR.
 
+\link{noise_estimate_dPCR_params} for jointly estimating uncertain
+parameters of the assay.
+
 Other {noise models}: 
 \code{\link{noise_estimate}()},
-\code{\link{noise_estimate_constant_var}()}
+\code{\link{noise_estimate_constant_var}()},
+\code{\link{noise_estimate_dPCR_params}()}
 }
 \concept{{noise models}}

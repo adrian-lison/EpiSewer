@@ -66,10 +66,11 @@ and protocol. It is usually established from a dedicated lab experiment
 not cover a large fraction of the preprocessing noise to find an optimal
 configuration for the exponential model.
 
-If used together with \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}, EpiSewer will also
-model the effect of pre-PCR noise on the LOD. This means that the modeled
-LOD could be slightly higher than specified under \code{limit}, depending on the
-estimated pre-PCR noise.
+If used together with \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}} or
+\code{\link[=noise_estimate_dPCR_params]{noise_estimate_dPCR_params()}}, EpiSewer will also model the effect of
+pre-PCR noise on the LOD. This means that the modeled LOD could be slightly
+higher than specified under \code{limit}, depending on the estimated pre-PCR
+noise.
 }
 \seealso{
 {Visualize the assumed LOD as a function of concentration:}

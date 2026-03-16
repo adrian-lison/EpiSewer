@@ -491,7 +491,7 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
      if (!is.null(cases)) {
        modeldata <- tbc("load_per_case_cases_suggest", {
          measurements <- setnames(
-           copy(modeldata$.sewer_data$concentrations_observe$measurements),
+           copy(modeldata$.sewer_data$measurements_observe$measurements),
            old = with(
              modeldata$.metainfo$measurements_cols,
              c(date_col, concentration_col)
@@ -541,7 +541,7 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
        },
        required = c(
          ".metainfo$measurements_cols", ".metainfo$flows_cols",
-         ".sewer_data$concentrations_observe$measurements",
+         ".sewer_data$measurements_observe$measurements",
          ".sewer_data$flows_observe$flows"
          ),
        modeldata = modeldata
@@ -675,7 +675,7 @@ load_variation_estimate <- function(
     mu = cv_prior_mu, sigma = cv_prior_sigma
   )
   modeldata$.init$nu_zeta <- as.array(init_from_location_scale_prior(
-    modeldata$nu_zeta_prior
+    modeldata$nu_zeta_prior, enforce_positive = TRUE
   ))
 
   modeldata <- tbc("zeta_normal_approximation",
