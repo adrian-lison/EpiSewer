@@ -494,6 +494,18 @@ fit_stan <- function(stanmodel_instance, arguments, fit_method, silent = FALSE) 
   ))
 }
 
+#' Convert draws from a previous stan model fit to inits for MCMC sampling
+#'
+#' @description Helper function that converts the draws obtained (e.g. from
+#'   pathfinder) to a list of inits that can be used for MCMC sampling.
+#'
+#' @param fit A fitted model object (e.g. obtained from pathfinder).
+#' @param model The model specification, used to identify scalar parameters.
+#' @param num_chains The number of chains for which to generate inits.
+#'
+#' @return A list of inits for MCMC sampling, with one entry per chain.
+#'
+#' @keywords internal
 draws_to_init <- function(fit, model, num_chains = 4) {
   rvars <- posterior::as_draws_rvars(fit$draws())
   # Get parameter names (exclude diagnostics ending in __)
@@ -516,6 +528,21 @@ draws_to_init <- function(fit, model, num_chains = 4) {
   })
 }
 
+#' Fit the EpiSewer model
+#'
+#' @description Helper function that fits the EpiSewer model using the specified
+#'   sampler and model instance, with the data and inits from the job object.
+#'
+#' @param job An EpiSewer job object containing the data, inits, and fitting
+#'   options.
+#' @param model The model specification, used to identify parameters.
+#' @param model_instance A compiled model object.
+#' @param run_silent Should the fitting be run silently? Default is FALSE.
+#'
+#' @return A fitted model object if successful, or a list with error messages
+#'   and sampler output if there was an error during fitting.
+#'
+#' @keywords internal
 fit_model <- function(job, model, model_instance, run_silent = FALSE) {
   # check if data, init and fit_opts are available in the job object
   if (!"data" %in% names(job)) {
@@ -606,6 +633,12 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
   return(fit_res)
 }
 
+#' Identify scalar variables in a stan model and write them to a text file
+#'
+#' @param modelfolder The folder containing the stan model file.
+#' @param modelname The name of the stan model file.
+#'
+#' @keywords internal
 write_scalar_vars <- function(modelfolder = "inst/stan", modelname = "EpiSewer_main.stan") {
   mod <- cmdstanr::cmdstan_model(file.path(modelfolder, modelname))
   vars <- mod$variables()$data
@@ -613,6 +646,13 @@ write_scalar_vars <- function(modelfolder = "inst/stan", modelname = "EpiSewer_m
   writeLines(scalar_vars, file.path(modelfolder, "scalar_data_vars.txt"))
 }
 
+#' Read scalar variables from a text file
+#'
+#' @param model The model specification, used to identify the correct text file.
+#'
+#' @return A character vector with the names of the scalar variables.
+#'
+#' @keywords internal
 read_scalar_vars <- function(model) {
   if (model$package == "EpiSewer-docker") {
     filepath <- file.path(
@@ -631,6 +671,12 @@ read_scalar_vars <- function(model) {
   return(scalar_vars)
 }
 
+#' Identify scalar parameters in a stan model and write them to a text file
+#'
+#' @param modelfolder The folder containing the stan model file.
+#' @param modelname The name of the stan model file.
+#'
+#' @keywords internal
 write_scalar_params <- function(modelfolder = "inst/stan", modelname = "EpiSewer_main.stan") {
   mod <- cmdstanr::cmdstan_model(file.path(modelfolder, modelname))
   vars <- mod$variables()$parameters
@@ -638,6 +684,13 @@ write_scalar_params <- function(modelfolder = "inst/stan", modelname = "EpiSewer
   writeLines(scalar_params, file.path(modelfolder, "scalar_param_vars.txt"))
 }
 
+#' Read scalar parameters from a text file
+#'
+#' @param model The model specification, used to identify the correct text file.
+#'
+#' @return A character vector with the names of the scalar parameters.
+#'
+#' @keywords internal
 read_scalar_params <- function(model) {
   if (model$package == "EpiSewer-docker") {
     filepath <- file.path(
