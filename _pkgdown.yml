@@ -88,6 +88,7 @@ reference:
   - model_stan_opts
   - set_results_opts
   - sewer_compile
+  - sewer_pull_docker
   - run
 - title: Plotting
   desc: Functions for plotting

@@ -79,6 +79,8 @@ model_measurements <- function(
 #'
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
+#'
+#' @keywords internal
 measurements_observe_ <- function(
     measurements = NULL,
     observation_type = c("concentrations", "partitions"),
