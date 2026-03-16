@@ -50,7 +50,8 @@ get_stan_model <- function(
       model_stan[["model_folder"]], model_stan[["model_filename"]]
     )
     model_stan[["load_model"]] <- list(function() {cmdstan_model(
-      exe_file = tools::file_path_sans_ext(model_filepath)
+      exe_file = tools::file_path_sans_ext(model_filepath),
+      compile = FALSE
       )})
   } else {
     model_stan[["model_folder"]] <- model_folder
