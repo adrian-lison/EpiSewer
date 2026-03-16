@@ -637,22 +637,53 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
 fit_model_docker <- function(job) {
   # create temporary files
   temp_input <- tempfile(fileext = ".rds")
+  on.exit({
+    unlink(temp_input)
+    unlink(file.path(temp_output, "fit.rds"))
+  }, add = TRUE)
+
   saveRDS(job, temp_input)
   temp_output <- tempdir()
+
   # run model inside docker container
-  system(paste(
+  exit_code <- system(paste(
     "docker run --rm",
     "-v", paste0(temp_input, ":/data/EpiSewer-docker-job.rds"),
     "-v", paste0(temp_output, ":/data/EpiSewer-docker-results"),
     "episewer /opt/fit_EpiSewer.R",
     "/data/EpiSewer-docker-job.rds", "/data/EpiSewer-docker-results/fit.rds"
   ))
-  # read result
-  fit_res <- readRDS(file.path(temp_output, "fit.rds"))
-  # delete temporary files
-  unlink(temp_input)
-  unlink(file.path(temp_output, "fit.rds"))
-  unlink(temp_output)
+
+  # check docker exit code
+  if (exit_code != 0) {
+    cli::cli_warn(paste(
+      "Fitting via docker container failed.",
+      "Check that the 'episewer' image exists and Docker is running."
+    ))
+    return(list(
+      errors = paste0(
+        "Fitting via docker container failed with exit code ", exit_code,
+        ". Check that the 'episewer' image exists and Docker is running."
+      )
+    ))
+  }
+
+  # check output file was actually created
+  result_path <- file.path(temp_output, "fit.rds")
+  if (!file.exists(result_path)) {
+    cli::cli_warn(
+      "Fitting via docker container failed (no result file produced)."
+    )
+    return(list(
+      errors = paste(
+        "Fitting via docker container failed.",
+        "No result file was produced."
+      )
+    ))
+  }
+
+  # read and return result
+  fit_res <- readRDS(result_path)
   return(fit_res)
 }
 
