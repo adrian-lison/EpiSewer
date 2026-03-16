@@ -411,6 +411,8 @@ get_discrete_lognormal <- function(
 #' @param sigma Standard deviation of the untruncated normal distribution
 #'
 #' @return The mean of the truncated normal distribution
+#'
+#' @keywords internal
 trunc_normal_mean <- function(mu, sigma) {
   if (sigma == 0) {
     return(mu)

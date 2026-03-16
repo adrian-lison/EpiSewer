@@ -19,3 +19,4 @@ The mean of the truncated normal distribution
 Calculate the mean of a truncated normal distribution (truncated below zero)
 with mean mu and standard deviation sigma.
 }
+\keyword{internal}

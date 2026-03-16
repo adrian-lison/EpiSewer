@@ -85,3 +85,4 @@ This helper function is called from other measurement modeling
 functions. Currently supported are \code{\link[=concentrations_observe]{concentrations_observe()}} and
 \code{\link[=concentrations_observe_partitions]{concentrations_observe_partitions()}}.
 }
+\keyword{internal}
