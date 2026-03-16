@@ -67,3 +67,11 @@ ww_assumptions_SARS_CoV_2_Zurich <- sewer_assumptions(
   shedding_reference = "symptom_onset"
 )
 usethis::use_data(ww_assumptions_SARS_CoV_2_Zurich, overwrite = TRUE)
+
+ww_result_SARS_CoV_2_Zurich <- EpiSewer(
+  data = ww_data_SARS_CoV_2_Zurich,
+  assumptions = ww_assumptions_SARS_CoV_2_Zurich,
+  results_opts = set_results_opts(fitted = FALSE)
+)
+
+usethis::use_data(ww_result_SARS_CoV_2_Zurich, overwrite = TRUE)
