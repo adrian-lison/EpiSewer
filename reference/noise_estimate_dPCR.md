@@ -1,14 +1,15 @@
 # Estimate measurement noise for digital PCR data
 
-This option estimates the unexplained variation in wastewater
-measurements using a coefficient of variation model specialized for
-digital PCR (e.g. digital droplet PCR). Specifically, the coefficient of
-variation is modeled as a function of the expected concentration
-according to the statistical properties of dPCR.
+This option models concentration measurements using an error model
+specialized for digital PCR (e.g. digital droplet PCR). This is a fast
+approximation assuming a fixed number of valid total partitions in the
+dPCR assay and a known conversion factor. For a model that jointly
+estimates uncertain assay parameters, see
+[`noise_estimate_dPCR_params()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR_params.md).
 
-This model predicts a higher coefficient of variation at smaller
-concentrations, which often leads to a better model fit, even for
-measurements from other quantification methods such as qPCR.
+This model predicts more relative variation at smaller concentrations,
+which often leads to a better model fit, even for measurements from
+other quantification methods such as qPCR.
 
 If multiple measurements (replicates) per sample are provided,
 `EpiSewer` can also explicitly model variation before the replication
@@ -21,17 +22,13 @@ noise_estimate_dPCR(
   replicates = FALSE,
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
-  total_partitions_prior_mu = 20000,
-  total_partitions_prior_sigma = 5000,
   total_partitions_observe = FALSE,
-  partition_variation_prior_mu = 0,
-  partition_variation_prior_sigma = 0.05,
-  volume_scaled_prior_mu = 1e-05,
-  volume_scaled_prior_sigma = 4e-05,
+  max_partitions = 30000,
+  partition_loss_mean = 0.1,
+  volume_scaled = 1e-05,
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   prePCR_noise_type = "log-normal",
-  use_taylor_approx = TRUE,
   modeldata = modeldata_init()
 )
 ```
@@ -45,29 +42,19 @@ noise_estimate_dPCR(
 
 - cv_prior_mu:
 
-  Prior (mean) on the coefficient of variation of concentration
-  measurements. Note that in contrast to using
-  [`noise_estimate()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate.md),
-  this does *not* include the technical noise of the digital PCR. This
-  is because the dPCR noise is explicitly modeled (using the number of
-  partitions and conversion factor). Moreover, when `replicates=TRUE`,
-  this is only the CV after the replication stage (see details for more
+  Prior (mean) on the coefficient of variation of analyzed
+  concentrations (pre-PCR noise). Note that this does *not* include the
+  technical noise of the digital PCR. This is because the dPCR noise is
+  explicitly modeled (using the total number of partitions and
+  conversion factor). Moreover, when `replicates=TRUE`, noise before the
+  replication stage is separately modeled, so `cv_prior_mu` only
+  describes any remaining pre-PCR noise (see details for more
   explanation).
 
 - cv_prior_sigma:
 
-  Prior (standard deviation) on the coefficient of variation of
-  concentration measurements.
-
-- total_partitions_prior_mu:
-
-  Prior (mean) on the total number of partitions in the dPCR reaction.
-
-- total_partitions_prior_sigma:
-
-  Prior (standard deviation) on the total number of partitions in the
-  dPCR reaction. If this is set to zero, the total number of partitions
-  will be fixed to the prior mean and not estimated.
+  Prior (standard deviation) on the coefficient of variation of analyzed
+  concentrations.
 
 - total_partitions_observe:
 
@@ -76,33 +63,23 @@ noise_estimate_dPCR(
   `total_partitions_col` is specified in
   [`concentrations_observe()`](https://adrian-lison.github.io/EpiSewer/reference/concentrations_observe.md).
 
-- partition_variation_prior_mu:
+- max_partitions:
 
-  Prior (mean) on the coefficient of variation of the total number of
-  partitions in the dPCR reaction. Usually, the maximum number of
-  partitions possible for a given dPCR chip is not reached, i.e. a
-  certain number of partitions is lost. This loss varies between PCR
-  runs, and is modeled as log-normal distributed in EpiSewer.
+  The maximum total number of dPCR partitions. This is usually defined
+  by the manufacturer of the dPCR system/chip used, which supports a
+  certain maximum number of partitions.
 
-- partition_variation_prior_sigma:
+- partition_loss_mean:
 
-  Prior (standard deviation) on the coefficient of variation of the
-  total number of partitions in the dPCR reaction. If this is set to
-  zero, the partition variation will be fixed to the prior mean and not
-  estimated.
+  The mean relative partition loss. A certain proportion of partitions
+  in a dPCR run is typically invalid and discarded from the
+  concentration estimate.
 
-- volume_scaled_prior_mu:
+- volume_scaled:
 
-  Prior (mean) on the conversion factor (partition volume scaled by the
-  dilution of wastewater in the assay) for the dPCR reaction. See
-  details for further explanation.
-
-- volume_scaled_prior_sigma:
-
-  Prior (standard deviation) on the conversion factor (partition volume
-  scaled by the dilution of wastewater in the assay) for the dPCR
-  reaction. If this is set to zero, the conversion factor will be fixed
-  to the prior mean and not estimated.
+  The conversion factor (partition volume multiplied with the scaling of
+  concentration in the assay) for the dPCR reaction. See details for
+  further explanation.
 
 - pre_replicate_cv_prior_mu:
 
@@ -122,14 +99,6 @@ noise_estimate_dPCR(
   noise model, but can make a relevant difference for the LOD model if
   [`LOD_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/LOD_estimate_dPCR.md)
   is used.
-
-- use_taylor_approx:
-
-  If TRUE (default), a Taylor expansion approximation is used to
-  estimate the CV of measurements under pre-PCR noise. The approximation
-  is very accurate, unless concentrations are extremely high (so high
-  that the quality of the measurements from dPCR would anyway be
-  questionable).
 
 - modeldata:
 
@@ -151,14 +120,13 @@ performed before model fitting (`.checks`).
 
 ## Details
 
-The conversion factor (see `volume_scaled_prior_mu`,
-`volume_scaled_prior_sigma`) is the partition volume scaled by the
-dilution of the wastewater in the assay. The dilution accounts for all
-extraction and preparation steps. For example, if the partition volume
-is 4.5e-7 mL and the dilution of the wastewater is 100:3 (i.e. 100 gc/mL
-in the original wastewater sample correspond to 3 gc/mL in the PCR
-reaction), then the overall conversion factor is 4.5e-7 \* 100 / 3 =
-1.5e-5.
+The conversion factor (see `volume_scaled`) is the partition volume v
+multiplied with a scaling factor s. The scaling factor accounts for
+concentration differences between the sample and the reaction mix, for
+example due to extraction or adding of reagents. For example, if the
+partition volume is 4.5e-7 mL and the scaling factor is 100:3 (i.e. 100
+gc/mL in the original sample correspond to 3 gc/mL in the PCR reaction),
+then the overall conversion factor is 4.5e-7 \* 100 / 3 = 1.5e-5.
 
 When `replicates=TRUE`, two coefficients of variation are estimated:
 
@@ -182,13 +150,6 @@ The priors of this component have the following functional form:
 - coefficient of variation of concentration measurements (`cv`):
   `Truncated normal`
 
-- mean number of partitions in dPCR: `Truncated normal`
-
-- coefficient of variation of number of partitions in dPCR:
-  `Truncated normal`
-
-- conversion factor for dPCR: `Truncated normal`
-
 - coefficient of variation of concentration before the replication stage
   (`pre_replicate_cv`): `Truncated normal`
 
@@ -197,6 +158,10 @@ The priors of this component have the following functional form:
 [LOD_estimate_dPCR](https://adrian-lison.github.io/EpiSewer/reference/LOD_estimate_dPCR.md)
 for a limit of detection model specialised for dPCR.
 
+[noise_estimate_dPCR_params](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR_params.md)
+for jointly estimating uncertain parameters of the assay.
+
 Other noise models:
 [`noise_estimate()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate.md),
-[`noise_estimate_constant_var()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_constant_var.md)
+[`noise_estimate_constant_var()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_constant_var.md),
+[`noise_estimate_dPCR_params()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR_params.md)

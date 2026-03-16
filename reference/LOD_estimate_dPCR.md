@@ -51,7 +51,8 @@ the number of partitions in the dPCR reaction and the conversion factor
 as defined and estimated by
 [`noise_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.md).
 It can therefore only be used together with
-`noise = noise_estimate_dPCR()` in
+`noise = noise_estimate_dPCR()` or
+`noise = noise_estimate_dPCR_params()` in
 [`model_measurements()`](https://adrian-lison.github.io/EpiSewer/reference/model_measurements.md).
 
 ## See also

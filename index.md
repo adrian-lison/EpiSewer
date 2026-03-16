@@ -64,6 +64,12 @@ can be done using the `install_cmdstan()` function from `cmdstanr`. If
 you experience any problems installing CmdStan, see the [cmdstanr
 vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for help.
 
+❗ Note: If you cannot install CmdStan on your system, you can
+alternatively run the EpiSewer model in a docker container. See the
+[docker
+vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html)
+for instructions.
+
 ``` r
 cmdstanr::check_cmdstan_toolchain()
 cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up
@@ -120,8 +126,7 @@ Technology) to the public domain (CC BY 4.0 license).
 ``` r
 data_zurich <- SARS_CoV_2_Zurich
 names(data_zurich)
-#> [1] "measurements" "flows"        "cases"       
-#> [4] "units"
+#> [1] "measurements" "flows"        "cases"        "units"
 ```
 
 - `measurements`: `EpiSewer` requires a time series of concentration
@@ -143,20 +148,19 @@ in Zurich. Some days have missing measurements, but this is no problem:
 
 ``` r
 data_zurich$measurements
-#> Index: <weekday>
-#>            date concentration   weekday
-#>          <Date>         <num>    <char>
-#>   1: 2022-01-01            NA  Saturday
-#>   2: 2022-01-02            NA    Sunday
-#>   3: 2022-01-03      455.7580    Monday
-#>   4: 2022-01-04      747.8792   Tuesday
-#>   5: 2022-01-05      573.7020 Wednesday
-#>  ---                                   
-#> 116: 2022-04-26      182.3664   Tuesday
-#> 117: 2022-04-27      379.2421 Wednesday
-#> 118: 2022-04-28      439.7427  Thursday
-#> 119: 2022-04-29      394.0033    Friday
-#> 120: 2022-04-30      293.1242  Saturday
+#>            date concentration
+#>          <Date>         <num>
+#>   1: 2022-01-01            NA
+#>   2: 2022-01-02            NA
+#>   3: 2022-01-03      455.7580
+#>   4: 2022-01-04      747.8792
+#>   5: 2022-01-05      573.7020
+#>  ---                         
+#> 116: 2022-04-26      182.3664
+#> 117: 2022-04-27      379.2421
+#> 118: 2022-04-28      439.7427
+#> 119: 2022-04-29      394.0033
+#> 120: 2022-04-30      293.1242
 ```
 
 To show the handling of missing data more clearly, we make our data
@@ -489,8 +493,7 @@ attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"         "stan_model"  "checksums"  
-#> [4] "summary"     "fitted"      "diagnostics"
+#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"      "diagnostics"
 #> [7] "runtime"
 ```
 
@@ -501,11 +504,8 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size"
-#>  [3] "data"          "model"        
-#>  [5] "init"          "fit_opts"     
-#>  [7] "results_opts"  "priors_text"  
-#>  [9] "metainfo"      "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"     
+#>  [7] "results_opts"  "priors_text"   "metainfo"      "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
@@ -519,7 +519,7 @@ ww_result$job$model
 #>  |- LOD_none
 #> 
 #> sampling
-#>  |- outliers_none
+#>  |- outliers_estimate
 #>  |- sample_effects_none
 #> 
 #> sewage
@@ -551,18 +551,11 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#>  [1] "samples"                 
-#>  [2] "R"                       
-#>  [3] "R_diagnostics"           
-#>  [4] "expected_infections"     
-#>  [5] "infections"              
-#>  [6] "growth_rate"             
-#>  [7] "doubling_time"           
-#>  [8] "days_growing"            
-#>  [9] "expected_load"           
-#> [10] "expected_concentration"  
-#> [11] "concentration"           
-#> [12] "normalized_concentration"
+#>  [1] "samples"                  "R"                        "R_diagnostics"           
+#>  [4] "expected_infections"      "infections"               "growth_rate"             
+#>  [7] "doubling_time"            "days_growing"             "expected_load"           
+#> [10] "expected_concentration"   "concentration"            "normalized_concentration"
+#> [13] "outliers"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -570,27 +563,13 @@ number.
 
 ``` r
 head(ww_result$summary$R, 5)
-#>          date     mean   median lower_0.95
-#>        <Date>    <num>    <num>      <num>
-#> 1: 2021-12-02 1.115172 1.110672  0.8615012
-#> 2: 2021-12-03 1.110969 1.108036  0.8628105
-#> 3: 2021-12-04 1.107426 1.104952  0.8605573
-#> 4: 2021-12-05 1.104382 1.102559  0.8669692
-#> 5: 2021-12-06 1.101656 1.100388  0.8699916
-#>    lower_0.5 upper_0.5 upper_0.95     type
-#>        <num>     <num>      <num>   <fctr>
-#> 1:  1.022565  1.201434   1.401401 estimate
-#> 2:  1.020731  1.197291   1.385792 estimate
-#> 3:  1.018906  1.192224   1.370607 estimate
-#> 4:  1.017617  1.187447   1.361395 estimate
-#> 5:  1.016991  1.180810   1.349066 estimate
-#>    seeding
-#>     <lgcl>
-#> 1:    TRUE
-#> 2:    TRUE
-#> 3:    TRUE
-#> 4:    TRUE
-#> 5:    TRUE
+#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95     type seeding
+#>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>   <fctr>  <lgcl>
+#> 1: 2021-12-03 1.065800 1.062111  0.7804628 0.9704949  1.155865   1.347606 estimate    TRUE
+#> 2: 2021-12-04 1.066615 1.063386  0.7873830 0.9718353  1.156192   1.344718 estimate    TRUE
+#> 3: 2021-12-05 1.067446 1.064492  0.7978542 0.9745666  1.156663   1.336939 estimate    TRUE
+#> 4: 2021-12-06 1.068285 1.066127  0.8056717 0.9769387  1.156550   1.334001 estimate    TRUE
+#> 5: 2021-12-07 1.069128 1.068549  0.8120417 0.9798131  1.155093   1.329651 estimate    TRUE
 ```
 
 The `fitted` attribute provides access to all details of the fitted stan
@@ -608,7 +587,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.9483824 1.0604264 0.9608296 0.8695765
+#> [1] 0.9432026 0.9982946 0.8426807 0.8658058
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -620,10 +599,10 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "df1728c80a97f9d14521b5a43bc98a12"
+#> [1] "c8484e1d5725559d91a98baaf86c86b6"
 #> 
 #> $input
-#> [1] "a2976b41049451d10be221f31e922835"
+#> [1] "dc28609580eb6ab527edcd5301ff20a8"
 #> 
 #> $fit_opts
 #> [1] "bfdedc2ea8d89b577ad57b86ac83e706"
@@ -632,7 +611,7 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "03dd9d0e5e02a8b393c5e765de3f79fa"
+#> [1] "ce0d2af60f2ac0fce8bb6b9c26adb59e"
 ```
 
 ## Citing the package

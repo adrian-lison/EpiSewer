@@ -17,12 +17,17 @@ Modeling functions for the measurement process
   : Model the measurement process
 - [`concentrations_observe()`](https://adrian-lison.github.io/EpiSewer/reference/concentrations_observe.md)
   : Observe concentration measurements
+- [`concentrations_observe_partitions()`](https://adrian-lison.github.io/EpiSewer/reference/concentrations_observe_partitions.md)
+  : Observe positive dPCR partition counts
 - [`noise_estimate()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate.md)
   : Estimate measurement noise
 - [`noise_estimate_constant_var()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_constant_var.md)
   : Estimate measurement noise with constant variance
 - [`noise_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.md)
   : Estimate measurement noise for digital PCR data
+- [`noise_estimate_dPCR_params()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR_params.md)
+  : Estimate measurement noise for digital PCR data with priors for
+  assay parameters
 - [`LOD_assume()`](https://adrian-lison.github.io/EpiSewer/reference/LOD_assume.md)
   : Assume a limit of detection
 - [`LOD_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/LOD_estimate_dPCR.md)
@@ -148,6 +153,8 @@ Functions to specify and run the sampling of EpiSewer models
   : Configure results returned after model fitting
 - [`sewer_compile()`](https://adrian-lison.github.io/EpiSewer/reference/sewer_compile.md)
   : Compile EpiSewer models
+- [`sewer_pull_docker()`](https://adrian-lison.github.io/EpiSewer/reference/sewer_pull_docker.md)
+  : Pull the latest EpiSewer docker image
 - [`run()`](https://adrian-lison.github.io/EpiSewer/reference/run.md) :
   Fit an EpiSewer model.
 

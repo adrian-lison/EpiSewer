@@ -6,28 +6,22 @@ Loads a specific stan model for model fitting in `EpiSewer`.
 
 ``` r
 get_stan_model(
-  model_metainfo = NULL,
   model_filename = NULL,
   model_folder = "stan",
   profile = TRUE,
   threads = FALSE,
   force_recompile = FALSE,
-  package = "EpiSewer"
+  package = "EpiSewer",
+  use_docker = FALSE
 )
 ```
 
 ## Arguments
 
-- model_metainfo:
-
-  A `list` containing meta information about the specified model to be
-  fitted. The required stan model is automatically inferred from the
-  `model_metainfo`.
-
 - model_filename:
 
-  File name of a specific stan model to load. This is an alternative to
-  supplying `model_metainfo`.
+  File name of a specific stan model to load. If NULL, the default model
+  will be loaded.
 
 - model_folder:
 
@@ -55,6 +49,12 @@ get_stan_model(
 
   Name of the package in which to search for stan files (defaults to
   EpiSewer). If NULL, will search in the normal working directory.
+
+- use_docker:
+
+  Use the model compiled in a docker container? Note that if TRUE, all
+  other arguments are ignored and the precompiled model in the container
+  will be used. Default is FALSE.
 
 ## Value
 

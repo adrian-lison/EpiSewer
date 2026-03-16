@@ -4,6 +4,7 @@
 <url><loc>https://adrian-lison.github.io/EpiSewer/LICENSE-text.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/LICENSE.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/articles/index.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/articles/load_per_case.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/articles/model-definition.html</loc></url>
@@ -34,11 +35,15 @@
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/component_functions.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/component_functions_.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/concentrations_observe.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/concentrations_observe_partitions.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/copy_env.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/damping_assume.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/damping_none.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/dist_mean.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/draws_to_init.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/fence.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/find_mu_sigma_truncnorm.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/fit_model.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/fit_stan.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/flows_assume.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/flows_observe.html</loc></url>
@@ -72,6 +77,8 @@
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/load_variation_estimate.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/load_variation_none.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/mark_outlier_spikes_median.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/match_obs_dist.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/measurements_observe_.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/model_forecast.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/model_infections.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/model_measurements.html</loc></url>
@@ -87,9 +94,9 @@
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_constant_var.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR_params.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/outliers_estimate.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/outliers_none.html</loc></url>
-<url><loc>https://adrian-lison.github.io/EpiSewer/reference/partitions_observe.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/place_knots.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/plot_LOD.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/plot_R.html</loc></url>
@@ -99,6 +106,7 @@
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/plot_growth_report.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/plot_infections.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/plot_load.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/plot_prior_partitions.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/plot_prior_posterior.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/plot_sample_effects.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/print.EpiSewerJob.html</loc></url>
@@ -109,6 +117,8 @@
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/print.tbe.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/print.tbp.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/qexpgamma.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/read_scalar_params.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/read_scalar_vars.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/rep_each_v.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/residence_dist_assume.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/run.html</loc></url>
@@ -124,10 +134,12 @@
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/set_prior.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/set_prior_normal.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/set_prior_normal_log.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/set_prior_trunc_normal.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/set_results_opts.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/sewer_assumptions.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/sewer_compile.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/sewer_data.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/sewer_pull_docker.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/shedding_dist_assume.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/shedding_dist_estimate.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/suggest_load_per_case.html</loc></url>
@@ -136,9 +148,12 @@
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/tbe.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/tbp.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/template_model_helpers.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/trunc_normal_mean.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/update_env.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/verify_is_modeldata.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/weighted.median.html</loc></url>
 <url><loc>https://adrian-lison.github.io/EpiSewer/reference/withWarnings.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/write_scalar_params.html</loc></url>
+<url><loc>https://adrian-lison.github.io/EpiSewer/reference/write_scalar_vars.html</loc></url>
 </urlset>
 

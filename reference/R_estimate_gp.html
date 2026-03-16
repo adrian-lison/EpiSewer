@@ -26,6 +26,7 @@ long-term trend in Rt, and one for short-term deviations from this trend."></hea
     <li><h6 class="dropdown-header" data-toc-skip>Introduction</h6></li>
     <li><a class="dropdown-item" href="../articles/model-specification.html">Modeling in EpiSewer</a></li>
     <li><a class="dropdown-item" href="../articles/detailed-example.html">Detailed example</a></li>
+    <li><a class="dropdown-item" href="../articles/docker-backend.html">Running EpiSewer with docker</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Modeling details</h6></li>
     <li><a class="dropdown-item" href="../articles/model-definition.html">Model definition</a></li>
@@ -60,12 +61,12 @@ long-term trend in Rt, and one for short-term deviations from this trend.</p>
 <span>  R_intercept_prior_sigma <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  length_scale_prior_mu <span class="op">=</span> <span class="fl">7</span> <span class="op">*</span> <span class="fl">3</span>,</span>
 <span>  length_scale_prior_sigma <span class="op">=</span> <span class="fl">7</span><span class="op">/</span><span class="fl">2</span>,</span>
-<span>  magnitude_prior_mu <span class="op">=</span> <span class="fl">0.2</span>,</span>
-<span>  magnitude_prior_sigma <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  magnitude_prior_mu <span class="op">=</span> <span class="fl">0.125</span>,</span>
+<span>  magnitude_prior_sigma <span class="op">=</span> <span class="fl">0.025</span>,</span>
 <span>  long_length_scale_prior_mu <span class="op">=</span> <span class="fl">7</span> <span class="op">*</span> <span class="fl">4</span> <span class="op">*</span> <span class="fl">3</span>,</span>
 <span>  long_length_scale_prior_sigma <span class="op">=</span> <span class="fl">7</span>,</span>
-<span>  long_magnitude_prior_mu <span class="op">=</span> <span class="fl">0.4</span>,</span>
-<span>  long_magnitude_prior_sigma <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  long_magnitude_prior_mu <span class="op">=</span> <span class="fl">0.25</span>,</span>
+<span>  long_magnitude_prior_sigma <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  matern_nu <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span><span class="op">/</span><span class="fl">2</span>, <span class="fl">5</span><span class="op">/</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span>,</span>
 <span>  boundary_factor <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  n_basis_factor <span class="op">=</span> <span class="fl">3.42</span>,</span>
@@ -267,7 +268,7 @@ subnational case counts. <em>Wellcome Open Res</em> 5, 112 (2020).
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.9000.</p>
 </div>
 
     </footer></div>

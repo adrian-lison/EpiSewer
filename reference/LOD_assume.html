@@ -26,6 +26,7 @@ known limit of detection and includes zero measurements in the likelihood."></he
     <li><h6 class="dropdown-header" data-toc-skip>Introduction</h6></li>
     <li><a class="dropdown-item" href="../articles/model-specification.html">Modeling in EpiSewer</a></li>
     <li><a class="dropdown-item" href="../articles/detailed-example.html">Detailed example</a></li>
+    <li><a class="dropdown-item" href="../articles/docker-backend.html">Running EpiSewer with docker</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Modeling details</h6></li>
     <li><a class="dropdown-item" href="../articles/model-definition.html">Model definition</a></li>
@@ -125,10 +126,11 @@ and protocol. It is usually established from a dedicated lab experiment
 (serial dilution experiment). It his here assumed that this experiment did
 not cover a large fraction of the preprocessing noise to find an optimal
 configuration for the exponential model.</p>
-<p>If used together with <code><a href="noise_estimate_dPCR.html">noise_estimate_dPCR()</a></code>, EpiSewer will also
-model the effect of pre-PCR noise on the LOD. This means that the modeled
-LOD could be slightly higher than specified under <code>limit</code>, depending on the
-estimated pre-PCR noise.</p>
+<p>If used together with <code><a href="noise_estimate_dPCR.html">noise_estimate_dPCR()</a></code> or
+<code><a href="noise_estimate_dPCR_params.html">noise_estimate_dPCR_params()</a></code>, EpiSewer will also model the effect of
+pre-PCR noise on the LOD. This means that the modeled LOD could be slightly
+higher than specified under <code>limit</code>, depending on the estimated pre-PCR
+noise.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -148,7 +150,7 @@ estimated pre-PCR noise.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.9000.</p>
 </div>
 
     </footer></div>

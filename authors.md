@@ -10,14 +10,14 @@
 Source:
 [`DESCRIPTION`](https://github.com/adrian-lison/EpiSewer/blob/main/DESCRIPTION)
 
-Lison A (2025). *EpiSewer: Estimate Epidemiological Parameters from
+Lison A (2026). *EpiSewer: Estimate Epidemiological Parameters from
 Wastewater Measurements*. R package version 0.0.4,
 <https://adrian-lison.github.io/EpiSewer/>.
 
     @Manual{,
       title = {EpiSewer: Estimate Epidemiological Parameters from Wastewater Measurements},
       author = {Adrian Lison},
-      year = {2025},
+      year = {2026},
       note = {R package version 0.0.4},
       url = {https://adrian-lison.github.io/EpiSewer/},
     }

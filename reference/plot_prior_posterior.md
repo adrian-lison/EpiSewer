@@ -40,11 +40,14 @@ The following parameters can be visualized (if in the model):
 - `measurement_noise_cv` (nu_upsilon_a): Coefficient of variation
   (measurement noise)
 
-- `dPCR_total_partitions` (nu_upsilon_b_mu): Average total number of
+- `dPCR_maximum_partitions` (max_partitions): Maximum number of
   partitions in dPCR
 
-- `dPCR_partition_variation` (nu_upsilon_b_cv): Partition number
-  variation in dPCR
+- `dPCR_partition_loss_mean` (partition_loss_mu): Mean relative
+  partition loss in dPCR
+
+- `dPCR_partition_loss_variation` (partition_loss_sigma): Partition
+  number variation in dPCR
 
 - `dPCR_conversion_factor` (nu_upsilon_c): Conversion factor in dPCR
 

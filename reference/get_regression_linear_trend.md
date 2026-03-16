@@ -39,5 +39,5 @@ trend_reg <- get_regression_linear_trend(x, weights = w)
 as.vector(trend_reg %*% y) # this gives you the trend estimate
 #> Error: object 'trend_reg' not found
 summary(lm(y ~ x, weights = w))$coefficients["x","Estimate"] # should be the same
-#> [1] 3.986604
+#> [1] 4.050874
 ```

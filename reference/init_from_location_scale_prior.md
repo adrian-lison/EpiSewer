@@ -9,7 +9,7 @@ zero (useful for truncated normal priors for example.)
 ## Usage
 
 ``` r
-init_from_location_scale_prior(prior)
+init_from_location_scale_prior(prior, enforce_positive = FALSE)
 ```
 
 ## Arguments

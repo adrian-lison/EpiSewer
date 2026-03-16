@@ -81,7 +81,9 @@ did not cover a large fraction of the preprocessing noise to find an
 optimal configuration for the exponential model.
 
 If used together with
-[`noise_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.md),
+[`noise_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.md)
+or
+[`noise_estimate_dPCR_params()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR_params.md),
 EpiSewer will also model the effect of pre-PCR noise on the LOD. This
 means that the modeled LOD could be slightly higher than specified under
 `limit`, depending on the estimated pre-PCR noise.

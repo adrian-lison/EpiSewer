@@ -32,6 +32,8 @@ model_measurements(
 
   - [`noise_estimate()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate.md)
 
+  - [`noise_estimate_dPCR_params()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR_params.md)
+
   - [`noise_estimate_constant_var()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_constant_var.md)
 
   - [`noise_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.md)

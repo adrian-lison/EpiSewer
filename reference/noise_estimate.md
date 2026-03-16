@@ -15,6 +15,7 @@ For a non-constant coefficient of variation model, see
 ``` r
 noise_estimate(
   replicates = FALSE,
+  distribution = "gamma",
   cv_prior_mu = 0,
   cv_prior_sigma = 1,
   pre_replicate_cv_prior_mu = 0,
@@ -29,6 +30,13 @@ noise_estimate(
 
   Should replicates be used to explicitly model variation before the
   replication stage?
+
+- distribution:
+
+  Parametric distribution for concentration measurements. Currently
+  supported are "gamma" (default and recommended), "log-normal",
+  "truncated normal", and "normal". The "truncated normal" and "normal"
+  options are not recommended for use in practice.
 
 - cv_prior_mu:
 
@@ -99,4 +107,5 @@ The priors of this component have the following functional form:
 
 Other noise models:
 [`noise_estimate_constant_var()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_constant_var.md),
-[`noise_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.md)
+[`noise_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.md),
+[`noise_estimate_dPCR_params()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR_params.md)

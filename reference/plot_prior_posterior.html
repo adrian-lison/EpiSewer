@@ -22,6 +22,7 @@
     <li><h6 class="dropdown-header" data-toc-skip>Introduction</h6></li>
     <li><a class="dropdown-item" href="../articles/model-specification.html">Modeling in EpiSewer</a></li>
     <li><a class="dropdown-item" href="../articles/detailed-example.html">Detailed example</a></li>
+    <li><a class="dropdown-item" href="../articles/docker-backend.html">Running EpiSewer with docker</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Modeling details</h6></li>
     <li><a class="dropdown-item" href="../articles/model-definition.html">Model definition</a></li>
@@ -81,8 +82,9 @@ functions to adjust themes and scales, and to add further geoms.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The following parameters can be visualized (if in the model):</p><ul><li><p><code>measurement_noise_cv</code> (nu_upsilon_a): Coefficient of variation (measurement noise)</p></li>
-<li><p><code>dPCR_total_partitions</code> (nu_upsilon_b_mu): Average total number of partitions in dPCR</p></li>
-<li><p><code>dPCR_partition_variation</code> (nu_upsilon_b_cv): Partition number variation in dPCR</p></li>
+<li><p><code>dPCR_maximum_partitions</code> (max_partitions): Maximum number of partitions in dPCR</p></li>
+<li><p><code>dPCR_partition_loss_mean</code> (partition_loss_mu): Mean relative partition loss in dPCR</p></li>
+<li><p><code>dPCR_partition_loss_variation</code> (partition_loss_sigma): Partition number variation in dPCR</p></li>
 <li><p><code>dPCR_conversion_factor</code> (nu_upsilon_c): Conversion factor in dPCR</p></li>
 <li><p><code>pre_replicate_cv</code> (nu_psi): Coefficient of variation (pre-PCR noise)</p></li>
 <li><p><code>load_variation_cv</code> (nu_zeta): Individual-level coefficient of load variation</p></li>
@@ -99,7 +101,7 @@ functions to adjust themes and scales, and to add further geoms.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.9000.</p>
 </div>
 
     </footer></div>

@@ -11,7 +11,7 @@ helper functions to adjust model priors and further settings.
 
 ``` r
 model_sampling(
-  outliers = outliers_none(),
+  outliers = outliers_estimate(),
   sample_effects = sample_effects_none()
 )
 ```

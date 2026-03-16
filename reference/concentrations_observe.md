@@ -2,8 +2,8 @@
 
 This option fits the `EpiSewer` model to pathogen concentrations
 measured in wastewater samples. It is suitable for different
-quantification methods such as qPCR or dPCR. The measured concentrations
-are by default modeled via a gamma likelihood.
+quantification methods such as qPCR or dPCR. By default, the measured
+concentrations are modeled via a gamma likelihood.
 
 ## Usage
 
@@ -11,7 +11,6 @@ are by default modeled via a gamma likelihood.
 concentrations_observe(
   measurements = NULL,
   composite_window = 1,
-  distribution = "gamma",
   date_col = "date",
   concentration_col = "concentration",
   replicate_col = NULL,
@@ -38,13 +37,6 @@ concentrations_observe(
   this case, the supplied dates represent the last day included in each
   sample.
 
-- distribution:
-
-  Parametric distribution for concentration measurements. Currently
-  supported are "gamma" (default and recommended), "log-normal",
-  "truncated normal", and "normal". The "truncated normal" and "normal"
-  options are not recommended for use in practice.
-
 - date_col:
 
   Name of the column containing the dates.
@@ -62,31 +54,33 @@ concentrations_observe(
 
 - n_averaged:
 
-  The number of replicates over which the measurements have been
-  averaged. This is typically used as an alternative to providing
-  several replicates per sample (i.e. the concentration provided in the
-  `measurements` `data.frame` is the average of several replicates). Can
-  be either a single number (it is then assumed that the number of
-  averaged replicates is the same for each observation) or a vector (one
-  value for each observation).
+  The number of technical replicates (i.e. repeated PCR runs) used for
+  each sample or biological replicate. The concentration provided in the
+  `measurements` `data.frame` is assumed to be the average or pooled
+  estimate from several technical replicates. Can be either a single
+  number (it is then assumed that the number of averaged replicates is
+  the same for each observation) or a vector (one value for each
+  observation).
 
 - n_averaged_col:
 
   Name of the column in the `measurements` data.frame containing the
-  number of replicates over which the measurements have been averaged.
-  This is an alternative to specifying `n_averaged`.
+  number of technical replicates over which the measurements have been
+  averaged/pooled. This is an alternative to specifying `n_averaged`.
 
 - total_partitions_col:
 
   Name of the column in the `measurements` data.frame containing the
-  total number of partitions (e.g. droplets for ddPCR) in the dPCR
-  reaction of each measurement. Only applies to concentration
-  measurements obtain via dPCR. Can be used by the
+  number of total partitions (e.g. droplets for ddPCR) in the dPCR
+  reaction of each measurement. If several technical replicates are
+  used, this should be the AVERAGE number of valid partitions per
+  replicate. Only applies when modeling concentration measurements via
+  the dPCR-specific noise model. Can be used by the
   [`noise_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.md)
   and
   [`LOD_estimate_dPCR()`](https://adrian-lison.github.io/EpiSewer/reference/LOD_estimate_dPCR.md)
-  modeling components. Note that this is really the *total* number of
-  partitions, not just the number of positive partitions.
+  modeling components. Note that this is really the number of *valid*
+  partitions, not the number of positive partitions.
 
 - modeldata:
 
@@ -109,4 +103,4 @@ performed before model fitting (`.checks`).
 ## See also
 
 Other observation types:
-[`partitions_observe()`](https://adrian-lison.github.io/EpiSewer/reference/partitions_observe.md)
+[`concentrations_observe_partitions()`](https://adrian-lison.github.io/EpiSewer/reference/concentrations_observe_partitions.md)
