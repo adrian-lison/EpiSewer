@@ -1,6 +1,8 @@
 #!/usr/bin/env Rscript
 options(cmdstanr_no_ver_check=TRUE)
 
+cat("--- Running EpiSewer in docker container ---\n")
+
 library(cmdstanr)
 source("/opt/utils_warnings.R")
 source("/opt/utils_stan.R")

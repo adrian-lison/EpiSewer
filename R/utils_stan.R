@@ -49,7 +49,7 @@ get_stan_model <- function(
     model_filepath <- file.path(
       model_stan[["model_folder"]], model_stan[["model_filename"]]
     )
-    model_stan[["load_model"]] <- list(function() {cmdstan_model(
+    model_stan[["load_model"]] <- list(function() {cmdstanr::cmdstan_model(
       exe_file = tools::file_path_sans_ext(model_filepath),
       compile = FALSE
       )})
@@ -197,7 +197,7 @@ sampler_stan_pathfinder <- function(
 #' @return A list with details of the stan model
 #' @export
 model_stan_opts <- function(model_filename = NULL, model_folder = "stan",
-                            profile = TRUE, threads = FALSE,
+                            profile = TRUE, threads = FALSE, use_docker = FALSE,
                             force_recompile = FALSE, package = "EpiSewer") {
   opts <- as.list(environment())
   return(opts)
@@ -631,6 +631,28 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
     try(fit_res$time())
   }
 
+  return(fit_res)
+}
+
+fit_model_docker <- function(job) {
+  # create temporary files
+  temp_input <- tempfile(fileext = ".rds")
+  saveRDS(job, temp_input)
+  temp_output <- tempdir()
+  # run model inside docker container
+  system(paste(
+    "docker run --rm",
+    "-v", paste0(temp_input, ":/data/EpiSewer-docker-job.rds"),
+    "-v", paste0(temp_output, ":/data/EpiSewer-docker-results"),
+    "episewer /opt/fit_EpiSewer.R",
+    "/data/EpiSewer-docker-job.rds", "/data/EpiSewer-docker-results/fit.rds"
+  ))
+  # read result
+  fit_res <- readRDS(file.path(temp_output, "fit.rds"))
+  # delete temporary files
+  unlink(temp_input)
+  unlink(file.path(temp_output, "fit.rds"))
+  unlink(temp_output)
   return(fit_res)
 }
 

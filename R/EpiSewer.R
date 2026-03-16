@@ -153,18 +153,24 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
     profile = job$fit_opts$model$profile,
     threads = job$fit_opts$model$threads,
     force_recompile = job$fit_opts$model$force_recompile,
-    package = job$fit_opts$model$package
+    package = job$fit_opts$model$package,
+    use_docker = job$fit_opts$model$use_docker
   )
-  model_instance <- result$stan_model$load_model[[1]]()
 
-  result$checksums <- get_checksums(job, model_instance)
+  if (job$fit_opts$model$use_docker) {
+    result$checksums <- get_checksums(job)
+    fit_res <- try(fit_model_docker(job = job))
+  } else {
+    model_instance <- result$stan_model$load_model[[1]]()
+    result$checksums <- get_checksums(job, model_instance)
+    fit_res <- try(fit_model(
+      job = job,
+      model = result$stan_model,
+      model_instance = model_instance,
+      run_silent = run_silent
+    ))
+  }
 
-  fit_res <- try(fit_model(
-    job = job,
-    model = result$stan_model,
-    model_instance = model_instance,
-    run_silent = run_silent
-  ))
 
   if (!"errors" %in% names(fit_res)) {
     result$summary <- try(summarize_fit(
