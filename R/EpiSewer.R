@@ -144,10 +144,7 @@ run <- function(job, ...) {
 
 #' @export
 run.EpiSewerJob <- function(job, run_silent = FALSE) {
-  result <- list()
-  result$job <- job
-
-  result$stan_model <- get_stan_model(
+  stan_model <- get_stan_model(
     model_filename = job$fit_opts$model$model_filename,
     model_folder = job$fit_opts$model$model_folder,
     profile = job$fit_opts$model$profile,
@@ -158,19 +155,36 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
   )
 
   if (job$fit_opts$model$use_docker) {
-    result$checksums <- get_checksums(job)
-    fit_res <- try(fit_model_docker(job = job))
+    checksums <- get_checksums(job)
+    fit_res <- try(fit_model_docker(job = job, run_silent = run_silent))
   } else {
-    model_instance <- result$stan_model$load_model[[1]]()
-    result$checksums <- get_checksums(job, model_instance)
+    model_instance <- stan_model$load_model[[1]]()
+    checksums <- get_checksums(job, model_instance)
     fit_res <- try(fit_model(
       job = job,
-      model = result$stan_model,
+      model = stan_model,
       model_instance = model_instance,
       run_silent = run_silent
     ))
   }
 
+  result <- EpiSewerJobResult(
+    fit_res = fit_res,
+    job = job,
+    stan_model = stan_model,
+    checksums = checksums
+  )
+
+  return(result)
+}
+
+#' Constructor for EpiSewerJobResult objects
+#' @keywords internal
+EpiSewerJobResult <- function(fit_res, job, stan_model, checksums) {
+  result <- list()
+  result$job <- job
+  result$stan_model <- stan_model
+  result$checksums <- checksums
 
   if (!"errors" %in% names(fit_res)) {
     result$summary <- try(summarize_fit(

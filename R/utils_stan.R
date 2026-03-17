@@ -654,7 +654,7 @@ sewer_pull_docker <- function() {
   }
 }
 
-fit_model_docker <- function(job) {
+fit_model_docker <- function(job, run_silent = FALSE) {
   # create temporary files
   temp_input <- tempfile(fileext = ".rds")
   on.exit({
@@ -672,7 +672,7 @@ fit_model_docker <- function(job) {
     "-v", paste0(temp_output, ":/data/EpiSewer-docker-results"),
     "ghcr.io/adrian-lison/episewer:main /opt/fit_EpiSewer.R",
     "/data/EpiSewer-docker-job.rds", "/data/EpiSewer-docker-results/fit.rds"
-  ))
+  ), ignore.stdout = run_silent, ignore.stderr = run_silent)
 
   # check docker exit code
   if (exit_code != 0) {
