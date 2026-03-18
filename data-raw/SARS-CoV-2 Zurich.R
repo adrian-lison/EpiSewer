@@ -5,6 +5,7 @@
 # Technology) to the public domain (CC BY 4.0 license).
 #
 # Measurements are according to the protocol v4 (link url v2)
+source("local/local_data.R")
 library(data.table)
 
 url <- "https://sensors-eawag.ch/sars/__data__/processed_normed_data_zurich_v2.csv"
@@ -43,9 +44,39 @@ WW_data <- WW_data[
   date >= as.Date("2022-01-01") & date < as.Date("2022-05-01"),
 ]
 
+# PMMoV
+pmmov_data <- read_local_pmmov_data()
+
+# summarize per wwtp and date and arrange
+pmmov_data <- pmmov_data[
+  , .(gc_per_mlww = mean(gc_per_mlww, na.rm = TRUE)),
+  by = .(wwtp, date)
+][order(wwtp, date)]
+
+# filter for Zurich and rename
+pmmov_data <- pmmov_data[
+  wwtp == "ARA Werdhölzli", .(date, concentration = gc_per_mlww)
+  ]
+
+# filter date range
+pmmov_data <- pmmov_data[
+  date >= as.Date("2022-01-01") & date < as.Date("2022-05-01"),
+]
+
+# interpolate missing PMMoV concentrations
+pmmov_data <- pmmov_data[
+  data.table::CJ(date = seq.Date(min(date), max(date), by = "day"), unique = TRUE),
+  on = .(date)
+]
+pmmov_data[!is.na(concentration), interpolated := FALSE]
+pmmov_data[is.na(concentration), interpolated := TRUE]
+data.table::setnafill(pmmov_data, type = "locf", cols = "concentration")
+
+# combined ww_data
 SARS_CoV_2_Zurich <- list(
   measurements = WW_data[, c("date", "concentration")],
   flows = WW_data[, c("date", "flow")],
+  pmmov = pmmov_data[, c("date", "concentration", "interpolated")],
   cases = WW_data[, c("date", "cases")],
   units = list(concentration = "gc/mL", flow = "mL/day")
 )
@@ -53,10 +84,18 @@ SARS_CoV_2_Zurich <- list(
 usethis::use_data(SARS_CoV_2_Zurich, overwrite = TRUE)
 
 data_zurich <- SARS_CoV_2_Zurich
-measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
-ww_data_SARS_CoV_2_Zurich <- sewer_data(measurements = measurements_sparse, flows = data_zurich$flows, cases = data_zurich$cases)
+measurements_sparse <- data_zurich$measurements[
+  ,weekday := weekdays(data_zurich$measurements$date)
+  ][weekday %in% c("Monday","Thursday"),]
+
+ww_data_SARS_CoV_2_Zurich <- sewer_data(
+  measurements = measurements_sparse,
+  flows = data_zurich$flows,
+  cases = data_zurich$cases
+  )
 usethis::use_data(ww_data_SARS_CoV_2_Zurich, overwrite = TRUE)
 
+# assumptions
 generation_dist <- get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)
 incubation_dist <- get_discrete_gamma(gamma_shape = 8.5, gamma_scale = 0.4)
 shedding_dist <- get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397)
