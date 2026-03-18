@@ -81,7 +81,24 @@ EpiSewer <- function(
 }
 
 #' Constructor for EpiSewerJob objects
-#' @keywords internal
+#'
+#' @param job_name A name for the job, used for labeling outputs and results.
+#' @param modeldata A list with all model specifications.
+#' @param fit_opts Settings for model fitting, see [set_fit_opts()].
+#' @param results_opts Settings for results to be returned, see
+#'   [set_results_opts()].
+#' @param jobarray_size The size of the job array to run. This is relevant when
+#'   running the model on a cluster with job arrays. The default is 1, i.e. no
+#'   job array.
+#' @param overwrite If `TRUE` (the default), existing outputs with the same job
+#'   name will be overwritten.
+#' @param results_exclude A character vector with names of results to exclude
+#'   when saving results. This can be used to exclude large objects such as the
+#'   fitted model from being saved in the results.
+#'
+#' @return An `EpiSewerJob` object with all specifications for model fitting.
+#'
+#' @export
 EpiSewerJob <- function(job_name,
                         modeldata,
                         fit_opts,
@@ -179,7 +196,18 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
 }
 
 #' Constructor for EpiSewerJobResult objects
-#' @keywords internal
+#'
+#' @param fit_res The result of model fitting, either a fitted model object or
+#'   an error object if model fitting failed.
+#' @param job The EpiSewerJob object that was run.
+#' @param stan_model The stan model that was used for fitting.
+#' @param checksums A list with checksums that uniquely identify the model,
+#'   input, inits, fit_opts and results_opts of the job.
+#'
+#' @return An EpiSewerJobResult object with the results of model fitting and
+#'   relevant information about the job and the model.
+#'
+#' @export
 EpiSewerJobResult <- function(fit_res, job, stan_model, checksums) {
   result <- list()
   result$job <- job

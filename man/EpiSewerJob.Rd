@@ -14,7 +14,30 @@ EpiSewerJob(
   results_exclude = c()
 )
 }
+\arguments{
+\item{job_name}{A name for the job, used for labeling outputs and results.}
+
+\item{modeldata}{A list with all model specifications.}
+
+\item{fit_opts}{Settings for model fitting, see \code{\link[=set_fit_opts]{set_fit_opts()}}.}
+
+\item{results_opts}{Settings for results to be returned, see
+\code{\link[=set_results_opts]{set_results_opts()}}.}
+
+\item{jobarray_size}{The size of the job array to run. This is relevant when
+running the model on a cluster with job arrays. The default is 1, i.e. no
+job array.}
+
+\item{overwrite}{If \code{TRUE} (the default), existing outputs with the same job
+name will be overwritten.}
+
+\item{results_exclude}{A character vector with names of results to exclude
+when saving results. This can be used to exclude large objects such as the
+fitted model from being saved in the results.}
+}
+\value{
+An \code{EpiSewerJob} object with all specifications for model fitting.
+}
 \description{
 Constructor for EpiSewerJob objects
 }
-\keyword{internal}
