@@ -76,6 +76,7 @@ ENV CMDSTAN=/opt/cmdstan-stub
 # Copy Stan model metadata files
 COPY inst/stan/scalar_data_vars.txt /opt/models/scalar_data_vars.txt
 COPY inst/stan/scalar_param_vars.txt /opt/models/scalar_param_vars.txt
+COPY inst/stan/stan_digest.txt /opt/models/stan_digest.txt
 
 # Copy R scripts
 COPY R/utils_warnings.R /opt/utils_warnings.R

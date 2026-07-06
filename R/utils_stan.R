@@ -786,3 +786,58 @@ read_scalar_params <- function(model) {
   scalar_params <- readLines(filepath)
   return(scalar_params)
 }
+
+#' Computes a digest of the stan model source files, i.e. of the main stan
+#' file and all included stan files (without requiring the model to be
+#' compiled)
+#' @keywords internal
+get_stan_files_digest <- function(modelfolder = "inst/stan", modelname = "EpiSewer_main.stan") {
+  model_file <- file.path(modelfolder, modelname)
+  model_code <- paste(readLines(model_file, warn = FALSE), collapse = " ")
+  includes <- stringr::str_extract_all(
+    model_code,
+    "(?<=#include )functions/.*?\\.stan"
+  )[[1]]
+  include_files <- file.path(modelfolder, includes)
+  all_digests <- sapply(c(model_file, include_files), function(x) {
+    digest::digest(file = x, algo = "md5")
+  })
+  digest::digest(paste0(all_digests, collapse = ""), algo = "md5", serialize = FALSE)
+}
+
+#' Compute a digest of the stan model and write it to a text file
+#'
+#' @description Computes a digest (checksum) of the main stan model file and
+#'   all included stan files (e.g. functions), and writes it to
+#'   `stan_digest.txt` in the model folder. This digest is stored in every
+#'   [EpiSewerJob()] created with the package, so that it can be verified
+#'   against the digest of the stan model compiled into a docker image (see
+#'   [sewer_pull_docker()]) before fitting a job in that image.
+#'
+#' @param modelfolder The folder containing the stan model file.
+#' @param modelname The name of the stan model file.
+#'
+#' @keywords internal
+write_stan_digest <- function(modelfolder = "inst/stan", modelname = "EpiSewer_main.stan") {
+  stan_digest <- get_stan_files_digest(modelfolder = modelfolder, modelname = modelname)
+  writeLines(stan_digest, file.path(modelfolder, "stan_digest.txt"))
+}
+
+#' Get the digest of the stan model files of the installed EpiSewer package
+#'
+#' @description Reads the digest written by [write_stan_digest()] from the
+#'   installed package. Returns `NULL` if no digest file is found, e.g.
+#'   because an older version of EpiSewer is installed that does not yet
+#'   provide one. This ensures backward compatibility with `EpiSewerJob`
+#'   objects created before this feature was introduced.
+#'
+#' @return A single character string with the digest, or `NULL` if not found.
+#'
+#' @keywords internal
+get_stan_digest <- function() {
+  digest_path <- system.file("stan", "stan_digest.txt", package = "EpiSewer")
+  if (!nzchar(digest_path) || !file.exists(digest_path)) {
+    return(NULL)
+  }
+  trimws(readLines(digest_path, warn = FALSE))
+}

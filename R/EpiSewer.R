@@ -133,6 +133,8 @@ EpiSewerJob <- function(job_name,
   ]
   job[["metainfo"]] <- modeldata$.metainfo
 
+  job[["stan_digest"]] <- get_stan_digest()
+
   job[["overwrite"]] <- overwrite
   job[["results_exclude"]] <- results_exclude
 
