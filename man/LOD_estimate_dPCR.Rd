@@ -46,8 +46,8 @@ therefore only be used together with \code{noise = noise_estimate_dPCR()} or
 \code{noise = noise_estimate_dPCR_params()} in \code{\link[=model_measurements]{model_measurements()}}.
 }
 \seealso{
-Other {LOD models}: 
-\code{\link{LOD_assume}()},
-\code{\link{LOD_none}()}
+Other {LOD models}:
+\code{\link[=LOD_assume]{LOD_assume()}},
+\code{\link[=LOD_none]{LOD_none()}}
 }
 \concept{{LOD models}}

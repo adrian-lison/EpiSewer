@@ -11,7 +11,6 @@ Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Depends:
     R (>= 3.5.0)
 Imports: 
@@ -54,3 +53,4 @@ LazyData: true
 Config/testthat/edition: 3
 URL: https://adrian-lison.github.io/EpiSewer/, https://github.com/adrian-lison/EpiSewer
 BugReports: https://github.com/adrian-lison/EpiSewer/issues
+Config/roxygen2/version: 8.0.0
