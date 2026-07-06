@@ -634,8 +634,6 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
   return(fit_res)
 }
 
-.docker_digest <- "sha256:3dffb2a04e330e44369a6b48d2691cc0e7f698bb6f4ba2929b4369d36d7fc7c0"
-
 #' Pull the latest EpiSewer docker image
 #'
 #' @description This function pulls the latest EpiSewer docker image from the
@@ -644,8 +642,13 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
 #'
 #' @export
 sewer_pull_docker <- function() {
+  docker_digest <- trimws(readLines(
+    system.file("docker_digest.txt", package = "EpiSewer"), warn = FALSE
+  ))
   cli::cli_alert("Pulling latest EpiSewer docker image...")
-  exit_code <- system(paste0("docker pull ghcr.io/adrian-lison/episewer@", .docker_digest))
+  exit_code <- system(
+    paste0("docker pull ghcr.io/adrian-lison/episewer@", docker_digest)
+  )
   if (exit_code != 0) {
     cli::cli_warn(paste(
       "Pulling the EpiSewer docker image failed.",

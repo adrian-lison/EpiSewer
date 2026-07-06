@@ -11,10 +11,11 @@ jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
       attestations: write
       id-token: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -48,3 +49,19 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+      - name: Update docker digest file
+        run: echo "${{ steps.push.outputs.digest }}" > inst/docker_digest.txt
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1c02de85 # v7.0.8
+        with:
+          commit-message: "Update docker digest to ${{ steps.push.outputs.digest }}"
+          title: "Update docker digest"
+          body: >
+            Automated update of `inst/docker_digest.txt` to the digest of the
+            latest published docker image
+            (`${{ steps.push.outputs.digest }}`).
+          branch: update-docker-digest
+          delete-branch: true
+          add-paths: inst/docker_digest.txt
