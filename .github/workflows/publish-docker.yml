@@ -86,7 +86,7 @@ jobs:
         run: |
           docker buildx imagetools create \
             --tag adrianlison/episewer:latest \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
+            ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')@${{ steps.push.outputs.digest }}
 
       - name: Update docker digest file
         run: echo "${{ steps.push.outputs.digest }}" > inst/docker_digest.txt
