@@ -21,6 +21,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.3'
+
+      - name: Install R dependencies for prepare_docker.R
+        run: install.packages(c("cmdstanr", "digest", "stringr"), repos = c("https://stan-dev.r-universe.dev", "https://cloud.r-project.org"))
+        shell: Rscript {0}
+
+      - name: Cache CmdStan
+        id: cache-cmdstan
+        uses: actions/cache@v4
+        with:
+          path: ~/.cmdstan
+          key: cmdstan-${{ runner.os }}-${{ hashFiles('inst/stan/stan_digest.txt') }}
+
+      - name: Install CmdStan
+        if: steps.cache-cmdstan.outputs.cache-hit != 'true'
+        run: cmdstanr::install_cmdstan()
+        shell: Rscript {0}
+
+      - name: Run prepare_docker.R
+        run: Rscript docker/prepare_docker.R
+
       - name: Log in to the Container registry
         uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 #v4.0.0
         with:
@@ -52,6 +76,18 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 #v4.0.0
+        with:
+          username: adrianlison
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push image to Docker Hub
+        run: |
+          docker buildx imagetools create \
+            --tag adrianlison/episewer:latest \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
+
       - name: Update docker digest file
         run: echo "${{ steps.push.outputs.digest }}" > inst/docker_digest.txt
 
@@ -64,7 +100,14 @@ jobs:
             Automated update of `inst/docker_digest.txt` to the digest of the
             latest published docker image
             (`${{ steps.push.outputs.digest }}`).
+            Also includes any changes to `inst/stan/stan_digest.txt`,
+            `inst/stan/scalar_data_vars.txt`, and
+            `inst/stan/scalar_param_vars.txt` produced by `docker/prepare_docker.R`.
           branch: update-docker-digest
           base: ${{ github.ref_name }}
           delete-branch: true
-          add-paths: inst/docker_digest.txt
+          add-paths: |
+            inst/docker_digest.txt
+            inst/stan/stan_digest.txt
+            inst/stan/scalar_data_vars.txt
+            inst/stan/scalar_param_vars.txt
