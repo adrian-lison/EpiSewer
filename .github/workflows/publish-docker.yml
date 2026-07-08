@@ -65,5 +65,6 @@ jobs:
             latest published docker image
             (`${{ steps.push.outputs.digest }}`).
           branch: update-docker-digest
+          base: ${{ github.ref_name }}
           delete-branch: true
           add-paths: inst/docker_digest.txt
