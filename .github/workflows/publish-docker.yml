@@ -76,6 +76,19 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
+      - name: Log in to ghcr.io as adrian-lison
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 #v4.0.0
+        with:
+          registry: ghcr.io
+          username: adrian-lison
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Push image to ghcr.io/adrian-lison
+        run: |
+          docker buildx imagetools create \
+            --tag ghcr.io/adrian-lison/episewer:latest \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
+
       - name: Update docker digest file
         run: echo "${{ steps.push.outputs.digest }}" > inst/docker_digest.txt
 
