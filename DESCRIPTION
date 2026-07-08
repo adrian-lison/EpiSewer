@@ -31,7 +31,6 @@ Imports:
     purrr (>= 1.0.1),
     posterior (>= 1.6.0),
     rlang,
-    rstan,
     scales,
     splines,
     stats,
