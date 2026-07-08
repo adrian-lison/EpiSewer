@@ -76,6 +76,18 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 #v4.0.0
+        with:
+          username: adrianlison
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push image to Docker Hub
+        run: |
+          docker buildx imagetools create \
+            --tag adrianlison/episewer:latest \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
+
       - name: Update docker digest file
         run: echo "${{ steps.push.outputs.digest }}" > inst/docker_digest.txt
 
