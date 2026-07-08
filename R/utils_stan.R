@@ -645,7 +645,7 @@ sewer_pull_docker <- function() {
   docker_digest <- trimws(readLines(
     system.file("docker_digest.txt", package = "EpiSewer"), warn = FALSE
   ))
-  cli::cli_alert("Pulling latest EpiSewer docker image...")
+  cli::cli_alert("Pulling EpiSewer docker image...")
   exit_code <- system(
     paste0("docker pull ghcr.io/adrian-lison/episewer@", docker_digest)
   )
@@ -670,12 +670,16 @@ fit_model_docker <- function(job, run_silent = FALSE) {
   saveRDS(job, temp_input)
   temp_output <- tempdir()
 
+  docker_digest <- trimws(readLines(
+    system.file("docker_digest.txt", package = "EpiSewer"), warn = FALSE
+  ))
+
   # run model inside docker container
   exit_code <- system(paste(
     "docker run --rm",
     "-v", paste0(temp_input, ":/data/EpiSewer-docker-job.rds"),
     "-v", paste0(temp_output, ":/data/EpiSewer-docker-results"),
-    "ghcr.io/adrian-lison/episewer:main /opt/fit_EpiSewer.R",
+    paste0("ghcr.io/adrian-lison/episewer@", docker_digest, " /opt/fit_EpiSewer.R"),
     "/data/EpiSewer-docker-job.rds", "/data/EpiSewer-docker-results/fit.rds"
   ), ignore.stdout = run_silent, ignore.stderr = run_silent)
 

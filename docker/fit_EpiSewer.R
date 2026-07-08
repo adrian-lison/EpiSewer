@@ -40,11 +40,15 @@ if (!is.null(job$stan_digest)) {
   if (file.exists(container_digest_path)) {
     container_digest <- trimws(readLines(container_digest_path, warn = FALSE))
     if (!identical(job$stan_digest, container_digest)) {
-      stop(paste(
-        "The stan model compiled in this docker image does not match the",
-        "stan model of the EpiSewer package version used to create this job.",
-        "Please use a docker image that matches your installed version of",
-        "EpiSewer (see `sewer_pull_docker()`)."
+      stop(paste0(
+        "\n--------\n",
+        "The stan model compiled in this docker image does not match the ",
+        "stan model of the EpiSewer package version used to create this job. ",
+        "Please use a docker image that matches your installed version of ",
+        "EpiSewer (see `sewer_pull_docker()`).\n",
+        "Container digest: ", container_digest, "\n",
+        "Package digest:   ", job$stan_digest,
+        "\n--------"
       ), call. = FALSE)
     }
   }
