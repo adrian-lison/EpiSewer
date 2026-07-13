@@ -99,6 +99,7 @@ EpiSewer <- function(
 #' @return An `EpiSewerJob` object with all specifications for model fitting.
 #'
 #' @export
+#' @keywords internal
 EpiSewerJob <- function(job_name,
                         modeldata,
                         fit_opts,
@@ -210,6 +211,7 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
 #'   relevant information about the job and the model.
 #'
 #' @export
+#' @keywords internal
 EpiSewerJobResult <- function(fit_res, job, stan_model, checksums) {
   result <- list()
   result$job <- job

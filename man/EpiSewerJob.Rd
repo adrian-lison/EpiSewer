@@ -41,3 +41,4 @@ An \code{EpiSewerJob} object with all specifications for model fitting.
 \description{
 Constructor for EpiSewerJob objects
 }
+\keyword{internal}

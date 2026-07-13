@@ -190,9 +190,9 @@ dPCR.
 \link{noise_estimate_dPCR} for a faster dPCR noise model with fixed assay
 parameters.
 
-Other {noise models}:
-\code{\link[=noise_estimate]{noise_estimate()}},
-\code{\link[=noise_estimate_constant_var]{noise_estimate_constant_var()}},
-\code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}
+Other {noise models}: 
+\code{\link{noise_estimate}()},
+\code{\link{noise_estimate_constant_var}()},
+\code{\link{noise_estimate_dPCR}()}
 }
 \concept{{noise models}}

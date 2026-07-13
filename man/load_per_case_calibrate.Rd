@@ -92,7 +92,7 @@ argument allows to average over a set of relative shifts between the two
 time series.
 }
 \seealso{
-Other {load per case functions}:
-\code{\link[=load_per_case_assume]{load_per_case_assume()}}
+Other {load per case functions}: 
+\code{\link{load_per_case_assume}()}
 }
 \concept{{load per case functions}}

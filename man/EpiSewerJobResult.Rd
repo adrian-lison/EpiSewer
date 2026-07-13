@@ -24,3 +24,4 @@ relevant information about the job and the model.
 \description{
 Constructor for EpiSewerJobResult objects
 }
+\keyword{internal}
