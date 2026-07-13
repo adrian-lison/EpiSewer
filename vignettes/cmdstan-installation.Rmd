@@ -54,40 +54,9 @@ done using:
 EpiSewer::sewer_compile()
 ```
 
-### Step 5: Load the package and run EpiSewer
-
-```{r}
-library(EpiSewer)
-```
-
-You can now run EpiSewer as described in the
-[README](https://adrian-lison.github.io/EpiSewer/) and other vignettes. For
-example, using the bundled example data:
-
-```{r, eval = FALSE}
-ww_result <- EpiSewer(
-  data = ww_data_SARS_CoV_2_Zurich,
-  assumptions = ww_assumptions_SARS_CoV_2_Zurich,
-  fit_opts = set_fit_opts(
-    sampler = sampler_stan_mcmc(
-      iter_warmup = 500, iter_sampling = 500, chains = 4, seed = 42
-      )
-  )
-)
-```
-
-```{r, eval = TRUE, include = FALSE}
-ww_result <- ww_result_SARS_CoV_2_Zurich
-```
-
-### Step 6: Inspect results as usual
-
-For example, plot the estimated reproduction number:
-```{r R}
-#| fig.alt: >
-#|   Plot of the effective reproduction number over time.
-plot_R(ww_result)
-```
+Great, you are now ready to run EpiSewer! See the
+[README](https://adrian-lison.github.io/EpiSewer/) for an introduction on how
+to use the package.
 
 ### Troubleshooting
 
