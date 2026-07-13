@@ -351,3 +351,32 @@ check_date_column <- function(data, date_col_name) {
   return(data)
 }
 
+#' Extract the sparse representation of a dgRMatrix
+#' 
+#' @description This function extracts the non-zero values and their corresponding
+#'   row and column indices from a dgRMatrix, which is a sparse matrix format
+#'   in R. It returns a list containing the non-zero values, their column indices
+#'   (1-based), and the row pointers (1-based).
+#'
+#' @param A A dgRMatrix object representing a sparse matrix.
+#' @return A list with three components:
+#'   - `w`: A numeric vector of non-zero values from the matrix.
+#'   - `v`: An integer vector of column indices corresponding to the non-zero values (1-based).
+#'   - `u`: An integer vector of row pointers indicating the start of each row in the non-zero values vector (1-based).
+#' @keywords internal
+extract_sparse_parts <- function(A) {
+  if (!inherits(A, "dgRMatrix")) {
+    if (inherits(A, "sparseMatrix")) {
+      A <- methods::as(A, "RsparseMatrix")
+    } else {
+      A <- Matrix::Matrix(A, sparse = TRUE)
+      A <- methods::as(A, "RsparseMatrix")
+    }
+  }
+
+  list(
+    w = A@x,
+    v = A@j + 1L,
+    u = A@p + 1L
+  )
+}

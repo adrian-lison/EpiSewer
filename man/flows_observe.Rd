@@ -45,7 +45,7 @@ measurements, e.g. if concentrations are measured in gc/mL, then the flow
 should be in mL as well.
 }
 \seealso{
-Other {flow models}: 
-\code{\link{flows_assume}()}
+Other {flow models}:
+\code{\link[=flows_assume]{flows_assume()}}
 }
 \concept{{flow models}}

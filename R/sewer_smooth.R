@@ -16,7 +16,7 @@ configure_R_model <- function(name_approach, model_id,
 #' @keywords internal
 add_sparse_matrix <- function(M, name, modeldata){
   modeldata[[paste0(name, "_ncol")]] <- ncol(M)
-  M_sparse <- suppressMessages(rstan::extract_sparse_parts(M))
+  M_sparse <- extract_sparse_parts(M)
   modeldata[[paste0(name, "_n_w")]] <- length(M_sparse$w)
   modeldata[[paste0(name, "_w")]] <- M_sparse$w
   modeldata[[paste0(name, "_v")]] <- M_sparse$v

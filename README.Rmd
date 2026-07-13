@@ -74,33 +74,21 @@ knitr::include_graphics("man/figures/weekly_zurich_animated.gif")
 
 ## Installing the package
 
-The development version of `EpiSewer` can be installed from GitHub as shown
-below. Please note that the package is still in early development and may be
-subject to breaking changes.
+The development version of `EpiSewer` can be installed from GitHub as shown below. Please note that the package is still in early development and may be subject to breaking changes.
 
 ```{r, eval = FALSE}
 remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
 ```
 
-`EpiSewer` also requires CmdStan to be installed on your system. This can be done using the `install_cmdstan()` function from `cmdstanr`. If you experience any problems installing CmdStan, see the [cmdstanr vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for help.
+`EpiSewer` requires a Stan sampling backend. There are two options:
 
-`r emo::ji("exclamation_mark")` Note: If you cannot install CmdStan on your system, you can alternatively run the EpiSewer model in a docker container. See the [docker vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html) for instructions.
-
-```{r, eval = FALSE}
-cmdstanr::check_cmdstan_toolchain()
-cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up
-```
-
-The stan models used by EpiSewer need to be compiled for your device. This is only necessary once - after installing or updating the package - and can be done using the `sewer_compile()` function.
-```{r, eval = FALSE}
-EpiSewer::sewer_compile()
-```
-
-If the models are not successfully compiled, please ensure that `cmdstan` is properly set up and try updating it to a newer version using `cmdstanr::install_cmdstan()`. If the problem persists, please run `EpiSewer::sewer_compile(verbose = TRUE)` and post the output in a new issue on GitHub, along with your `cmdstanr::cmdstan_version()`.
+- `r emo::ji("wrench")` **Install CmdStan locally**: See the [cmdstan installation vignette](https://adrian-lison.github.io/EpiSewer/articles/cmdstan-installation.html) for step-by-step instructions.
+- `r emo::ji("whale")` **Use a Docker container**: If you cannot install CmdStan on your system, you can run EpiSewer inside a pre-built Docker image. See the [docker vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html) for instructions.
 
 ## Introduction
 
-This is a quick introduction to using the `EpiSewer` package. To learn more about modeling with `EpiSewer`, see the [model specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html) and [detailed example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html) vignettes on the [package website](https://adrian-lison.github.io/EpiSewer/).
+You have installed `EpiSewer` and the stan backend, and are ready to analyze your wastewater data? Then follow the quick introduction below to learn how to use the package.
+For more details on how to customize the model, see the [model specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html) and [detailed example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html) vignettes on the [package website](https://adrian-lison.github.io/EpiSewer/).
 
 ### Loading the package
 

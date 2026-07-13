@@ -81,7 +81,24 @@ EpiSewer <- function(
 }
 
 #' Constructor for EpiSewerJob objects
-#' @keywords internal
+#'
+#' @param job_name A name for the job, used for labeling outputs and results.
+#' @param modeldata A list with all model specifications.
+#' @param fit_opts Settings for model fitting, see [set_fit_opts()].
+#' @param results_opts Settings for results to be returned, see
+#'   [set_results_opts()].
+#' @param jobarray_size The size of the job array to run. This is relevant when
+#'   running the model on a cluster with job arrays. The default is 1, i.e. no
+#'   job array.
+#' @param overwrite If `TRUE` (the default), existing outputs with the same job
+#'   name will be overwritten.
+#' @param results_exclude A character vector with names of results to exclude
+#'   when saving results. This can be used to exclude large objects such as the
+#'   fitted model from being saved in the results.
+#'
+#' @return An `EpiSewerJob` object with all specifications for model fitting.
+#'
+#' @export
 EpiSewerJob <- function(job_name,
                         modeldata,
                         fit_opts,
@@ -116,6 +133,8 @@ EpiSewerJob <- function(job_name,
   ]
   job[["metainfo"]] <- modeldata$.metainfo
 
+  job[["stan_digest"]] <- get_stan_digest()
+
   job[["overwrite"]] <- overwrite
   job[["results_exclude"]] <- results_exclude
 
@@ -144,10 +163,7 @@ run <- function(job, ...) {
 
 #' @export
 run.EpiSewerJob <- function(job, run_silent = FALSE) {
-  result <- list()
-  result$job <- job
-
-  result$stan_model <- get_stan_model(
+  stan_model <- get_stan_model(
     model_filename = job$fit_opts$model$model_filename,
     model_folder = job$fit_opts$model$model_folder,
     profile = job$fit_opts$model$profile,
@@ -158,19 +174,47 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
   )
 
   if (job$fit_opts$model$use_docker) {
-    result$checksums <- get_checksums(job)
-    fit_res <- try(fit_model_docker(job = job))
+    checksums <- get_checksums(job)
+    fit_res <- try(fit_model_docker(job = job, run_silent = run_silent))
   } else {
-    model_instance <- result$stan_model$load_model[[1]]()
-    result$checksums <- get_checksums(job, model_instance)
+    model_instance <- stan_model$load_model[[1]]()
+    checksums <- get_checksums(job, model_instance)
     fit_res <- try(fit_model(
       job = job,
-      model = result$stan_model,
+      model = stan_model,
       model_instance = model_instance,
       run_silent = run_silent
     ))
   }
 
+  result <- EpiSewerJobResult(
+    fit_res = fit_res,
+    job = job,
+    stan_model = stan_model,
+    checksums = checksums
+  )
+
+  return(result)
+}
+
+#' Constructor for EpiSewerJobResult objects
+#'
+#' @param fit_res The result of model fitting, either a fitted model object or
+#'   an error object if model fitting failed.
+#' @param job The EpiSewerJob object that was run.
+#' @param stan_model The stan model that was used for fitting.
+#' @param checksums A list with checksums that uniquely identify the model,
+#'   input, inits, fit_opts and results_opts of the job.
+#'
+#' @return An EpiSewerJobResult object with the results of model fitting and
+#'   relevant information about the job and the model.
+#'
+#' @export
+EpiSewerJobResult <- function(fit_res, job, stan_model, checksums) {
+  result <- list()
+  result$job <- job
+  result$stan_model <- stan_model
+  result$checksums <- checksums
 
   if (!"errors" %in% names(fit_res)) {
     result$summary <- try(summarize_fit(

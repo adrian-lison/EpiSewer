@@ -115,13 +115,13 @@ quantiles of the prior, so you will also have to decrease the scale
 parameter to achieve a similar level of day-to-day variation.
 }
 \seealso{
-Other {Rt models}: 
-\code{\link{R_estimate_approx}()},
-\code{\link{R_estimate_changepoint_splines}()},
-\code{\link{R_estimate_ets}()},
-\code{\link{R_estimate_gp}()},
-\code{\link{R_estimate_rw}()},
-\code{\link{R_estimate_smooth_derivative}()},
-\code{\link{R_estimate_splines}()}
+Other {Rt models}:
+\code{\link[=R_estimate_approx]{R_estimate_approx()}},
+\code{\link[=R_estimate_changepoint_splines]{R_estimate_changepoint_splines()}},
+\code{\link[=R_estimate_ets]{R_estimate_ets()}},
+\code{\link[=R_estimate_gp]{R_estimate_gp()}},
+\code{\link[=R_estimate_rw]{R_estimate_rw()}},
+\code{\link[=R_estimate_smooth_derivative]{R_estimate_smooth_derivative()}},
+\code{\link[=R_estimate_splines]{R_estimate_splines()}}
 }
 \concept{{Rt models}}

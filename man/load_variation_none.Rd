@@ -27,7 +27,7 @@ total load shed per case, i.e. the individual shedding load is fixed to the
 average shedding load.
 }
 \seealso{
-Other {load variation models}: 
-\code{\link{load_variation_estimate}()}
+Other {load variation models}:
+\code{\link[=load_variation_estimate]{load_variation_estimate()}}
 }
 \concept{{load variation models}}

@@ -63,7 +63,7 @@ The priors of this component have the following functional form:
 }
 }
 \seealso{
-Other {infection noise models}: 
-\code{\link{infection_noise_none}()}
+Other {infection noise models}:
+\code{\link[=infection_noise_none]{infection_noise_none()}}
 }
 \concept{{infection noise models}}

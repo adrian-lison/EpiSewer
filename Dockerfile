@@ -16,6 +16,8 @@ ENV CMDSTAN=/opt/cmdstan-${CMDSTAN_VERSION}
 ARG CMDSTANR_VERSION
 ENV CMDSTANR_VERSION=${CMDSTANR_VERSION}
 
+ARG GITHUB_PAT
+
 # The following part (installation of cmdstan and cmdstanr configuration) is
 # adapted from https://github.com/storopoli/cmdstanr-docker by Jose Storopoli.
 # See https://github.com/storopoli/cmdstanr-docker/blob/main/LICENSE for the
@@ -39,8 +41,9 @@ COPY docker/make/local $CMDSTAN/make/local
 RUN cd cmdstan-$CMDSTAN_VERSION && make -j2 build
 
 # Install cmdstanr
-RUN Rscript -e "install.packages('remotes', repos = getOption('repos'))" \
-    && Rscript -e "remotes::install_github(paste0('stan-dev/cmdstanr@v', Sys.getenv('CMDSTANR_VERSION')))"
+RUN export GITHUB_PAT="${GITHUB_PAT}" \
+    && Rscript -e "install.packages('remotes', repos = getOption('repos'))" \
+    && Rscript -e "repo <- paste0('stan-dev/cmdstanr@v', Sys.getenv('CMDSTANR_VERSION')); tok <- Sys.getenv('GITHUB_PAT', ''); if (nzchar(tok)) remotes::install_github(repo, auth_token = tok) else remotes::install_github(repo)"
 
 # Compile EpiSewer model — produces executable at /opt/models/EpiSewer_main
 COPY inst/stan/EpiSewer_main.stan /opt/models/EpiSewer_main.stan
@@ -57,11 +60,14 @@ ENV CMDSTAN_VERSION=${CMDSTAN_VERSION}
 ARG CMDSTANR_VERSION
 ENV CMDSTANR_VERSION=${CMDSTANR_VERSION}
 
+ARG GITHUB_PAT
+
 RUN echo 'options(Ncpus = max(1L, parallel::detectCores() - 1L), mc.cores = max(1L, parallel::detectCores() - 1L))' >> "${R_HOME}/etc/Rprofile.site"
 
 # Install cmdstanr + other R packages (no compiler needed at runtime)
-RUN Rscript -e "install.packages('remotes', repos = getOption('repos'))" \
-    && Rscript -e "remotes::install_github(paste0('stan-dev/cmdstanr@v', Sys.getenv('CMDSTANR_VERSION')))" \
+RUN export GITHUB_PAT="${GITHUB_PAT}" \
+    && Rscript -e "install.packages('remotes', repos = getOption('repos'))" \
+    && Rscript -e "repo <- paste0('stan-dev/cmdstanr@v', Sys.getenv('CMDSTANR_VERSION')); tok <- Sys.getenv('GITHUB_PAT', ''); if (nzchar(tok)) remotes::install_github(repo, auth_token = tok) else remotes::install_github(repo)" \
     && Rscript -e "install.packages('stringr', dependencies=TRUE)"
 
 # Copy only compiled Stan executable from builder
@@ -76,6 +82,7 @@ ENV CMDSTAN=/opt/cmdstan-stub
 # Copy Stan model metadata files
 COPY inst/stan/scalar_data_vars.txt /opt/models/scalar_data_vars.txt
 COPY inst/stan/scalar_param_vars.txt /opt/models/scalar_param_vars.txt
+COPY inst/stan/stan_digest.txt /opt/models/stan_digest.txt
 
 # Copy R scripts
 COPY R/utils_warnings.R /opt/utils_warnings.R

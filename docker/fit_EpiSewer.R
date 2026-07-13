@@ -32,6 +32,28 @@ if (tools::file_ext(input_filepath) != "rds") {
 # read job file
 job <- readRDS(input_filepath)
 
+# check that the stan model in this container matches the one used to create
+# the job (if the job does not have a digest, it was created with an older
+# version of EpiSewer and this check is skipped for backward compatibility)
+if (!is.null(job$stan_digest)) {
+  container_digest_path <- "/opt/models/stan_digest.txt"
+  if (file.exists(container_digest_path)) {
+    container_digest <- trimws(readLines(container_digest_path, warn = FALSE))
+    if (!identical(job$stan_digest, container_digest)) {
+      stop(paste0(
+        "\n--------\n",
+        "The stan model compiled in this docker image does not match the ",
+        "stan model of the EpiSewer package version used to create this job. ",
+        "Please use a docker image that matches your installed version of ",
+        "EpiSewer (see `sewer_pull_docker()`).\n",
+        "Container digest: ", container_digest, "\n",
+        "Package digest:   ", job$stan_digest,
+        "\n--------"
+      ), call. = FALSE)
+    }
+  }
+}
+
 stan_model <- get_stan_model(use_docker = TRUE)
 model_instance <- stan_model$load_model[[1]]()
 

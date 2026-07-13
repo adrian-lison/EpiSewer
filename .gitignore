@@ -11,7 +11,11 @@ inst/stan/*
 .httr-oauth
 .DS_Store
 
+.vscode
+.conda
+
 vignettes/*.html
 data/result_example.rds
 local/
 docs
+
