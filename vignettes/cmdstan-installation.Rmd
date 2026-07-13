@@ -1,0 +1,101 @@
+---
+title: "Installing CmdStan for EpiSewer"
+output: github_document
+---
+
+This vignette describes how to install CmdStan on your system to use as a
+backend for EpiSewer. If you cannot install CmdStan locally, you can
+alternatively use the docker backend (see the
+[docker vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html)).
+
+### Step 1: Install the EpiSewer package
+
+Install the EpiSewer package from GitHub as usual:
+
+```{r, eval = FALSE}
+remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
+```
+
+### Step 2: Check the C++ toolchain
+
+CmdStan requires a working C++ toolchain. You can check whether your system is
+ready using:
+
+```{r, eval = FALSE}
+cmdstanr::check_cmdstan_toolchain()
+```
+
+If the toolchain is not set up, follow the instructions printed by the above
+function. The [cmdstanr vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html)
+also contains platform-specific guidance for setting up the toolchain on
+Windows, macOS, and Linux.
+
+### Step 3: Install CmdStan
+
+Once the toolchain is ready, install CmdStan using:
+
+```{r, eval = FALSE}
+cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up installation
+```
+
+You can verify the installation was successful by checking the CmdStan version:
+
+```{r, eval = FALSE}
+cmdstanr::cmdstan_version()
+```
+
+### Step 4: Compile the EpiSewer models
+
+The Stan models used by EpiSewer need to be compiled for your device. This is
+only necessary once — after installing or updating the package — and can be
+done using:
+
+```{r, eval = FALSE}
+EpiSewer::sewer_compile()
+```
+
+### Step 5: Load the package and run EpiSewer
+
+```{r}
+library(EpiSewer)
+```
+
+You can now run EpiSewer as described in the
+[README](https://adrian-lison.github.io/EpiSewer/) and other vignettes. For
+example, using the bundled example data:
+
+```{r, eval = FALSE}
+ww_result <- EpiSewer(
+  data = ww_data_SARS_CoV_2_Zurich,
+  assumptions = ww_assumptions_SARS_CoV_2_Zurich,
+  fit_opts = set_fit_opts(
+    sampler = sampler_stan_mcmc(
+      iter_warmup = 500, iter_sampling = 500, chains = 4, seed = 42
+      )
+  )
+)
+```
+
+```{r, eval = TRUE, include = FALSE}
+ww_result <- ww_result_SARS_CoV_2_Zurich
+```
+
+### Step 6: Inspect results as usual
+
+For example, plot the estimated reproduction number:
+```{r R}
+#| fig.alt: >
+#|   Plot of the effective reproduction number over time.
+plot_R(ww_result)
+```
+
+### Troubleshooting
+
+If the models are not successfully compiled in step 4, first ensure that
+CmdStan is properly set up by re-running step 2. You can also try updating
+CmdStan to a newer version by re-running `cmdstanr::install_cmdstan()`.
+
+If the problem persists, run `EpiSewer::sewer_compile(verbose = TRUE)` and
+post the output in a new
+[GitHub issue](https://github.com/adrian-lison/EpiSewer/issues), along with
+your `cmdstanr::cmdstan_version()`.
