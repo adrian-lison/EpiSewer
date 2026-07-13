@@ -26,8 +26,8 @@ This option does not model effects of sample covariates on the
 concentrations.
 }
 \seealso{
-Other {sample effect models}:
-\code{\link[=sample_effects_estimate_matrix]{sample_effects_estimate_matrix()}},
-\code{\link[=sample_effects_estimate_weekday]{sample_effects_estimate_weekday()}}
+Other {sample effect models}: 
+\code{\link{sample_effects_estimate_matrix}()},
+\code{\link{sample_effects_estimate_weekday}()}
 }
 \concept{{sample effect models}}

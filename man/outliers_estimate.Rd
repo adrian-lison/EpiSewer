@@ -60,7 +60,7 @@ loads and concentrations will be theoretically infinite if this modeling
 option is used. The median remains be well-behaved.
 }
 \seealso{
-Other {outlier models}:
-\code{\link[=outliers_none]{outliers_none()}}
+Other {outlier models}: 
+\code{\link{outliers_none}()}
 }
 \concept{{outlier models}}

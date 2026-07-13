@@ -26,5 +26,5 @@ If one or several models are not successfully compiled, please
 ensure that \code{cmdstan} is properly set up and try updating it to a newer
 version using \code{\link[cmdstanr:install_cmdstan]{cmdstanr::install_cmdstan()}}. If the problem persists,
 please run \code{sewer_compile(verbose = TRUE)} and post the output in
-a new issue on GitHub, along with your \code{\link[cmdstanr:cmdstan_version]{cmdstanr::cmdstan_version()}}.
+a new issue on GitHub, along with your \code{\link[cmdstanr:set_cmdstan_path]{cmdstanr::cmdstan_version()}}.
 }

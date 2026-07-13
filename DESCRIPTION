@@ -52,3 +52,4 @@ Config/testthat/edition: 3
 URL: https://adrian-lison.github.io/EpiSewer/, https://github.com/adrian-lison/EpiSewer
 BugReports: https://github.com/adrian-lison/EpiSewer/issues
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.3
