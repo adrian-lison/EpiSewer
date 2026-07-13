@@ -23,8 +23,7 @@ library(EpiSewer)
 
 ```{r, eval = TRUE, include = FALSE}
 require(emo)
-library(draw)
-drawSettings(pageWidth = 18, pageHeight = 3, units = "inches")
+library(ggplot2)
 ```
 
 ```{r, echo = FALSE, warning=FALSE}
@@ -39,57 +38,46 @@ textForc <- paste(paste("-", rlang::fn_fmls_names(EpiSewer::model_forecast)), co
 ## Modules
 `EpiSewer` uses 5 different modules to describe the data generating process behind the wastewater measurements: `infections`, `shedding`, `sewage`, `sampling`, and `measurements`. There is a 6th module to specify `forecast` functionality. Each of these modules consists of a number of module components, as shown below.
 
-```{r model, eval = TRUE, echo = FALSE, fig.width=18, fig.height=3, fig.alt="The 6 modules of the EpiSewer model"}
-start_x = 1.5
-w = 2
-gap = 1
-s = w + gap
-fontsize1 <- 17
-fontsize2 <- 15
+```{r model1, eval = TRUE, echo = FALSE, fig.width=18, fig.height=3, fig.cap="", fig.alt="The 6 modules of the EpiSewer model"}
+start_x <- 1.5
+w <- 2
+gap <- 1
+s <- w + gap
 
-drawPage()
-drawText(x = start_x - 1.4, y = 1.5, angle = 90, text = "modules", hjust = 0, size = fontsize1, face = "bold")
-drawText(x = start_x - 1.4, y = 1.3, angle = 90, text = "components", hjust = 1, size = fontsize2)
+module_x <- start_x + (0:5) * s
+module_labels <- c("infections", "shedding", "sewage", "sampling", "measurements", "forecast")
+module_texts <- c(textInf, textShed, textSewage, textSampl, textMeas, textForc)
 
-# infections
-drawBox(x = start_x, y = 2, width = 2, height = 1, lineWidth = 2)
-drawText(x = start_x, y = 2, text = "infections", size = fontsize1, face = "bold")
-drawText(x = start_x - 1, y = 1.3, text = textInf, size = fontsize2, hjust = 0, vjust = 1)
+boxes_df  <- data.frame(xmin = module_x - w/2, xmax = module_x + w/2)
+labels_df <- data.frame(x = module_x, label = module_labels, stringsAsFactors = FALSE)
+comps_df  <- data.frame(x = module_x - w/2, label = module_texts, stringsAsFactors = FALSE)
+arrows_df <- data.frame(
+  x = module_x[1:4] + w/2, xend = module_x[1:4] + w/2 + gap, y = 2, yend = 2
+)
 
-drawLine(x = c(start_x + w/2,start_x + w/2 + gap), y = 2, arrowEnds = "last", arrowLength = 0.3, lineWidth = 2)
-
-# shedding
-drawBox(x = start_x + s, y = 2, width = 2, height = 1, lineWidth = 2)
-drawText(x = start_x + s, y = 2, text = "shedding", size = fontsize1, face = "bold")
-drawText(x = start_x + s - 1, y = 1.3, text = textShed, size = fontsize2, hjust = 0, vjust = 1)
-
-drawLine(x = c(start_x + s + w/2,start_x + s + w/2 + gap), y = 2, arrowEnds = "last", arrowLength = 0.3, lineWidth = 2)
-
-# sewage
-drawBox(x = start_x + 2*s, y = 2, width = 2, height = 1, lineWidth = 2)
-drawText(x = start_x + 2*s, y = 2, text = "sewage", size = fontsize1, face = "bold")
-drawText(x = start_x + 2*s - 1, y = 1.3, text = textSewage, size = fontsize2, hjust = 0, vjust = 1)
-
-drawLine(x = c(start_x + 2*s + w/2,start_x + 2*s + w/2 + gap), y = 2, arrowEnds = "last", arrowLength = 0.3, lineWidth = 2)
-
-# sampling
-drawBox(x = start_x + 3*s, y = 2, width = 2, height = 1, lineWidth = 2)
-drawText(x = start_x + 3*s, y = 2, text = "sampling", size = fontsize1, face = "bold")
-drawText(x = start_x + 3*s - 1, y = 1.3, text = textSampl, size = fontsize2, hjust = 0, vjust = 1)
-
-drawLine(x = c(start_x + 3*s + w/2,start_x + 3*s + w/2 + gap), y = 2, arrowEnds = "last", arrowLength = 0.3, lineWidth = 2)
-
-# measurements
-drawBox(x = start_x + 4*s, y = 2, width = 2, height = 1, lineWidth = 2)
-drawText(x = start_x + 4*s, y = 2, text = "measurements", size = fontsize1, face = "bold")
-drawText(x = start_x + 4*s - 1, y = 1.3, text = textMeas, size = fontsize2, hjust = 0, vjust = 1)
-
-drawLine(x = start_x + 4.5*s, y = c(0.2,2.7), lineWidth = 2)
-
-# forecast
-drawBox(x = start_x + 5*s, y = 2, width = 2, height = 1, lineWidth = 2)
-drawText(x = start_x + 5*s, y = 2, text = "forecast", size = fontsize1, face = "bold")
-drawText(x = start_x + 5*s - 1, y = 1.3, text = textForc, size = fontsize2, hjust = 0, vjust = 1)
+ggplot() +
+  geom_rect(data = boxes_df,
+            aes(xmin = xmin, xmax = xmax), ymin = 1.5, ymax = 2.5,
+            fill = "white", color = "black", linewidth = 1) +
+  geom_text(data = labels_df,
+            aes(x = x, y = 2, label = label),
+            size = 6, fontface = "bold") +
+  geom_text(data = comps_df,
+            aes(x = x, y = 1.3, label = label),
+            size = 5.3, hjust = 0, vjust = 1, lineheight = 0.85) +
+  geom_segment(data = arrows_df,
+               aes(x = x, y = y, xend = xend, yend = yend),
+               arrow = arrow(ends = "last", length = unit(0.12, "inches")),
+               linewidth = 1) +
+  geom_segment(aes(x = start_x + 4.5 * s, xend = start_x + 4.5 * s,
+                   y = 0.2, yend = 2.7),
+               linewidth = 1) +
+  annotate("text", x = start_x - 1.4, y = 1.5, label = "modules",
+           angle = 90, hjust = 0, size = 6, fontface = "bold") +
+  annotate("text", x = start_x - 1.4, y = 1.3, label = "components",
+           angle = 90, hjust = 1, size = 5.3) +
+  coord_cartesian(xlim = c(0, 18), ylim = c(0, 3), expand = FALSE) +
+  theme_void()
 ```
 
 The modules are defined using their corresponding module function, i.e. by 
