@@ -642,8 +642,13 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
 #'
 #' @export
 sewer_pull_docker <- function() {
-  cli::cli_alert("Pulling latest EpiSewer docker image...")
-  exit_code <- system("docker pull ghcr.io/adrian-lison/episewer:main")
+  docker_digest <- trimws(readLines(
+    system.file("docker_digest.txt", package = "EpiSewer"), warn = FALSE
+  ))
+  cli::cli_alert("Pulling EpiSewer docker image...")
+  exit_code <- system(
+    paste0("docker pull ghcr.io/adrian-lison/episewer@", docker_digest)
+  )
   if (exit_code != 0) {
     cli::cli_warn(paste(
       "Pulling the EpiSewer docker image failed.",
@@ -654,7 +659,7 @@ sewer_pull_docker <- function() {
   }
 }
 
-fit_model_docker <- function(job) {
+fit_model_docker <- function(job, run_silent = FALSE) {
   # create temporary files
   temp_input <- tempfile(fileext = ".rds")
   on.exit({
@@ -665,14 +670,18 @@ fit_model_docker <- function(job) {
   saveRDS(job, temp_input)
   temp_output <- tempdir()
 
+  docker_digest <- trimws(readLines(
+    system.file("docker_digest.txt", package = "EpiSewer"), warn = FALSE
+  ))
+
   # run model inside docker container
   exit_code <- system(paste(
     "docker run --rm",
     "-v", paste0(temp_input, ":/data/EpiSewer-docker-job.rds"),
     "-v", paste0(temp_output, ":/data/EpiSewer-docker-results"),
-    "ghcr.io/adrian-lison/episewer:main /opt/fit_EpiSewer.R",
+    paste0("ghcr.io/adrian-lison/episewer@", docker_digest, " /opt/fit_EpiSewer.R"),
     "/data/EpiSewer-docker-job.rds", "/data/EpiSewer-docker-results/fit.rds"
-  ))
+  ), ignore.stdout = run_silent, ignore.stderr = run_silent)
 
   # check docker exit code
   if (exit_code != 0) {
@@ -780,4 +789,59 @@ read_scalar_params <- function(model) {
 
   scalar_params <- readLines(filepath)
   return(scalar_params)
+}
+
+#' Computes a digest of the stan model source files, i.e. of the main stan
+#' file and all included stan files (without requiring the model to be
+#' compiled)
+#' @keywords internal
+get_stan_files_digest <- function(modelfolder = "inst/stan", modelname = "EpiSewer_main.stan") {
+  model_file <- file.path(modelfolder, modelname)
+  model_code <- paste(readLines(model_file, warn = FALSE), collapse = " ")
+  includes <- stringr::str_extract_all(
+    model_code,
+    "(?<=#include )functions/.*?\\.stan"
+  )[[1]]
+  include_files <- file.path(modelfolder, includes)
+  all_digests <- sapply(c(model_file, include_files), function(x) {
+    digest::digest(file = x, algo = "md5")
+  })
+  digest::digest(paste0(all_digests, collapse = ""), algo = "md5", serialize = FALSE)
+}
+
+#' Compute a digest of the stan model and write it to a text file
+#'
+#' @description Computes a digest (checksum) of the main stan model file and
+#'   all included stan files (e.g. functions), and writes it to
+#'   `stan_digest.txt` in the model folder. This digest is stored in every
+#'   [EpiSewerJob()] created with the package, so that it can be verified
+#'   against the digest of the stan model compiled into a docker image (see
+#'   [sewer_pull_docker()]) before fitting a job in that image.
+#'
+#' @param modelfolder The folder containing the stan model file.
+#' @param modelname The name of the stan model file.
+#'
+#' @keywords internal
+write_stan_digest <- function(modelfolder = "inst/stan", modelname = "EpiSewer_main.stan") {
+  stan_digest <- get_stan_files_digest(modelfolder = modelfolder, modelname = modelname)
+  writeLines(stan_digest, file.path(modelfolder, "stan_digest.txt"))
+}
+
+#' Get the digest of the stan model files of the installed EpiSewer package
+#'
+#' @description Reads the digest written by [write_stan_digest()] from the
+#'   installed package. Returns `NULL` if no digest file is found, e.g.
+#'   because an older version of EpiSewer is installed that does not yet
+#'   provide one. This ensures backward compatibility with `EpiSewerJob`
+#'   objects created before this feature was introduced.
+#'
+#' @return A single character string with the digest, or `NULL` if not found.
+#'
+#' @keywords internal
+get_stan_digest <- function() {
+  digest_path <- system.file("stan", "stan_digest.txt", package = "EpiSewer")
+  if (!nzchar(digest_path) || !file.exists(digest_path)) {
+    return(NULL)
+  }
+  trimws(readLines(digest_path, warn = FALSE))
 }

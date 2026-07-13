@@ -1567,7 +1567,7 @@ add_R_variability <- function(length_R, h, length_seeding, partial_window,
     }
   }
   modeldata$R_vari_ncol <- ncol(B)
-  B_sparse <- suppressMessages(rstan::extract_sparse_parts(B))
+  B_sparse <- extract_sparse_parts(B)
   modeldata$R_vari_n_w <- length(B_sparse$w)
   modeldata$R_vari_w <- B_sparse$w
   modeldata$R_vari_v <- B_sparse$v

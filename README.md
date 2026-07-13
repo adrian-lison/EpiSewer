@@ -28,32 +28,32 @@ configurable modeling components.
 
 ## Model highlights
 
-**Measurements**  
-⭐ Non-daily / missing measurements  
-⭐ Multiple measurements (replicates) per sample  
-⭐ Multi-day composite samples  
-⭐ Accurate dPCR noise model  
+**Measurements**\
+⭐ Non-daily / missing measurements\
+⭐ Multiple measurements (replicates) per sample\
+⭐ Multi-day composite samples\
+⭐ Accurate dPCR noise model\
 ⭐ Limit of detection (LOD) model
 
-**Sampling**  
-⭐ Integrated outlier detection  
+**Sampling**\
+⭐ Integrated outlier detection\
 ⭐ Sample batch effects (e.g. weekday or age-of-sample effects)
 
-**Sewer**  
-⭐ Flow normalization  
+**Sewer**\
+⭐ Flow normalization\
 ⭐ Sewer residence time distributions
 
-**Shedding**  
-⭐ Shedding load distributions (with uncertainty)  
+**Shedding**\
+⭐ Shedding load distributions (with uncertainty)\
 ⭐ Individual-level shedding load variation
 
-**Infections**  
-⭐ Stochastic infection model with overdispersion  
+**Infections**\
+⭐ Stochastic infection model with overdispersion\
 ⭐ Flexible $R_t$ smoothing (Gaussian process, random walk, exponential
-smoothing, splines, changepoint models)  
+smoothing, splines, changepoint models)\
 ⭐ Transmission indicators: $R_t$, growth rate, doubling time, and more
 
-**Forecast**  
+**Forecast**\
 ⭐ Probabilistic forecasts of $R_t$, infections, concentrations and more
 
 ## Installing the package
@@ -66,40 +66,23 @@ and may be subject to breaking changes.
 remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
 ```
 
-`EpiSewer` also requires CmdStan to be installed on your system. This
-can be done using the `install_cmdstan()` function from `cmdstanr`. If
-you experience any problems installing CmdStan, see the [cmdstanr
-vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for help.
+`EpiSewer` requires a Stan sampling backend. There are two options:
 
-❗ Note: If you cannot install CmdStan on your system, you can
-alternatively run the EpiSewer model in a docker container. See the
-[docker
-vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html)
-for instructions.
-
-``` r
-cmdstanr::check_cmdstan_toolchain()
-cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up
-```
-
-The stan models used by EpiSewer need to be compiled for your device.
-This is only necessary once - after installing or updating the package -
-and can be done using the `sewer_compile()` function.
-
-``` r
-EpiSewer::sewer_compile()
-```
-
-If the models are not successfully compiled, please ensure that
-`cmdstan` is properly set up and try updating it to a newer version
-using `cmdstanr::install_cmdstan()`. If the problem persists, please run
-`EpiSewer::sewer_compile(verbose = TRUE)` and post the output in a new
-issue on GitHub, along with your `cmdstanr::cmdstan_version()`.
+- 🔧 **Install CmdStan locally**: See the [cmdstan installation
+  vignette](https://adrian-lison.github.io/EpiSewer/articles/cmdstan-installation.html)
+  for step-by-step instructions.
+- 🐳 **Use a Docker container**: If you cannot install CmdStan on your
+  system, you can run EpiSewer inside a pre-built Docker image. See the
+  [docker
+  vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html)
+  for instructions.
 
 ## Introduction
 
-This is a quick introduction to using the `EpiSewer` package. To learn
-more about modeling with `EpiSewer`, see the [model
+You have installed `EpiSewer` and the stan backend, and are ready to
+analyze your wastewater data? Then follow the quick introduction below
+to learn how to use the package. For more details on how to customize
+the model, see the [model
 specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html)
 and [detailed
 example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html)
@@ -487,8 +470,7 @@ attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"      "diagnostics"
-#> [7] "runtime"
+#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"      "diagnostics" "runtime"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -498,8 +480,7 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"     
-#>  [7] "results_opts"  "priors_text"   "metainfo"      "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"      "results_opts"  "priors_text"   "metainfo"      "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
@@ -545,11 +526,8 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#>  [1] "samples"                  "R"                        "R_diagnostics"           
-#>  [4] "expected_infections"      "infections"               "growth_rate"             
-#>  [7] "doubling_time"            "days_growing"             "expected_load"           
-#> [10] "expected_concentration"   "concentration"            "normalized_concentration"
-#> [13] "outliers"
+#>  [1] "samples"                  "R"                        "R_diagnostics"            "expected_infections"      "infections"               "growth_rate"              "doubling_time"            "days_growing"            
+#>  [9] "expected_load"            "expected_concentration"   "concentration"            "normalized_concentration" "outliers"
 ```
 
 For example, we can access the exact estimates for the reproduction
