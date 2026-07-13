@@ -38,7 +38,7 @@ textForc <- paste(paste("-", rlang::fn_fmls_names(EpiSewer::model_forecast)), co
 ## Modules
 `EpiSewer` uses 5 different modules to describe the data generating process behind the wastewater measurements: `infections`, `shedding`, `sewage`, `sampling`, and `measurements`. There is a 6th module to specify `forecast` functionality. Each of these modules consists of a number of module components, as shown below.
 
-```{r model, eval = TRUE, echo = FALSE, fig.width=18, fig.height=3, fig.alt="The 6 modules of the EpiSewer model"}
+```{r model1, eval = TRUE, echo = FALSE, fig.width=18, fig.height=3, fig.cap="", fig.alt="The 6 modules of the EpiSewer model"}
 start_x <- 1.5
 w <- 2
 gap <- 1
