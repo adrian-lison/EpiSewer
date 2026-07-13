@@ -3,7 +3,7 @@ options(
   repos = c(CRAN = "https://cloud.r-project.org")
 )
 
-cran_pkgs <- c("extraDistr", "draw")
+cran_pkgs <- c("extraDistr")
 to_install <- cran_pkgs[!vapply(cran_pkgs, requireNamespace, logical(1), quietly = TRUE)]
 
 if (length(to_install) > 0) {
