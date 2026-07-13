@@ -40,13 +40,13 @@ configurable modeling components.
 
 **Infections**  
 ⭐ Stochastic infection model with overdispersion  
-⭐ Flexible $R_{t}$ smoothing (Gaussian process, random walk,
+⭐ Flexible $`R_t`$ smoothing (Gaussian process, random walk,
 exponential smoothing, splines, changepoint models)  
-⭐ Transmission indicators: $R_{t}$, growth rate, doubling time, and
+⭐ Transmission indicators: $`R_t`$, growth rate, doubling time, and
 more
 
 **Forecast**  
-⭐ Probabilistic forecasts of $R_{t}$, infections, concentrations and
+⭐ Probabilistic forecasts of $`R_t`$, infections, concentrations and
 more
 
 ## Installing the package
@@ -56,48 +56,27 @@ shown below. Please note that the package is still in early development
 and may be subject to breaking changes.
 
 ``` r
+
 remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
 ```
 
-`EpiSewer` also requires CmdStan to be installed on your system. This
-can be done using the `install_cmdstan()` function from `cmdstanr`. If
-you experience any problems installing CmdStan, see the [cmdstanr
-vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for help.
+`EpiSewer` requires a Stan sampling backend. There are two options:
 
-❗ Note: If you cannot install CmdStan on your system, you can
-alternatively run the EpiSewer model in a docker container. See the
-[docker
-vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html)
-for instructions.
-
-``` r
-cmdstanr::check_cmdstan_toolchain()
-cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up
-```
-
-The stan models used by EpiSewer need to be compiled for your device.
-This is only necessary once - after installing or updating the package -
-and can be done using the
-[`sewer_compile()`](https://adrian-lison.github.io/EpiSewer/reference/sewer_compile.md)
-function.
-
-``` r
-EpiSewer::sewer_compile()
-```
-
-If the models are not successfully compiled, please ensure that
-`cmdstan` is properly set up and try updating it to a newer version
-using
-[`cmdstanr::install_cmdstan()`](https://mc-stan.org/cmdstanr/reference/install_cmdstan.html).
-If the problem persists, please run
-`EpiSewer::sewer_compile(verbose = TRUE)` and post the output in a new
-issue on GitHub, along with your
-[`cmdstanr::cmdstan_version()`](https://mc-stan.org/cmdstanr/reference/set_cmdstan_path.html).
+- 🔧 **Install CmdStan locally**: See the [cmdstan installation
+  vignette](https://adrian-lison.github.io/EpiSewer/articles/cmdstan-installation.html)
+  for step-by-step instructions.
+- 🐳 **Use a Docker container**: If you cannot install CmdStan on your
+  system, you can run EpiSewer inside a pre-built Docker image. See the
+  [docker
+  vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html)
+  for instructions.
 
 ## Introduction
 
-This is a quick introduction to using the `EpiSewer` package. To learn
-more about modeling with `EpiSewer`, see the [model
+You have installed `EpiSewer` and the stan backend, and are ready to
+analyze your wastewater data? Then follow the quick introduction below
+to learn how to use the package. For more details on how to customize
+the model, see the [model
 specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html)
 and [detailed
 example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html)
@@ -110,6 +89,7 @@ website](https://adrian-lison.github.io/EpiSewer/).
 for plotting.
 
 ``` r
+
 library(EpiSewer)
 library(data.table)
 library(ggplot2)
@@ -124,6 +104,7 @@ are provided by EAWAG (Swiss Federal Institute of Aquatic Science and
 Technology) to the public domain (CC BY 4.0 license).
 
 ``` r
+
 data_zurich <- SARS_CoV_2_Zurich
 names(data_zurich)
 #> [1] "measurements" "flows"        "cases"        "units"
@@ -147,6 +128,7 @@ in Zurich. Some days have missing measurements, but this is no problem:
 `EpiSewer` naturally accounts for missing values during estimation.
 
 ``` r
+
 data_zurich$measurements
 #>            date concentration
 #>          <Date>         <num>
@@ -169,6 +151,7 @@ artificially sparse by keeping only measurements that were made on
 per week.
 
 ``` r
+
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
 head(measurements_sparse, 10)
 #>           date concentration  weekday
@@ -194,6 +177,7 @@ factors such as rainfall. It is important that the flow uses the same
 volume unit as the concentration (mL here in both cases).
 
 ``` r
+
 data_zurich$flows
 #>            date        flow
 #>          <Date>       <num>
@@ -224,6 +208,7 @@ estimated number of infections approximately matches the observed number
 of cases.
 
 ``` r
+
 data_zurich$cases
 #>            date     cases
 #>          <Date>     <num>
@@ -257,6 +242,7 @@ Thursdays). For calibration purposes, we also supply the case data, as
 explained above.
 
 ``` r
+
 ww_data <- sewer_data(
   measurements = measurements_sparse,
   flows = data_zurich$flows,
@@ -285,6 +271,7 @@ specific functions to obtain discretized versions of popular continuous
 probability distributions.
 
 ``` r
+
 ww_assumptions <- sewer_assumptions(
   generation_dist = get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4),
   shedding_dist = get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397),
@@ -315,6 +302,7 @@ fits the data. On a modern laptop the example below should take about 3
 minutes to run.
 
 ``` r
+
 options(mc.cores = 4) # allow stan to use 4 cores, i.e. one for each chain
 ww_result <- EpiSewer(
   data = ww_data,
@@ -351,6 +339,7 @@ other measurements that were not available to the model. As we can see,
 the model still achieved a decent fit on these missing days.
 
 ``` r
+
 plot_concentration(ww_result, measurements = data_zurich$measurements)
 ```
 
@@ -365,6 +354,7 @@ hypothetical concentration if the flow was at its median value. For this
 option, we need to provide the flow data as well (see below).
 
 ``` r
+
 plot_concentration(ww_result, measurements = data_zurich$measurements, flows = data_zurich$flows, normalized = TRUE)
 ```
 
@@ -382,6 +372,7 @@ even with only two measurements per week, we get a fairly clear signal
 for R being above or below the critical threshold of 1.
 
 ``` r
+
 plot_R(ww_result)
 ```
 
@@ -403,6 +394,7 @@ infections have been growing for a prolonged period of time. By default,
 possible as a reference.
 
 ``` r
+
 plot_growth_report(ww_result)
 ```
 
@@ -418,6 +410,7 @@ at least a week. At the same time, it seems rather unlikely that they
 have already been growing for 3 weeks or longer.
 
 ``` r
+
 plot_growth_report(ww_result, date = "2022-02-19")
 ```
 
@@ -441,6 +434,7 @@ load that arrived at the sampling side on a given day. We can see this
 is roughly on the order 1e14 to 3e14.
 
 ``` r
+
 plot_load(ww_result)
 ```
 
@@ -454,6 +448,7 @@ shedding load distribution). This makes the load a slightly delayed and
 blurred signal of the infections.
 
 ``` r
+
 plot_infections(ww_result)
 ```
 
@@ -468,6 +463,7 @@ or 0.01 infections per day). Please do **not** interpret the estimated
 number of infections in terms of true absolute incidence or prevalence.
 
 ``` r
+
 plot_infections(ww_result) + geom_step(data = data_zurich$cases, aes(x = date, y = cases), color = "#000080")
 ```
 
@@ -479,6 +475,7 @@ For example, we can inspect the coefficient of variation (CV) of the
 observation noise:
 
 ``` r
+
 plot_prior_posterior(ww_result, "measurement_noise_cv")
 ```
 
@@ -492,9 +489,9 @@ We can further inspect our results object. It has the following
 attributes:
 
 ``` r
+
 names(ww_result)
-#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"      "diagnostics"
-#> [7] "runtime"
+#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"      "diagnostics" "runtime"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -503,15 +500,16 @@ meta-information, and the settings for the sampler. By calling
 `run(ww_result$job)`, the job can be run again.
 
 ``` r
+
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"     
-#>  [7] "results_opts"  "priors_text"   "metainfo"      "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"      "results_opts"  "priors_text"   "metainfo"      "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
 (the `EpiSewer` defaults in this case):
 
 ``` r
+
 ww_result$job$model
 #> measurements
 #>  |- concentrations_observe
@@ -550,18 +548,17 @@ The `summary` attribute stores summarized results for important
 parameters from the model.
 
 ``` r
+
 names(ww_result$summary)
-#>  [1] "samples"                  "R"                        "R_diagnostics"           
-#>  [4] "expected_infections"      "infections"               "growth_rate"             
-#>  [7] "doubling_time"            "days_growing"             "expected_load"           
-#> [10] "expected_concentration"   "concentration"            "normalized_concentration"
-#> [13] "outliers"
+#>  [1] "samples"                  "R"                        "R_diagnostics"            "expected_infections"      "infections"               "growth_rate"              "doubling_time"            "days_growing"            
+#>  [9] "expected_load"            "expected_concentration"   "concentration"            "normalized_concentration" "outliers"
 ```
 
 For example, we can access the exact estimates for the reproduction
 number.
 
 ``` r
+
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95     type seeding
 #>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>   <fctr>  <lgcl>
@@ -579,6 +576,7 @@ details). For example, we can use this to show sampler diagnostics for
 each chain:
 
 ``` r
+
 ww_result$fitted$diagnostic_summary()
 #> $num_divergent
 #> [1] 0 0 0 0
@@ -597,6 +595,7 @@ fitting options, or inits. If all checksums are identical (and the seed
 is not `NULL`), then the results should also be identical.
 
 ``` r
+
 ww_result$checksums
 #> $model
 #> [1] "c8484e1d5725559d91a98baaf86c86b6"

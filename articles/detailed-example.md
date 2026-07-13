@@ -17,6 +17,7 @@ We assume that `EpiSewer` is already successfully installed (see
 the package).
 
 ``` r
+
 library(EpiSewer)
 library(data.table)
 library(ggplot2)
@@ -28,6 +29,7 @@ This is again the wastewater data from Zurich, Switzerland, provided by
 EAWAG (Swiss Federal Institute of Aquatic Science and Technology).
 
 ``` r
+
 data_zurich <- SARS_CoV_2_Zurich
 ```
 
@@ -35,6 +37,7 @@ As in the introductory example, we keep only measurements that were made
 on Mondays and Thursdays to test `EpiSewer` on sparse data.
 
 ``` r
+
 measurements_sparse <- data_zurich$measurements[,weekday := weekdays(data_zurich$measurements$date)][weekday %in% c("Monday","Thursday"),]
 head(measurements_sparse, 10)
 #>           date concentration  weekday
@@ -70,6 +73,7 @@ We start with the first module, the observed measurements. The module
 can be specified as follows:
 
 ``` r
+
 ww_measurements <- model_measurements(
   concentrations = concentrations_observe(measurements = measurements_sparse),
   noise = noise_estimate(),
@@ -100,6 +104,7 @@ suffix of each function explains what we modeled:
 We can also print the module object to see what we have modeled:
 
 ``` r
+
 ww_measurements
 #> measurements
 #>  |- concentrations_observe
@@ -113,6 +118,7 @@ example, we could set a custom prior on the measurement noise as
 follows:
 
 ``` r
+
 ww_measurements2 <- model_measurements(
   concentrations = concentrations_observe(measurements = measurements_sparse),
   noise = noise_estimate(cv_prior_mu = 0.5, cv_prior_sigma = 0.1), # prior on coefficient of variation
@@ -129,6 +135,7 @@ function for each option. To see all available options, you can use
 [`component_functions()`](https://adrian-lison.github.io/EpiSewer/reference/component_functions.md):
 
 ``` r
+
 component_functions("LOD")
 #> [1] "LOD_none()"          "LOD_assume()"        "LOD_estimate_dPCR()"
 ```
@@ -138,6 +145,7 @@ on a lab experiment by EAWAG, this was the lowest concentration at which
 still 95% of replicates were positive) as follows:
 
 ``` r
+
 ww_measurements3 <- model_measurements(
   concentrations = concentrations_observe(measurements = measurements_sparse),
   noise = noise_estimate(cv_prior_mu = 0.5, cv_prior_sigma = 0.1), # prior on coefficient of variation
@@ -150,6 +158,7 @@ the LOD with an explicit model of dPCR noise. Note that we also have to
 adapt the noise component accordingly.
 
 ``` r
+
 ww_measurements4 <- model_measurements(
   concentrations = concentrations_observe(measurements = measurements_sparse),
   noise = noise_estimate_dPCR(), # also model dPCR noise
@@ -163,6 +172,7 @@ Next is the `sampling` module. It models the process of sampling from
 the wastewater:
 
 ``` r
+
 ww_sampling <- model_sampling(
   outliers = outliers_none(),
   sample_effects = sample_effects_none()
@@ -182,6 +192,7 @@ example, we do not model outliers or sampling effects.
 The `sewage` module describes aspects of the sewage system:
 
 ``` r
+
 ww_sewage <- model_sewage(
   flows = flows_observe(flows = data_zurich$flows),
   residence_dist = residence_dist_assume(residence_dist = c(1))
@@ -210,6 +221,7 @@ The `shedding` module describes how infected individuals shed pathogen
 particles into the wastewater:
 
 ``` r
+
 ww_shedding <- model_shedding(
   shedding_dist = shedding_dist_assume(
     get_discrete_gamma(gamma_shape = 0.929639, gamma_scale = 7.241397), shedding_reference = "symptom_onset"),
@@ -242,6 +254,7 @@ The `infections` module describes the underlying process leading to
 infected individuals:
 
 ``` r
+
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4)),
   R = R_estimate_gp(),
@@ -278,6 +291,7 @@ produce no forecasts by effectively setting the forecast horizon to
 zero.
 
 ``` r
+
 ww_forecast <- model_forecast(
   horizon = horizon_none()
 )
@@ -287,6 +301,7 @@ If we want to produce forecasts, we can define the forecast horizon
 (e.g. 7 days) as follows:
 
 ``` r
+
 ww_forecast2 <- model_forecast(
   horizon = horizon_assume(horizon = 7),
   damping = damping_assume(0.95)
@@ -310,6 +325,7 @@ specified the `EpiSewer` defaults. For example, the `infections` module
 described above could simply be written as
 
 ``` r
+
 ww_infections <- model_infections(
   generation_dist = generation_dist_assume(get_discrete_gamma_shifted(gamma_mean = 3, gamma_sd = 2.4))
 )
@@ -340,6 +356,7 @@ allows you to pass various arguments to stan, including number of
 chains, iterations, and much more.
 
 ``` r
+
 ww_fit_opts <- set_fit_opts(
   model = model_stan_opts(package = "EpiSewer"),
   sampler = sampler_stan_mcmc(
@@ -363,6 +380,7 @@ want to explicitly store 50 posterior samples for the Rt and infections
 time series (useful for spaghetti plots etc.).
 
 ``` r
+
 ww_results_opts <- set_results_opts(
   fitted = TRUE,
   summary_intervals = c(0.5, 0.95),
@@ -378,6 +396,7 @@ EpiSewer modules and settings defined above to the
 function.
 
 ``` r
+
 ww_result <- EpiSewer(
   measurements = ww_measurements,
   sampling = ww_sampling,
@@ -402,6 +421,7 @@ Remember that you can print a summary of the full modeling details from
 the job object:
 
 ``` r
+
 ww_result$job$model
 #> measurements
 #>  |- concentrations_observe
@@ -444,6 +464,7 @@ customize priors and other modeling details. As always, the function
 documentation is your friend!
 
 ``` r
+
 measurements_sparse <- data_zurich$measurements[
   , weekday := weekdays(data_zurich$measurements$date)
   ][weekday %in% c("Monday","Thursday"),]

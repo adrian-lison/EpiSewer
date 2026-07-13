@@ -9,6 +9,7 @@ a package from the github container registry.
 Install the EpiSewer package from github as usual:
 
 ``` r
+
 remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
 ```
 
@@ -18,12 +19,14 @@ Pull the docker image from the github container registry (make sure that
 your docker daemon is running!):
 
 ``` r
+
 EpiSewer::sewer_pull_docker()
 ```
 
 ### Step 3: Load the package
 
 ``` r
+
 library(EpiSewer)
 ```
 
@@ -32,6 +35,7 @@ library(EpiSewer)
 We will use this backend during model fitting as shown in step 5.
 
 ``` r
+
 docker_backend <- model_stan_opts(use_docker = TRUE)
 ```
 
@@ -41,6 +45,7 @@ We here use example data and assumptions for SARS-CoV-2 in Zurich, which
 are included in the package.
 
 ``` r
+
 ww_result <- EpiSewer(
   data = ww_data_SARS_CoV_2_Zurich,
   assumptions = ww_assumptions_SARS_CoV_2_Zurich,
@@ -58,6 +63,7 @@ ww_result <- EpiSewer(
 For example, plot the estimated reproduction number:
 
 ``` r
+
 plot_R(ww_result)
 ```
 

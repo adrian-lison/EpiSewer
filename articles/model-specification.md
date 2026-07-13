@@ -16,7 +16,7 @@ specify `forecast` functionality. Each of these modules consists of a
 number of module components, as shown below.
 
 ![The 6 modules of the EpiSewer
-model](figures/specification-model-1.png)
+model](figures/specification-model1-1.png)
 
 The modules are defined using their corresponding module function,
 i.e. by calling
@@ -62,6 +62,7 @@ component, you can consult the documentation or use the helper
 [`component_functions()`](https://adrian-lison.github.io/EpiSewer/reference/component_functions.md):
 
 ``` r
+
 EpiSewer::component_functions("infection_noise")
 #> [1] "infection_noise_none()"     "infection_noise_estimate()"
 ```
@@ -81,6 +82,7 @@ reproduction number, such as
 (smoothing splines) and more.
 
 ``` r
+
 EpiSewer::component_functions("R")
 #> [1] "R_estimate_gp()"                  "R_estimate_ets()"                
 #> [3] "R_estimate_smooth_derivative()"   "R_estimate_piecewise()"          
@@ -97,6 +99,7 @@ but not `generation_dist_estimate`, `generation_dist_calibrate`, or
 `generation_dist_observe`.
 
 ``` r
+
 EpiSewer::component_functions("generation_dist")
 #> [1] "generation_dist_assume()"
 ```
@@ -116,6 +119,7 @@ overview and allows to run `EpiSewer` under its default settings without
 repeating the component definitions:
 
 ``` r
+
 ww_data <- sewer_data(
   measurements = SARS_CoV_2_Zurich$measurements,
   flows = SARS_CoV_2_Zurich$flows,
@@ -145,6 +149,7 @@ function.
 assumptions explicitly in the model component:
 
 ``` r
+
 # Leave out flows from the data
 ww_data <- sewer_data(
   measurements = SARS_CoV_2_Zurich$measurements,

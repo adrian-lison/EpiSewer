@@ -53,6 +53,7 @@ small. You can adapt this default with the `min_cases` argument in
 [`sewer_assumptions()`](https://adrian-lison.github.io/EpiSewer/reference/sewer_assumptions.md):
 
 ``` r
+
 ww_assumptions <- sewer_assumptions(
   min_cases = 30
   # add further assumptions here
@@ -64,6 +65,7 @@ or using the
 function:
 
 ``` r
+
 load_per_case_calibrate(min_cases = 30)
 ```
 
@@ -83,6 +85,7 @@ by a single individual in the whole catchment.
 If we also have case data available, we can provide this to EpiSewer via
 
 ``` r
+
 ww_data <- sewer_data(
   cases = SARS_CoV_2_Zurich$cases
   # add further data here
@@ -94,6 +97,7 @@ or using the
 function:
 
 ``` r
+
 load_per_case_calibrate(cases = SARS_CoV_2_Zurich$cases)
 ```
 
@@ -111,6 +115,7 @@ underdetection of infections. For simplicity, we here assume
 cases (which is often not realistic).
 
 ``` r
+
 suggest_load_per_case(
   SARS_CoV_2_Zurich$measurements,
   SARS_CoV_2_Zurich$cases,

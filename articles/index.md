@@ -6,6 +6,8 @@
   EpiSewer](https://adrian-lison.github.io/EpiSewer/articles/model-specification.md):
 - [Detailed
   example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.md):
+- [Installing CmdStan for
+  EpiSewer](https://adrian-lison.github.io/EpiSewer/articles/cmdstan-installation.md):
 - [Running EpiSewer with
   docker](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.md):
 

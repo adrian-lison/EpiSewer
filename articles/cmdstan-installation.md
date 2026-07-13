@@ -1,0 +1,76 @@
+# Installing CmdStan for EpiSewer
+
+This vignette describes how to install CmdStan on your system to use as
+a backend for EpiSewer. If you cannot install CmdStan locally, you can
+alternatively use the docker backend (see the [docker
+vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html)).
+
+### Step 1: Install the EpiSewer package
+
+Install the EpiSewer package from GitHub. This will also install the
+`cmdstanr` package, which is used to interface with CmdStan from R.
+
+``` r
+
+remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
+```
+
+### Step 2: Check the C++ toolchain
+
+CmdStan requires a working C++ toolchain. You can check whether your
+system is ready using:
+
+``` r
+
+cmdstanr::check_cmdstan_toolchain()
+```
+
+If the toolchain is not set up, follow the instructions printed by the
+above function. The [cmdstanr
+vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) also
+contains platform-specific guidance for setting up the toolchain on
+Windows, macOS, and Linux.
+
+### Step 3: Install CmdStan
+
+Once the toolchain is ready, install CmdStan using:
+
+``` r
+
+cmdstanr::install_cmdstan(cores = 2) # use more cores to speed up installation
+```
+
+You can verify the installation was successful by checking the CmdStan
+version:
+
+``` r
+
+cmdstanr::cmdstan_version()
+```
+
+### Step 4: Compile the EpiSewer models
+
+The Stan models used by EpiSewer need to be compiled for your device.
+This is only necessary once — after installing or updating the package —
+and can be done using:
+
+``` r
+
+EpiSewer::sewer_compile()
+```
+
+Great, you are now ready to run EpiSewer! See the
+[README](https://adrian-lison.github.io/EpiSewer/) for an introduction
+on how to use the package.
+
+### Troubleshooting
+
+If the models are not successfully compiled in step 4, first ensure that
+CmdStan is properly set up by re-running step 2. You can also try
+updating CmdStan to a newer version by re-running
+[`cmdstanr::install_cmdstan()`](https://mc-stan.org/cmdstanr/reference/install_cmdstan.html).
+
+If the problem persists, run `EpiSewer::sewer_compile(verbose = TRUE)`
+and post the output in a new [GitHub
+issue](https://github.com/adrian-lison/EpiSewer/issues), along with your
+[`cmdstanr::cmdstan_version()`](https://mc-stan.org/cmdstanr/reference/set_cmdstan_path.html).
