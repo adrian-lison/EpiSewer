@@ -10,7 +10,7 @@ alternatively use the docker backend (see the
 
 ### Step 1: Install the EpiSewer package
 
-Install the EpiSewer package from GitHub as usual:
+Install the EpiSewer package from GitHub. This will also install the `cmdstanr` package, which is used to interface with CmdStan from R.
 
 ```{r, eval = FALSE}
 remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)

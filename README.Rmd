@@ -74,9 +74,7 @@ knitr::include_graphics("man/figures/weekly_zurich_animated.gif")
 
 ## Installing the package
 
-The development version of `EpiSewer` can be installed from GitHub as shown
-below. Please note that the package is still in early development and may be
-subject to breaking changes.
+The development version of `EpiSewer` can be installed from GitHub as shown below. Please note that the package is still in early development and may be subject to breaking changes.
 
 ```{r, eval = FALSE}
 remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
@@ -89,7 +87,8 @@ remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
 
 ## Introduction
 
-This is a quick introduction to using the `EpiSewer` package. To learn more about modeling with `EpiSewer`, see the [model specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html) and [detailed example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html) vignettes on the [package website](https://adrian-lison.github.io/EpiSewer/).
+You have installed `EpiSewer` and the stan backend, and are ready to analyze your wastewater data? Then follow the quick introduction below to learn how to use the package.
+For more details on how to customize the model, see the [model specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html) and [detailed example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html) vignettes on the [package website](https://adrian-lison.github.io/EpiSewer/).
 
 ### Loading the package
 
