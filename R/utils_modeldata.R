@@ -456,7 +456,7 @@ modeldata_check <- function(modeldata,
                             advice = NULL,
                             throw_error = TRUE,
                             calling_env = rlang::caller_env()) {
-  if (!class(modeldata) == "modeldata") {
+  if (!inherits(modeldata, "modeldata")) {
     cli::cli_abort("Please supply a modeldata object.")
   }
 
@@ -525,7 +525,7 @@ modeldata_validate <- function(modeldata,
                                data = list(),
                                assumptions = list(),
                                defaults = modeldata_defaults()) {
-  if (!class(modeldata) == "modeldata") {
+  if (!inherits(modeldata, "modeldata")) {
     cli::cli_abort("Please supply a modeldata object.")
   }
 
@@ -656,7 +656,7 @@ modeldata_combine <- function(...) {
   modeldata_sets <- list(...)
 
   lapply(modeldata_sets, function(md) {
-    if (!class(md) == "modeldata") {
+    if (!inherits(md, "modeldata")) {
       cli::cli_abort("Please supply a modeldata object.")
     }
   })
@@ -715,7 +715,7 @@ modeldata_combine <- function(...) {
 modeldata_update <- function(modeldata,
                              data = list(), assumptions = list(),
                              throw_error = TRUE) {
-  if (!class(modeldata) == "modeldata") {
+  if (!inherits(modeldata, "modeldata")) {
     cli::cli_abort("Please supply a modeldata object.")
   }
 

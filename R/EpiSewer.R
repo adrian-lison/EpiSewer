@@ -231,7 +231,7 @@ EpiSewerJobResult <- function(fit_res, job, stan_model, checksums) {
     if (job$results_opts$fitted) {
       result$fitted <- fit_res
     }
-    if (class(job$fit_opts$sampler) == "mcmc") {
+    if (inherits(job$fit_opts$sampler, "mcmc")) {
       result$diagnostics <- try(suppressMessages(fit_res$diagnostic_summary()))
     }
     result$runtime <- try(fit_res$time())
@@ -256,13 +256,13 @@ test_run <- function(job) {
 
 #' @export
 test_run.EpiSewerJob <- function(job) {
-  if (class(job$fit_opts$sampler) == "mcmc") {
+  if (inherits(job$fit_opts$sampler, "mcmc")) {
     job$fit_opts$sampler$iter_warmup <- 5
     job$fit_opts$sampler$iter_sampling <- 5
     job$fit_opts$sampler$show_messages <- FALSE
     job$fit_opts$sampler$show_exceptions <- FALSE
     job$fit_opts$sampler$init_pathfinder_max_lbfgs_iters <- 10
-  } else if (class(job$fit_opts$sampler) == "pathfinder") {
+  } else if (inherits(job$fit_opts$sampler, "pathfinder")) {
     job$fit_opts$sampler$num_paths <- 1
     job$fit_opts$sampler$draws <- 10
     job$fit_opts$sampler$max_lbfgs_iters <- 10

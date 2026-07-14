@@ -584,7 +584,7 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
   }
 
   # pathfinder initialization for mcmc
-  use_mcmc <- class(job$fit_opts$sampler) == "mcmc"
+  use_mcmc <- inherits(job$fit_opts$sampler, "mcmc")
   init_pathfinder <- job$fit_opts$sampler$init_pathfinder
   fitting_method <- class(job$fit_opts$sampler)
   if (use_mcmc && init_pathfinder) {
@@ -624,7 +624,7 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
       try(fit_res$init(), silent = TRUE)
       try(fit_res$profiles(), silent = TRUE)
     }
-    if (class(job$fit_opts$sampler) == "mcmc") {
+    if (inherits(job$fit_opts$sampler, "mcmc")) {
       try(suppressMessages(fit_res$diagnostic_summary()), silent = TRUE)
       try(fit_res$sampler_diagnostics(), silent = TRUE)
     }
