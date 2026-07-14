@@ -69,8 +69,8 @@
 <div class="section level2">
 <h2 id="about">About<a class="anchor" aria-label="anchor" href="#about"></a>
 </h2>
-<p>The <code>EpiSewer</code> R package provides a Bayesian generative model to estimate effective reproduction numbers and other epidemiological parameters from concentration measurements at a wastewater treatment plant (or other sampling site) over time. This allows to track the transmission dynamics of a pathogen in the associated catchment population. The <code>EpiSewer</code> model is tailored to the specifics of wastewater concentration measurements, offers comprehensive uncertainty quantification via MCMC sampling in <code>stan</code>, and provides easily configurable modeling components.</p>
-<p><img src="reference/figures/weekly_zurich_animated.gif" alt="" width="100%"></p>
+<p>The <code>EpiSewer</code> R package provides a Bayesian generative model to estimate the effective reproduction number R<sub>t</sub> and other transmission indicators from pathogen concentrations measured in wastewater. This enables tracking of transmission dynamics both retrospectively and in real time. <code>EpiSewer</code> is tailored to the specifics of wastewater concentration measurements, offers comprehensive uncertainty quantification via MCMC sampling in <code>stan</code>, and provides easily configurable modeling components. See our <a href="https://doi.org/10.1038/s41467-026-75380-3" class="external-link">paper</a> for a detailed assessment of the model’s performance.</p>
+<p><img src="reference/figures/forecasting_example_IAV.gif" alt="" width="100%"></p>
 </div>
 <div class="section level2">
 <h2 id="model-highlights">Model highlights<a class="anchor" aria-label="anchor" href="#model-highlights"></a>
@@ -386,11 +386,11 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">R</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95</span></span>
 <span><span class="co">#&gt;        &lt;Date&gt;    &lt;num&gt;    &lt;num&gt;      &lt;num&gt;     &lt;num&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1: 2021-12-03 1.046023 1.045972  0.7666883 0.9567267  1.137864   1.307879</span></span>
-<span><span class="co">#&gt; 2: 2021-12-04 1.046344 1.046856  0.7769552 0.9610890  1.135075   1.302537</span></span>
-<span><span class="co">#&gt; 3: 2021-12-05 1.046800 1.048775  0.7861204 0.9617936  1.134287   1.294250</span></span>
-<span><span class="co">#&gt; 4: 2021-12-06 1.047425 1.051254  0.7965203 0.9653125  1.131942   1.290663</span></span>
-<span><span class="co">#&gt; 5: 2021-12-07 1.048243 1.051093  0.8012424 0.9686246  1.130858   1.284757</span></span>
+<span><span class="co">#&gt; 1: 2021-12-03 1.033535 1.028817  0.7833869 0.9399895  1.122385   1.294914</span></span>
+<span><span class="co">#&gt; 2: 2021-12-04 1.034030 1.028373  0.7872094 0.9447821  1.121171   1.297848</span></span>
+<span><span class="co">#&gt; 3: 2021-12-05 1.034722 1.028168  0.7933240 0.9476269  1.118173   1.290570</span></span>
+<span><span class="co">#&gt; 4: 2021-12-06 1.035643 1.030817  0.8043344 0.9491813  1.118184   1.283502</span></span>
+<span><span class="co">#&gt; 5: 2021-12-07 1.036816 1.032449  0.8073532 0.9529308  1.117731   1.276039</span></span>
 <span><span class="co">#&gt;        type seeding</span></span>
 <span><span class="co">#&gt;      &lt;fctr&gt;  &lt;lgcl&gt;</span></span>
 <span><span class="co">#&gt; 1: estimate    TRUE</span></span>
@@ -408,7 +408,7 @@
 <span><span class="co">#&gt; [1] 0 0 0 0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $ebfmi</span></span>
-<span><span class="co">#&gt; [1] 1.0282100 0.9586172 0.9549151 0.9054327</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.9272984 0.9189541 0.9192444 0.8973010</span></span></code></pre></div>
 <p>Finally, the <code>checksums</code> attribute gives us several checksums that uniquely identify the job which was run. These can be used to check whether two job results used the same or different models, input data, fitting options, or inits. If all checksums are identical (and the seed is not <code>NULL</code>), then the results should also be identical.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_result</span><span class="op">$</span><span class="va">checksums</span></span>
@@ -429,23 +429,29 @@
 </div>
 </div>
 <div class="section level2">
+<h2 id="finding-out-more">Finding out more<a class="anchor" aria-label="anchor" href="#finding-out-more"></a>
+</h2>
+<p><code>EpiSewer</code> offers comprehensive model customization and advanced plotting features. To find out more, please consult the <a href="https://adrian-lison.github.io/EpiSewer/">package website</a>.</p>
+<p><img src="reference/figures/weekly_zurich_animated.gif" alt="" width="100%"></p>
+</div>
+<div class="section level2">
 <h2 id="citing-the-package">Citing the package<a class="anchor" aria-label="anchor" href="#citing-the-package"></a>
 </h2>
-<p>To cite <code>EpiSewer</code> in a publication, please use:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="sc">@</span>article{lisonRobustRealtimeEstimation2025,</span>
-<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>  title <span class="ot">=</span> {Robust Real<span class="sc">-</span>Time Estimation of Pathogen Transmission Dynamics from Wastewater},</span>
-<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>  author <span class="ot">=</span> {Lison, Adrian and McLeod, Rachel and Huisman, Jana S. and Munday, James D. and Ort, Christoph and Julian, Timothy R. and Stadler, Tanja},</span>
-<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>  year <span class="ot">=</span> {<span class="dv">2025</span>},</span>
-<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>  journal <span class="ot">=</span> {medRxiv preprint},</span>
-<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a>  doi <span class="ot">=</span> {<span class="fl">10.1101</span><span class="sc">/</span><span class="dv">2025</span>.<span class="dv">10</span>.<span class="fl">23.25338640</span>}</span>
+<p>If you are using <code>EpiSewer</code> in your work, please cite <a href="https://doi.org/10.1038/s41467-026-75380-3" class="external-link">our paper</a>:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="sc">@</span>article{lisonRealTimeEstimation2026,</span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>  title <span class="ot">=</span> {Real<span class="sc">-</span>Time Estimation of Pathogen Transmission Dynamics from Wastewater},</span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>  author <span class="ot">=</span> {Lison, Adrian and McLeod, Rachel E. and Huisman, Jana S. and Munday, James D. and Ort, Christoph and Julian, Timothy R. and Stadler, Tanja},</span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>  year <span class="ot">=</span> {<span class="dv">2026</span>},</span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>  journal <span class="ot">=</span> {Nature Communications},</span>
+<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a>  doi <span class="ot">=</span> {<span class="fl">10.1038</span><span class="sc">/</span>s41467<span class="dv">-026-75380-3</span>}</span>
 <span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a>}</span></code></pre></div>
-<p>If you use the dPCR-specific model of <code>EpiSewer</code> (see <a href="https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.html">noise_estimate_dPCR</a>), please also cite:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="sc">@</span>article{lisonImprovingInferenceWastewaterbased2024,</span>
-<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>  title <span class="ot">=</span> {Improving Inference <span class="cf">in</span> Wastewater<span class="sc">-</span>Based Epidemiology by Modelling the Statistical Features of Digital {{PCR}}},</span>
-<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a>  author <span class="ot">=</span> {Lison, Adrian and Julian, Timothy and Stadler, Tanja},</span>
-<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a>  year <span class="ot">=</span> {<span class="dv">2024</span>},</span>
-<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a>  journal <span class="ot">=</span> {bioRxiv preprint},</span>
-<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a>  doi <span class="ot">=</span> {<span class="fl">10.1101</span><span class="sc">/</span><span class="dv">2024</span>.<span class="dv">10</span>.<span class="fl">14.618307</span>}</span>
+<p>If you use the dPCR-specific model of <code>EpiSewer</code> (see <a href="https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.html">noise_estimate_dPCR</a>), please also <a href="https://doi.org/10.1021/acsestwater.5c01051" class="external-link">this paper</a>:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="sc">@</span>article{lisonImprovingInference2026,</span>
+<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>  title<span class="ot">=</span>{Improving Inference from Reported Concentrations <span class="cf">in</span> Environmental Surveillance by Modeling the Statistical Features of Digital PCR},</span>
+<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a>  author<span class="ot">=</span>{Lison, Adrian and Julian, Timothy R and Stadler, Tanja},</span>
+<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a>  journal<span class="ot">=</span>{ACS ES\<span class="sc">&amp;</span>T Water},</span>
+<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a>  year<span class="ot">=</span>{<span class="dv">2026</span>},</span>
+<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a>  doi <span class="ot">=</span> {<span class="fl">10.1021</span><span class="sc">/</span>acsestwater<span class="fl">.5</span>c01051}</span>
 <span id="cb28-7"><a href="#cb28-7" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 <div class="section level2">
