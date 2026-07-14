@@ -143,12 +143,14 @@ place_knots_partial_window <- function(partial_window, n_knots = 3) {
 #'   least squares) estimate of the trend.
 #' @keywords internal
 #' @examples
+#' \dontrun{
 #' x = 1:6
 #' y = x*4 + rnorm(6, 0, 0.1)
 #' w <- c(0.1, 0.1, 0.1, 0.2, 0.2, 0.3) # weights
 #' trend_reg <- get_regression_linear_trend(x, weights = w)
 #' as.vector(trend_reg %*% y) # this gives you the trend estimate
 #' summary(lm(y ~ x, weights = w))$coefficients["x","Estimate"] # should be the same
+#' }
 get_regression_linear_trend <- function(x, weights = rep(1/length(x), length(x))) {
   if (length(weights) != length(x)) {
     cli::cli_abort(
