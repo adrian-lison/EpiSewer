@@ -13,9 +13,10 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 3.5.0)
-Imports: 
+Imports:
     cli,
     cmdstanr,
+    cowplot,
     curl,
     data.table,
     digest,
@@ -28,6 +29,7 @@ Imports:
     lifecycle,
     lubridate,
     Matrix (>= 1.5-1),
+    methods,
     purrr (>= 1.0.1),
     posterior (>= 1.6.0),
     rlang,
@@ -38,6 +40,9 @@ Imports:
     vctrs,
     withr
 Suggests:
+    desc,
+    dplyr,
+    readr,
     testthat (>= 3.0.0),
     zoo
 Config/Needs/website:
