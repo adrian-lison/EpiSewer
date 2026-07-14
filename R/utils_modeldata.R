@@ -815,7 +815,7 @@ add_dummy_inits <- function(modeldata, dummies) {
 #'   modeldata content (data, inits, metainfo) is printed.
 #' @export
 #' @keywords internal
-print.modeldata <- function(x, type = "structure") {
+print.modeldata <- function(x, type = "structure", ...) {
   if (type == "structure") {
     print(x$.str)
   } else if (type == "data") {
@@ -831,18 +831,18 @@ print.modeldata <- function(x, type = "structure") {
 #'
 #' @export
 #' @keywords internal
-print.modelstructure <- function(.str) {
-  output <- sapply(names(.str), function(module) {
-    if (length(.str[[module]]) > 0) {
-      comp_output <- sapply(names(.str[[module]]), function(component) {
-        if (length(.str[[module]][[component]][[1]]) > 0) {
-          a <- .str[[module]][[component]][[1]]
+print.modelstructure <- function(x, ...) {
+  output <- sapply(names(x), function(module) {
+    if (length(x[[module]]) > 0) {
+      comp_output <- sapply(names(x[[module]]), function(component) {
+        if (length(x[[module]][[component]][[1]]) > 0) {
+          a <- x[[module]][[component]][[1]]
           details <- paste0(
             " (", paste(paste0(names(a), " = ", a), collapse = ", "), ")"
             )
-          paste0(" |- ", names(.str[[module]][[component]])[1], details)
+          paste0(" |- ", names(x[[module]][[component]])[1], details)
         } else {
-          paste0(" |- ", names(.str[[module]][[component]])[1])
+          paste0(" |- ", names(x[[module]][[component]])[1])
         }
       })
       paste0(module, "\n", paste(comp_output, collapse = "\n"))

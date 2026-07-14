@@ -186,7 +186,7 @@ tbp <- function(f_name, f_expr,
 #' Print to-be-provided object
 #' @export
 #' @keywords internal
-print.tbp <- function(x) {
+print.tbp <- function(x, ...) {
   req_data <- c()
   req_assumptions <- c()
   if (length(x$required_data) > 0) {
@@ -204,7 +204,7 @@ print.tbp <- function(x) {
 
 #' @export
 #' @keywords internal
-solve.tbp <- function(x, modeldata, data = list(), assumptions = list()) {
+solve.tbp <- function(x, modeldata, data = list(), assumptions = list(), ...) {
   provided <- x$check_provided(
     data = data, assumptions = assumptions,
     required_data = x$required_data, required_assumptions = x$required_assumptions
@@ -243,13 +243,13 @@ tbe <- function(r_expr, required = c(), calling_env = rlang::caller_env()) {
 #' Print to-be-evaluated object
 #' @export
 #' @keywords internal
-print.tbe <- function(x) {
+print.tbe <- function(x, ...) {
   print(paste("Waiting for information:", rlang::expr_text(x$lazy_r$expr)))
 }
 
 #' @export
 #' @keywords internal
-solve.tbe <- function(x, modeldata, throw_error = TRUE) {
+solve.tbe <- function(x, modeldata, throw_error = TRUE, ...) {
   evaluate <- modeldata_check(
     modeldata, x$required, calling_env = x$calling_f, throw_error = throw_error
   )
@@ -323,7 +323,7 @@ tbc <- function(f_name, f_expr, required = c(), required_values = NULL,
 #' Print to-be-computed object
 #' @export
 #' @keywords internal
-print.tbc <- function(x) {
+print.tbc <- function(x, ...) {
   print(paste(
     "Waiting for the following information to compute values:",
     paste(x$required, collapse = ", ")
@@ -332,7 +332,7 @@ print.tbc <- function(x) {
 
 #' @export
 #' @keywords internal
-solve.tbc <- function(x, modeldata, throw_error = TRUE) {
+solve.tbc <- function(x, modeldata, throw_error = TRUE, ...) {
   computable <- modeldata_check(
     modeldata, x$required, required_values = x$required_values,
     advice = x$advice, calling_env = x$calling_f, throw_error = throw_error

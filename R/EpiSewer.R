@@ -165,7 +165,7 @@ run <- function(job, ...) {
 }
 
 #' @export
-run.EpiSewerJob <- function(job, run_silent = FALSE) {
+run.EpiSewerJob <- function(job, run_silent = FALSE, ...) {
   stan_model <- get_stan_model(
     model_filename = job$fit_opts$model$model_filename,
     model_folder = job$fit_opts$model$model_folder,
@@ -245,7 +245,7 @@ EpiSewerJobResult <- function(fit_res, job, stan_model, checksums) {
 }
 
 #' @export
-run.EpiSewerJobResult <- function(job, run_silent = FALSE) {
+run.EpiSewerJobResult <- function(job, run_silent = FALSE, ...) {
   return(run(job$job, run_silent = run_silent))
 }
 
@@ -285,7 +285,7 @@ test_run.EpiSewerJobResult <- function(job) {
 #' Print an EpiSewerJob.
 #' @export
 #' @keywords internal
-print.EpiSewerJob <- function(x) {
+print.EpiSewerJob <- function(x, ...) {
   cat(paste0("\n",x$job_name,"\n"))
   cat("-----\n")
   cat(paste0(
@@ -308,7 +308,7 @@ setClass("EpiSewerJobResult")
 #' Print an EpiSewerJobResult.
 #' @export
 #' @keywords internal
-print.EpiSewerJobResult <- function(x) {
+print.EpiSewerJobResult <- function(x, ...) {
   print(x$job)
   if (all(c("runtime","diagnostics") %in% names(x))) {
     cat("\n\n")
