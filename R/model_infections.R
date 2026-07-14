@@ -1040,6 +1040,9 @@ R_estimate_piecewise <- function(
 #'   ignored by `changepoint_min_distance`, i.e. they can also occur closer to
 #'   each other. This tolerance gives the model more flexibility in placing
 #'   changepoints with large trend changes.
+#' @param spline_knot_distance Distance (in days) between spline knots for the
+#'   B-splines used to smooth the Rt trajectory between changepoints. Smaller
+#'   distances increase flexibility but also daily Rt uncertainty.
 #' @param strictness_alpha The concentration parameter of the Dirichlet prior
 #'   for the changepoint positions. Choosing smaller values of
 #'   `strictness_alpha` will lead to more strict changepoints. Note that

@@ -8,6 +8,8 @@ run(job, ...)
 }
 \arguments{
 \item{job}{An EpiSewerJob object as returned by \code{\link[=EpiSewer]{EpiSewer()}}.}
+
+\item{...}{Further arguments passed to the method.}
 }
 \description{
 This function allows to (re-)run the model fitting from an

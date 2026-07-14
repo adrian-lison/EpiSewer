@@ -68,6 +68,10 @@ non-linear below (and in the case of \code{scaled_logit} also above) R=1.}
 must be assumed. This should be higher than any realistic R value for the
 modeled pathogen. Default is 6.}
 
+\item{spline_knot_distance}{Distance (in days) between spline knots for the
+B-splines used to smooth the Rt trajectory between changepoints. Smaller
+distances increase flexibility but also daily Rt uncertainty.}
+
 \item{strictness_alpha}{The concentration parameter of the Dirichlet prior
 for the changepoint positions. Choosing smaller values of
 \code{strictness_alpha} will lead to more strict changepoints. Note that

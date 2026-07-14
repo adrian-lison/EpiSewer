@@ -56,6 +56,10 @@ plotted in black and will not be part of the legend.}
 \item{model_levels}{A \code{character} vector with the names of the models to be
 included. The colors and legend will be ordered according to the order in
 \code{model_levels}.}
+
+\item{intervals}{Credible intervals to display. A numeric vector of
+probabilities, e.g. \code{c(0.5, 0.95)} (default) shows 50\% and 95\% intervals.
+Ignored if \code{draws=TRUE}.}
 }
 \value{
 A \code{ggplot} object showing the estimated time-varying doubling time. Can
