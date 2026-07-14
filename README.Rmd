@@ -218,7 +218,7 @@ settings provided by `EpiSewer`. With the helper function `set_fit_opts()` we
 specify our sampling approach: we apply Hamiltonian MCMC sampling via stan,
 using 4 chains with 500 warmup and 500 sampling iterations each.
 
-Stan regularly provides updates about the progress of the sampler. The overall 
+Stan regularly provides updates about the sampling process. The overall 
 runtime will depend on your hardware resources, the size of the data, 
 the complexity of the model used, and how well the model actually fits the data.
 On a modern laptop the example below should take about 3 minutes to run.
