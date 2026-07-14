@@ -16,3 +16,4 @@ derived from the literature.
 \code{\link{ww_data_SARS_CoV_2_Zurich}}, \code{\link{ww_result_SARS_CoV_2_Zurich}}
 }
 \keyword{datasets}
+\keyword{internal}

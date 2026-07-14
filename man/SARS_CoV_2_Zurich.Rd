@@ -18,6 +18,7 @@ A list with the following elements:
 \source{
 \url{https://sensors-eawag.ch/sars/}
 }
+\keyword{internal}
 \description{
 Wastewater measurements of SARS-CoV-2 RNA and case counts from
 the WWTP Werdhölzli in Zürich, Switzerland (January–April 2022). Data are

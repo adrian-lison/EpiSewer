@@ -16,3 +16,4 @@ literature.
 \code{\link{ww_data_influenza_Zurich}}
 }
 \keyword{datasets}
+\keyword{internal}
