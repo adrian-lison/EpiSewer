@@ -49,6 +49,10 @@ Suggests:
 Config/Needs/website:
     r-lib/pkgdown,
     hadley/emo
+Config/Needs/readme:
+    rmarkdown,
+    ropensci/allcontributors,
+    hadley/emo
 Remotes:
     stan-dev/cmdstanr
 SystemRequirements:

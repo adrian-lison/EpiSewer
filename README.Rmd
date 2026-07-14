@@ -235,12 +235,21 @@ ww_result <- EpiSewer(
 
 `r emo::ji("bulb")` We are here using a shorthand version of the `EpiSewer()` function which uses all available default settings. To find out how the `EpiSewer` model can be customized, see the [model specification](https://adrian-lison.github.io/EpiSewer/articles/model-specification.html) and [detailed example](https://adrian-lison.github.io/EpiSewer/articles/detailed-example.html) vignettes.
 
-```{r, eval = FALSE, include = FALSE}
-saveRDS(ww_result, file.path("data", "result_example.rds"))
-```
-
-```{r, eval = TRUE, include = FALSE}
-ww_result <- readRDS(file.path("data", "result_example.rds"))
+```{r, include = FALSE}
+cache_file <- file.path("data", "result_example.rds")
+if (file.exists(cache_file)) {
+  ww_result <- readRDS(cache_file)
+} else {
+  options(mc.cores = 4)
+  ww_result <- EpiSewer(
+    data = ww_data,
+    assumptions = ww_assumptions,
+    fit_opts = set_fit_opts(sampler = sampler_stan_mcmc(
+      iter_warmup = 500, iter_sampling = 500, chains = 4, seed = 42
+    ))
+  )
+  try(saveRDS(ww_result, cache_file), silent = TRUE)
+}
 ```
 
 ### Plotting the results
