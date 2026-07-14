@@ -7,13 +7,15 @@
 \format{
 A \code{sewer_data} object as returned by \code{\link[=sewer_data]{sewer_data()}}.
 }
+\usage{
+ww_data_influenza_Zurich
+}
 \description{
 Processed wastewater data for Influenza A from the WWTP
 Werdhölzli in Zürich (September–December 2022), ready for use with
 \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \seealso{
-\code{\link{Influenza_A_Zurich}}, \code{\link{ww_assumptions_influenza_Zurich}}
+\link{Influenza_A_Zurich}, \link{ww_assumptions_influenza_Zurich}
 }
-\keyword{datasets}
 \keyword{internal}

@@ -7,13 +7,15 @@
 \format{
 A \code{sewer_assumptions} object as returned by \code{\link[=sewer_assumptions]{sewer_assumptions()}}.
 }
+\usage{
+ww_assumptions_SARS_CoV_2_Zurich
+}
 \description{
 Epidemiological assumptions for SARS-CoV-2, including
 generation time, incubation period, and shedding load distributions
 derived from the literature.
 }
 \seealso{
-\code{\link{ww_data_SARS_CoV_2_Zurich}}, \code{\link{ww_result_SARS_CoV_2_Zurich}}
+\link{ww_data_SARS_CoV_2_Zurich}, \link{ww_result_SARS_CoV_2_Zurich}
 }
-\keyword{datasets}
 \keyword{internal}

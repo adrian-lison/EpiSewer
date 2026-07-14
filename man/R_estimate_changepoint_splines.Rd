@@ -59,6 +59,10 @@ ignored by \code{changepoint_min_distance}, i.e. they can also occur closer to
 each other. This tolerance gives the model more flexibility in placing
 changepoints with large trend changes.}
 
+\item{spline_knot_distance}{Distance (in days) between spline knots for the
+B-splines used to smooth the Rt trajectory between changepoints. Smaller
+distances increase flexibility but also daily Rt uncertainty.}
+
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
 approximately like the identity function around R=1, but become increasingly
@@ -67,10 +71,6 @@ non-linear below (and in the case of \code{scaled_logit} also above) R=1.}
 \item{R_max}{If \code{link=scaled_logit} is used, a maximum reproduction number
 must be assumed. This should be higher than any realistic R value for the
 modeled pathogen. Default is 6.}
-
-\item{spline_knot_distance}{Distance (in days) between spline knots for the
-B-splines used to smooth the Rt trajectory between changepoints. Smaller
-distances increase flexibility but also daily Rt uncertainty.}
 
 \item{strictness_alpha}{The concentration parameter of the Dirichlet prior
 for the changepoint positions. Choosing smaller values of

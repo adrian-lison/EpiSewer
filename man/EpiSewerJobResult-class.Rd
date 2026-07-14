@@ -6,8 +6,7 @@
 \title{The EpiSewerJobResult S4 class}
 \description{
 An S4 class registration for \code{EpiSewerJobResult} objects.
-Instances are S3 objects created by
-\code{\link[=EpiSewerJobResult]{EpiSewerJobResult()}}. The class registration
-enables \code{is(x, "EpiSewerJobResult")} checks.
+Instances are S3 objects created by \code{\link[=EpiSewerJobResult]{EpiSewerJobResult()}}. The class
+registration enables \code{is(x, "EpiSewerJobResult")} checks.
 }
 \keyword{internal}

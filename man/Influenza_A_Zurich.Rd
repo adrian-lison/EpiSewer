@@ -7,17 +7,19 @@
 \format{
 A list with the following elements:
 \describe{
-  \item{measurements}{A \code{data.table} with columns \code{date},
-    \code{concentration} (gc/mL), \code{replicate_id}, \code{dilution},
-    \code{total_droplets}, and \code{positive_droplets}.}
-  \item{flows}{A \code{data.table} with columns \code{date} and \code{flow} (mL/day).}
-  \item{units}{A list with concentration and flow unit strings.}
+\item{measurements}{A \code{data.table} with columns \code{date},
+\code{concentration} (gc/mL), \code{replicate_id}, \code{dilution},
+\code{total_droplets}, and \code{positive_droplets}.}
+\item{flows}{A \code{data.table} with columns \code{date} and \code{flow} (mL/day).}
+\item{units}{A list with concentration and flow unit strings.}
 }
+}
+\usage{
+Influenza_A_Zurich
 }
 \description{
 Wastewater measurements of Influenza A RNA from the WWTP
 Werdhölzli in Zürich, Switzerland (September 2022–April 2023). Data are
 provided by EAWAG.
 }
-\keyword{datasets}
 \keyword{internal}
