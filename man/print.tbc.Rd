@@ -4,7 +4,7 @@
 \alias{print.tbc}
 \title{Print to-be-computed object}
 \usage{
-\method{print}{tbc}(x)
+\method{print}{tbc}(x, ...)
 }
 \description{
 Print to-be-computed object
