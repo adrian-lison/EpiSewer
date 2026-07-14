@@ -9,9 +9,8 @@
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![MIT
 license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/adrian-lison/EpiSewer/blob/main/LICENSE.md/)
-[![DOI](https://zenodo.org/badge/676114941.svg)](https://zenodo.org/badge/latestdoi/676114941)
+[![DOI](https://img.shields.io/badge/DOI-Zenodo-blue)](https://zenodo.org/badge/latestdoi/676114941)
 [![R-CMD-check](https://github.com/adrian-lison/EpiSewer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/adrian-lison/EpiSewer/actions/workflows/R-CMD-check.yaml)
-
 <!-- badges: end -->
 
 ## About
@@ -26,36 +25,36 @@ wastewater concentration measurements, offers comprehensive uncertainty
 quantification via MCMC sampling in `stan`, and provides easily
 configurable modeling components.
 
-<img src="man/figures/weekly_zurich_animated.gif" width="100%" />
+<img src="man/figures/weekly_zurich_animated.gif" alt="" width="100%" />
 
 ## Model highlights
 
-**Measurements**\
-⭐ Non-daily / missing measurements\
-⭐ Multiple measurements (replicates) per sample\
-⭐ Multi-day composite samples\
-⭐ Accurate dPCR noise model\
+**Measurements**  
+⭐ Non-daily / missing measurements  
+⭐ Multiple measurements (replicates) per sample  
+⭐ Multi-day composite samples  
+⭐ Accurate dPCR noise model  
 ⭐ Limit of detection (LOD) model
 
-**Sampling**\
-⭐ Integrated outlier detection\
+**Sampling**  
+⭐ Integrated outlier detection  
 ⭐ Sample batch effects (e.g. weekday or age-of-sample effects)
 
-**Sewer**\
-⭐ Flow normalization\
+**Sewer**  
+⭐ Flow normalization  
 ⭐ Sewer residence time distributions
 
-**Shedding**\
-⭐ Shedding load distributions (with uncertainty)\
+**Shedding**  
+⭐ Shedding load distributions (with uncertainty)  
 ⭐ Individual-level shedding load variation
 
-**Infections**\
-⭐ Stochastic infection model with overdispersion\
+**Infections**  
+⭐ Stochastic infection model with overdispersion  
 ⭐ Flexible $R_t$ smoothing (Gaussian process, random walk, exponential
-smoothing, splines, changepoint models)\
+smoothing, splines, changepoint models)  
 ⭐ Transmission indicators: $R_t$, growth rate, doubling time, and more
 
-**Forecast**\
+**Forecast**  
 ⭐ Probabilistic forecasts of $R_t$, infections, concentrations and more
 
 ## Installing the package
@@ -291,10 +290,10 @@ function `set_fit_opts()` we specify our sampling approach: we apply
 Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 500 sampling iterations each.
 
-Stan regularly provides updates about the progress of the sampler. The
-overall runtime will depend on your hardware resources, the size of the
-data, the complexity of the model used, and how well the model actually
-fits the data. On a modern laptop the example below should take about 3
+Stan regularly provides updates about the sampling process. The overall
+runtime will depend on your hardware resources, the size of the data,
+the complexity of the model used, and how well the model actually fits
+the data. On a modern laptop the example below should take about 3
 minutes to run.
 
 ``` r
@@ -336,7 +335,7 @@ the model still achieved a decent fit on these missing days.
 plot_concentration(ww_result, measurements = data_zurich$measurements)
 ```
 
-<img src="man/figures/README-concentration-1.png" width="100%" />
+<img src="man/figures/README-concentration-1.png" alt="" width="100%" />
 
 By default, the function `plot_concentration()` shows absolute
 concentrations, which strongly depend on the daily wastewater flow.
@@ -349,7 +348,7 @@ the flow data as well (see below).
 plot_concentration(ww_result, measurements = data_zurich$measurements, flows = data_zurich$flows, normalized = TRUE)
 ```
 
-<img src="man/figures/README-concentration_normalized-1.png" width="100%" />
+<img src="man/figures/README-concentration_normalized-1.png" alt="" width="100%" />
 As can be seen, the normalization removes the noise due to the daily
 variation of flow. The remaining uncertainty is due to the measurement
 noise and other sources of variation.
@@ -366,7 +365,7 @@ for R being above or below the critical threshold of 1.
 plot_R(ww_result)
 ```
 
-<img src="man/figures/README-R-1.png" width="100%" />
+<img src="man/figures/README-R-1.png" alt="" width="100%" />
 
 Note that the estimates for R go back further into the past than our
 observations. This is due to the delay from infection to shedding, i.e.
@@ -387,10 +386,10 @@ possible as a reference.
 plot_growth_report(ww_result)
 ```
 
-<img src="man/figures/README-growth_report-1.png" width="100%" /> As the
-model was fitted at the end of the seasonal wave in Zurich, there is
-high posterior support that infections are currently not growing for a
-prolonged period of time.
+<img src="man/figures/README-growth_report-1.png" alt="" width="100%" />
+As the model was fitted at the end of the seasonal wave in Zurich, there
+is high posterior support that infections are currently not growing for
+a prolonged period of time.
 
 You can also display a growth report for other dates. Let’s for example
 have a look at the report for mid-February 2022. Here we can see that
@@ -402,7 +401,7 @@ have already been growing for 3 weeks or longer.
 plot_growth_report(ww_result, date = "2022-02-19")
 ```
 
-<img src="man/figures/README-growth_report2-1.png" width="100%" />
+<img src="man/figures/README-growth_report2-1.png" alt="" width="100%" />
 
 💡 `EpiSewer` also provides further indicators of transmission dynamics,
 see e.g. `plot_growth_rate()` and `plot_doubling_time()`. These can
@@ -422,11 +421,11 @@ is roughly on the order 1e14 to 3e14.
 plot_load(ww_result)
 ```
 
-<img src="man/figures/README-load-1.png" width="100%" /> Next, we plot
-the estimated number of infections over time. The time series follows a
-very similar trend as the load. Compared to the load, the peak in
-infections seems to be a bit more spiked, and also a bit earlier. This
-is because infected individuals only begin shedding after their
+<img src="man/figures/README-load-1.png" alt="" width="100%" /> Next, we
+plot the estimated number of infections over time. The time series
+follows a very similar trend as the load. Compared to the load, the peak
+in infections seems to be a bit more spiked, and also a bit earlier.
+This is because infected individuals only begin shedding after their
 infection and then shed over a longer period of time (as defined by the
 incubation period and shedding load distribution). This makes the load a
 slightly delayed and blurred signal of the infections.
@@ -435,7 +434,7 @@ slightly delayed and blurred signal of the infections.
 plot_infections(ww_result)
 ```
 
-<img src="man/figures/README-infections-1.png" width="100%" />
+<img src="man/figures/README-infections-1.png" alt="" width="100%" />
 
 Note that because we supplied case data, the estimated infections
 *rougly* match the case numbers (plotted in blue below). Nevertheless,
@@ -449,7 +448,7 @@ number of infections in terms of true absolute incidence or prevalence.
 plot_infections(ww_result) + geom_step(data = data_zurich$cases, aes(x = date, y = cases), color = "#000080")
 ```
 
-<img src="man/figures/README-infections_with_cases-1.png" width="100%" />
+<img src="man/figures/README-infections_with_cases-1.png" alt="" width="100%" />
 
 We can also compare the prior and posterior distribution for certain
 parameters of the model to see how much they were informed by the data.
@@ -460,7 +459,7 @@ observation noise:
 plot_prior_posterior(ww_result, "measurement_noise_cv")
 ```
 
-<img src="man/figures/README-prior_posterior_noise_cv-1.png" width="100%" />
+<img src="man/figures/README-prior_posterior_noise_cv-1.png" alt="" width="100%" />
 As we can see, the prior (in grey) and posterior (in blue) differ
 substantially, indicating that this parameter is well informed by the
 data.
@@ -472,7 +471,8 @@ attributes:
 
 ``` r
 names(ww_result)
-#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"      "diagnostics" "runtime"
+#> [1] "job"         "stan_model"  "checksums"   "summary"     "fitted"     
+#> [6] "diagnostics" "runtime"
 ```
 
 The `job` attribute stores all information about the job that was
@@ -482,8 +482,9 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"      "results_opts"  "priors_text"   "metainfo"     
-#> [10] "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "model"        
+#>  [5] "init"          "fit_opts"      "results_opts"  "priors_text"  
+#>  [9] "metainfo"      "stan_digest"   "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
@@ -529,9 +530,13 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#>  [1] "samples"                  "R"                        "R_diagnostics"            "expected_infections"      "infections"              
-#>  [6] "growth_rate"              "doubling_time"            "days_growing"             "expected_load"            "expected_concentration"  
-#> [11] "concentration"            "normalized_concentration" "outliers"
+#>  [1] "samples"                  "R"                       
+#>  [3] "R_diagnostics"            "expected_infections"     
+#>  [5] "infections"               "growth_rate"             
+#>  [7] "doubling_time"            "days_growing"            
+#>  [9] "expected_load"            "expected_concentration"  
+#> [11] "concentration"            "normalized_concentration"
+#> [13] "outliers"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -539,13 +544,20 @@ number.
 
 ``` r
 head(ww_result$summary$R, 5)
-#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95     type seeding
-#>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>   <fctr>  <lgcl>
-#> 1: 2021-12-03 1.065800 1.062111  0.7804628 0.9704949  1.155865   1.347606 estimate    TRUE
-#> 2: 2021-12-04 1.066615 1.063386  0.7873830 0.9718353  1.156192   1.344718 estimate    TRUE
-#> 3: 2021-12-05 1.067446 1.064492  0.7978542 0.9745666  1.156663   1.336939 estimate    TRUE
-#> 4: 2021-12-06 1.068285 1.066127  0.8056717 0.9769387  1.156550   1.334001 estimate    TRUE
-#> 5: 2021-12-07 1.069128 1.068549  0.8120417 0.9798131  1.155093   1.329651 estimate    TRUE
+#>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
+#>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>
+#> 1: 2021-12-03 1.046023 1.045972  0.7666883 0.9567267  1.137864   1.307879
+#> 2: 2021-12-04 1.046344 1.046856  0.7769552 0.9610890  1.135075   1.302537
+#> 3: 2021-12-05 1.046800 1.048775  0.7861204 0.9617936  1.134287   1.294250
+#> 4: 2021-12-06 1.047425 1.051254  0.7965203 0.9653125  1.131942   1.290663
+#> 5: 2021-12-07 1.048243 1.051093  0.8012424 0.9686246  1.130858   1.284757
+#>        type seeding
+#>      <fctr>  <lgcl>
+#> 1: estimate    TRUE
+#> 2: estimate    TRUE
+#> 3: estimate    TRUE
+#> 4: estimate    TRUE
+#> 5: estimate    TRUE
 ```
 
 The `fitted` attribute provides access to all details of the fitted stan
@@ -563,7 +575,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.9432026 0.9982946 0.8426807 0.8658058
+#> [1] 1.0282100 0.9586172 0.9549151 0.9054327
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -575,10 +587,10 @@ is not `NULL`), then the results should also be identical.
 ``` r
 ww_result$checksums
 #> $model
-#> [1] "c8484e1d5725559d91a98baaf86c86b6"
+#> [1] "9e1475ec1197cd29ff81d4f5a3f48928"
 #> 
 #> $input
-#> [1] "dc28609580eb6ab527edcd5301ff20a8"
+#> [1] "67660031772057ad86e6cdff143c8832"
 #> 
 #> $fit_opts
 #> [1] "bfdedc2ea8d89b577ad57b86ac83e706"
@@ -587,7 +599,7 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "ce0d2af60f2ac0fce8bb6b9c26adb59e"
+#> [1] "dc2507c9c9cfe7b8d05f117238d336bd"
 ```
 
 ## Citing the package
