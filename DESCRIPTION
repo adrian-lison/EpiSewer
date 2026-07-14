@@ -37,6 +37,7 @@ Imports:
     splines,
     stats,
     stringr,
+    utils,
     vctrs,
     withr
 Suggests:
