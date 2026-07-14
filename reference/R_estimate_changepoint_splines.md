@@ -80,6 +80,12 @@ R_estimate_changepoint_splines(
   other. This tolerance gives the model more flexibility in placing
   changepoints with large trend changes.
 
+- spline_knot_distance:
+
+  Distance (in days) between spline knots for the B-splines used to
+  smooth the Rt trajectory between changepoints. Smaller distances
+  increase flexibility but also daily Rt uncertainty.
+
 - link:
 
   Link function. Currently supported are `inv_softplus` (default) and

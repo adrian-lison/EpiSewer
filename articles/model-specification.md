@@ -84,10 +84,10 @@ reproduction number, such as
 ``` r
 
 EpiSewer::component_functions("R")
-#> [1] "R_estimate_gp()"                  "R_estimate_ets()"                
-#> [3] "R_estimate_smooth_derivative()"   "R_estimate_piecewise()"          
-#> [5] "R_estimate_changepoint_splines()" "R_estimate_approx()"             
-#> [7] "R_estimate_rw()"                  "R_estimate_splines()"
+#> [1] "R_estimate_piecewise()"           "R_estimate_splines()"            
+#> [3] "R_estimate_rw()"                  "R_estimate_approx()"             
+#> [5] "R_estimate_smooth_derivative()"   "R_estimate_ets()"                
+#> [7] "R_estimate_changepoint_splines()" "R_estimate_gp()"
 ```
 
 #### ❗ Modeling restrictions

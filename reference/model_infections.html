@@ -86,14 +86,14 @@ of its secondary cases. Modeling options:</p><ul><li><p><code><a href="generatio
 <dd><p>Effective reproduction number over time. This is the main parameter
 of interest estimated by <code>EpiSewer</code>. <code>R</code> is smoothed using a time series
 smoothing prior (Gaussian process by default). A variety of smoothing
-priors is supported. Modeling options:</p><ul><li><p><code><a href="R_estimate_gp.html">R_estimate_gp()</a></code></p></li>
-<li><p><code><a href="R_estimate_ets.html">R_estimate_ets()</a></code></p></li>
-<li><p><code><a href="R_estimate_smooth_derivative.html">R_estimate_smooth_derivative()</a></code></p></li>
-<li><p><code><a href="R_estimate_piecewise.html">R_estimate_piecewise()</a></code></p></li>
-<li><p><code><a href="R_estimate_changepoint_splines.html">R_estimate_changepoint_splines()</a></code></p></li>
-<li><p><code><a href="R_estimate_approx.html">R_estimate_approx()</a></code></p></li>
-<li><p><code><a href="R_estimate_rw.html">R_estimate_rw()</a></code></p></li>
+priors is supported. Modeling options:</p><ul><li><p><code><a href="R_estimate_piecewise.html">R_estimate_piecewise()</a></code></p></li>
 <li><p><code><a href="R_estimate_splines.html">R_estimate_splines()</a></code></p></li>
+<li><p><code><a href="R_estimate_rw.html">R_estimate_rw()</a></code></p></li>
+<li><p><code><a href="R_estimate_approx.html">R_estimate_approx()</a></code></p></li>
+<li><p><code><a href="R_estimate_smooth_derivative.html">R_estimate_smooth_derivative()</a></code></p></li>
+<li><p><code><a href="R_estimate_ets.html">R_estimate_ets()</a></code></p></li>
+<li><p><code><a href="R_estimate_changepoint_splines.html">R_estimate_changepoint_splines()</a></code></p></li>
+<li><p><code><a href="R_estimate_gp.html">R_estimate_gp()</a></code></p></li>
 </ul></dd>
 
 
@@ -101,9 +101,9 @@ priors is supported. Modeling options:</p><ul><li><p><code><a href="R_estimate_g
 <dd><p>Seeding of initial infections. The renewal model used by
 <code>EpiSewer</code> requires a seeding phase of the length of the maximum generation
 time. For these initial infections, a simple seeding model instead of the
-renewal model must be used. Modeling options:</p><ul><li><p><code><a href="seeding_estimate_growth.html">seeding_estimate_growth()</a></code></p></li>
-<li><p><code><a href="seeding_estimate_rw.html">seeding_estimate_rw()</a></code></p></li>
+renewal model must be used. Modeling options:</p><ul><li><p><code><a href="seeding_estimate_rw.html">seeding_estimate_rw()</a></code></p></li>
 <li><p><code><a href="seeding_estimate_constant.html">seeding_estimate_constant()</a></code></p></li>
+<li><p><code><a href="seeding_estimate_growth.html">seeding_estimate_growth()</a></code></p></li>
 </ul></dd>
 
 

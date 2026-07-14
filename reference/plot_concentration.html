@@ -185,6 +185,11 @@ included. The colors and legend will be ordered according to the order in
 which contains the measured concentration that should be plotted.</p></dd>
 
 
+<dt id="arg-flow-col">flow_col<a class="anchor" aria-label="anchor" href="#arg-flow-col"></a></dt>
+<dd><p>Name of the column in the flows <code>data.frame</code> that contains
+the flow values. Default is <code>"flow"</code>.</p></dd>
+
+
 <dt id="arg-date-col">date_col<a class="anchor" aria-label="anchor" href="#arg-date-col"></a></dt>
 <dd><p>Name of the date column in the measurements <code>data.frame</code>.</p></dd>
 
@@ -200,6 +205,12 @@ which identifies outlier measurements (for example added by
 "pp_check", the observations are ordered by concentration and plotted
 against the predicted concentration (useful for posterior predictive
 checks).</p></dd>
+
+
+<dt id="arg-intervals">intervals<a class="anchor" aria-label="anchor" href="#arg-intervals"></a></dt>
+<dd><p>Credible intervals to display. A numeric vector of
+probabilities, e.g. <code>c(0.5, 0.95)</code> (default) shows 50% and 95% intervals.
+Ignored if <code>draws=TRUE</code>.</p></dd>
 
 
 <dt id="arg-obs-size">obs_size<a class="anchor" aria-label="anchor" href="#arg-obs-size"></a></dt>

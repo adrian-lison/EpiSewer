@@ -63,6 +63,11 @@ noise_estimate_constant_var(
   Prior (standard deviation) on the coefficient of variation of
   concentrations *before* the replication stage.
 
+- warn:
+
+  If `TRUE` (default), a warning is shown that constant variance
+  modeling is not recommended. Set to `FALSE` to suppress this warning.
+
 - modeldata:
 
   A `modeldata` object to which the above model specifications should be

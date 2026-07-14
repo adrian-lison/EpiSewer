@@ -19,3 +19,7 @@ run(job, ...)
 
   An EpiSewerJob object as returned by
   [`EpiSewer()`](https://adrian-lison.github.io/EpiSewer/reference/EpiSewer.md).
+
+- ...:
+
+  Further arguments passed to the method.

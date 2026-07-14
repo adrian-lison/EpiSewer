@@ -6,5 +6,5 @@ Print to-be-evaluated object
 
 ``` r
 # S3 method for class 'tbe'
-print(x)
+print(x, ...)
 ```

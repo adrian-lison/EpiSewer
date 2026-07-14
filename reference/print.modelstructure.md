@@ -6,5 +6,5 @@ Print a `modelstructure` object
 
 ``` r
 # S3 method for class 'modelstructure'
-print(.str)
+print(x, ...)
 ```

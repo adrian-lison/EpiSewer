@@ -139,6 +139,12 @@ each other. This tolerance gives the model more flexibility in placing
 changepoints with large trend changes.</p></dd>
 
 
+<dt id="arg-spline-knot-distance">spline_knot_distance<a class="anchor" aria-label="anchor" href="#arg-spline-knot-distance"></a></dt>
+<dd><p>Distance (in days) between spline knots for the
+B-splines used to smooth the Rt trajectory between changepoints. Smaller
+distances increase flexibility but also daily Rt uncertainty.</p></dd>
+
+
 <dt id="arg-link">link<a class="anchor" aria-label="anchor" href="#arg-link"></a></dt>
 <dd><p>Link function. Currently supported are <code>inv_softplus</code> (default)
 and <code>scaled_logit</code>. Both of these links are configured to behave

@@ -138,6 +138,11 @@ plot_concentration(
   Name of the column in the measurements `data.frame` which contains the
   measured concentration that should be plotted.
 
+- flow_col:
+
+  Name of the column in the flows `data.frame` that contains the flow
+  values. Default is `"flow"`.
+
 - date_col:
 
   Name of the date column in the measurements `data.frame`.
@@ -154,6 +159,12 @@ plot_concentration(
   "pp_check", the observations are ordered by concentration and plotted
   against the predicted concentration (useful for posterior predictive
   checks).
+
+- intervals:
+
+  Credible intervals to display. A numeric vector of probabilities, e.g.
+  `c(0.5, 0.95)` (default) shows 50% and 95% intervals. Ignored if
+  `draws=TRUE`.
 
 - obs_size:
 

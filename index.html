@@ -66,6 +66,7 @@
 </h1></div>
 <!-- badges: start -->
 
+<!-- badges: end -->
 <div class="section level2">
 <h2 id="about">About<a class="anchor" aria-label="anchor" href="#about"></a>
 </h2>
@@ -339,7 +340,8 @@
 <p>The <code>job</code> attribute stores all information about the job that was defined via <code>EpiSewer</code>. It contains the data used, alongside meta-information, and the settings for the sampler. By calling <code>run(ww_result$job)</code>, the job can be run again.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">job</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"      "results_opts"  "priors_text"   "metainfo"      "overwrite"</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"      "results_opts"  "priors_text"   "metainfo"     </span></span>
+<span><span class="co">#&gt; [10] "overwrite"</span></span></code></pre></div>
 <p>In particular, we can print a concise summary of the modeling details (the <code>EpiSewer</code> defaults in this case):</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_result</span><span class="op">$</span><span class="va">job</span><span class="op">$</span><span class="va">model</span></span>
@@ -371,8 +373,9 @@
 <p>The <code>summary</code> attribute stores summarized results for important parameters from the model.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "samples"                  "R"                        "R_diagnostics"            "expected_infections"      "infections"               "growth_rate"              "doubling_time"            "days_growing"            </span></span>
-<span><span class="co">#&gt;  [9] "expected_load"            "expected_concentration"   "concentration"            "normalized_concentration" "outliers"</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] "samples"                  "R"                        "R_diagnostics"            "expected_infections"      "infections"              </span></span>
+<span><span class="co">#&gt;  [6] "growth_rate"              "doubling_time"            "days_growing"             "expected_load"            "expected_concentration"  </span></span>
+<span><span class="co">#&gt; [11] "concentration"            "normalized_concentration" "outliers"</span></span></code></pre></div>
 <p>For example, we can access the exact estimates for the reproduction number.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">R</span>, <span class="fl">5</span><span class="op">)</span></span>

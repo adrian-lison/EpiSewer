@@ -6,7 +6,7 @@ Print a `modeldata` object
 
 ``` r
 # S3 method for class 'modeldata'
-print(x, type = "structure")
+print(x, type = "structure", ...)
 ```
 
 ## Arguments

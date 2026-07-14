@@ -35,21 +35,21 @@ model_infections(
   smoothing prior (Gaussian process by default). A variety of smoothing
   priors is supported. Modeling options:
 
-  - [`R_estimate_gp()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_gp.md)
-
-  - [`R_estimate_ets()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_ets.md)
-
-  - [`R_estimate_smooth_derivative()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_smooth_derivative.md)
-
   - [`R_estimate_piecewise()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_piecewise.md)
 
-  - [`R_estimate_changepoint_splines()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_changepoint_splines.md)
-
-  - [`R_estimate_approx()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_approx.md)
+  - [`R_estimate_splines()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_splines.md)
 
   - [`R_estimate_rw()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_rw.md)
 
-  - [`R_estimate_splines()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_splines.md)
+  - [`R_estimate_approx()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_approx.md)
+
+  - [`R_estimate_smooth_derivative()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_smooth_derivative.md)
+
+  - [`R_estimate_ets()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_ets.md)
+
+  - [`R_estimate_changepoint_splines()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_changepoint_splines.md)
+
+  - [`R_estimate_gp()`](https://adrian-lison.github.io/EpiSewer/reference/R_estimate_gp.md)
 
 - seeding:
 
@@ -58,11 +58,11 @@ model_infections(
   For these initial infections, a simple seeding model instead of the
   renewal model must be used. Modeling options:
 
-  - [`seeding_estimate_growth()`](https://adrian-lison.github.io/EpiSewer/reference/seeding_estimate_growth.md)
-
   - [`seeding_estimate_rw()`](https://adrian-lison.github.io/EpiSewer/reference/seeding_estimate_rw.md)
 
   - [`seeding_estimate_constant()`](https://adrian-lison.github.io/EpiSewer/reference/seeding_estimate_constant.md)
+
+  - [`seeding_estimate_growth()`](https://adrian-lison.github.io/EpiSewer/reference/seeding_estimate_growth.md)
 
 - infection_noise:
 

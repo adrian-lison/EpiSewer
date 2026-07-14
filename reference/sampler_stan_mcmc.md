@@ -1,7 +1,7 @@
 # Use the stan MCMC sampler
 
 This option uses stan's NUTS sampler via
-[cmdstanr::cmdstanr](https://mc-stan.org/cmdstanr/reference/cmdstanr-package.html)
+[cmdstanr](https://mc-stan.org/cmdstanr/reference/cmdstanr-package.html)
 for Markov Chain Monte Carlo (MCMC) sampling of the `EpiSewer` model.
 
 ## Usage
@@ -131,7 +131,7 @@ sampler_stan_mcmc(
 - ...:
 
   Further arguments to pass to
-  [cmdstanr::cmdstanr](https://mc-stan.org/cmdstanr/reference/cmdstanr-package.html).
+  [cmdstanr](https://mc-stan.org/cmdstanr/reference/cmdstanr-package.html).
 
 ## Value
 

@@ -146,6 +146,12 @@ included. The colors and legend will be ordered according to the order in
 <code>model_levels</code>.</p></dd>
 
 
+<dt id="arg-intervals">intervals<a class="anchor" aria-label="anchor" href="#arg-intervals"></a></dt>
+<dd><p>Credible intervals to display. A numeric vector of
+probabilities, e.g. <code>c(0.5, 0.95)</code> (default) shows 50% and 95% intervals.
+Ignored if <code>draws=TRUE</code>.</p></dd>
+
+
 <dt id="arg-color-by-chain">color_by_chain<a class="anchor" aria-label="anchor" href="#arg-color-by-chain"></a></dt>
 <dd><p>If <code>TRUE</code>, and <code>draws=TRUE</code>, individual samples are
 colored by chain. This is useful for checking mixing of the chains with

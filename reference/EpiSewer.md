@@ -72,6 +72,11 @@ EpiSewer(
   The `infections` module, see
   [`model_infections()`](https://adrian-lison.github.io/EpiSewer/reference/model_infections.md).
 
+- forecast:
+
+  The `forecast` module, see
+  [`model_forecast()`](https://adrian-lison.github.io/EpiSewer/reference/model_forecast.md).
+
 - fit_opts:
 
   Settings for model fitting, see

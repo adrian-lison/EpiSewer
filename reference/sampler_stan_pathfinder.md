@@ -1,7 +1,7 @@
 # Use stan's pathfinder variational inference algorithm
 
 This option uses stan's pathfinder algorithm via
-[cmdstanr::cmdstanr](https://mc-stan.org/cmdstanr/reference/cmdstanr-package.html)
+[cmdstanr](https://mc-stan.org/cmdstanr/reference/cmdstanr-package.html)
 for variational inference. Sampling is fast but yields potentially
 inaccurate results with unreliable uncertainty information. Currently,
 this sampler is recommended only for preview purposes, not for
@@ -100,7 +100,7 @@ sampler_stan_pathfinder(
 - ...:
 
   Further arguments to pass to
-  [cmdstanr::cmdstanr](https://mc-stan.org/cmdstanr/reference/cmdstanr-package.html).
+  [cmdstanr](https://mc-stan.org/cmdstanr/reference/cmdstanr-package.html).
 
 ## Value
 

@@ -6,5 +6,5 @@ Print an EpiSewerJob.
 
 ``` r
 # S3 method for class 'EpiSewerJob'
-print(x)
+print(x, ...)
 ```

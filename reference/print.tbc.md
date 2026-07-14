@@ -6,5 +6,5 @@ Print to-be-computed object
 
 ``` r
 # S3 method for class 'tbc'
-print(x)
+print(x, ...)
 ```

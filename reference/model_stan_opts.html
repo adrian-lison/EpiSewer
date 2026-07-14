@@ -87,6 +87,12 @@ before fitting. This can decrease runtime in some cases.</p></dd>
 <code>EpiSewer</code> currently does not support within-chain parallelism.</p></dd>
 
 
+<dt id="arg-use-docker">use_docker<a class="anchor" aria-label="anchor" href="#arg-use-docker"></a></dt>
+<dd><p>Use the model compiled in a Docker container? If <code>TRUE</code>,
+all other arguments are ignored and the precompiled model in the container
+is used. Default is <code>FALSE</code>.</p></dd>
+
+
 <dt id="arg-force-recompile">force_recompile<a class="anchor" aria-label="anchor" href="#arg-force-recompile"></a></dt>
 <dd><p>Should recompilation be forced before model fitting?
 If <code>FALSE</code> (default), the model is only recompiled when changes to the

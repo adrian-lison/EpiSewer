@@ -6,5 +6,5 @@ Print to-be-provided object
 
 ``` r
 # S3 method for class 'tbp'
-print(x)
+print(x, ...)
 ```

@@ -38,6 +38,12 @@ model_stan_opts(
   Should multihreading be enabled? Default is `FALSE`, as `EpiSewer`
   currently does not support within-chain parallelism.
 
+- use_docker:
+
+  Use the model compiled in a Docker container? If `TRUE`, all other
+  arguments are ignored and the precompiled model in the container is
+  used. Default is `FALSE`.
+
 - force_recompile:
 
   Should recompilation be forced before model fitting? If `FALSE`

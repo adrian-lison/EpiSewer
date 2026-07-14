@@ -8,7 +8,7 @@ articles:
   load_per_case: load_per_case.html
   model-definition: model-definition.html
   model-specification: model-specification.html
-last_built: 2026-07-13T20:22Z
+last_built: 2026-07-14T13:33Z
 urls:
   reference: https://adrian-lison.github.io/EpiSewer/reference
   article: https://adrian-lison.github.io/EpiSewer/articles

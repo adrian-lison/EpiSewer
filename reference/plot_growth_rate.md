@@ -86,6 +86,12 @@ plot_growth_rate(
   colors and legend will be ordered according to the order in
   `model_levels`.
 
+- intervals:
+
+  Credible intervals to display. A numeric vector of probabilities, e.g.
+  `c(0.5, 0.95)` (default) shows 50% and 95% intervals. Ignored if
+  `draws=TRUE`.
+
 ## Value
 
 A `ggplot` object showing the estimated growth rate over time. Can be
