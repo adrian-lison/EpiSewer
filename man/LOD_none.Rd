@@ -32,8 +32,8 @@ the corresponding observations are dropped, this will discard information,
 but not bias estimates.
 }
 \seealso{
-Other {LOD models}: 
-\code{\link{LOD_assume}()},
-\code{\link{LOD_estimate_dPCR}()}
+Other LOD models:
+\code{\link[=LOD_assume]{LOD_assume()}},
+\code{\link[=LOD_estimate_dPCR]{LOD_estimate_dPCR()}}
 }
-\concept{{LOD models}}
+\concept{LOD models}

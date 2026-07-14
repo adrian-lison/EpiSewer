@@ -185,6 +185,9 @@ sampler_stan_pathfinder <- function(
 #'   before fitting. This can decrease runtime in some cases.
 #' @param threads Should multihreading be enabled? Default is `FALSE`, as
 #'   `EpiSewer` currently does not support within-chain parallelism.
+#' @param use_docker Use the model compiled in a Docker container? If `TRUE`,
+#'   all other arguments are ignored and the precompiled model in the container
+#'   is used. Default is `FALSE`.
 #' @param force_recompile Should recompilation be forced before model fitting?
 #'   If `FALSE` (default), the model is only recompiled when changes to the
 #'   model code are detected. However, as the change detection is not fully
@@ -584,7 +587,7 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
   }
 
   # pathfinder initialization for mcmc
-  use_mcmc <- class(job$fit_opts$sampler) == "mcmc"
+  use_mcmc <- inherits(job$fit_opts$sampler, "mcmc")
   init_pathfinder <- job$fit_opts$sampler$init_pathfinder
   fitting_method <- class(job$fit_opts$sampler)
   if (use_mcmc && init_pathfinder) {
@@ -624,7 +627,7 @@ fit_model <- function(job, model, model_instance, run_silent = FALSE) {
       try(fit_res$init(), silent = TRUE)
       try(fit_res$profiles(), silent = TRUE)
     }
-    if (class(job$fit_opts$sampler) == "mcmc") {
+    if (inherits(job$fit_opts$sampler, "mcmc")) {
       try(suppressMessages(fit_res$diagnostic_summary()), silent = TRUE)
       try(fit_res$sampler_diagnostics(), silent = TRUE)
     }

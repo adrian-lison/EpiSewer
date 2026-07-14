@@ -38,6 +38,10 @@
 #'   respect to the estimated trajectories. Only available when plotting a
 #'   single model.
 #'
+#' @param intervals Credible intervals to display. A numeric vector of
+#'   probabilities, e.g. `c(0.5, 0.95)` (default) shows 50% and 95% intervals.
+#'   Ignored if `draws=TRUE`.
+#'
 #' @return A `ggplot` object showing the time series of estimated infections,
 #'   either with credible intervals or as "spaghetti plot". Can be further
 #'   manipulated using `ggplot2` functions to adjust themes and scales, and to
@@ -428,6 +432,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   can be found in `summary$outliers`.
 #' @param concentration_col Name of the column in the measurements `data.frame`
 #'   which contains the measured concentration that should be plotted.
+#' @param flow_col Name of the column in the flows `data.frame` that contains
+#'   the flow values. Default is `"flow"`.
 #' @param date_col Name of the date column in the measurements `data.frame`.
 #' @param outlier_col Name of a logical column in the measurements `data.frame`
 #'   which identifies outlier measurements (for example added by
@@ -850,7 +856,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
       {
         if (!is.null(measurements_modeled) && mark_outliers) {
           geom_point(
-            data = measurements_modeled |> filter(.outlier),
+            data = measurements_modeled[measurements_modeled$.outlier, ],
             aes(y = concentration),
             color = "red", shape = obs_shape, size = obs_size
           )
@@ -1418,8 +1424,7 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
     }
   }
   days <- forcats::fct_inorder(paste(c(3,7,14,21,28), "days"), ordered = TRUE)
-  result$summary$days_growing[date == date_select,] |>
-    ggplot() +
+  ggplot(result$summary$days_growing[date == date_select,]) +
     geom_hline(yintercept = -0.5, linetype = "solid") +
     geom_hline(yintercept = 0, linetype = "dashed") +
     geom_hline(yintercept = 0.5, linetype = "solid") +
@@ -1553,8 +1558,7 @@ plot_prior_partitions <- function(modeldata, n_draws = 1000, show_draws = 50, se
     ggtitle("95% intervals for valid partitions")
 
   # plot distribution of mean partition number across ids
-  plot_means <- partition_number_draws[, .(mean_partitions = mean(partitions)), by = id] |>
-    ggplot(aes(x=mean_partitions)) +
+  plot_means <- ggplot(partition_number_draws[, .(mean_partitions = mean(partitions)), by = id], aes(x=mean_partitions)) +
     geom_histogram(bins = 30, fill = "darkblue", color = "black", alpha = 0.7) +
     xlab("Mean valid partitions") + ylab("Count") +
     theme_bw() +
@@ -1562,8 +1566,7 @@ plot_prior_partitions <- function(modeldata, n_draws = 1000, show_draws = 50, se
     ggtitle("Distribution of mean valid partitions")
 
   # plot distribution of sd of partition number across ids
-  plot_sds <- partition_number_draws[, .(sd_partitions = sd(partitions)), by = id] |>
-    ggplot(aes(x=sd_partitions)) +
+  plot_sds <- ggplot(partition_number_draws[, .(sd_partitions = sd(partitions)), by = id], aes(x=sd_partitions)) +
     geom_histogram(bins = 30, fill = "darkblue", color = "black", alpha = 0.7) +
     xlab("Standard deviation of valid partitions") + ylab("Count") +
     theme_bw() +

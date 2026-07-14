@@ -21,9 +21,9 @@ Modeling options:
 and lab analysis. Modeling options:
 \itemize{
 \item \code{\link[=noise_estimate]{noise_estimate()}}
-\item \code{\link[=noise_estimate_dPCR_params]{noise_estimate_dPCR_params()}}
-\item \code{\link[=noise_estimate_constant_var]{noise_estimate_constant_var()}}
 \item \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}
+\item \code{\link[=noise_estimate_constant_var]{noise_estimate_constant_var()}}
+\item \code{\link[=noise_estimate_dPCR_params]{noise_estimate_dPCR_params()}}
 }}
 
 \item{LOD}{Limit of detection. Concentrations below a certain threshold may
@@ -48,11 +48,11 @@ functions (see available options below). See the documentation of the
 individual helper functions to adjust model priors and further settings.
 }
 \seealso{
-Other {module functions}: 
-\code{\link{model_forecast}()},
-\code{\link{model_infections}()},
-\code{\link{model_sampling}()},
-\code{\link{model_sewage}()},
-\code{\link{model_shedding}()}
+Other module functions:
+\code{\link[=model_forecast]{model_forecast()}},
+\code{\link[=model_infections]{model_infections()}},
+\code{\link[=model_sampling]{model_sampling()}},
+\code{\link[=model_sewage]{model_sewage()}},
+\code{\link[=model_shedding]{model_shedding()}}
 }
-\concept{{module functions}}
+\concept{module functions}

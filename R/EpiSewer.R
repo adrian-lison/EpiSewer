@@ -22,6 +22,7 @@
 #' @param sewage The `sewage` module, see [model_sewage()].
 #' @param shedding The `shedding` module, see [model_shedding()].
 #' @param infections The `infections` module, see [model_infections()].
+#' @param forecast The `forecast` module, see [model_forecast()].
 #' @param fit_opts Settings for model fitting, see [set_fit_opts()].
 #' @param results_opts Settings for results to be returned, see
 #'   [set_results_opts()].
@@ -42,6 +43,8 @@
 #'
 #' @export
 #' @import data.table
+#' @import stats
+#' @importFrom utils tail
 EpiSewer <- function(
     data = sewer_data(),
     assumptions = sewer_assumptions(),
@@ -79,6 +82,16 @@ EpiSewer <- function(
     return(res)
   }
 }
+
+#' The EpiSewerJob S4 class
+#'
+#' @description An S4 class registration for `EpiSewerJob` objects. Instances
+#'   are S3 objects created by [EpiSewerJob()]. The class registration enables
+#'   `is(x, "EpiSewerJob")` checks.
+#'
+#' @exportClass EpiSewerJob
+#' @keywords internal
+setClass("EpiSewerJob")
 
 #' Constructor for EpiSewerJob objects
 #'
@@ -144,9 +157,6 @@ EpiSewerJob <- function(job_name,
   return(job)
 }
 
-#' @export
-setClass("EpiSewerJob")
-
 #' Fit an EpiSewer model.
 #'
 #' @description This function allows to (re-)run the model fitting from an
@@ -156,6 +166,7 @@ setClass("EpiSewerJob")
 #'   machine.
 #'
 #' @param job An EpiSewerJob object as returned by [EpiSewer()].
+#' @param ... Further arguments passed to the method.
 #'
 #' @export
 run <- function(job, ...) {
@@ -163,7 +174,7 @@ run <- function(job, ...) {
 }
 
 #' @export
-run.EpiSewerJob <- function(job, run_silent = FALSE) {
+run.EpiSewerJob <- function(job, run_silent = FALSE, ...) {
   stan_model <- get_stan_model(
     model_filename = job$fit_opts$model$model_filename,
     model_folder = job$fit_opts$model$model_folder,
@@ -198,6 +209,16 @@ run.EpiSewerJob <- function(job, run_silent = FALSE) {
   return(result)
 }
 
+#' The EpiSewerJobResult S4 class
+#'
+#' @description An S4 class registration for `EpiSewerJobResult` objects.
+#'   Instances are S3 objects created by [EpiSewerJobResult()]. The class
+#'   registration enables `is(x, "EpiSewerJobResult")` checks.
+#'
+#' @exportClass EpiSewerJobResult
+#' @keywords internal
+setClass("EpiSewerJobResult")
+
 #' Constructor for EpiSewerJobResult objects
 #'
 #' @param fit_res The result of model fitting, either a fitted model object or
@@ -229,7 +250,7 @@ EpiSewerJobResult <- function(fit_res, job, stan_model, checksums) {
     if (job$results_opts$fitted) {
       result$fitted <- fit_res
     }
-    if (class(job$fit_opts$sampler) == "mcmc") {
+    if (inherits(job$fit_opts$sampler, "mcmc")) {
       result$diagnostics <- try(suppressMessages(fit_res$diagnostic_summary()))
     }
     result$runtime <- try(fit_res$time())
@@ -243,24 +264,34 @@ EpiSewerJobResult <- function(fit_res, job, stan_model, checksums) {
 }
 
 #' @export
-run.EpiSewerJobResult <- function(job, run_silent = FALSE) {
+run.EpiSewerJobResult <- function(job, run_silent = FALSE, ...) {
   return(run(job$job, run_silent = run_silent))
 }
 
+#' Run a quick model fitting test with minimal iterations.
+#'
+#' @description Modifies sampler settings to use very few iterations and then
+#'   calls [run()]. Useful for quickly checking that a model specification is
+#'   valid and that the model can be fitted without errors.
+#'
+#' @param job An `EpiSewerJob` or `EpiSewerJobResult` object.
+#'
+#' @return An `EpiSewerJobResult` object.
 #' @export
+#' @keywords internal
 test_run <- function(job) {
   UseMethod("test_run")
 }
 
 #' @export
 test_run.EpiSewerJob <- function(job) {
-  if (class(job$fit_opts$sampler) == "mcmc") {
+  if (inherits(job$fit_opts$sampler, "mcmc")) {
     job$fit_opts$sampler$iter_warmup <- 5
     job$fit_opts$sampler$iter_sampling <- 5
     job$fit_opts$sampler$show_messages <- FALSE
     job$fit_opts$sampler$show_exceptions <- FALSE
     job$fit_opts$sampler$init_pathfinder_max_lbfgs_iters <- 10
-  } else if (class(job$fit_opts$sampler) == "pathfinder") {
+  } else if (inherits(job$fit_opts$sampler, "pathfinder")) {
     job$fit_opts$sampler$num_paths <- 1
     job$fit_opts$sampler$draws <- 10
     job$fit_opts$sampler$max_lbfgs_iters <- 10
@@ -283,7 +314,7 @@ test_run.EpiSewerJobResult <- function(job) {
 #' Print an EpiSewerJob.
 #' @export
 #' @keywords internal
-print.EpiSewerJob <- function(x) {
+print.EpiSewerJob <- function(x, ...) {
   cat(paste0("\n",x$job_name,"\n"))
   cat("-----\n")
   cat(paste0(
@@ -300,13 +331,10 @@ print.EpiSewerJob <- function(x) {
   cat("\nUse ...$model for a summary of the model specification.")
 }
 
-#' @export
-setClass("EpiSewerJobResult")
-
 #' Print an EpiSewerJobResult.
 #' @export
 #' @keywords internal
-print.EpiSewerJobResult <- function(x) {
+print.EpiSewerJobResult <- function(x, ...) {
   print(x$job)
   if (all(c("runtime","diagnostics") %in% names(x))) {
     cat("\n\n")

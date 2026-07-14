@@ -37,6 +37,9 @@ of concentrations \emph{before} the replication stage.}
 \item{pre_replicate_cv_prior_sigma}{Prior (standard deviation) on the
 coefficient of variation of concentrations \emph{before} the replication stage.}
 
+\item{warn}{If \code{TRUE} (default), a warning is shown that constant variance
+modeling is not recommended. Set to \code{FALSE} to suppress this warning.}
+
 \item{modeldata}{A \code{modeldata} object to which the above model specifications
 should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
 also be an already partly specified model returned by other \code{EpiSewer}
@@ -78,9 +81,9 @@ The priors of this component have the following functional form:
 }
 }
 \seealso{
-Other {noise models}: 
-\code{\link{noise_estimate}()},
-\code{\link{noise_estimate_dPCR}()},
-\code{\link{noise_estimate_dPCR_params}()}
+Other noise models:
+\code{\link[=noise_estimate]{noise_estimate()}},
+\code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}},
+\code{\link[=noise_estimate_dPCR_params]{noise_estimate_dPCR_params()}}
 }
-\concept{{noise models}}
+\concept{noise models}

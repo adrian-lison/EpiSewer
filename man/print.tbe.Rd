@@ -4,7 +4,7 @@
 \alias{print.tbe}
 \title{Print to-be-evaluated object}
 \usage{
-\method{print}{tbe}(x)
+\method{print}{tbe}(x, ...)
 }
 \description{
 Print to-be-evaluated object

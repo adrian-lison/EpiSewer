@@ -38,6 +38,8 @@ directly supplied to the relevant model components, in which case
 
 \item{infections}{The \code{infections} module, see \code{\link[=model_infections]{model_infections()}}.}
 
+\item{forecast}{The \code{forecast} module, see \code{\link[=model_forecast]{model_forecast()}}.}
+
 \item{fit_opts}{Settings for model fitting, see \code{\link[=set_fit_opts]{set_fit_opts()}}.}
 
 \item{results_opts}{Settings for results to be returned, see

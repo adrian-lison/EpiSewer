@@ -1,5 +1,10 @@
 
 test_that("Running from R with docker backend works", {
+  skip_if(
+    system2("docker", c("image", "inspect", "episewer"),
+            stdout = FALSE, stderr = FALSE) != 0,
+    "Docker episewer image not available"
+  )
   job <- EpiSewer(
     data = ww_data_SARS_CoV_2_Zurich,
     assumptions = ww_assumptions_SARS_CoV_2_Zurich,

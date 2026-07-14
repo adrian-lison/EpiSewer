@@ -4,7 +4,7 @@
 \alias{print.modelstructure}
 \title{Print a \code{modelstructure} object}
 \usage{
-\method{print}{modelstructure}(.str)
+\method{print}{modelstructure}(x, ...)
 }
 \description{
 Print a \code{modelstructure} object

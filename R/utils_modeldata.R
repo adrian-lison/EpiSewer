@@ -456,7 +456,7 @@ modeldata_check <- function(modeldata,
                             advice = NULL,
                             throw_error = TRUE,
                             calling_env = rlang::caller_env()) {
-  if (!class(modeldata) == "modeldata") {
+  if (!inherits(modeldata, "modeldata")) {
     cli::cli_abort("Please supply a modeldata object.")
   }
 
@@ -525,7 +525,7 @@ modeldata_validate <- function(modeldata,
                                data = list(),
                                assumptions = list(),
                                defaults = modeldata_defaults()) {
-  if (!class(modeldata) == "modeldata") {
+  if (!inherits(modeldata, "modeldata")) {
     cli::cli_abort("Please supply a modeldata object.")
   }
 
@@ -656,7 +656,7 @@ modeldata_combine <- function(...) {
   modeldata_sets <- list(...)
 
   lapply(modeldata_sets, function(md) {
-    if (!class(md) == "modeldata") {
+    if (!inherits(md, "modeldata")) {
       cli::cli_abort("Please supply a modeldata object.")
     }
   })
@@ -715,7 +715,7 @@ modeldata_combine <- function(...) {
 modeldata_update <- function(modeldata,
                              data = list(), assumptions = list(),
                              throw_error = TRUE) {
-  if (!class(modeldata) == "modeldata") {
+  if (!inherits(modeldata, "modeldata")) {
     cli::cli_abort("Please supply a modeldata object.")
   }
 
@@ -725,17 +725,17 @@ modeldata_update <- function(modeldata,
   all_vars <- names(modeldata$.metainfo)
   for (name in all_vars) {
     if ("tbe" %in% class(modeldata$.metainfo[[name]])) {
-      modeldata$.metainfo[[name]] <- solve(
+      modeldata$.metainfo[[name]] <- resolve(
         modeldata$.metainfo[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbc" %in% class(modeldata$.metainfo[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata$.metainfo[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbp" %in% class(modeldata$.metainfo[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata$.metainfo[[name]],
         modeldata = modeldata,
         data = data,
@@ -748,17 +748,17 @@ modeldata_update <- function(modeldata,
   all_vars <- setdiff(names(modeldata), c(".init", ".metainfo", ".checks"))
   for (name in all_vars) {
     if ("tbe" %in% class(modeldata[[name]])) {
-      modeldata[[name]] <- solve(
+      modeldata[[name]] <- resolve(
         modeldata[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbc" %in% class(modeldata[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbp" %in% class(modeldata[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata[[name]],
         modeldata = modeldata,
         data = data,
@@ -771,17 +771,17 @@ modeldata_update <- function(modeldata,
   all_vars <- names(modeldata$.init)
   for (name in all_vars) {
     if ("tbe" %in% class(modeldata$.init[[name]])) {
-      modeldata$.init[[name]] <- solve(
+      modeldata$.init[[name]] <- resolve(
         modeldata$.init[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbc" %in% class(modeldata$.init[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata$.init[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbp" %in% class(modeldata$.init[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata$.init[[name]],
         modeldata = modeldata,
         data = data,
@@ -815,7 +815,7 @@ add_dummy_inits <- function(modeldata, dummies) {
 #'   modeldata content (data, inits, metainfo) is printed.
 #' @export
 #' @keywords internal
-print.modeldata <- function(x, type = "structure") {
+print.modeldata <- function(x, type = "structure", ...) {
   if (type == "structure") {
     print(x$.str)
   } else if (type == "data") {
@@ -831,18 +831,18 @@ print.modeldata <- function(x, type = "structure") {
 #'
 #' @export
 #' @keywords internal
-print.modelstructure <- function(.str) {
-  output <- sapply(names(.str), function(module) {
-    if (length(.str[[module]]) > 0) {
-      comp_output <- sapply(names(.str[[module]]), function(component) {
-        if (length(.str[[module]][[component]][[1]]) > 0) {
-          a <- .str[[module]][[component]][[1]]
+print.modelstructure <- function(x, ...) {
+  output <- sapply(names(x), function(module) {
+    if (length(x[[module]]) > 0) {
+      comp_output <- sapply(names(x[[module]]), function(component) {
+        if (length(x[[module]][[component]][[1]]) > 0) {
+          a <- x[[module]][[component]][[1]]
           details <- paste0(
             " (", paste(paste0(names(a), " = ", a), collapse = ", "), ")"
             )
-          paste0(" |- ", names(.str[[module]][[component]])[1], details)
+          paste0(" |- ", names(x[[module]][[component]])[1], details)
         } else {
-          paste0(" |- ", names(.str[[module]][[component]])[1])
+          paste0(" |- ", names(x[[module]][[component]])[1])
         }
       })
       paste0(module, "\n", paste(comp_output, collapse = "\n"))

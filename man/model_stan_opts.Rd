@@ -28,6 +28,10 @@ before fitting. This can decrease runtime in some cases.}
 \item{threads}{Should multihreading be enabled? Default is \code{FALSE}, as
 \code{EpiSewer} currently does not support within-chain parallelism.}
 
+\item{use_docker}{Use the model compiled in a Docker container? If \code{TRUE},
+all other arguments are ignored and the precompiled model in the container
+is used. Default is \code{FALSE}.}
+
 \item{force_recompile}{Should recompilation be forced before model fitting?
 If \code{FALSE} (default), the model is only recompiled when changes to the
 model code are detected. However, as the change detection is not fully

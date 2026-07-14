@@ -3,6 +3,8 @@
 on:
   push:
     branches: [main, master]
+  pull_request:
+    branches: [main, develop]
   release:
     types: [published]
   workflow_dispatch:
@@ -32,7 +34,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: local::.
+          extra-packages: any::pkgdown, local::.
           needs: website
 
       - name: Build site
@@ -40,7 +42,10 @@ jobs:
         shell: Rscript {0}
 
       - name: Deploy to GitHub pages 🚀
-        if: github.event_name != 'pull_request'
+        if: >-
+          github.event_name == 'release' ||
+          github.event_name == 'push' ||
+          (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
         uses: JamesIves/github-pages-deploy-action@v4.5.0
         with:
           clean: false

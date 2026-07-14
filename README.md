@@ -10,6 +10,8 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 [![MIT
 license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/adrian-lison/EpiSewer/blob/main/LICENSE.md/)
 [![DOI](https://zenodo.org/badge/676114941.svg)](https://zenodo.org/badge/latestdoi/676114941)
+[![R-CMD-check](https://github.com/adrian-lison/EpiSewer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/adrian-lison/EpiSewer/actions/workflows/R-CMD-check.yaml)
+
 <!-- badges: end -->
 
 ## About
@@ -480,7 +482,8 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"      "results_opts"  "priors_text"   "metainfo"      "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"      "results_opts"  "priors_text"   "metainfo"     
+#> [10] "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
@@ -526,8 +529,9 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#>  [1] "samples"                  "R"                        "R_diagnostics"            "expected_infections"      "infections"               "growth_rate"              "doubling_time"            "days_growing"            
-#>  [9] "expected_load"            "expected_concentration"   "concentration"            "normalized_concentration" "outliers"
+#>  [1] "samples"                  "R"                        "R_diagnostics"            "expected_infections"      "infections"              
+#>  [6] "growth_rate"              "doubling_time"            "days_growing"             "expected_load"            "expected_concentration"  
+#> [11] "concentration"            "normalized_concentration" "outliers"
 ```
 
 For example, we can access the exact estimates for the reproduction

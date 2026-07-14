@@ -4,7 +4,7 @@
 \alias{print.tbp}
 \title{Print to-be-provided object}
 \usage{
-\method{print}{tbp}(x)
+\method{print}{tbp}(x, ...)
 }
 \description{
 Print to-be-provided object

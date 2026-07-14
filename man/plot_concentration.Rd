@@ -99,6 +99,9 @@ included. The colors and legend will be ordered according to the order in
 \item{concentration_col}{Name of the column in the measurements \code{data.frame}
 which contains the measured concentration that should be plotted.}
 
+\item{flow_col}{Name of the column in the flows \code{data.frame} that contains
+the flow values. Default is \code{"flow"}.}
+
 \item{date_col}{Name of the date column in the measurements \code{data.frame}.}
 
 \item{outlier_col}{Name of a logical column in the measurements \code{data.frame}
@@ -109,6 +112,10 @@ which identifies outlier measurements (for example added by
 "pp_check", the observations are ordered by concentration and plotted
 against the predicted concentration (useful for posterior predictive
 checks).}
+
+\item{intervals}{Credible intervals to display. A numeric vector of
+probabilities, e.g. \code{c(0.5, 0.95)} (default) shows 50\% and 95\% intervals.
+Ignored if \code{draws=TRUE}.}
 
 \item{obs_size}{Size of the observed concentration points. Default is 1.5.}
 

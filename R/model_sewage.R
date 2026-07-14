@@ -21,7 +21,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `sewage` module.
 #' @export
-#' @family {module functions}
+#' @family module functions
 model_sewage <- function(
     flows = flows_observe(),
     residence_dist = residence_dist_assume()) {
@@ -51,7 +51,7 @@ model_sewage <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {flow models}
+#' @family flow models
 flows_assume <- function(
     flow_constant,
     modeldata = modeldata_init()) {
@@ -100,7 +100,7 @@ flows_assume <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {flow models}
+#' @family flow models
 flows_observe <-
   function(flows = NULL,
            date_col = "date",
