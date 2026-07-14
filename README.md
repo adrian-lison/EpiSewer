@@ -16,16 +16,17 @@ license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/
 ## About
 
 The `EpiSewer` R package provides a Bayesian generative model to
-estimate effective reproduction numbers and other epidemiological
-parameters from concentration measurements at a wastewater treatment
-plant (or other sampling site) over time. This allows to track the
-transmission dynamics of a pathogen in the associated catchment
-population. The `EpiSewer` model is tailored to the specifics of
-wastewater concentration measurements, offers comprehensive uncertainty
-quantification via MCMC sampling in `stan`, and provides easily
-configurable modeling components.
+estimate the effective reproduction number R<sub>t</sub> and other
+transmission indicators from pathogen concentrations measured in
+wastewater. This enables tracking of transmission dynamics both
+retrospectively and in real time. `EpiSewer` is tailored to the
+specifics of wastewater concentration measurements, offers comprehensive
+uncertainty quantification via MCMC sampling in `stan`, and provides
+easily configurable modeling components. See our
+[paper](https://doi.org/10.1038/s41467-026-75380-3) for a detailed
+assessment of the model’s performance.
 
-<img src="man/figures/weekly_zurich_animated.gif" alt="" width="100%" />
+<img src="man/figures/forecasting_example_IAV.gif" alt="" width="100%" />
 
 ## Model highlights
 
@@ -546,11 +547,11 @@ number.
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
 #>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>
-#> 1: 2021-12-03 1.046023 1.045972  0.7666883 0.9567267  1.137864   1.307879
-#> 2: 2021-12-04 1.046344 1.046856  0.7769552 0.9610890  1.135075   1.302537
-#> 3: 2021-12-05 1.046800 1.048775  0.7861204 0.9617936  1.134287   1.294250
-#> 4: 2021-12-06 1.047425 1.051254  0.7965203 0.9653125  1.131942   1.290663
-#> 5: 2021-12-07 1.048243 1.051093  0.8012424 0.9686246  1.130858   1.284757
+#> 1: 2021-12-03 1.033535 1.028817  0.7833869 0.9399895  1.122385   1.294914
+#> 2: 2021-12-04 1.034030 1.028373  0.7872094 0.9447821  1.121171   1.297848
+#> 3: 2021-12-05 1.034722 1.028168  0.7933240 0.9476269  1.118173   1.290570
+#> 4: 2021-12-06 1.035643 1.030817  0.8043344 0.9491813  1.118184   1.283502
+#> 5: 2021-12-07 1.036816 1.032449  0.8073532 0.9529308  1.117731   1.276039
 #>        type seeding
 #>      <fctr>  <lgcl>
 #> 1: estimate    TRUE
@@ -575,7 +576,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 1.0282100 0.9586172 0.9549151 0.9054327
+#> [1] 0.9272984 0.9189541 0.9192444 0.8973010
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -602,28 +603,37 @@ ww_result$checksums
 #> [1] "dc2507c9c9cfe7b8d05f117238d336bd"
 ```
 
+## Finding out more
+
+`EpiSewer` offers comprehensive model customization and advanced
+plotting features. To find out more, please consult the [package
+website](https://adrian-lison.github.io/EpiSewer/).
+
+<img src="man/figures/weekly_zurich_animated.gif" alt="" width="100%" />
+
 ## Citing the package
 
-To cite `EpiSewer` in a publication, please use:
+If you are using `EpiSewer` in your work, please cite [our
+paper](https://doi.org/10.1038/s41467-026-75380-3):
 
-    @article{lisonRobustRealtimeEstimation2025,
-      title = {Robust Real-Time Estimation of Pathogen Transmission Dynamics from Wastewater},
-      author = {Lison, Adrian and McLeod, Rachel and Huisman, Jana S. and Munday, James D. and Ort, Christoph and Julian, Timothy R. and Stadler, Tanja},
-      year = {2025},
-      journal = {medRxiv preprint},
-      doi = {10.1101/2025.10.23.25338640}
+    @article{lisonRealTimeEstimation2026,
+      title = {Real-Time Estimation of Pathogen Transmission Dynamics from Wastewater},
+      author = {Lison, Adrian and McLeod, Rachel E. and Huisman, Jana S. and Munday, James D. and Ort, Christoph and Julian, Timothy R. and Stadler, Tanja},
+      year = {2026},
+      journal = {Nature Communications},
+      doi = {10.1038/s41467-026-75380-3}
     }
 
 If you use the dPCR-specific model of `EpiSewer` (see
 [noise_estimate_dPCR](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.html)),
-please also cite:
+please also [this paper](https://doi.org/10.1021/acsestwater.5c01051):
 
-    @article{lisonImprovingInferenceWastewaterbased2024,
-      title = {Improving Inference in Wastewater-Based Epidemiology by Modelling the Statistical Features of Digital {{PCR}}},
-      author = {Lison, Adrian and Julian, Timothy and Stadler, Tanja},
-      year = {2024},
-      journal = {bioRxiv preprint},
-      doi = {10.1101/2024.10.14.618307}
+    @article{lisonImprovingInference2026,
+      title={Improving Inference from Reported Concentrations in Environmental Surveillance by Modeling the Statistical Features of Digital PCR},
+      author={Lison, Adrian and Julian, Timothy R and Stadler, Tanja},
+      journal={ACS ES\&T Water},
+      year={2026},
+      doi = {10.1021/acsestwater.5c01051}
     }
 
 ## Contributors
