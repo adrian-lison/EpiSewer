@@ -1139,6 +1139,8 @@ noise_estimate_dPCR <-
 #' - coefficient of variation of concentration before the replication stage:
 #'   `Truncated normal`
 #'
+#' @param warn If `TRUE` (default), a warning is shown that constant variance
+#'   modeling is not recommended. Set to `FALSE` to suppress this warning.
 #' @inheritParams noise_estimate_
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return

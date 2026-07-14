@@ -70,6 +70,10 @@ included. The colors and legend will be ordered according to the order in
 colored by chain. This is useful for checking mixing of the chains with
 respect to the estimated trajectories. Only available when plotting a
 single model.}
+
+\item{intervals}{Credible intervals to display. A numeric vector of
+probabilities, e.g. \code{c(0.5, 0.95)} (default) shows 50\% and 95\% intervals.
+Ignored if \code{draws=TRUE}.}
 }
 \value{
 A \code{ggplot} object showing the time series of estimated infections,

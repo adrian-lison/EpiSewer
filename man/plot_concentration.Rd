@@ -116,6 +116,13 @@ checks).}
 
 \item{obs_forecast_shape}{Shape of the observed concentration points for
 forecasted values. Default is 8.}
+
+\item{flow_col}{Name of the column in the flows \code{data.frame} that contains
+the flow values. Default is \code{"flow"}.}
+
+\item{intervals}{Credible intervals to display. A numeric vector of
+probabilities, e.g. \code{c(0.5, 0.95)} (default) shows 50\% and 95\% intervals.
+Ignored if \code{draws=TRUE}.}
 }
 \value{
 A \code{ggplot} object showing predicted and observed concentrations over

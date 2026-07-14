@@ -22,6 +22,7 @@
 #' @param sewage The `sewage` module, see [model_sewage()].
 #' @param shedding The `shedding` module, see [model_shedding()].
 #' @param infections The `infections` module, see [model_infections()].
+#' @param forecast The `forecast` module, see [model_forecast()].
 #' @param fit_opts Settings for model fitting, see [set_fit_opts()].
 #' @param results_opts Settings for results to be returned, see
 #'   [set_results_opts()].
@@ -81,6 +82,15 @@ EpiSewer <- function(
     return(res)
   }
 }
+
+#' The EpiSewerJob S4 class
+#'
+#' @description An S4 class registration for `EpiSewerJob` objects. Instances
+#'   are S3 objects created by [EpiSewerJob()]. The class registration enables
+#'   `is(x, "EpiSewerJob")` checks.
+#'
+#' @exportClass EpiSewerJob
+setClass("EpiSewerJob")
 
 #' Constructor for EpiSewerJob objects
 #'
@@ -146,9 +156,6 @@ EpiSewerJob <- function(job_name,
   return(job)
 }
 
-#' @export
-setClass("EpiSewerJob")
-
 #' Fit an EpiSewer model.
 #'
 #' @description This function allows to (re-)run the model fitting from an
@@ -158,6 +165,7 @@ setClass("EpiSewerJob")
 #'   machine.
 #'
 #' @param job An EpiSewerJob object as returned by [EpiSewer()].
+#' @param ... Further arguments passed to the method.
 #'
 #' @export
 run <- function(job, ...) {
@@ -199,6 +207,15 @@ run.EpiSewerJob <- function(job, run_silent = FALSE, ...) {
 
   return(result)
 }
+
+#' The EpiSewerJobResult S4 class
+#'
+#' @description An S4 class registration for `EpiSewerJobResult` objects.
+#'   Instances are S3 objects created by [EpiSewerJobResult()]. The class
+#'   registration enables `is(x, "EpiSewerJobResult")` checks.
+#'
+#' @exportClass EpiSewerJobResult
+setClass("EpiSewerJobResult")
 
 #' Constructor for EpiSewerJobResult objects
 #'
@@ -249,6 +266,15 @@ run.EpiSewerJobResult <- function(job, run_silent = FALSE, ...) {
   return(run(job$job, run_silent = run_silent))
 }
 
+#' Run a quick model fitting test with minimal iterations.
+#'
+#' @description Modifies sampler settings to use very few iterations and then
+#'   calls [run()]. Useful for quickly checking that a model specification is
+#'   valid and that the model can be fitted without errors.
+#'
+#' @param job An `EpiSewerJob` or `EpiSewerJobResult` object.
+#'
+#' @return An `EpiSewerJobResult` object.
 #' @export
 test_run <- function(job) {
   UseMethod("test_run")
@@ -301,9 +327,6 @@ print.EpiSewerJob <- function(x, ...) {
   }
   cat("\nUse ...$model for a summary of the model specification.")
 }
-
-#' @export
-setClass("EpiSewerJobResult")
 
 #' Print an EpiSewerJobResult.
 #' @export

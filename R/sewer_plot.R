@@ -38,6 +38,10 @@
 #'   respect to the estimated trajectories. Only available when plotting a
 #'   single model.
 #'
+#' @param intervals Credible intervals to display. A numeric vector of
+#'   probabilities, e.g. `c(0.5, 0.95)` (default) shows 50% and 95% intervals.
+#'   Ignored if `draws=TRUE`.
+#'
 #' @return A `ggplot` object showing the time series of estimated infections,
 #'   either with credible intervals or as "spaghetti plot". Can be further
 #'   manipulated using `ggplot2` functions to adjust themes and scales, and to
@@ -428,6 +432,8 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
 #'   can be found in `summary$outliers`.
 #' @param concentration_col Name of the column in the measurements `data.frame`
 #'   which contains the measured concentration that should be plotted.
+#' @param flow_col Name of the column in the flows `data.frame` that contains
+#'   the flow values. Default is `"flow"`.
 #' @param date_col Name of the date column in the measurements `data.frame`.
 #' @param outlier_col Name of a logical column in the measurements `data.frame`
 #'   which identifies outlier measurements (for example added by
