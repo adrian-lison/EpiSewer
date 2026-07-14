@@ -850,7 +850,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
       {
         if (!is.null(measurements_modeled) && mark_outliers) {
           geom_point(
-            data = filter(measurements_modeled, .outlier),
+            data = measurements_modeled[measurements_modeled$.outlier, ],
             aes(y = concentration),
             color = "red", shape = obs_shape, size = obs_size
           )
