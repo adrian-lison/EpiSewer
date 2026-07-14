@@ -9,24 +9,24 @@
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![MIT
 license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/adrian-lison/EpiSewer/blob/main/LICENSE.md/)
-[![DOI](https://zenodo.org/badge/676114941.svg)](https://zenodo.org/badge/latestdoi/676114941)
+[![DOI](https://img.shields.io/badge/DOI-Zenodo-blue)](https://zenodo.org/badge/latestdoi/676114941)
 [![R-CMD-check](https://github.com/adrian-lison/EpiSewer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/adrian-lison/EpiSewer/actions/workflows/R-CMD-check.yaml)
-
 <!-- badges: end -->
 
 ## About
 
 The `EpiSewer` R package provides a Bayesian generative model to
-estimate effective reproduction numbers and other epidemiological
-parameters from concentration measurements at a wastewater treatment
-plant (or other sampling site) over time. This allows to track the
-transmission dynamics of a pathogen in the associated catchment
-population. The `EpiSewer` model is tailored to the specifics of
-wastewater concentration measurements, offers comprehensive uncertainty
-quantification via MCMC sampling in `stan`, and provides easily
-configurable modeling components.
+estimate the effective reproduction number R<sub>t</sub> and other
+transmission indicators from pathogen concentrations measured in
+wastewater. This enables tracking of transmission dynamics both
+retrospectively and in real time. `EpiSewer` is tailored to the
+specifics of wastewater concentration measurements, offers comprehensive
+uncertainty quantification via MCMC sampling in `stan`, and provides
+easily configurable modeling components. See our
+[paper](https://doi.org/10.1038/s41467-026-75380-3) for a detailed
+assessment of the model’s performance.
 
-<img src="man/figures/weekly_zurich_animated.gif" width="100%" />
+<img src="man/figures/forecasting_example_IAV.gif" width="100%" />
 
 ## Model highlights
 
@@ -134,19 +134,20 @@ in Zurich. Some days have missing measurements, but this is no problem:
 
 ``` r
 data_zurich$measurements
-#>            date concentration
-#>          <Date>         <num>
-#>   1: 2022-01-01            NA
-#>   2: 2022-01-02            NA
-#>   3: 2022-01-03      455.7580
-#>   4: 2022-01-04      747.8792
-#>   5: 2022-01-05      573.7020
-#>  ---                         
-#> 116: 2022-04-26      182.3664
-#> 117: 2022-04-27      379.2421
-#> 118: 2022-04-28      439.7427
-#> 119: 2022-04-29      394.0033
-#> 120: 2022-04-30      293.1242
+#> Index: <weekday>
+#>            date concentration   weekday
+#>          <Date>         <num>    <char>
+#>   1: 2022-01-01            NA  Saturday
+#>   2: 2022-01-02            NA    Sunday
+#>   3: 2022-01-03      455.7580    Monday
+#>   4: 2022-01-04      747.8792   Tuesday
+#>   5: 2022-01-05      573.7020 Wednesday
+#>  ---                                   
+#> 116: 2022-04-26      182.3664   Tuesday
+#> 117: 2022-04-27      379.2421 Wednesday
+#> 118: 2022-04-28      439.7427  Thursday
+#> 119: 2022-04-29      394.0033    Friday
+#> 120: 2022-04-30      293.1242  Saturday
 ```
 
 To show the handling of missing data more clearly, we make our data
@@ -291,10 +292,10 @@ function `set_fit_opts()` we specify our sampling approach: we apply
 Hamiltonian MCMC sampling via stan, using 4 chains with 500 warmup and
 500 sampling iterations each.
 
-Stan regularly provides updates about the progress of the sampler. The
-overall runtime will depend on your hardware resources, the size of the
-data, the complexity of the model used, and how well the model actually
-fits the data. On a modern laptop the example below should take about 3
+Stan regularly provides updates about the sampling process. The overall
+runtime will depend on your hardware resources, the size of the data,
+the complexity of the model used, and how well the model actually fits
+the data. On a modern laptop the example below should take about 3
 minutes to run.
 
 ``` r
@@ -482,8 +483,7 @@ meta-information, and the settings for the sampler. By calling
 
 ``` r
 names(ww_result$job)
-#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"      "results_opts"  "priors_text"   "metainfo"     
-#> [10] "overwrite"
+#>  [1] "job_name"      "jobarray_size" "data"          "model"         "init"          "fit_opts"      "results_opts"  "priors_text"   "metainfo"      "overwrite"
 ```
 
 In particular, we can print a concise summary of the modeling details
@@ -529,9 +529,9 @@ parameters from the model.
 
 ``` r
 names(ww_result$summary)
-#>  [1] "samples"                  "R"                        "R_diagnostics"            "expected_infections"      "infections"              
-#>  [6] "growth_rate"              "doubling_time"            "days_growing"             "expected_load"            "expected_concentration"  
-#> [11] "concentration"            "normalized_concentration" "outliers"
+#>  [1] "samples"                  "R"                        "R_diagnostics"            "expected_infections"      "infections"               "growth_rate"             
+#>  [7] "doubling_time"            "days_growing"             "expected_load"            "expected_concentration"   "concentration"            "normalized_concentration"
+#> [13] "outliers"
 ```
 
 For example, we can access the exact estimates for the reproduction
@@ -590,28 +590,37 @@ ww_result$checksums
 #> [1] "ce0d2af60f2ac0fce8bb6b9c26adb59e"
 ```
 
+## Finding out more
+
+`EpiSewer` offers comprehensive model customization and advanced
+plotting features. To find out more, please consult the [package
+website](https://adrian-lison.github.io/EpiSewer/).
+
+<img src="man/figures/weekly_zurich_animated.gif" width="100%" />
+
 ## Citing the package
 
-To cite `EpiSewer` in a publication, please use:
+If you are using `EpiSewer` in your work, please cite [our
+paper](https://doi.org/10.1038/s41467-026-75380-3):
 
-    @article{lisonRobustRealtimeEstimation2025,
-      title = {Robust Real-Time Estimation of Pathogen Transmission Dynamics from Wastewater},
-      author = {Lison, Adrian and McLeod, Rachel and Huisman, Jana S. and Munday, James D. and Ort, Christoph and Julian, Timothy R. and Stadler, Tanja},
-      year = {2025},
-      journal = {medRxiv preprint},
-      doi = {10.1101/2025.10.23.25338640}
+    @article{lisonRealTimeEstimation2026,
+      title = {Real-Time Estimation of Pathogen Transmission Dynamics from Wastewater},
+      author = {Lison, Adrian and McLeod, Rachel E. and Huisman, Jana S. and Munday, James D. and Ort, Christoph and Julian, Timothy R. and Stadler, Tanja},
+      year = {2026},
+      journal = {Nature Communications},
+      doi = {10.1038/s41467-026-75380-3}
     }
 
 If you use the dPCR-specific model of `EpiSewer` (see
 [noise_estimate_dPCR](https://adrian-lison.github.io/EpiSewer/reference/noise_estimate_dPCR.html)),
-please also cite:
+please also [this paper](https://doi.org/10.1021/acsestwater.5c01051):
 
-    @article{lisonImprovingInferenceWastewaterbased2024,
-      title = {Improving Inference in Wastewater-Based Epidemiology by Modelling the Statistical Features of Digital {{PCR}}},
-      author = {Lison, Adrian and Julian, Timothy and Stadler, Tanja},
-      year = {2024},
-      journal = {bioRxiv preprint},
-      doi = {10.1101/2024.10.14.618307}
+    @article{lisonImprovingInference2026,
+      title={Improving Inference from Reported Concentrations in Environmental Surveillance by Modeling the Statistical Features of Digital PCR},
+      author={Lison, Adrian and Julian, Timothy R and Stadler, Tanja},
+      journal={ACS ES\&T Water},
+      year={2026},
+      doi = {10.1021/acsestwater.5c01051}
     }
 
 ## Contributors
