@@ -129,9 +129,9 @@ dPCR.
 \link{noise_estimate_dPCR_params} for jointly estimating uncertain
 parameters of the assay.
 
-Other {noise models}: 
-\code{\link{noise_estimate}()},
-\code{\link{noise_estimate_constant_var}()},
-\code{\link{noise_estimate_dPCR_params}()}
+Other noise models:
+\code{\link[=noise_estimate]{noise_estimate()}},
+\code{\link[=noise_estimate_constant_var]{noise_estimate_constant_var()}},
+\code{\link[=noise_estimate_dPCR_params]{noise_estimate_dPCR_params()}}
 }
-\concept{{noise models}}
+\concept{noise models}

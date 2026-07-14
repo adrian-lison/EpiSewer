@@ -76,8 +76,8 @@ noise.
 {Visualize the assumed LOD as a function of concentration:}
 \code{\link[=plot_LOD]{plot_LOD()}}
 
-Other {LOD models}: 
-\code{\link{LOD_estimate_dPCR}()},
-\code{\link{LOD_none}()}
+Other LOD models:
+\code{\link[=LOD_estimate_dPCR]{LOD_estimate_dPCR()}},
+\code{\link[=LOD_none]{LOD_none()}}
 }
-\concept{{LOD models}}
+\concept{LOD models}

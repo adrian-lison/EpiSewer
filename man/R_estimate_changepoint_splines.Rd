@@ -59,6 +59,10 @@ ignored by \code{changepoint_min_distance}, i.e. they can also occur closer to
 each other. This tolerance gives the model more flexibility in placing
 changepoints with large trend changes.}
 
+\item{spline_knot_distance}{Distance (in days) between spline knots for the
+B-splines used to smooth the Rt trajectory between changepoints. Smaller
+distances increase flexibility but also daily Rt uncertainty.}
+
 \item{link}{Link function. Currently supported are \code{inv_softplus} (default)
 and \code{scaled_logit}. Both of these links are configured to behave
 approximately like the identity function around R=1, but become increasingly
@@ -67,10 +71,6 @@ non-linear below (and in the case of \code{scaled_logit} also above) R=1.}
 \item{R_max}{If \code{link=scaled_logit} is used, a maximum reproduction number
 must be assumed. This should be higher than any realistic R value for the
 modeled pathogen. Default is 6.}
-
-\item{spline_knot_distance}{Distance (in days) between spline knots for the
-B-splines used to smooth the Rt trajectory between changepoints. Smaller
-distances increase flexibility but also daily Rt uncertainty.}
 
 \item{strictness_alpha}{The concentration parameter of the Dirichlet prior
 for the changepoint positions. Choosing smaller values of
@@ -121,13 +121,13 @@ quantiles of the prior, so you will also have to decrease the scale
 parameter to achieve a similar level of day-to-day variation.
 }
 \seealso{
-Other {Rt models}: 
-\code{\link{R_estimate_approx}()},
-\code{\link{R_estimate_ets}()},
-\code{\link{R_estimate_gp}()},
-\code{\link{R_estimate_piecewise}()},
-\code{\link{R_estimate_rw}()},
-\code{\link{R_estimate_smooth_derivative}()},
-\code{\link{R_estimate_splines}()}
+Other Rt models:
+\code{\link[=R_estimate_approx]{R_estimate_approx()}},
+\code{\link[=R_estimate_ets]{R_estimate_ets()}},
+\code{\link[=R_estimate_gp]{R_estimate_gp()}},
+\code{\link[=R_estimate_piecewise]{R_estimate_piecewise()}},
+\code{\link[=R_estimate_rw]{R_estimate_rw()}},
+\code{\link[=R_estimate_smooth_derivative]{R_estimate_smooth_derivative()}},
+\code{\link[=R_estimate_splines]{R_estimate_splines()}}
 }
-\concept{{Rt models}}
+\concept{Rt models}

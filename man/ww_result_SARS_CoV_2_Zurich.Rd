@@ -7,14 +7,15 @@
 \format{
 An \code{EpiSewerJobResult} object as returned by \code{\link[=EpiSewer]{EpiSewer()}}.
 }
+\usage{
+ww_result_SARS_CoV_2_Zurich
+}
 \description{
-Result of running \code{\link[=EpiSewer]{EpiSewer()}} on
-\code{\link{ww_data_SARS_CoV_2_Zurich}} with
-\code{\link{ww_assumptions_SARS_CoV_2_Zurich}}. Can be used to explore
-outputs and plotting functions without fitting a model.
+Result of running \code{\link[=EpiSewer]{EpiSewer()}} on \link{ww_data_SARS_CoV_2_Zurich}
+with \link{ww_assumptions_SARS_CoV_2_Zurich}. Can be used to explore outputs
+and plotting functions without fitting a model.
 }
 \seealso{
-\code{\link{ww_data_SARS_CoV_2_Zurich}}, \code{\link{ww_assumptions_SARS_CoV_2_Zurich}}
+\link{ww_data_SARS_CoV_2_Zurich}, \link{ww_assumptions_SARS_CoV_2_Zurich}
 }
-\keyword{datasets}
 \keyword{internal}

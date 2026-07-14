@@ -21,7 +21,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `measurements` module.
 #' @export
-#' @family {module functions}
+#' @family module functions
 model_measurements <- function(
     concentrations = concentrations_observe(),
     noise = noise_estimate(),
@@ -318,7 +318,7 @@ measurements_observe_ <- function(
 #' @inherit modeldata_init return
 #'
 #' @export
-#' @family {observation types}
+#' @family observation types
 concentrations_observe <- function(
     measurements = NULL,
     composite_window = 1,
@@ -356,7 +356,7 @@ concentrations_observe <- function(
 #' @inherit modeldata_init return
 #'
 #' @export
-#' @family {observation types}
+#' @family observation types
 concentrations_observe_partitions <- function(
     measurements = NULL,
     composite_window = 1,
@@ -864,7 +864,7 @@ noise_estimate_ <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {noise models}
+#' @family noise models
 noise_estimate <-
   function(replicates = FALSE,
            distribution = "gamma",
@@ -953,7 +953,7 @@ noise_estimate <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {noise models}
+#' @family noise models
 #' @seealso [LOD_estimate_dPCR] for a limit of detection model specialised for
 #'   dPCR.
 #' @seealso [noise_estimate_dPCR] for a faster dPCR noise model with fixed assay
@@ -1070,7 +1070,7 @@ noise_estimate_dPCR_params <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {noise models}
+#' @family noise models
 #' @seealso [LOD_estimate_dPCR] for a limit of detection model specialised for
 #'   dPCR.
 #' @seealso [noise_estimate_dPCR_params] for jointly estimating uncertain
@@ -1145,7 +1145,7 @@ noise_estimate_dPCR <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {noise models}
+#' @family noise models
 noise_estimate_constant_var <-
   function(replicates = FALSE,
            distribution = "gamma",
@@ -1197,7 +1197,7 @@ noise_estimate_constant_var <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {LOD models}
+#' @family LOD models
 LOD_none <- function(modeldata = modeldata_init()) {
   if (!is.null(modeldata$obs_dist) && modeldata$obs_dist == 4) {
     cli::cli_abort(paste0(
@@ -1267,7 +1267,7 @@ LOD_none <- function(modeldata = modeldata_init()) {
 #' @seealso {Visualize the assumed LOD as a function of concentration:}
 #'   [plot_LOD()]
 #'
-#' @family {LOD models}
+#' @family LOD models
 LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
                        drop_prob = 1e-10,
                        modeldata = modeldata_init()) {
@@ -1326,7 +1326,7 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
 #' @inherit modeldata_init return
 #' @export
 #'
-#' @family {LOD models}
+#' @family LOD models
 LOD_estimate_dPCR <- function(drop_prob = 1e-10, modeldata = modeldata_init()) {
 
   modeldata <- tbc("LOD_estimate_dPCR",

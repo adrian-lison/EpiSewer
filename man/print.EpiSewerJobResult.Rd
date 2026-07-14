@@ -4,7 +4,7 @@
 \alias{print.EpiSewerJobResult}
 \title{Print an EpiSewerJobResult.}
 \usage{
-\method{print}{EpiSewerJobResult}(x)
+\method{print}{EpiSewerJobResult}(x, ...)
 }
 \description{
 Print an EpiSewerJobResult.

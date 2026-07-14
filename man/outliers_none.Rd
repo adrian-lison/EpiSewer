@@ -25,7 +25,7 @@ performed before model fitting (\code{.checks}).
 This option does not model outliers in sampled concentrations.
 }
 \seealso{
-Other {outlier models}: 
-\code{\link{outliers_estimate}()}
+Other outlier models:
+\code{\link[=outliers_estimate]{outliers_estimate()}}
 }
-\concept{{outlier models}}
+\concept{outlier models}

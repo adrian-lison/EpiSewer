@@ -79,7 +79,7 @@ methods such as qPCR or dPCR. By default, the measured concentrations are
 modeled via a gamma likelihood.
 }
 \seealso{
-Other {observation types}: 
-\code{\link{concentrations_observe_partitions}()}
+Other observation types:
+\code{\link[=concentrations_observe_partitions]{concentrations_observe_partitions()}}
 }
-\concept{{observation types}}
+\concept{observation types}

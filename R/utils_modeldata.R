@@ -725,17 +725,17 @@ modeldata_update <- function(modeldata,
   all_vars <- names(modeldata$.metainfo)
   for (name in all_vars) {
     if ("tbe" %in% class(modeldata$.metainfo[[name]])) {
-      modeldata$.metainfo[[name]] <- solve(
+      modeldata$.metainfo[[name]] <- resolve(
         modeldata$.metainfo[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbc" %in% class(modeldata$.metainfo[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata$.metainfo[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbp" %in% class(modeldata$.metainfo[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata$.metainfo[[name]],
         modeldata = modeldata,
         data = data,
@@ -748,17 +748,17 @@ modeldata_update <- function(modeldata,
   all_vars <- setdiff(names(modeldata), c(".init", ".metainfo", ".checks"))
   for (name in all_vars) {
     if ("tbe" %in% class(modeldata[[name]])) {
-      modeldata[[name]] <- solve(
+      modeldata[[name]] <- resolve(
         modeldata[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbc" %in% class(modeldata[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbp" %in% class(modeldata[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata[[name]],
         modeldata = modeldata,
         data = data,
@@ -771,17 +771,17 @@ modeldata_update <- function(modeldata,
   all_vars <- names(modeldata$.init)
   for (name in all_vars) {
     if ("tbe" %in% class(modeldata$.init[[name]])) {
-      modeldata$.init[[name]] <- solve(
+      modeldata$.init[[name]] <- resolve(
         modeldata$.init[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbc" %in% class(modeldata$.init[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata$.init[[name]],
         modeldata = modeldata, throw_error = throw_error
       )
     } else if ("tbp" %in% class(modeldata$.init[[name]])) {
-      modeldata <- solve(
+      modeldata <- resolve(
         modeldata$.init[[name]],
         modeldata = modeldata,
         data = data,

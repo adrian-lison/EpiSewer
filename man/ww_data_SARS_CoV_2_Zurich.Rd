@@ -7,14 +7,16 @@
 \format{
 A \code{sewer_data} object as returned by \code{\link[=sewer_data]{sewer_data()}}.
 }
+\usage{
+ww_data_SARS_CoV_2_Zurich
+}
 \description{
 Processed wastewater data for SARS-CoV-2 from the WWTP
 Werdhölzli in Zürich (January–April 2022), subsampled to Monday and
 Thursday measurements, ready for use with \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \seealso{
-\code{\link{SARS_CoV_2_Zurich}}, \code{\link{ww_assumptions_SARS_CoV_2_Zurich}},
-\code{\link{ww_result_SARS_CoV_2_Zurich}}
+\link{SARS_CoV_2_Zurich}, \link{ww_assumptions_SARS_CoV_2_Zurich},
+\link{ww_result_SARS_CoV_2_Zurich}
 }
-\keyword{datasets}
 \keyword{internal}

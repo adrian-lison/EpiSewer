@@ -87,7 +87,7 @@ of positive partitions observed. For a more generic likelihood, see
 \code{\link[=concentrations_observe]{concentrations_observe()}}.
 }
 \seealso{
-Other {observation types}: 
-\code{\link{concentrations_observe}()}
+Other observation types:
+\code{\link[=concentrations_observe]{concentrations_observe()}}
 }
-\concept{{observation types}}
+\concept{observation types}

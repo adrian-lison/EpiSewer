@@ -4,7 +4,7 @@
 \alias{print.modeldata}
 \title{Print a \code{modeldata} object}
 \usage{
-\method{print}{modeldata}(x, type = "structure")
+\method{print}{modeldata}(x, type = "structure", ...)
 }
 \arguments{
 \item{type}{If "structure", the model structure is printed. If "data", the

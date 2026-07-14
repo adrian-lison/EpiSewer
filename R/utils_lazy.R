@@ -202,9 +202,24 @@ print.tbp <- function(x, ...) {
   print(paste("Requires", paste(c(req_data, req_assumptions), collapse = " and ")))
 }
 
+#' Resolve a lazy EpiSewer object
+#'
+#' @description Resolves a lazy `tbp`, `tbe`, or `tbc` object by evaluating it
+#'   once all required inputs are available.
+#'
+#' @param x A lazy object of class `tbp`, `tbe`, or `tbc`.
+#' @param ... Further arguments passed to the method.
+#'
+#' @return The resolved value or updated modeldata.
 #' @export
 #' @keywords internal
-solve.tbp <- function(x, modeldata, data = list(), assumptions = list(), ...) {
+resolve <- function(x, ...) {
+  UseMethod("resolve")
+}
+
+#' @export
+#' @keywords internal
+resolve.tbp <- function(x, modeldata, data = list(), assumptions = list(), ...) {
   provided <- x$check_provided(
     data = data, assumptions = assumptions,
     required_data = x$required_data, required_assumptions = x$required_assumptions
@@ -249,7 +264,7 @@ print.tbe <- function(x, ...) {
 
 #' @export
 #' @keywords internal
-solve.tbe <- function(x, modeldata, throw_error = TRUE, ...) {
+resolve.tbe <- function(x, modeldata, throw_error = TRUE, ...) {
   evaluate <- modeldata_check(
     modeldata, x$required, calling_env = x$calling_f, throw_error = throw_error
   )
@@ -332,7 +347,7 @@ print.tbc <- function(x, ...) {
 
 #' @export
 #' @keywords internal
-solve.tbc <- function(x, modeldata, throw_error = TRUE, ...) {
+resolve.tbc <- function(x, modeldata, throw_error = TRUE, ...) {
   computable <- modeldata_check(
     modeldata, x$required, required_values = x$required_values,
     advice = x$advice, calling_env = x$calling_f, throw_error = throw_error

@@ -7,21 +7,23 @@
 \format{
 A list with the following elements:
 \describe{
-  \item{measurements}{A \code{data.table} with columns \code{date} and
-    \code{concentration} (gc/mL).}
-  \item{flows}{A \code{data.table} with columns \code{date} and \code{flow} (mL/day).}
-  \item{cases}{A \code{data.table} with columns \code{date} and \code{cases}
-    (cases/day).}
-  \item{units}{A list with concentration and flow unit strings.}
+\item{measurements}{A \code{data.table} with columns \code{date} and
+\code{concentration} (gc/mL).}
+\item{flows}{A \code{data.table} with columns \code{date} and \code{flow} (mL/day).}
+\item{cases}{A \code{data.table} with columns \code{date} and \code{cases}
+(cases/day).}
+\item{units}{A list with concentration and flow unit strings.}
 }
 }
 \source{
 \url{https://sensors-eawag.ch/sars/}
 }
-\keyword{internal}
+\usage{
+SARS_CoV_2_Zurich
+}
 \description{
 Wastewater measurements of SARS-CoV-2 RNA and case counts from
 the WWTP Werdhölzli in Zürich, Switzerland (January–April 2022). Data are
 provided by EAWAG under the CC BY 4.0 license.
 }
-\keyword{datasets}
+\keyword{internal}

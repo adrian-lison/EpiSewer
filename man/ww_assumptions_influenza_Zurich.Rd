@@ -7,13 +7,15 @@
 \format{
 A \code{sewer_assumptions} object as returned by \code{\link[=sewer_assumptions]{sewer_assumptions()}}.
 }
+\usage{
+ww_assumptions_influenza_Zurich
+}
 \description{
 Epidemiological assumptions for Influenza A, including
 generation time and shedding load distributions derived from the
 literature.
 }
 \seealso{
-\code{\link{ww_data_influenza_Zurich}}
+\link{ww_data_influenza_Zurich}
 }
-\keyword{datasets}
 \keyword{internal}
