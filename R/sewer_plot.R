@@ -850,7 +850,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
       {
         if (!is.null(measurements_modeled) && mark_outliers) {
           geom_point(
-            data = measurements_modeled |> filter(.outlier),
+            data = filter(measurements_modeled, .outlier),
             aes(y = concentration),
             color = "red", shape = obs_shape, size = obs_size
           )
@@ -1418,8 +1418,7 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
     }
   }
   days <- forcats::fct_inorder(paste(c(3,7,14,21,28), "days"), ordered = TRUE)
-  result$summary$days_growing[date == date_select,] |>
-    ggplot() +
+  ggplot(result$summary$days_growing[date == date_select,]) +
     geom_hline(yintercept = -0.5, linetype = "solid") +
     geom_hline(yintercept = 0, linetype = "dashed") +
     geom_hline(yintercept = 0.5, linetype = "solid") +
@@ -1553,8 +1552,7 @@ plot_prior_partitions <- function(modeldata, n_draws = 1000, show_draws = 50, se
     ggtitle("95% intervals for valid partitions")
 
   # plot distribution of mean partition number across ids
-  plot_means <- partition_number_draws[, .(mean_partitions = mean(partitions)), by = id] |>
-    ggplot(aes(x=mean_partitions)) +
+  plot_means <- ggplot(partition_number_draws[, .(mean_partitions = mean(partitions)), by = id], aes(x=mean_partitions)) +
     geom_histogram(bins = 30, fill = "darkblue", color = "black", alpha = 0.7) +
     xlab("Mean valid partitions") + ylab("Count") +
     theme_bw() +
@@ -1562,8 +1560,7 @@ plot_prior_partitions <- function(modeldata, n_draws = 1000, show_draws = 50, se
     ggtitle("Distribution of mean valid partitions")
 
   # plot distribution of sd of partition number across ids
-  plot_sds <- partition_number_draws[, .(sd_partitions = sd(partitions)), by = id] |>
-    ggplot(aes(x=sd_partitions)) +
+  plot_sds <- ggplot(partition_number_draws[, .(sd_partitions = sd(partitions)), by = id], aes(x=sd_partitions)) +
     geom_histogram(bins = 30, fill = "darkblue", color = "black", alpha = 0.7) +
     xlab("Standard deviation of valid partitions") + ylab("Count") +
     theme_bw() +
