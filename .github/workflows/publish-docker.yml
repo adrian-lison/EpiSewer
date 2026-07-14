@@ -1,6 +1,12 @@
 name: Publish docker backend
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - 'inst/stan/**'
+      - 'docker/fit_EpiSewer.R'
   workflow_dispatch:
 
 env:
