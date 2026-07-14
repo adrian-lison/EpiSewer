@@ -83,6 +83,15 @@ EpiSewer <- function(
   }
 }
 
+#' The EpiSewerJob S4 class
+#'
+#' @description An S4 class registration for `EpiSewerJob` objects. Instances
+#'   are S3 objects created by [EpiSewerJob()]. The class registration enables
+#'   `is(x, "EpiSewerJob")` checks.
+#'
+#' @exportClass EpiSewerJob
+setClass("EpiSewerJob")
+
 #' Constructor for EpiSewerJob objects
 #'
 #' @param job_name A name for the job, used for labeling outputs and results.
@@ -198,6 +207,15 @@ run.EpiSewerJob <- function(job, run_silent = FALSE, ...) {
 
   return(result)
 }
+
+#' The EpiSewerJobResult S4 class
+#'
+#' @description An S4 class registration for `EpiSewerJobResult` objects.
+#'   Instances are S3 objects created by [EpiSewerJobResult()]. The class
+#'   registration enables `is(x, "EpiSewerJobResult")` checks.
+#'
+#' @exportClass EpiSewerJobResult
+setClass("EpiSewerJobResult")
 
 #' Constructor for EpiSewerJobResult objects
 #'
