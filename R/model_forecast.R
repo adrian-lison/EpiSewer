@@ -31,7 +31,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `forecast` module.
 #' @export
-#' @family {module functions}
+#' @family module functions
 model_forecast <- function(horizon = horizon_none(),
                            damping = damping_assume(damping = 0.95)) {
   verify_is_modeldata(horizon, "horizon")

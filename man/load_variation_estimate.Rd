@@ -61,7 +61,7 @@ on the individual-level CV is strong)
 }
 }
 \seealso{
-Other {load variation models}: 
-\code{\link{load_variation_none}()}
+Other load variation models:
+\code{\link[=load_variation_none]{load_variation_none()}}
 }
-\concept{{load variation models}}
+\concept{load variation models}

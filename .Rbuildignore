@@ -9,3 +9,9 @@
 ^\.claude$
 ^\.devenv$
 ^vignettes$
+^CONTRIBUTING\.md$
+^Dockerfile$
+^README\.Rmd$
+^build_README\.R$
+^docker$
+^inst/stan/EpiSewer_main$

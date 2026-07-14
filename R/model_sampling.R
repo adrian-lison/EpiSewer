@@ -23,7 +23,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `sampling` module.
 #' @export
-#' @family {module functions}
+#' @family module functions
 model_sampling <- function(
     outliers = outliers_estimate(),
     sample_effects = sample_effects_none()
@@ -41,7 +41,7 @@ model_sampling <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {sample effect models}
+#' @family sample effect models
 sample_effects_none <- function(modeldata = modeldata_init()) {
   modeldata$K <- 0
   modeldata$X <- numeric(0)
@@ -77,7 +77,7 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {sample effect models}
+#' @family sample effect models
 sample_effects_estimate_weekday <- function(
     effect_prior_mu = 0,
     effect_prior_sigma = 1,
@@ -139,7 +139,7 @@ sample_effects_estimate_weekday <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {sample effect models}
+#' @family sample effect models
 sample_effects_estimate_matrix <- function(
     design_matrix,
     effect_prior_mu = 0,
@@ -191,7 +191,7 @@ sample_effects_estimate_matrix <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {outlier models}
+#' @family outlier models
 outliers_none <- function(modeldata = modeldata_init()) {
   modeldata$outliers <- FALSE
   modeldata$epsilon_prior <- numeric(0)
@@ -238,7 +238,7 @@ outliers_none <- function(modeldata = modeldata_init()) {
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {outlier models}
+#' @family outlier models
 outliers_estimate <- function(gev_prior_mu = 0, gev_prior_sigma = 2e-8,
                               gev_prior_xi = 4, modeldata = modeldata_init()) {
   modeldata$outliers <- TRUE

@@ -31,7 +31,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `infections` module.
 #' @export
-#' @family {module functions}
+#' @family module functions
 model_infections <- function(
     generation_dist = generation_dist_assume(),
     R = R_estimate_gp(),
@@ -206,7 +206,7 @@ generation_dist_assume <-
 #'@inheritParams template_model_helpers
 #'@inherit modeldata_init return
 #'@export
-#'@family {Rt models}
+#'@family Rt models
 R_estimate_ets <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
@@ -404,7 +404,7 @@ R_estimate_ets <- function(
 #'@inheritParams template_model_helpers
 #'@inherit modeldata_init return
 #'@export
-#'@family {Rt models}
+#'@family Rt models
 R_estimate_rw <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
@@ -561,7 +561,7 @@ R_estimate_rw <- function(
 #'@inheritParams template_model_helpers
 #'@inherit modeldata_init return
 #'@export
-#'@family {Rt models}
+#'@family Rt models
 R_estimate_splines <- function(
     knot_distance_global = 4*7,
     knot_distance_local = 7,
@@ -831,7 +831,7 @@ R_estimate_splines <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {Rt models}
+#' @family Rt models
 R_estimate_approx <- function(
     inf_sd_prior_mu = 0.05,
     inf_sd_prior_sigma = 0.025,
@@ -914,7 +914,7 @@ R_estimate_approx <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {Rt models}
+#' @family Rt models
 R_estimate_piecewise <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
@@ -1073,7 +1073,7 @@ R_estimate_piecewise <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {Rt models}
+#' @family Rt models
 R_estimate_changepoint_splines <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
@@ -1220,7 +1220,7 @@ R_estimate_changepoint_splines <- function(
 #'@inheritParams template_model_helpers
 #'@inherit modeldata_init return
 #'@export
-#'@family {Rt models}
+#'@family Rt models
 R_estimate_smooth_derivative <- function(
     R_start_prior_mu = 1,
     R_start_prior_sigma = 0.8,
@@ -1407,7 +1407,7 @@ R_estimate_smooth_derivative <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {Rt models}
+#' @family Rt models
 R_estimate_gp <- function(
     R_intercept_prior_mu = 1,
     R_intercept_prior_sigma = 0,
@@ -1953,7 +1953,7 @@ add_seeding_intercept_prior <- function(
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {infection noise models}
+#' @family infection noise models
 infection_noise_none <- function(modeldata = modeldata_init()) {
   modeldata$I_sample <- FALSE
   modeldata$I_overdispersion <- FALSE
@@ -2004,7 +2004,7 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {infection noise models}
+#' @family infection noise models
 infection_noise_estimate <-
   function(overdispersion = TRUE,
            overdispersion_prior_mu = 0.1,

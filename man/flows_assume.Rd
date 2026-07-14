@@ -40,7 +40,7 @@ in the assumed \code{load_per_case}. For this purpose, the function
 \code{\link[=suggest_load_per_case]{suggest_load_per_case()}} offers a \code{flow_constant} argument.
 }
 \seealso{
-Other {flow models}: 
-\code{\link{flows_observe}()}
+Other flow models:
+\code{\link[=flows_observe]{flows_observe()}}
 }
-\concept{{flow models}}
+\concept{flow models}

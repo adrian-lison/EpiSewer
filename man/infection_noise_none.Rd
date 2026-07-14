@@ -26,7 +26,7 @@ This option does not model noise in the infection process and instead
 implements a deterministic renewal model.
 }
 \seealso{
-Other {infection noise models}: 
-\code{\link{infection_noise_estimate}()}
+Other infection noise models:
+\code{\link[=infection_noise_estimate]{infection_noise_estimate()}}
 }
-\concept{{infection noise models}}
+\concept{infection noise models}

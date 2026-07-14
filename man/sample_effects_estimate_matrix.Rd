@@ -53,8 +53,8 @@ The priors of this component have the following functional form:
 }
 }
 \seealso{
-Other {sample effect models}: 
-\code{\link{sample_effects_estimate_weekday}()},
-\code{\link{sample_effects_none}()}
+Other sample effect models:
+\code{\link[=sample_effects_estimate_weekday]{sample_effects_estimate_weekday()}},
+\code{\link[=sample_effects_none]{sample_effects_none()}}
 }
-\concept{{sample effect models}}
+\concept{sample effect models}

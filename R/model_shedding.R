@@ -32,7 +32,7 @@
 #' @return A `modeldata` object containing the data and specifications of the
 #'   `shedding` module.
 #' @export
-#' @family {module functions}
+#' @family module functions
 model_shedding <- function(
     incubation_dist = incubation_dist_assume(),
     shedding_dist = shedding_dist_assume(),
@@ -400,7 +400,7 @@ shedding_dist_estimate <-
 #'
 #' @seealso {Helper for finding a suitable load per case assumption:}
 #'   [suggest_load_per_case()]
-#' @family {load per case functions}
+#' @family load per case functions
 load_per_case_assume <-
   function(load_per_case = NULL, modeldata = modeldata_init()) {
     modeldata <- tbp("load_per_case_assume",
@@ -477,7 +477,7 @@ load_per_case_assume <-
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {load per case functions}
+#' @family load per case functions
 load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
                                     ascertainment_prop = 1,
                                     measurement_shift = seq(-7,7),
@@ -608,7 +608,7 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {load variation models}
+#' @family load variation models
 load_variation_none <- function(modeldata = modeldata_init()) {
   modeldata$load_vari <- 0
   modeldata$nu_zeta_prior <- numeric(0)
@@ -664,7 +664,7 @@ load_variation_none <- function(modeldata = modeldata_init()) {
 #' @inheritParams template_model_helpers
 #' @inherit modeldata_init return
 #' @export
-#' @family {load variation models}
+#' @family load variation models
 load_variation_estimate <- function(
     cv_prior_mu = 1,
     cv_prior_sigma = 0,

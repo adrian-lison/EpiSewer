@@ -44,11 +44,11 @@ functions (see available options below). See the documentation of the
 individual helper functions to adjust model priors and further settings.
 }
 \seealso{
-Other {module functions}: 
-\code{\link{model_forecast}()},
-\code{\link{model_infections}()},
-\code{\link{model_measurements}()},
-\code{\link{model_sewage}()},
-\code{\link{model_shedding}()}
+Other module functions:
+\code{\link[=model_forecast]{model_forecast()}},
+\code{\link[=model_infections]{model_infections()}},
+\code{\link[=model_measurements]{model_measurements()}},
+\code{\link[=model_sewage]{model_sewage()}},
+\code{\link[=model_shedding]{model_shedding()}}
 }
-\concept{{module functions}}
+\concept{module functions}
