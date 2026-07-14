@@ -42,6 +42,8 @@
 #'
 #' @export
 #' @import data.table
+#' @import stats
+#' @importFrom utils tail
 EpiSewer <- function(
     data = sewer_data(),
     assumptions = sewer_assumptions(),
