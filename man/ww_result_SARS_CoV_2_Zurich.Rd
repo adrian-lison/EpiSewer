@@ -17,3 +17,4 @@ outputs and plotting functions without fitting a model.
 \code{\link{ww_data_SARS_CoV_2_Zurich}}, \code{\link{ww_assumptions_SARS_CoV_2_Zurich}}
 }
 \keyword{datasets}
+\keyword{internal}

@@ -10,3 +10,4 @@ Instances are S3 objects created by
 \code{\link[=EpiSewerJobResult]{EpiSewerJobResult()}}. The class registration
 enables \code{is(x, "EpiSewerJobResult")} checks.
 }
+\keyword{internal}

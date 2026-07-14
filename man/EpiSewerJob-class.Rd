@@ -9,3 +9,4 @@ An S4 class registration for \code{EpiSewerJob} objects. Instances
 are S3 objects created by \code{\link[=EpiSewerJob]{EpiSewerJob()}}. The class
 registration enables \code{is(x, "EpiSewerJob")} checks.
 }
+\keyword{internal}

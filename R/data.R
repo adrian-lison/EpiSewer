@@ -14,6 +14,7 @@
 #'   \item{units}{A list with concentration and flow unit strings.}
 #' }
 #' @source \url{https://sensors-eawag.ch/sars/}
+#' @keywords internal
 "SARS_CoV_2_Zurich"
 
 #' Raw Influenza A wastewater data from Zurich
@@ -30,6 +31,7 @@
 #'   \item{flows}{A `data.table` with columns `date` and `flow` (mL/day).}
 #'   \item{units}{A list with concentration and flow unit strings.}
 #' }
+#' @keywords internal
 "Influenza_A_Zurich"
 
 #' Example sewer_data object for SARS-CoV-2 in Zurich
@@ -41,6 +43,7 @@
 #' @format A `sewer_data` object as returned by [sewer_data()].
 #' @seealso [SARS_CoV_2_Zurich], [ww_assumptions_SARS_CoV_2_Zurich],
 #'   [ww_result_SARS_CoV_2_Zurich]
+#' @keywords internal
 "ww_data_SARS_CoV_2_Zurich"
 
 #' Example sewer_data object for Influenza A in Zurich
@@ -51,6 +54,7 @@
 #'
 #' @format A `sewer_data` object as returned by [sewer_data()].
 #' @seealso [Influenza_A_Zurich], [ww_assumptions_influenza_Zurich]
+#' @keywords internal
 "ww_data_influenza_Zurich"
 
 #' Example sewer_assumptions object for SARS-CoV-2 in Zurich
@@ -61,6 +65,7 @@
 #'
 #' @format A `sewer_assumptions` object as returned by [sewer_assumptions()].
 #' @seealso [ww_data_SARS_CoV_2_Zurich], [ww_result_SARS_CoV_2_Zurich]
+#' @keywords internal
 "ww_assumptions_SARS_CoV_2_Zurich"
 
 #' Example sewer_assumptions object for Influenza A in Zurich
@@ -71,6 +76,7 @@
 #'
 #' @format A `sewer_assumptions` object as returned by [sewer_assumptions()].
 #' @seealso [ww_data_influenza_Zurich]
+#' @keywords internal
 "ww_assumptions_influenza_Zurich"
 
 #' Example EpiSewerJobResult for SARS-CoV-2 in Zurich
@@ -81,4 +87,5 @@
 #'
 #' @format An `EpiSewerJobResult` object as returned by [EpiSewer()].
 #' @seealso [ww_data_SARS_CoV_2_Zurich], [ww_assumptions_SARS_CoV_2_Zurich]
+#' @keywords internal
 "ww_result_SARS_CoV_2_Zurich"

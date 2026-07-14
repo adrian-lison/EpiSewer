@@ -90,6 +90,7 @@ EpiSewer <- function(
 #'   `is(x, "EpiSewerJob")` checks.
 #'
 #' @exportClass EpiSewerJob
+#' @keywords internal
 setClass("EpiSewerJob")
 
 #' Constructor for EpiSewerJob objects
@@ -215,6 +216,7 @@ run.EpiSewerJob <- function(job, run_silent = FALSE, ...) {
 #'   registration enables `is(x, "EpiSewerJobResult")` checks.
 #'
 #' @exportClass EpiSewerJobResult
+#' @keywords internal
 setClass("EpiSewerJobResult")
 
 #' Constructor for EpiSewerJobResult objects
@@ -276,6 +278,7 @@ run.EpiSewerJobResult <- function(job, run_silent = FALSE, ...) {
 #'
 #' @return An `EpiSewerJobResult` object.
 #' @export
+#' @keywords internal
 test_run <- function(job) {
   UseMethod("test_run")
 }

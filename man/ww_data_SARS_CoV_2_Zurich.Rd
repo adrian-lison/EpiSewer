@@ -17,3 +17,4 @@ Thursday measurements, ready for use with \code{\link[=EpiSewer]{EpiSewer()}}.
 \code{\link{ww_result_SARS_CoV_2_Zurich}}
 }
 \keyword{datasets}
+\keyword{internal}
