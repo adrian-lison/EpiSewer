@@ -1,11 +1,8 @@
 on:
-  workflow_dispatch:
-  release:
-    types: [published]
-  push:
+  pull_request:
     branches: [main]
     paths:
-      - 'README.Rmd'
+      - README.Rmd
 
 name: build-readme.yaml
 
@@ -15,13 +12,12 @@ permissions:
 jobs:
   build-readme:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event.release.target_commitish == 'main'
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.target_commitish || github.ref }}
+          ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: r-lib/actions/setup-pandoc@v2
@@ -54,4 +50,4 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md README.Rmd man/figures/README-*.png
           git diff --staged --quiet || git commit -m "chore: update README [skip ci]"
-          git push
+          git push origin HEAD:${{ github.head_ref }}
