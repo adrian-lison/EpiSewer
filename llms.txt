@@ -72,6 +72,12 @@ remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
   vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html)
   for instructions.
 
+#### Snakemake workflow 🐍
+
+`EpiSewer` can also be used with pipeline orchestration software - see
+[here](https://github.com/adrian-lison/EpiSewer-snakemake) for a
+Snakemake workflow example.
+
 ## Introduction
 
 You have installed `EpiSewer` and the stan backend, and are ready to
@@ -571,11 +577,11 @@ number.
 head(ww_result$summary$R, 5)
 #>          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95
 #>        <Date>    <num>    <num>      <num>     <num>     <num>      <num>
-#> 1: 2021-12-03 1.033535 1.028817  0.7833869 0.9399895  1.122385   1.294914
-#> 2: 2021-12-04 1.034030 1.028373  0.7872094 0.9447821  1.121171   1.297848
-#> 3: 2021-12-05 1.034722 1.028168  0.7933240 0.9476269  1.118173   1.290570
-#> 4: 2021-12-06 1.035643 1.030817  0.8043344 0.9491813  1.118184   1.283502
-#> 5: 2021-12-07 1.036816 1.032449  0.8073532 0.9529308  1.117731   1.276039
+#> 1: 2021-12-03 1.041682 1.038992  0.7659975 0.9446526  1.134036   1.350692
+#> 2: 2021-12-04 1.042748 1.038827  0.7755440 0.9513116  1.131919   1.346471
+#> 3: 2021-12-05 1.044001 1.039777  0.7874364 0.9543437  1.132151   1.335327
+#> 4: 2021-12-06 1.045449 1.044896  0.7976320 0.9588722  1.129238   1.332912
+#> 5: 2021-12-07 1.047096 1.047486  0.8045988 0.9617819  1.130224   1.326906
 #>        type seeding
 #>      <fctr>  <lgcl>
 #> 1: estimate    TRUE
@@ -601,7 +607,7 @@ ww_result$fitted$diagnostic_summary()
 #> [1] 0 0 0 0
 #> 
 #> $ebfmi
-#> [1] 0.9272984 0.9189541 0.9192444 0.8973010
+#> [1] 0.8409685 0.9463659 0.8608124 0.9331239
 ```
 
 Finally, the `checksums` attribute gives us several checksums that
@@ -626,7 +632,7 @@ ww_result$checksums
 #> [1] "e92f83d0ca5d22b3bb5849d62c5412ee"
 #> 
 #> $init
-#> [1] "dc2507c9c9cfe7b8d05f117238d336bd"
+#> [1] "4494611d40e53efdda644ca85a2fa9e9"
 ```
 
 ## Finding out more

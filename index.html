@@ -108,6 +108,11 @@
 <li>🔧 <strong>Install CmdStan locally</strong>: See the <a href="https://adrian-lison.github.io/EpiSewer/articles/cmdstan-installation.html">cmdstan installation vignette</a> for step-by-step instructions.</li>
 <li>🐳 <strong>Use a Docker container</strong>: If you cannot install CmdStan on your system, you can run EpiSewer inside a pre-built Docker image. See the <a href="https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html">docker vignette</a> for instructions.</li>
 </ul>
+<div class="section level4">
+<h4 id="snakemake-workflow-snake">Snakemake workflow 🐍<a class="anchor" aria-label="anchor" href="#snakemake-workflow-snake"></a>
+</h4>
+<p><code>EpiSewer</code> can also be used with pipeline orchestration software - see <a href="https://github.com/adrian-lison/EpiSewer-snakemake" class="external-link">here</a> for a Snakemake workflow example.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
@@ -386,11 +391,11 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ww_result</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">R</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          date     mean   median lower_0.95 lower_0.5 upper_0.5 upper_0.95</span></span>
 <span><span class="co">#&gt;        &lt;Date&gt;    &lt;num&gt;    &lt;num&gt;      &lt;num&gt;     &lt;num&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1: 2021-12-03 1.033535 1.028817  0.7833869 0.9399895  1.122385   1.294914</span></span>
-<span><span class="co">#&gt; 2: 2021-12-04 1.034030 1.028373  0.7872094 0.9447821  1.121171   1.297848</span></span>
-<span><span class="co">#&gt; 3: 2021-12-05 1.034722 1.028168  0.7933240 0.9476269  1.118173   1.290570</span></span>
-<span><span class="co">#&gt; 4: 2021-12-06 1.035643 1.030817  0.8043344 0.9491813  1.118184   1.283502</span></span>
-<span><span class="co">#&gt; 5: 2021-12-07 1.036816 1.032449  0.8073532 0.9529308  1.117731   1.276039</span></span>
+<span><span class="co">#&gt; 1: 2021-12-03 1.041682 1.038992  0.7659975 0.9446526  1.134036   1.350692</span></span>
+<span><span class="co">#&gt; 2: 2021-12-04 1.042748 1.038827  0.7755440 0.9513116  1.131919   1.346471</span></span>
+<span><span class="co">#&gt; 3: 2021-12-05 1.044001 1.039777  0.7874364 0.9543437  1.132151   1.335327</span></span>
+<span><span class="co">#&gt; 4: 2021-12-06 1.045449 1.044896  0.7976320 0.9588722  1.129238   1.332912</span></span>
+<span><span class="co">#&gt; 5: 2021-12-07 1.047096 1.047486  0.8045988 0.9617819  1.130224   1.326906</span></span>
 <span><span class="co">#&gt;        type seeding</span></span>
 <span><span class="co">#&gt;      &lt;fctr&gt;  &lt;lgcl&gt;</span></span>
 <span><span class="co">#&gt; 1: estimate    TRUE</span></span>
@@ -408,7 +413,7 @@
 <span><span class="co">#&gt; [1] 0 0 0 0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $ebfmi</span></span>
-<span><span class="co">#&gt; [1] 0.9272984 0.9189541 0.9192444 0.8973010</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.8409685 0.9463659 0.8608124 0.9331239</span></span></code></pre></div>
 <p>Finally, the <code>checksums</code> attribute gives us several checksums that uniquely identify the job which was run. These can be used to check whether two job results used the same or different models, input data, fitting options, or inits. If all checksums are identical (and the seed is not <code>NULL</code>), then the results should also be identical.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ww_result</span><span class="op">$</span><span class="va">checksums</span></span>
@@ -425,7 +430,7 @@
 <span><span class="co">#&gt; [1] "e92f83d0ca5d22b3bb5849d62c5412ee"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $init</span></span>
-<span><span class="co">#&gt; [1] "dc2507c9c9cfe7b8d05f117238d336bd"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "4494611d40e53efdda644ca85a2fa9e9"</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
