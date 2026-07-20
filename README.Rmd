@@ -85,6 +85,9 @@ remotes::install_github("adrian-lison/EpiSewer", dependencies = TRUE)
 - `r emo::ji("wrench")` **Install CmdStan locally**: See the [cmdstan installation vignette](https://adrian-lison.github.io/EpiSewer/articles/cmdstan-installation.html) for step-by-step instructions.
 - `r emo::ji("whale")` **Use a Docker container**: If you cannot install CmdStan on your system, you can run EpiSewer inside a pre-built Docker image. See the [docker vignette](https://adrian-lison.github.io/EpiSewer/articles/docker-backend.html) for instructions.
 
+#### Snakemake workflow `r emo::ji("snake")`
+`EpiSewer` can also be used with pipeline orchestration software - see [here](https://github.com/adrian-lison/EpiSewer-snakemake) for a Snakemake workflow example.
+
 ## Introduction
 
 You have installed `EpiSewer` and the stan backend, and are ready to analyze your wastewater data? Then follow the quick introduction below to learn how to use the package.
