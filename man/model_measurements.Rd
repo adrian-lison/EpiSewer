@@ -36,7 +36,7 @@ for the limit of detection using a hurdle model. Modeling options:
 }}
 }
 \value{
-A \code{modeldata} object containing the data and specifications of the
+A module object containing the components of the
 \code{measurements} module.
 }
 \description{
@@ -48,11 +48,11 @@ functions (see available options below). See the documentation of the
 individual helper functions to adjust model priors and further settings.
 }
 \seealso{
-Other module functions:
-\code{\link[=model_forecast]{model_forecast()}},
-\code{\link[=model_infections]{model_infections()}},
-\code{\link[=model_sampling]{model_sampling()}},
-\code{\link[=model_sewage]{model_sewage()}},
-\code{\link[=model_shedding]{model_shedding()}}
+Other module functions: 
+\code{\link{model_forecast}()},
+\code{\link{model_infections}()},
+\code{\link{model_sampling}()},
+\code{\link{model_sewage}()},
+\code{\link{model_shedding}()}
 }
 \concept{module functions}

@@ -22,8 +22,7 @@ noise_estimate_dPCR_params(
   pre_replicate_cv_prior_mu = 0,
   pre_replicate_cv_prior_sigma = 1,
   prePCR_noise_type = "log-normal",
-  use_taylor_approx = TRUE,
-  modeldata = modeldata_init()
+  use_taylor_approx = TRUE
 )
 }
 \arguments{
@@ -116,20 +115,12 @@ is used to estimate the CV of measurements under pre-PCR noise. The
 approximation is very accurate, unless concentrations are extremely high
 (so high that the quality of the measurements from dPCR would anyway be
 questionable).}
-
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option models concentration measurements using an error
@@ -190,9 +181,9 @@ dPCR.
 \link{noise_estimate_dPCR} for a faster dPCR noise model with fixed assay
 parameters.
 
-Other noise models:
-\code{\link[=noise_estimate]{noise_estimate()}},
-\code{\link[=noise_estimate_constant_var]{noise_estimate_constant_var()}},
-\code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}
+Other noise models: 
+\code{\link{noise_estimate}()},
+\code{\link{noise_estimate_constant_var}()},
+\code{\link{noise_estimate_dPCR}()}
 }
 \concept{noise models}

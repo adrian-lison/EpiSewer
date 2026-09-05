@@ -12,8 +12,7 @@ concentrations_observe(
   replicate_col = NULL,
   n_averaged = 1,
   n_averaged_col = NULL,
-  total_partitions_col = NULL,
-  modeldata = modeldata_init()
+  total_partitions_col = NULL
 )
 }
 \arguments{
@@ -57,20 +56,12 @@ per replicate. Only applies when modeling concentration measurements via
 the dPCR-specific noise model. Can be used by the \code{\link[=noise_estimate_dPCR]{noise_estimate_dPCR()}}
 and \code{\link[=LOD_estimate_dPCR]{LOD_estimate_dPCR()}} modeling components. Note that this is really the
 number of \emph{valid} partitions, not the number of positive partitions.}
-
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option fits the \code{EpiSewer} model to pathogen concentrations
@@ -79,7 +70,7 @@ methods such as qPCR or dPCR. By default, the measured concentrations are
 modeled via a gamma likelihood.
 }
 \seealso{
-Other observation types:
-\code{\link[=concentrations_observe_partitions]{concentrations_observe_partitions()}}
+Other observation types: 
+\code{\link{concentrations_observe_partitions}()}
 }
 \concept{observation types}

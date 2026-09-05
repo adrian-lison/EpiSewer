@@ -7,8 +7,7 @@
 seeding_estimate_constant(
   intercept_prior_q5 = NULL,
   intercept_prior_q95 = NULL,
-  extend = TRUE,
-  modeldata = modeldata_init()
+  extend = TRUE
 )
 }
 \arguments{
@@ -33,20 +32,12 @@ low infection numbers during a period with many non-detects. Note that
 estimated reproduction numbers are not necessarily meaningful during
 periods with very low infection numbers, as transmission dynamics may be
 dominated by chance events and importations.}
-
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option estimates a constant number of infections at the

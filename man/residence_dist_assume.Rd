@@ -4,26 +4,18 @@
 \alias{residence_dist_assume}
 \title{Assume a sewer residence time distribution}
 \usage{
-residence_dist_assume(residence_dist = NULL, modeldata = modeldata_init())
+residence_dist_assume(residence_dist = NULL)
 }
 \arguments{
 \item{residence_dist}{A numeric vector representing a discrete residence time
 distribution, with elements describing the share of load that takes 0 days,
 1 day, 2 days, and so on to arrive at the sampling site.}
-
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option assumes a fixed residence time distribution for

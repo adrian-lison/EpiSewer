@@ -4,11 +4,7 @@
 \alias{shedding_dist_assume}
 \title{Assume a shedding load distribution}
 \usage{
-shedding_dist_assume(
-  shedding_dist = NULL,
-  shedding_reference = NULL,
-  modeldata = modeldata_init()
-)
+shedding_dist_assume(shedding_dist = NULL, shedding_reference = NULL)
 }
 \arguments{
 \item{shedding_dist}{A numeric vector representing a discrete shedding load
@@ -21,20 +17,12 @@ shedding load distributions provided in the literature are sometimes by
 days since infection and sometimes by days since symptom onset. If
 \code{shedding_reference="symptom_onset"}, EpiSewer also needs information about
 the incubation period distribution (see \code{\link[=incubation_dist_assume]{incubation_dist_assume()}}).}
-
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option assumes a fixed shedding load distribution for the

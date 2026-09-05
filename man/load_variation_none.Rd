@@ -4,22 +4,13 @@
 \alias{load_variation_none}
 \title{Do not model individual-level load variation}
 \usage{
-load_variation_none(modeldata = modeldata_init())
-}
-\arguments{
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
+load_variation_none()
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option assumes that there is no variation in the
@@ -27,7 +18,7 @@ total load shed per case, i.e. the individual shedding load is fixed to the
 average shedding load.
 }
 \seealso{
-Other load variation models:
-\code{\link[=load_variation_estimate]{load_variation_estimate()}}
+Other load variation models: 
+\code{\link{load_variation_estimate}()}
 }
 \concept{load variation models}

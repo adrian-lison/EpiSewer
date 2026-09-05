@@ -4,12 +4,7 @@
 \alias{flows_observe}
 \title{Observe wastewater flows}
 \usage{
-flows_observe(
-  flows = NULL,
-  date_col = "date",
-  flow_col = "flow",
-  modeldata = modeldata_init()
-)
+flows_observe(flows = NULL, date_col = "date", flow_col = "flow")
 }
 \arguments{
 \item{flows}{A \code{data.frame} with each row representing one day. Must have at
@@ -18,20 +13,12 @@ least a column with dates and a column with flow measurements.}
 \item{date_col}{Name of the column containing the dates.}
 
 \item{flow_col}{Name of the column containing the flows.}
-
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option accounts for daily wastewater flow volumes measured
@@ -45,7 +32,7 @@ measurements, e.g. if concentrations are measured in gc/mL, then the flow
 should be in mL as well.
 }
 \seealso{
-Other flow models:
-\code{\link[=flows_assume]{flows_assume()}}
+Other flow models: 
+\code{\link{flows_assume}()}
 }
 \concept{flow models}

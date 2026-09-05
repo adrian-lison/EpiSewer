@@ -15,8 +15,7 @@ R_estimate_splines(
   R_sd_global_prior_scale = 0.01,
   R_sd_global_change_distance = knot_distance_global,
   link = "inv_softplus",
-  R_max = 6,
-  modeldata = modeldata_init()
+  R_max = 6
 )
 }
 \arguments{
@@ -77,20 +76,12 @@ non-linear below (and in the case of \code{scaled_logit} also above) R=1.}
 \item{R_max}{If \code{link=scaled_logit} is used, a maximum reproduction number
 must be assumed. This should be higher than any realistic R value for the
 modeled pathogen. Default is 6.}
-
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option estimates the effective reproduction number Rt using
@@ -161,13 +152,13 @@ The priors of this component have the following functional form:
 }
 }
 \seealso{
-Other Rt models:
-\code{\link[=R_estimate_approx]{R_estimate_approx()}},
-\code{\link[=R_estimate_changepoint_splines]{R_estimate_changepoint_splines()}},
-\code{\link[=R_estimate_ets]{R_estimate_ets()}},
-\code{\link[=R_estimate_gp]{R_estimate_gp()}},
-\code{\link[=R_estimate_piecewise]{R_estimate_piecewise()}},
-\code{\link[=R_estimate_rw]{R_estimate_rw()}},
-\code{\link[=R_estimate_smooth_derivative]{R_estimate_smooth_derivative()}}
+Other Rt models: 
+\code{\link{R_estimate_approx}()},
+\code{\link{R_estimate_changepoint_splines}()},
+\code{\link{R_estimate_ets}()},
+\code{\link{R_estimate_gp}()},
+\code{\link{R_estimate_piecewise}()},
+\code{\link{R_estimate_rw}()},
+\code{\link{R_estimate_smooth_derivative}()}
 }
 \concept{Rt models}
