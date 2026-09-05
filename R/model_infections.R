@@ -37,11 +37,14 @@ model_infections <- function(
     R = R_estimate_gp(),
     seeding = seeding_estimate_rw(),
     infection_noise = infection_noise_estimate()) {
-  verify_is_modeldata(generation_dist, "generation_dist")
-  verify_is_modeldata(R, "R")
-  verify_is_modeldata(seeding, "seeding")
-  verify_is_modeldata(infection_noise, "infection_noise")
-  return(modeldata_combine(generation_dist, R, seeding, infection_noise))
+  verify_is_component(generation_dist, "generation_dist")
+  verify_is_component(R, "R")
+  verify_is_component(seeding, "seeding")
+  verify_is_component(infection_noise, "infection_noise")
+  return(new_module("infections", list(
+    generation_dist = generation_dist, R = R,
+    seeding = seeding, infection_noise = infection_noise
+  )))
 }
 
 #' Assume a generation time distribution
@@ -67,24 +70,22 @@ model_infections <- function(
 #'   [get_discrete_gamma_shifted()],
 #'   [get_discrete_lognormal()]
 generation_dist_assume <-
-  function(generation_dist = NULL, modeldata = modeldata_init()) {
-    modeldata <- tbp("generation_dist_assume",
+  function(generation_dist = NULL) {
+    model_component("generation_dist_assume", "generation_dist",
       {
+        generation_dist <- take_input(
+          modeldata, "generation_dist", "generation_dist",
+          type = "assumptions"
+        )
         generation_dist <- check_dist(
           generation_dist, "generation time distribution", min_length = 2
         )
         modeldata$G <- length(generation_dist)
         modeldata$generation_dist <- generation_dist
+        return(modeldata)
       },
-      required_assumptions = "generation_dist",
-      modeldata = modeldata
+      requires_assumptions = "generation_dist"
     )
-
-    modeldata$.str$infections[["generation_dist"]] <- list(
-      generation_dist_assume = c()
-    )
-
-    return(modeldata)
   }
 
 #'Estimate Rt via exponential smoothing
@@ -226,8 +227,9 @@ R_estimate_ets <- function(
     dampen_prior_mu = 0.9,
     dampen_prior_sigma = 0,
     differenced = FALSE,
-    noncentered = TRUE,
-    modeldata = modeldata_init()) {
+    noncentered = TRUE
+    ) {
+  model_component("R_estimate_ets", "R", {
 
   modeldata <- configure_R_model(
     name_approach = "ets",
@@ -261,9 +263,11 @@ R_estimate_ets <- function(
     modeldata$R_intercept_prior$R_intercept_prior[1]
   modeldata$.init$ets_trend_start <- 1e-4
 
-  modeldata <- tbc(
-    "R_ets_noise",
-    {
+  {
+      # resolve derived time-series lengths on demand
+      md_need(modeldata, ".metainfo$length_R_modeled")
+      md_need(modeldata, ".metainfo$partial_window")
+      md_need(modeldata, ".metainfo$partial_generation")
       modeldata$ets_length <- modeldata$.metainfo$length_R_modeled
       modeldata$.init$ets_noise <- rep(0, modeldata$.metainfo$length_R_modeled - 1)
       modeldata <- add_R_variability(
@@ -281,16 +285,7 @@ R_estimate_ets <- function(
       } else {
         modeldata$.init$R_sd_changepoints <- rep(1e-2, modeldata$R_vari_ncol)
       }
-    },
-    required = c(
-      ".metainfo$length_R_modeled",
-      ".metainfo$length_seeding",
-      ".metainfo$partial_window",
-      ".metainfo$partial_generation",
-      ".metainfo$forecast_horizon"
-    ),
-    modeldata = modeldata
-  )
+  }
 
   check_beta_alternative(smooth_prior_mu, smooth_prior_sigma)
   modeldata$ets_alpha_prior <- set_prior("ets_alpha", "beta",
@@ -329,11 +324,8 @@ R_estimate_ets <- function(
   modeldata <- add_dummies_smooth_derivative(modeldata)
   modeldata <- add_dummies_gp(modeldata)
 
-  modeldata$.str$infections[["R"]] <- list(
-    R_estimate_ets = c()
-  )
-
   return(modeldata)
+  })
 }
 
 #'Estimate Rt via a random walk
@@ -416,9 +408,8 @@ R_estimate_rw <- function(
     link = "inv_softplus",
     R_max = 6,
     differenced = FALSE,
-    noncentered = TRUE,
-    modeldata = modeldata_init()) {
-  modeldata <- R_estimate_ets(
+    noncentered = TRUE) {
+  component <- R_estimate_ets(
     R_start_prior_mu = R_start_prior_mu,
     R_start_prior_sigma = R_start_prior_sigma,
     sd_base_prior_mu = sd_base_prior_mu,
@@ -435,15 +426,10 @@ R_estimate_rw <- function(
     dampen_prior_mu = 0,
     dampen_prior_sigma = 0,
     differenced = differenced,
-    noncentered = noncentered,
-    modeldata = modeldata
+    noncentered = noncentered
   )
-
-  modeldata$.str$infections[["R"]] <- list(
-    R_estimate_rw = c()
-  )
-
-  return(modeldata)
+  component$name <- "R_estimate_rw"
+  return(component)
 }
 
 #'Estimate Rt via smoothing splines
@@ -573,8 +559,9 @@ R_estimate_splines <- function(
     R_sd_global_prior_scale = 1e-2,
     R_sd_global_change_distance = knot_distance_global,
     link = "inv_softplus",
-    R_max = 6,
-    modeldata = modeldata_init()) {
+    R_max = 6
+    ) {
+  model_component("R_estimate_splines", "R", {
 
   modeldata <- configure_R_model(
     name_approach = "splines",
@@ -586,9 +573,11 @@ R_estimate_splines <- function(
 
   spline_degree <- 3 # fixed to cubic splines
 
-  modeldata <- tbc(
-    "spline_definition",
-    {
+  {
+      # resolve derived time-series lengths on demand
+      md_need(modeldata, ".metainfo$length_R_modeled")
+      md_need(modeldata, ".metainfo$partial_window")
+      md_need(modeldata, ".metainfo$partial_generation")
       modeldata$.init$R_intercept <- 1
 
       # Global spline model for Rt
@@ -679,16 +668,7 @@ R_estimate_splines <- function(
         R_vari_selection_local, "R_vari_sel_local", modeldata
         )
 
-    },
-    required = c(
-      ".metainfo$length_R_modeled",
-      ".metainfo$length_seeding",
-      ".metainfo$partial_window",
-      ".metainfo$partial_generation",
-      ".metainfo$forecast_horizon"
-      ),
-    modeldata = modeldata
-  )
+  }
 
   modeldata$R_intercept_prior <- set_prior("R_intercept",
     "normal",
@@ -714,11 +694,8 @@ R_estimate_splines <- function(
   modeldata <- add_dummies_smooth_derivative(modeldata)
   modeldata <- add_dummies_gp(modeldata)
 
-  modeldata$.str$infections[["R"]] <- list(
-    R_estimate_splines = c()
-  )
-
   return(modeldata)
+  })
 }
 
 #' Estimate Rt using an approximation of the generative renewal model
@@ -840,8 +817,7 @@ R_estimate_approx <- function(
     inf_trend_dampen = 0.9,
     knot_distance = 7,
     spline_degree = 3,
-    R_window = 1,
-    modeldata = modeldata_init()) {
+    R_window = 1) {
   lifecycle::deprecate_stop(
     when = "v0.0.4",
     what = "R_estimate_approx()",
@@ -925,9 +901,9 @@ R_estimate_piecewise <- function(
     change_tolerance = 0.05,
     link = "inv_softplus",
     R_max = 6,
-    strictness_alpha = 1,
-    modeldata = modeldata_init()
+    strictness_alpha = 1
     ) {
+  model_component("R_estimate_piecewise", "R", {
 
   modeldata <-  configure_R_model(
     name_approach = "piecewise",
@@ -962,10 +938,11 @@ R_estimate_piecewise <- function(
     scale = change_prior_scale
   )
 
-  modeldata <- tbc(
-    "R_piecewise",
-    {
-      modeldata$.metainfo$R_knots <- knots
+  {
+      # resolve derived time-series lengths on demand
+      md_need(modeldata, ".metainfo$length_R_modeled")
+      md_need(modeldata, ".metainfo$partial_window")
+      md_need(modeldata, ".metainfo$partial_generation")
       modeldata <- use_soft_changepoints(
         scp_length = modeldata$.metainfo$length_R_modeled,
         last_knot = modeldata$.metainfo$length_R_modeled - changepoint_min_distance,
@@ -977,14 +954,7 @@ R_estimate_piecewise <- function(
         strictness_alpha = strictness_alpha,
         modeldata
         )
-    },
-    required = c(
-      ".metainfo$length_R_modeled",
-      ".metainfo$partial_window",
-      ".metainfo$partial_generation"
-    ),
-    modeldata = modeldata
-  )
+  }
 
   modeldata <- add_link_function(link, R_max, modeldata)
 
@@ -997,11 +967,8 @@ R_estimate_piecewise <- function(
   modeldata <- add_dummies_smooth_derivative(modeldata)
   modeldata <- add_dummies_gp(modeldata)
 
-  modeldata$.str$infections[["R"]] <- list(
-    R_estimate_piecewise = c()
-  )
-
   return(modeldata)
+  })
 }
 
 #' Estimate Rt via a changepoint spline model
@@ -1085,9 +1052,9 @@ R_estimate_changepoint_splines <- function(
     spline_knot_distance = 3,
     link = "inv_softplus",
     R_max = 6,
-    strictness_alpha = 0.5,
-    modeldata = modeldata_init()
-) {
+    strictness_alpha = 0.5
+    ) {
+  model_component("R_estimate_changepoint_splines", "R", {
 
   modeldata <-  configure_R_model(
     name_approach = "changepoint_splines",
@@ -1123,9 +1090,11 @@ R_estimate_changepoint_splines <- function(
                                            scale = trend_prior_scale
   )
 
-  modeldata <- tbc(
-    "R_changepoint_splines",
-    {
+  {
+      # resolve derived time-series lengths on demand
+      md_need(modeldata, ".metainfo$length_R_modeled")
+      md_need(modeldata, ".metainfo$partial_window")
+      md_need(modeldata, ".metainfo$partial_generation")
       # Spline model
       spline_knots <- list(
         interior = rev(seq(
@@ -1166,12 +1135,7 @@ R_estimate_changepoint_splines <- function(
         strictness_alpha = strictness_alpha,
         modeldata
       )
-    },
-    required = c(
-      ".metainfo$length_R_modeled"
-    ),
-    modeldata = modeldata
-  )
+  }
 
   modeldata <- add_link_function(link, R_max, modeldata)
 
@@ -1183,11 +1147,8 @@ R_estimate_changepoint_splines <- function(
   modeldata <- add_dummies_smooth_derivative(modeldata)
   modeldata <- add_dummies_gp(modeldata)
 
-  modeldata$.str$infections[["R"]] <- list(
-    R_estimate_changepoint_splines = c()
-  )
-
   return(modeldata)
+  })
 }
 
 #'@title Estimate Rt with a smooth derivative
@@ -1228,9 +1189,9 @@ R_estimate_smooth_derivative <- function(
     trend_prior_shape = 5,
     trend_prior_scale = 5e-3,
     link = "inv_softplus",
-    R_max = 6,
-    modeldata = modeldata_init()
-) {
+    R_max = 6
+    ) {
+  model_component("R_estimate_smooth_derivative", "R", {
 
   modeldata <-  configure_R_model(
     name_approach = "smooth_derivative",
@@ -1252,9 +1213,11 @@ R_estimate_smooth_derivative <- function(
      scale = trend_prior_scale
   )
 
-  modeldata <- tbc(
-    "R_smooth_derivative",
-    {
+  {
+      # resolve derived time-series lengths on demand
+      md_need(modeldata, ".metainfo$length_R_modeled")
+      md_need(modeldata, ".metainfo$partial_window")
+      md_need(modeldata, ".metainfo$partial_generation")
       # Spline model
       spline_knots <- list(
         interior = rev(seq(
@@ -1272,12 +1235,7 @@ R_estimate_smooth_derivative <- function(
       )
       modeldata$.init$bs_coeff_noise_raw <- rep(1e-4, modeldata$bs_ncol - 2)
       modeldata$.init$bs_coeff_noise_lomax <- rep(1e-4, modeldata$bs_ncol - 2)
-    },
-    required = c(
-      ".metainfo$length_R_modeled"
-    ),
-    modeldata = modeldata
-  )
+  }
 
   modeldata <- add_link_function(link, R_max, modeldata)
 
@@ -1289,11 +1247,8 @@ R_estimate_smooth_derivative <- function(
   modeldata <- add_dummies_soft_changepoints(modeldata)
   modeldata <- add_dummies_gp(modeldata)
 
-  modeldata$.str$infections[["R"]] <- list(
-    R_estimate_smooth_derivative = c()
-  )
-
   return(modeldata)
+  })
 }
 
 #' @title Estimate Rt using Gaussian processes
@@ -1423,9 +1378,9 @@ R_estimate_gp <- function(
     boundary_factor = 3,
     n_basis_factor = 3.42,
     link = "inv_softplus",
-    R_max = 6,
-    modeldata = modeldata_init()
-) {
+    R_max = 6
+    ) {
+  model_component("R_estimate_gp", "R", {
 
   modeldata <- configure_R_model(
     name_approach = "gp",
@@ -1484,9 +1439,11 @@ R_estimate_gp <- function(
   }
   modeldata$gp_c <- boundary_factor
 
-  modeldata <- tbc(
-    "R_gp",
-    {
+  {
+      # resolve derived time-series lengths on demand
+      md_need(modeldata, ".metainfo$length_R_modeled")
+      md_need(modeldata, ".metainfo$partial_window")
+      md_need(modeldata, ".metainfo$partial_generation")
       modeldata$gp_n <- with(
         modeldata$.metainfo, length_R_modeled + forecast_horizon
         )
@@ -1499,13 +1456,7 @@ R_estimate_gp <- function(
       l2 = max(1, length_scale_prior_mu - 2 * length_scale_prior_sigma) # length scale (5% quantile of prior)
       modeldata$gp2_m <- ceiling(n_basis_factor * modeldata$gp_c / (l2 / S)) # number of basis functions
       modeldata$.init$gp2_noise_raw <- rep(1e-4, modeldata$gp2_m)
-    },
-    required = c(
-      ".metainfo$length_R_modeled",
-      ".metainfo$forecast_horizon"
-    ),
-    modeldata = modeldata
-  )
+  }
 
   modeldata <- add_link_function(link, R_max, modeldata)
 
@@ -1519,11 +1470,8 @@ R_estimate_gp <- function(
   modeldata <- add_dummies_smooth_derivative(modeldata)
   modeldata$R_sd_change_prior <- c(-1, -1)
 
-  modeldata$.str$infections[["R"]] <- list(
-    R_estimate_gp = c()
-  )
-
   return(modeldata)
+  })
 }
 
 #' Add change point model for the variability of Rt
@@ -1614,8 +1562,8 @@ add_R_variability <- function(length_R, h, length_seeding, partial_window,
 seeding_estimate_constant <- function(
     intercept_prior_q5 = NULL,
     intercept_prior_q95 = NULL,
-    extend = TRUE,
-    modeldata = modeldata_init()) {
+    extend = TRUE) {
+  model_component("seeding_estimate_constant", "seeding", {
 
   modeldata$seeding_model <- 0
 
@@ -1630,18 +1578,13 @@ seeding_estimate_constant <- function(
   modeldata$.init$iota_log_seed_sd <- numeric(0)
   modeldata$.init$iota_log_ar_noise <- numeric(0)
 
-  modeldata$iota_log_seed_trend_reg <- tbe(
-    rep(0, modeldata$.metainfo$length_seeding),
-    ".metainfo$length_seeding"
-  )
-
-  modeldata$.metainfo$extend_seeding <- extend
-
-  modeldata$.str$infections[["seeding"]] <- list(
-    seeding_estimate_constant = c()
+  md_need(modeldata, ".metainfo$length_seeding") # also computes `se`
+  modeldata$iota_log_seed_trend_reg <- rep(
+    0, modeldata$.metainfo$length_seeding
   )
 
   return(modeldata)
+  })
 }
 
 #' Estimate seeding infections using a random walk model
@@ -1713,8 +1656,8 @@ seeding_estimate_rw <- function(
     intercept_prior_q95 = NULL,
     rel_change_prior_mu = 0.05,
     rel_change_prior_sigma = 0.025,
-    extend = TRUE,
-    modeldata = modeldata_init()) {
+    extend = TRUE) {
+  model_component("seeding_estimate_rw", "seeding", {
 
   modeldata$seeding_model <- 1
 
@@ -1733,27 +1676,19 @@ seeding_estimate_rw <- function(
   )
 
   modeldata$.init$iota_log_seed_sd <- 1
-  modeldata$.init$iota_log_ar_noise <- tbe(
-    rep(0, modeldata$.metainfo$length_seeding - 1),
-    ".metainfo$length_seeding"
+  md_need(modeldata, ".metainfo$length_seeding") # also computes `se`
+  modeldata$.init$iota_log_ar_noise <- rep(
+    0, modeldata$.metainfo$length_seeding - 1
   )
 
   # compute regression vector for estimating log-linear trend of seeding phase
-  modeldata$iota_log_seed_trend_reg <- tbe(
-    get_regression_linear_trend(
-      1:modeldata$.metainfo$length_seeding,
-      weights = c(rep(0,modeldata$se), rev(modeldata$generation_dist))
-      ),
-    c(".metainfo$length_seeding", "generation_dist")
-  )
-
-  modeldata$.metainfo$extend_seeding <- extend
-
-  modeldata$.str$infections[["seeding"]] <- list(
-    seeding_estimate_rw = c()
+  modeldata$iota_log_seed_trend_reg <- get_regression_linear_trend(
+    1:modeldata$.metainfo$length_seeding,
+    weights = c(rep(0,modeldata$se), rev(modeldata$generation_dist))
   )
 
   return(modeldata)
+  })
 }
 
 #' Estimate seeding infections with a time-varying growth rate
@@ -1810,8 +1745,8 @@ seeding_estimate_growth <- function(
     intercept_prior_q95 = NULL,
     growth_change_prior_mu = 0,
     growth_change_prior_sigma = 0.01,
-    extend = TRUE,
-    modeldata = modeldata_init()) {
+    extend = TRUE) {
+  model_component("seeding_estimate_growth", "seeding", {
 
   modeldata$seeding_model <- 2
 
@@ -1830,33 +1765,25 @@ seeding_estimate_growth <- function(
   )
 
   modeldata$.init$iota_log_seed_sd <- 1e-4
-  modeldata$.init$iota_log_ar_noise <- tbe(
-    rep(0, modeldata$.metainfo$length_seeding - 1),
-    ".metainfo$length_seeding"
+  md_need(modeldata, ".metainfo$length_seeding") # also computes `se`
+  modeldata$.init$iota_log_ar_noise <- rep(
+    0, modeldata$.metainfo$length_seeding - 1
   )
 
   # compute regression vector for estimating log-linear trend of seeding phase
-  modeldata$iota_log_seed_trend_reg <- tbe(
-    get_regression_linear_trend(
-      1:modeldata$.metainfo$length_seeding,
-      weights = c(rep(0,modeldata$se), rev(modeldata$generation_dist))
-    ),
-    c(".metainfo$length_seeding", "generation_dist")
-  )
-
-  modeldata$.metainfo$extend_seeding <- extend
-
-  modeldata$.str$infections[["seeding"]] <- list(
-    seeding_estimate_growth = c()
+  modeldata$iota_log_seed_trend_reg <- get_regression_linear_trend(
+    1:modeldata$.metainfo$length_seeding,
+    weights = c(rep(0,modeldata$se), rev(modeldata$generation_dist))
   )
 
   return(modeldata)
+  })
 }
 
 add_seeding_intercept_prior <- function(
     intercept_prior_q5, intercept_prior_q95,
     calling_f_name,
-    modeldata = modeldata_init()) {
+    modeldata) {
 
   help_seeding_f <- cli_help(calling_f_name)
 
@@ -1888,10 +1815,8 @@ add_seeding_intercept_prior <- function(
       modeldata$iota_log_seed_intercept_prior
     )
   } else {
-    modeldata <- tbc(
-      "seeding_prior",
-      {
-        cases_crude <- modeldata$.metainfo$initial_cases_crude
+    {
+        cases_crude <- md_need(modeldata, ".metainfo$initial_cases_crude")
         if (!is.null(intercept_prior_q5) && intercept_prior_q5 > cases_crude) {
           cli::cli_warn(paste0(
             "Warning from ",
@@ -1937,10 +1862,7 @@ add_seeding_intercept_prior <- function(
         modeldata$.init$iota_log_seed_intercept <- init_from_location_scale_prior(
           modeldata$iota_log_seed_intercept_prior
         )
-      },
-      required = ".metainfo$initial_cases_crude",
-      modeldata = modeldata
-    )
+    }
   }
   return(modeldata)
 }
@@ -1954,19 +1876,17 @@ add_seeding_intercept_prior <- function(
 #' @inherit modeldata_init return
 #' @export
 #' @family infection noise models
-infection_noise_none <- function(modeldata = modeldata_init()) {
-  modeldata$I_sample <- FALSE
-  modeldata$I_overdispersion <- FALSE
-  modeldata$I_xi_prior <- numeric(0)
-  modeldata$.init$I_xi <- numeric(0)
-  modeldata$.init$I <- numeric(0)
-  modeldata$.init$I_log <- numeric(0)
+infection_noise_none <- function() {
+  model_component("infection_noise_none", "infection_noise", {
+    modeldata$I_sample <- FALSE
+    modeldata$I_overdispersion <- FALSE
+    modeldata$I_xi_prior <- numeric(0)
+    modeldata$.init$I_xi <- numeric(0)
+    modeldata$.init$I <- numeric(0)
+    modeldata$.init$I_log <- numeric(0)
 
-  modeldata$.str$infections[["infection_noise"]] <- list(
-    infection_noise_none = c()
-  )
-
-  return(modeldata)
+    return(modeldata)
+  })
 }
 
 #' Estimate infection noise
@@ -2008,8 +1928,8 @@ infection_noise_none <- function(modeldata = modeldata_init()) {
 infection_noise_estimate <-
   function(overdispersion = TRUE,
            overdispersion_prior_mu = 0.1,
-           overdispersion_prior_sigma = 0,
-           modeldata = modeldata_init()) {
+           overdispersion_prior_sigma = 0) {
+    model_component("infection_noise_estimate", "infection_noise", {
 
     if (overdispersion_prior_mu == 0 && overdispersion_prior_sigma == 0) {
       modeldata$I_overdispersion <- FALSE
@@ -2031,27 +1951,17 @@ infection_noise_estimate <-
     }
 
     modeldata$I_sample <- TRUE
-    modeldata$.init$I <- tbe(
-      modeldata$.metainfo$infection_curve_crude$infections,
-      ".metainfo$infection_curve_crude"
+    infection_curve_crude <- md_need(
+      modeldata, ".metainfo$infection_curve_crude"
     )
-    modeldata$.init$I_log <- tbe(
-      log(modeldata$.metainfo$infection_curve_crude$infections),
-      ".metainfo$infection_curve_crude"
-    )
-    modeldata$.init$I_raw <- tbe(
-      rep(
-        0,
-        modeldata$.metainfo$length_I
-      ),
-      c(".metainfo$length_I")
-    )
-
-    modeldata$.str$infections[["infection_noise"]] <- list(
-      infection_noise_estimate = c(overdispersion = overdispersion)
+    modeldata$.init$I <- infection_curve_crude$infections
+    modeldata$.init$I_log <- log(infection_curve_crude$infections)
+    modeldata$.init$I_raw <- rep(
+      0, md_need(modeldata, ".metainfo$length_I")
     )
 
     return(modeldata)
+    })
   }
 
 add_link_function <- function(link, R_max, modeldata) {
