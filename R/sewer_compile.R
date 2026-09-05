@@ -325,9 +325,8 @@ spec_to_structure <- function(spec) {
     }
     helper <- slot_spec$.helper
     details <- component_str_details(helper, slot_spec)
-    entry <- list()
-    entry[[helper]] <- details
-    str[[modules[[slot]]]][[slot]] <- entry
+    # setNames(list(...)) keeps the element even when details is NULL/empty
+    str[[modules[[slot]]]][[slot]] <- setNames(list(details), helper)
   }
   class(str) <- "modelstructure"
   str
