@@ -192,50 +192,6 @@ logistic_deriv <- function(x, c, a, k) {
   return(a*c*k*exp(k*x)/((a+exp(k*x))^2))
 }
 
-check_list_nested <- function(list_to_check, flat_var, var_vals = NULL) {
-  if (is.null(var_vals)) {
-    var_vals <- rep(NA, length(flat_var))
-  }
-  vars_levels <- stringr::str_split(flat_var, "\\$")
-  presence <- mapply(function(levels, value) {
-    check_l <- list_to_check
-    for (l in levels) {
-      if (!(l %in% names(check_l))) {
-        return(FALSE)
-      } else {
-        check_l <- check_l[[l]]
-      }
-    }
-    if (any(c("tbe", "tbc", "tbp") %in% class(check_l))) {
-      return(FALSE)
-    } else if (!is.na(value)) {
-      return(check_l == value)
-    } else {
-      return(TRUE)
-    }
-  }, levels = vars_levels, value = var_vals)
-  return(presence)
-}
-
-default_list_nested <- function(list_to_validate, levels, default, i = 1) {
-  if (i < length(levels)) {
-    if (!(levels[i] %in% names(list_to_validate))) {
-      list_to_validate[[levels[i]]] <- default_list_nested(
-        list(), levels, default, i + 1
-      )
-    } else {
-      list_to_validate[[levels[i]]] <- default_list_nested(
-        list_to_validate[[levels[i]]], levels, default, i + 1
-      )
-    }
-  } else {
-    if (!(levels[i] %in% names(list_to_validate))) {
-      list_to_validate[[levels[i]]] <- default
-    }
-  }
-  return(list_to_validate)
-}
-
 list_except <- function(l, except) {
   sel <- names(l)[!(names(l) %in% except)]
   return(l[sel])

@@ -61,8 +61,7 @@ model_infections <- function(
 #'   time distribution, starting with the probability for a generation time of 1
 #'   day, 2 days, 3 days, and so on (a generation time of 0 days is excluded).
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @seealso Helpers to discretize continuous probability distributions:
@@ -204,8 +203,7 @@ generation_dist_assume <-
 #' - trend smoothing parameter: `Beta`
 #' - damping parameter: `Beta`
 #'
-#'@inheritParams template_model_helpers
-#'@inherit modeldata_init return
+#'@inherit template_model_helpers return
 #'@export
 #'@family Rt models
 R_estimate_ets <- function(
@@ -393,8 +391,7 @@ R_estimate_ets <- function(
 #' - baseline standard deviation of the random walk: `Half-normal`
 #' - additional standard deviation at changepoints: `Exponential-Gamma`
 #'
-#'@inheritParams template_model_helpers
-#'@inherit modeldata_init return
+#'@inherit template_model_helpers return
 #'@export
 #'@family Rt models
 R_estimate_rw <- function(
@@ -544,8 +541,7 @@ R_estimate_rw <- function(
 #'- daily standard deviation of the random walk over global spline coefficients:
 #'  `Exponential-Gamma`
 #'
-#'@inheritParams template_model_helpers
-#'@inherit modeldata_init return
+#'@inherit template_model_helpers return
 #'@export
 #'@family Rt models
 R_estimate_splines <- function(
@@ -805,8 +801,7 @@ R_estimate_splines <- function(
 #'   [R_estimate_splines()] for a pathogen of interest and to carefully adjust
 #'   the smoothing hyperparameters if needed.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family Rt models
 R_estimate_approx <- function(
@@ -887,8 +882,7 @@ R_estimate_approx <- function(
 #'
 #' @inheritParams R_estimate_splines
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family Rt models
 R_estimate_piecewise <- function(
@@ -1037,8 +1031,7 @@ R_estimate_piecewise <- function(
 #'
 #' @inheritParams R_estimate_splines
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family Rt models
 R_estimate_changepoint_splines <- function(
@@ -1178,8 +1171,7 @@ R_estimate_changepoint_splines <- function(
 #'
 #'@inheritParams R_estimate_splines
 #'
-#'@inheritParams template_model_helpers
-#'@inherit modeldata_init return
+#'@inherit template_model_helpers return
 #'@export
 #'@family Rt models
 R_estimate_smooth_derivative <- function(
@@ -1359,8 +1351,7 @@ R_estimate_smooth_derivative <- function(
 #'
 #' @inheritParams R_estimate_splines
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family Rt models
 R_estimate_gp <- function(
@@ -1479,7 +1470,6 @@ R_estimate_gp <- function(
 #' @param length_R Length of the modeled Rt time series
 #' @param changepoint_dist How many days should the change points be apart? If
 #'   zero, no change points are modeled (fixed R variability).
-#' @inheritParams template_model_helpers
 #'
 #' @details The change points are placed going backwards from the end of the
 #'   time series, i.e. on the last day, then `changepoint_dist` days before
@@ -1487,7 +1477,7 @@ R_estimate_gp <- function(
 #'   the start of the time series (partly falls into the seeding phase) varies
 #'   between half and double the `changepoint_dist`.
 #'
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @keywords internal
 add_R_variability <- function(length_R, h, length_seeding, partial_window,
                               partial_generation,
@@ -1556,8 +1546,7 @@ add_R_variability <- function(length_R, h, length_seeding, partial_window,
 #' @details The priors of this component have the following functional form:
 #' - initial number of infections (log scale): `Normal`
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 seeding_estimate_constant <- function(
     intercept_prior_q5 = NULL,
@@ -1648,8 +1637,7 @@ seeding_estimate_constant <- function(
 #'   thumb.
 #'
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 seeding_estimate_rw <- function(
     intercept_prior_q5 = NULL,
@@ -1737,8 +1725,7 @@ seeding_estimate_rw <- function(
 #'   the idea to back-calculate the growth rate of the seeding phase from the
 #'   initial reproduction number.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 seeding_estimate_growth <- function(
     intercept_prior_q5 = NULL,
@@ -1872,8 +1859,7 @@ add_seeding_intercept_prior <- function(
 #' This option does not model noise in the infection process and instead
 #' implements a deterministic renewal model.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family infection noise models
 infection_noise_none <- function() {
@@ -1921,8 +1907,7 @@ infection_noise_none <- function() {
 #' @details The priors of this component have the following functional form:
 #' - overdispersion parameter of the Negative Binomial: `Truncated normal`
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family infection noise models
 infection_noise_estimate <-

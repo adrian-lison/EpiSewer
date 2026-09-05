@@ -64,8 +64,7 @@ model_shedding <- function(
 #'   period distribution, starting with the probability for an incubation period
 #'   of 0 days, 1 day, 2 days, and so on.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @seealso Helpers to discretize continuous probability distributions:
@@ -124,8 +123,7 @@ incubation_dist_assume <-
 #'   `shedding_reference="symptom_onset"`, EpiSewer also needs information about
 #'   the incubation period distribution (see [incubation_dist_assume()]).
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @seealso Helpers to discretize continuous probability distributions:
@@ -215,8 +213,7 @@ shedding_dist_assume <-
 #'   separately, i.e. in each posterior sample, one of the prior distributions
 #'   is given almost all the weight.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 shedding_dist_estimate <-
   function(shedding_dist_mean_prior_mean = NULL,
@@ -402,8 +399,7 @@ shedding_dist_estimate <-
 #'   if concentration is measured in gc/mL (gc = gene copies), then
 #'   `load_per_case` should also be in gc.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @seealso {Helper for finding a suitable load per case assumption:}
@@ -478,8 +474,7 @@ load_per_case_assume <-
 #'   argument allows to average over a set of relative shifts between the two
 #'   time series.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family load per case functions
 load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
@@ -607,8 +602,7 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
 #'   total load shed per case, i.e. the individual shedding load is fixed to the
 #'   average shedding load.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family load variation models
 load_variation_none <- function() {
@@ -661,8 +655,7 @@ load_variation_none <- function() {
 #'   - the population-level CV will be underestimated (especially if the prior
 #'   on the individual-level CV is strong)
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family load variation models
 load_variation_estimate <- function(

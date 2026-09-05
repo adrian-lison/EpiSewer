@@ -79,8 +79,7 @@ model_measurements <- function(
 #'   and [LOD_estimate_dPCR()] modeling components. Note that this is really the
 #'   number of *valid* partitions, not the number of positive partitions.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #'
 #' @keywords internal
 measurements_observe_ <- function(
@@ -273,9 +272,8 @@ measurements_observe_ <- function(
 #'   methods such as qPCR or dPCR. By default, the measured concentrations are
 #'   modeled via a gamma likelihood.
 #'
-#' @inheritParams template_model_helpers
 #' @inheritParams measurements_observe_
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #'
 #' @export
 #' @family observation types
@@ -309,9 +307,8 @@ concentrations_observe <- function(
 #'   of positive partitions observed. For a more generic likelihood, see
 #'   [concentrations_observe()].
 #'
-#' @inheritParams template_model_helpers
 #' @inheritParams measurements_observe_
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #'
 #' @export
 #' @family observation types
@@ -524,8 +521,7 @@ match_obs_dist <- function(distribution) {
 #'   (so high that the quality of the measurements from dPCR would anyway be
 #'   questionable).
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @keywords internal
 noise_estimate_ <-
   function(replicates = FALSE,
@@ -842,8 +838,7 @@ noise_estimate_ <-
 #'   `Truncated normal`
 #'
 #' @inheritParams noise_estimate_
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family noise models
 noise_estimate <-
@@ -930,8 +925,7 @@ noise_estimate <-
 #'   `Truncated normal`
 #'
 #' @inheritParams noise_estimate_
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family noise models
 #' @seealso [LOD_estimate_dPCR] for a limit of detection model specialised for
@@ -1046,8 +1040,7 @@ noise_estimate_dPCR_params <-
 #'   `Truncated normal`
 #'
 #' @inheritParams noise_estimate_
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family noise models
 #' @seealso [LOD_estimate_dPCR] for a limit of detection model specialised for
@@ -1120,8 +1113,7 @@ noise_estimate_dPCR <-
 #' @param warn If `TRUE` (default), a warning is shown that constant variance
 #'   modeling is not recommended. Set to `FALSE` to suppress this warning.
 #' @inheritParams noise_estimate_
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family noise models
 noise_estimate_constant_var <-
@@ -1171,8 +1163,7 @@ noise_estimate_constant_var <-
 #'   the corresponding observations are dropped, this will discard information,
 #'   but not bias estimates.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family LOD models
 LOD_none <- function() {
@@ -1235,8 +1226,7 @@ LOD_none <- function() {
 #'   higher than specified under `limit`, depending on the estimated pre-PCR
 #'   noise.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @seealso {Visualize the assumed LOD as a function of concentration:}
@@ -1291,8 +1281,7 @@ LOD_assume <- function(limit = NULL, prob = 0.95, LOD_type = "exponential",
 #'   therefore only be used together with `noise = noise_estimate_dPCR()` or
 #'   `noise = noise_estimate_dPCR_params()` in [model_measurements()].
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @family LOD models
