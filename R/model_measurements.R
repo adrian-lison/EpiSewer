@@ -338,6 +338,37 @@ concentrations_observe_partitions <- function(
         total_partitions_col = total_partitions_col))
 }
 
+#' Compute the dPCR partition prior specifications from noise helper arguments
+#'
+#' @description Mirrors the prior computations of the dPCR noise component,
+#'   returning the flattened numeric prior vectors (as they appear in
+#'   `job$data`). Used by [plot_prior_partitions()].
+#' @keywords internal
+dPCR_partition_priors <- function(args) {
+  max_partitions_prior <- set_prior(
+    "max_partitions", "uniform",
+    a = args$max_partitions_prior_lower,
+    b = args$max_partitions_prior_upper
+  )
+  partition_loss_mu_prior <- set_prior_normal(
+    "partition_loss_mu", "normal",
+    q5 = qlogis(args$partition_loss_mean_prior_lower),
+    q95 = qlogis(args$partition_loss_mean_prior_upper)
+  )
+  partition_loss_sigma_prior <- set_prior_trunc_normal(
+    "partition_loss_sigma", "truncated normal",
+    q5 = args$partition_loss_variation_prior_lower,
+    q95 = args$partition_loss_variation_prior_upper
+  )
+  list(
+    max_partitions_prior = max_partitions_prior$max_partitions_prior,
+    partition_loss_mu_prior = partition_loss_mu_prior$partition_loss_mu_prior,
+    partition_loss_sigma_prior =
+      partition_loss_sigma_prior$partition_loss_sigma_prior,
+    partition_loss_max = min(args$partition_loss_max, 1 - 1e-6)
+  )
+}
+
 #' Check the supplied observation distribution type and return the internal id
 #'
 #' @keywords internal

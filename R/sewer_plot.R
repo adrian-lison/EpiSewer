@@ -1214,7 +1214,33 @@ plot_sample_effects <- function(results,
 #' modeldata <- LOD_assume(limit = 2.56, prob = 0.95)
 #' plot_LOD(modeldata)
 plot_LOD <- function(modeldata) {
-  lod_model <- modeldata$.str$measurements$LO
+  if (inherits(modeldata, "model_component")) {
+    component <- modeldata
+    if (component$name == "LOD_none") {
+      cli::cli_abort(
+        "LOD cannot be plotted when using LOD_none()."
+      )
+    } else if (component$name != "LOD_assume") {
+      cli::cli_abort(
+        paste0(
+          "LOD plotting is currently only supported for LOD_assume(). ",
+          "The provided model uses ", component$name, "() instead."
+        )
+      )
+    }
+    if (is.null(component$args$limit)) {
+      cli::cli_abort(paste(
+        "To plot the LOD, please provide a limit to LOD_assume()."
+      ))
+    }
+    modeldata <- list(
+      LOD_model = 1,
+      LOD_scale = -log(1 - component$args$prob) / component$args$limit
+    )
+    lod_model <- list(LOD_assume = c())
+  } else {
+    lod_model <- modeldata$.str$measurements$LO
+  }
   if (is.null(lod_model)) {
     cli::cli_abort(
       "No LOD model is currently included in the modeldata."
@@ -1453,8 +1479,8 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
 
 #' Plot prior distributions for total number of partitions
 #'
-#' @param modeldata A `modeldata` object as returned by
-#' [noise_estimate_dPCR_params()].
+#' @param modeldata A model component as returned by
+#' [noise_estimate_dPCR_params()], or an `EpiSewer` job/result object.
 #' @param n_draws Number of draws to simulate from the prior distributions.
 #' @param show_draws Number of example draws to show in the plots.
 #' @param seed Seed for random number generation to ensure reproducibility.
@@ -1464,7 +1490,15 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
 #'   deviation of valid partitions.
 #' @keywords internal
 plot_prior_partitions <- function(modeldata, n_draws = 1000, show_draws = 50, seed = 0) {
-  if ("job" %in% names(modeldata)) {
+  if (inherits(modeldata, "model_component")) {
+    if (!identical(modeldata$name, "noise_estimate_dPCR_params")) {
+      cli::cli_abort(paste(c(
+        "Plotting the prior for the total number of partitions in dPCR only works",
+        "for components returned by `noise_estimate_dPCR_params()`."
+      )))
+    }
+    modeldata <- dPCR_partition_priors(modeldata$args)
+  } else if ("job" %in% names(modeldata)) {
     modeldata <- modeldata$job$data
   }
 
