@@ -322,7 +322,7 @@ modeldata_defaults <- function() {
     "K" = 0,
     "X" = numeric(0),
     "eta_prior" = numeric(0),
-    "init$eta" = numeric(0)
+    ".init$eta" = numeric(0)
   )
   return(defaults)
 }
