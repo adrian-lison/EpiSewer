@@ -20,7 +20,7 @@
 #'   samples. Modeling options:
 #'   `r component_functions_("sample_effects")`
 #'
-#' @return A `modeldata` object containing the data and specifications of the
+#' @return A module object containing the components of the
 #'   `sampling` module.
 #' @export
 #' @family module functions
@@ -28,9 +28,11 @@ model_sampling <- function(
     outliers = outliers_estimate(),
     sample_effects = sample_effects_none()
     ) {
-  verify_is_modeldata(outliers, "outliers")
-  verify_is_modeldata(sample_effects, "sample_effects")
-  return(modeldata_combine(outliers, sample_effects))
+  verify_is_component(outliers, "outliers")
+  verify_is_component(sample_effects, "sample_effects")
+  return(new_module("sampling", list(
+    outliers = outliers, sample_effects = sample_effects
+  )))
 }
 
 #' Do not model sample effects
@@ -38,21 +40,18 @@ model_sampling <- function(
 #' @description This option does not model effects of sample covariates on the
 #'   concentrations.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family sample effect models
-sample_effects_none <- function(modeldata = modeldata_init()) {
-  modeldata$K <- 0
-  modeldata$X <- numeric(0)
-  modeldata$eta_prior <- numeric(0)
-  modeldata$.init$eta <- numeric(0)
+sample_effects_none <- function() {
+  model_component("sample_effects_none", "sample_effects", {
+    modeldata$K <- 0
+    modeldata$X <- numeric(0)
+    modeldata$eta_prior <- numeric(0)
+    modeldata$.init$eta <- numeric(0)
 
-  modeldata$.str$sampling[["sample_effects"]] <- list(
-    sample_effects_none = c()
-  )
-
-  return(modeldata)
+    return(modeldata)
+  })
 }
 
 #' Estimate weekday sample effects
@@ -74,44 +73,33 @@ sample_effects_none <- function(modeldata = modeldata_init()) {
 #' @details The priors of this component have the following functional form:
 #' - regression coefficients: `Normal`
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family sample effect models
 sample_effects_estimate_weekday <- function(
     effect_prior_mu = 0,
-    effect_prior_sigma = 1,
-    modeldata = modeldata_init()) {
-  modeldata <- tbc(
-    "weekday_design_matrix",
-    {
-      weekdays <- lubridate::wday(
-        seq.Date(
-          modeldata$.metainfo$T_start_date,
-          modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
-          by = "1 day"
-        ),
-        label = TRUE
+    effect_prior_sigma = 1) {
+  model_component("sample_effects_estimate_weekday", "sample_effects", {
+    weekdays <- lubridate::wday(
+      seq.Date(
+        modeldata$.metainfo$T_start_date,
+        modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
+        by = "1 day"
+      ),
+      label = TRUE
+    )
+    design_matrix <- model.matrix(
+      ~wday,
+      data.frame(wday = weekdays),
+      contrasts.arg = list(wday = "contr.treatment")
+    )[, -1]
+    modeldata <-
+      sample_effects_matrix_(
+        design_matrix, effect_prior_mu, effect_prior_sigma, modeldata
       )
-      design_matrix <- model.matrix(
-        ~wday,
-        data.frame(wday = weekdays),
-        contrasts.arg = list(wday = "contr.treatment")
-      )[, -1]
-      modeldata <-
-        sample_effects_estimate_matrix(
-          design_matrix, effect_prior_mu, effect_prior_sigma, modeldata
-        )
-    },
-    required = c(".metainfo$T_start_date", ".metainfo$T_end_date", ".metainfo$forecast_horizon"),
-    modeldata = modeldata
-  )
 
-  modeldata$.str$sampling[["sample_effects"]] <- list(
-    sample_effects_estimate_weekday = c()
-  )
-
-  return(modeldata)
+    return(modeldata)
+  })
 }
 
 #' Estimate sample effects using a design matrix
@@ -136,50 +124,54 @@ sample_effects_estimate_weekday <- function(
 #' @details The priors of this component have the following functional form:
 #' - regression coefficients: `Normal`
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family sample effect models
 sample_effects_estimate_matrix <- function(
     design_matrix,
     effect_prior_mu = 0,
-    effect_prior_sigma = 1,
-    modeldata = modeldata_init()) {
-  eta_prior <- set_prior(
+    effect_prior_sigma = 1) {
+  model_component("sample_effects_estimate_matrix", "sample_effects", {
+    modeldata <- sample_effects_matrix_(
+      design_matrix, effect_prior_mu, effect_prior_sigma, modeldata
+    )
+    return(modeldata)
+  })
+}
+
+#' Add a sample effects design matrix to modeldata (shared internal)
+#'
+#' @description Used by [sample_effects_estimate_matrix()] and
+#'   [sample_effects_estimate_weekday()].
+#' @keywords internal
+sample_effects_matrix_ <- function(design_matrix,
+                                   effect_prior_mu,
+                                   effect_prior_sigma,
+                                   modeldata) {
+  if (!(modeldata$T + modeldata$.metainfo$forecast_horizon ==
+        nrow(design_matrix))) {
+    cli::cli_abort(
+      paste(
+        "Mismatch: Modeled time period has",
+        modeldata$T + modeldata$.metainfo$forecast_horizon,
+        "days (from earliest to latest date, including forecasts and",
+        "accounting for the composite window length),",
+        "but design matrix for sample date effects has",
+        nrow(design_matrix),
+        "rows."
+      )
+    )
+  }
+
+  modeldata$K <- ncol(design_matrix)
+  modeldata$X <- design_matrix
+
+  modeldata$eta_prior <- set_prior(
     "eta", "normal",
     mu = effect_prior_mu, sigma = effect_prior_sigma
   )
 
-  modeldata <- tbc(
-    "check_design_matrix",
-    {
-      if (!(modeldata$T + modeldata$.metainfo$forecast_horizon == nrow(design_matrix))) {
-        cli::cli_abort(
-          paste(
-            "Mismatch: Modeled time period has",
-            modeldata$T + modeldata$.metainfo$forecast_horizon,
-            "days (from earliest to latest date, including forecasts and",
-            "accounting for the composite window length),",
-            "but design matrix for sample date effects has",
-            nrow(design_matrix),
-            "rows."
-          )
-        )
-      }
-    },
-    required = c("T", ".metainfo$forecast_horizon"),
-    modeldata = modeldata
-  )
-  modeldata$K <- ncol(design_matrix)
-  modeldata$X <- design_matrix
-
-  modeldata$eta_prior <- eta_prior
-
   modeldata$.init$eta <- rep(0, modeldata$K)
-
-  modeldata$.str$sampling[["sample_effects"]] <- list(
-    sample_effects_estimate_matrix = c()
-  )
 
   return(modeldata)
 }
@@ -188,20 +180,17 @@ sample_effects_estimate_matrix <- function(
 #'
 #' @description This option does not model outliers in sampled concentrations.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family outlier models
-outliers_none <- function(modeldata = modeldata_init()) {
-  modeldata$outliers <- FALSE
-  modeldata$epsilon_prior <- numeric(0)
-  modeldata$.init$epsilon <- numeric(0)
+outliers_none <- function() {
+  model_component("outliers_none", "outliers", {
+    modeldata$outliers <- FALSE
+    modeldata$epsilon_prior <- numeric(0)
+    modeldata$.init$epsilon <- numeric(0)
 
-  modeldata$.str$sampling[["outliers"]] <- list(
-    outliers_none = c()
-  )
-
-  return(modeldata)
+    return(modeldata)
+  })
 }
 
 #' Model outliers via an extreme value distribution
@@ -235,25 +224,19 @@ outliers_none <- function(modeldata = modeldata_init()) {
 #'   loads and concentrations will be theoretically infinite if this modeling
 #'   option is used. The median remains be well-behaved.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family outlier models
 outliers_estimate <- function(gev_prior_mu = 0, gev_prior_sigma = 2e-8,
-                              gev_prior_xi = 4, modeldata = modeldata_init()) {
-  modeldata$outliers <- TRUE
-  modeldata$epsilon_prior <- set_prior(
-    "epsilon", dist = "gev", mu = gev_prior_mu,
-    sigma = gev_prior_sigma, xi = gev_prior_xi
-    )
-  modeldata$.init$epsilon <- tbe(
-    rep(1e-4, modeldata$T),
-    required = c("T")
-  )
+                              gev_prior_xi = 4) {
+  model_component("outliers_estimate", "outliers", {
+    modeldata$outliers <- TRUE
+    modeldata$epsilon_prior <- set_prior(
+      "epsilon", dist = "gev", mu = gev_prior_mu,
+      sigma = gev_prior_sigma, xi = gev_prior_xi
+      )
+    modeldata$.init$epsilon <- rep(1e-4, modeldata$T)
 
-  modeldata$.str$sampling[["outliers"]] <- list(
-    outliers_estimate = c()
-  )
-
-  return(modeldata)
+    return(modeldata)
+  })
 }
