@@ -18,16 +18,18 @@
 #'   when they were shed into the wastewater. Modeling options:
 #' `r component_functions_("residence_dist")`
 #'
-#' @return A `modeldata` object containing the data and specifications of the
+#' @return A module object containing the components of the
 #'   `sewage` module.
 #' @export
 #' @family module functions
 model_sewage <- function(
     flows = flows_observe(),
     residence_dist = residence_dist_assume()) {
-  verify_is_modeldata(flows, "flows")
-  verify_is_modeldata(residence_dist, "residence_dist")
-  return(modeldata_combine(flows, residence_dist))
+  verify_is_component(flows, "flows")
+  verify_is_component(residence_dist, "residence_dist")
+  return(new_module("sewage", list(
+    flows = flows, residence_dist = residence_dist
+  )))
 }
 
 #' Assume a constant wastewater flow
@@ -48,37 +50,20 @@ model_sewage <- function(
 #'   in the assumed `load_per_case`. For this purpose, the function
 #'   [suggest_load_per_case()] offers a `flow_constant` argument.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family flow models
-flows_assume <- function(
-    flow_constant,
-    modeldata = modeldata_init()) {
-  modeldata <- tbc(
-    "flow_data",
-    {
-      all_dates <-
-        seq.Date(
-          modeldata$.metainfo$T_start_date,
-          modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
-          by = "1 day"
-        )
-      modeldata$flow <- rep(flow_constant, length(all_dates))
-    },
-    required = c(
-      ".metainfo$T_start_date",
-      ".metainfo$T_end_date",
-      ".metainfo$forecast_horizon"
-      ),
-    modeldata = modeldata
-  )
-
-  modeldata$.str$sewage[["flows"]] <- list(
-    flows_assume = c()
-  )
-
-  return(modeldata)
+flows_assume <- function(flow_constant) {
+  model_component("flows_assume", "flows", {
+    all_dates <-
+      seq.Date(
+        modeldata$.metainfo$T_start_date,
+        modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
+        by = "1 day"
+      )
+    modeldata$flow <- rep(flow_constant, length(all_dates))
+    return(modeldata)
+  })
 }
 
 #' Observe wastewater flows
@@ -97,17 +82,18 @@ flows_assume <- function(
 #' @param date_col Name of the column containing the dates.
 #' @param flow_col Name of the column containing the flows.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family flow models
 flows_observe <-
   function(flows = NULL,
            date_col = "date",
-           flow_col = "flow",
-           modeldata = modeldata_init()) {
-    modeldata <- tbp("flows_observe",
+           flow_col = "flow") {
+    model_component("flows_observe", "flows",
       {
+        flows <- take_input(modeldata, "flows", "flows", type = "data")
+        modeldata$.staging$flows <- flows
+
         required_data_cols <- c(date_col, flow_col)
         if (!all(required_data_cols %in% names(flows))) {
           cli::cli_abort(
@@ -122,7 +108,9 @@ flows_observe <-
         }
 
         flows = as.data.table(flows)[, .SD, .SDcols = required_data_cols]
-        flows <- setnames(flows, old = c(date_col, flow_col), new = c("date", "flow"))
+        flows <- setnames(
+          flows, old = c(date_col, flow_col), new = c("date", "flow")
+        )
         modeldata$.metainfo$flows_cols <- list(
           date_col = date_col,
           flow_col = flow_col
@@ -139,92 +127,75 @@ flows_observe <-
           }
         }
 
-        modeldata <- tbc(
-          "flow_data",
-          {
-            all_dates <-
-              seq.Date(
-                modeldata$.metainfo$T_start_date,
-                modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
-                by = "1 day"
-              )
-            missing_flow_dates <-
-              lubridate::as_date(
-                setdiff(all_dates, flows[!is.na(flow), date])
-              )
-            if (length(missing_flow_dates) > 0) {
-              if (any(missing_flow_dates %in% modeldata$.metainfo$measured_dates)) {
-              cli::cli_abort(paste(
-                "Missing flow values for the following sampled dates:",
-                paste(lubridate::as_date(intersect(
-                  missing_flow_dates,
-                  modeldata$.metainfo$measured_dates
-                  )), collapse = ", ")
-              ))
-              } else {
-                n_estimate = sum(missing_flow_dates <= modeldata$.metainfo$T_end_date)
-                n_forecast = sum(missing_flow_dates > modeldata$.metainfo$T_end_date)
-                if (n_forecast == 0) {
-                  text_dates <- paste(n_estimate, "unsampled dates")
-                } else if (n_estimate == 0) {
-                  text_dates <- paste(n_forecast, "forecasting dates")
-                } else {
-                  text_dates <- paste(
-                    n_estimate, "unsampled and", n_forecast, "forecasting dates"
-                    )
-                }
-                cli::cli_inform(c(
-                  "!" = paste(
-                    "EpiSewer will impute missing flow data for", text_dates,
-                    "using the median flow value."),
-                  "*" = paste(
-                     "This has no impact on model fitting and Rt estimation -",
-                    "but means that absolute concentrations on these",
-                    "unobserved dates may not be accurately predicted."),
-                  "*" = paste(
-                    "To disable this warning, please impute the missing",
-                    "flow data manually before running EpiSewer.")
-                ))
+        all_dates <-
+          seq.Date(
+            modeldata$.metainfo$T_start_date,
+            modeldata$.metainfo$T_end_date +
+              modeldata$.metainfo$forecast_horizon,
+            by = "1 day"
+          )
+        missing_flow_dates <-
+          lubridate::as_date(
+            setdiff(all_dates, flows[!is.na(flow), date])
+          )
+        if (length(missing_flow_dates) > 0) {
+          if (any(missing_flow_dates %in% modeldata$.metainfo$measured_dates)) {
+          cli::cli_abort(paste(
+            "Missing flow values for the following sampled dates:",
+            paste(lubridate::as_date(intersect(
+              missing_flow_dates,
+              modeldata$.metainfo$measured_dates
+              )), collapse = ", ")
+          ))
+          } else {
+            n_estimate = sum(missing_flow_dates <= modeldata$.metainfo$T_end_date)
+            n_forecast = sum(missing_flow_dates > modeldata$.metainfo$T_end_date)
+            if (n_forecast == 0) {
+              text_dates <- paste(n_estimate, "unsampled dates")
+            } else if (n_estimate == 0) {
+              text_dates <- paste(n_forecast, "forecasting dates")
+            } else {
+              text_dates <- paste(
+                n_estimate, "unsampled and", n_forecast, "forecasting dates"
+                )
+            }
+            cli::cli_inform(c(
+              "!" = paste(
+                "EpiSewer will impute missing flow data for", text_dates,
+                "using the median flow value."),
+              "*" = paste(
+                 "This has no impact on model fitting and Rt estimation -",
+                "but means that absolute concentrations on these",
+                "unobserved dates may not be accurately predicted."),
+              "*" = paste(
+                "To disable this warning, please impute the missing",
+                "flow data manually before running EpiSewer.")
+            ))
 
-                flows <- flows[
-                  CJ(date = all_dates, unique=TRUE),
-                  on=.(date)
-                ]
-                median_flow <- median(flows$flow, na.rm = TRUE)
-                setnafill(flows, fill = median_flow, cols = "flow")
-              }
-            }
-            if (any(flows$flow==0)) {
-              cli::cli_abort("Flow data must not contain zero flows.")
-            }
-            flows <-
-              flows[
-                date >= modeldata$.metainfo$T_start_date &
-                date <= modeldata$.metainfo$T_end_date + modeldata$.metainfo$forecast_horizon,
-                ]
-            flows <- setorderv(flows, cols = "date")
-            modeldata$flow <- flows$flow
-          },
-          required = c(
-            ".metainfo$T_start_date",
-            ".metainfo$T_end_date",
-            ".metainfo$measured_dates",
-            ".metainfo$forecast_horizon"
-            ),
-          modeldata = modeldata
-        )
+            flows <- flows[
+              CJ(date = all_dates, unique=TRUE),
+              on=.(date)
+            ]
+            median_flow <- median(flows$flow, na.rm = TRUE)
+            setnafill(flows, fill = median_flow, cols = "flow")
+          }
+        }
+        if (any(flows$flow==0)) {
+          cli::cli_abort("Flow data must not contain zero flows.")
+        }
+        flows <-
+          flows[
+            date >= modeldata$.metainfo$T_start_date &
+            date <= modeldata$.metainfo$T_end_date +
+              modeldata$.metainfo$forecast_horizon,
+            ]
+        flows <- setorderv(flows, cols = "date")
+        modeldata$flow <- flows$flow
 
         return(modeldata)
       },
-      required_data = "flows",
-      modeldata = modeldata
+      requires_data = "flows"
     )
-
-    modeldata$.str$sewage[["flows"]] <- list(
-      flows_observe = c()
-    )
-
-    return(modeldata)
   }
 
 #' Assume a sewer residence time distribution
@@ -239,8 +210,7 @@ flows_observe <-
 #'   distribution, with elements describing the share of load that takes 0 days,
 #'   1 day, 2 days, and so on to arrive at the sampling site.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @examples
@@ -253,9 +223,12 @@ flows_observe <-
 #' # 1/4 of particles only arrives after one day
 #' residence_dist_assume(residence_dist = c(0.75, 0.25))
 residence_dist_assume <-
-  function(residence_dist = NULL, modeldata = modeldata_init()) {
-    modeldata <- tbp("residence_dist_assume",
+  function(residence_dist = NULL) {
+    model_component("residence_dist_assume", "residence_dist",
       {
+        residence_dist <- take_input(
+          modeldata, "residence_dist", "residence_dist", type = "assumptions"
+        )
         residence_dist <- check_dist(
           residence_dist, "residence time distribution", min_length = 1
           )
@@ -263,13 +236,6 @@ residence_dist_assume <-
         modeldata$residence_dist <- residence_dist
         return(modeldata)
       },
-      required_assumptions = "residence_dist",
-      modeldata = modeldata
+      requires_assumptions = "residence_dist"
     )
-
-    modeldata$.str$sewage[["residence_dist"]] <- list(
-      residence_dist_assume = c()
-    )
-
-    return(modeldata)
   }
