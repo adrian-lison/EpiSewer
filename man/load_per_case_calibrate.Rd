@@ -12,8 +12,7 @@ load_per_case_calibrate(
   shift_weights = 1/(abs(measurement_shift) + 1),
   date_col = "date",
   case_col = "cases",
-  signif_fig = 2,
-  modeldata = modeldata_init()
+  signif_fig = 2
 )
 }
 \arguments{
@@ -51,20 +50,12 @@ provides crude estimates which should not be over-interpreted, the result
 gets rounded (this also increases stability when fitting the model at
 different points in time). Default is rounding to the 2 most significant
 figures.}
-
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option calibrates the average total shedding load per case
@@ -92,7 +83,7 @@ argument allows to average over a set of relative shifts between the two
 time series.
 }
 \seealso{
-Other load per case functions:
-\code{\link[=load_per_case_assume]{load_per_case_assume()}}
+Other load per case functions: 
+\code{\link{load_per_case_assume}()}
 }
 \concept{load per case functions}

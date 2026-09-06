@@ -38,14 +38,16 @@ model_shedding <- function(
     shedding_dist = shedding_dist_assume(),
     load_per_case = load_per_case_calibrate(),
     load_variation = load_variation_estimate()) {
-  verify_is_modeldata(incubation_dist, "incubation_dist")
-  verify_is_modeldata(shedding_dist, "shedding_dist")
-  verify_is_modeldata(load_per_case, "load_per_case")
-  verify_is_modeldata(load_variation, "load_variation")
-  modeldata <- modeldata_combine(
-    incubation_dist, shedding_dist, load_per_case, load_variation
-  )
-  return(modeldata)
+  verify_is_component(incubation_dist, "incubation_dist")
+  verify_is_component(shedding_dist, "shedding_dist")
+  verify_is_component(load_per_case, "load_per_case")
+  verify_is_component(load_variation, "load_variation")
+  return(new_module("shedding", list(
+    incubation_dist = incubation_dist,
+    shedding_dist = shedding_dist,
+    load_per_case = load_per_case,
+    load_variation = load_variation
+  )))
 }
 
 #' Assume an incubation period distribution
@@ -62,52 +64,48 @@ model_shedding <- function(
 #'   period distribution, starting with the probability for an incubation period
 #'   of 0 days, 1 day, 2 days, and so on.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @seealso Helpers to discretize continuous probability distributions:
 #'   [get_discrete_gamma()], [get_discrete_lognormal()]
 incubation_dist_assume <-
-  function(incubation_dist = NULL, modeldata = modeldata_init()) {
-
-    modeldata <- tbc("incubation_dist_compute", {
-      if (modeldata$.metainfo$shedding_reference == "symptom_onset") {
-
-        modeldata <- tbp("incubation_dist_assume",
-         {
-           incubation_dist <- check_dist(
-             incubation_dist, "incubation period distribution", min_length = 2
-           )
-           modeldata$L <- length(incubation_dist) - 1
-           modeldata$incubation_dist <- incubation_dist
-           return(modeldata)
-         },
-         required_assumptions = "incubation_dist",
-         modeldata = modeldata
-        )
-
-      } else if (modeldata$.metainfo$shedding_reference == "infection") {
-        # this is a workaround because the incubation period is currently
-        # not needed for anything else than for modeling the shedding
-        # profile.
-        modeldata$L <- 1
-        modeldata$incubation_dist <- c(1, 0)
+  function(incubation_dist = NULL) {
+    model_component("incubation_dist_assume", "incubation_dist",
+      {
+        if (modeldata$.metainfo$shedding_reference == "symptom_onset") {
+          incubation_dist <- take_input(
+            modeldata, "incubation_dist", "incubation_dist",
+            type = "assumptions"
+          )
+          incubation_dist <- check_dist(
+            incubation_dist, "incubation period distribution", min_length = 2
+          )
+          modeldata$L <- length(incubation_dist) - 1
+          modeldata$incubation_dist <- incubation_dist
+        } else if (modeldata$.metainfo$shedding_reference == "infection") {
+          # this is a workaround because the incubation period is currently
+          # not needed for anything else than for modeling the shedding
+          # profile.
+          modeldata$L <- 1
+          modeldata$incubation_dist <- c(1, 0)
+        }
         return(modeldata)
+      },
+      # the incubation period is only needed when the shedding load
+      # distribution is referenced by symptom onset
+      requires_assumptions = function(spec) {
+        reference <- spec$shedding_dist$shedding_reference
+        if (is.null(reference)) {
+          reference <- spec$assumptions$shedding_reference
+        }
+        if (identical(reference, "symptom_onset")) {
+          "incubation_dist"
+        } else {
+          character(0)
+        }
       }
-
-    },
-    required = c(
-      ".metainfo$shedding_reference"
-    ),
-    modeldata = modeldata
     )
-
-    modeldata$.str$shedding[["incubation_dist"]] <- list(
-      incubation_dist_assume = c()
-    )
-
-    return(modeldata)
   }
 
 #' Assume a shedding load distribution
@@ -125,16 +123,22 @@ incubation_dist_assume <-
 #'   `shedding_reference="symptom_onset"`, EpiSewer also needs information about
 #'   the incubation period distribution (see [incubation_dist_assume()]).
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @seealso Helpers to discretize continuous probability distributions:
 #'   [get_discrete_gamma()], [get_discrete_lognormal()]
 shedding_dist_assume <-
-  function(shedding_dist = NULL, shedding_reference = NULL, modeldata = modeldata_init()) {
-    modeldata <- tbp("shedding_dist_assume",
+  function(shedding_dist = NULL, shedding_reference = NULL) {
+    model_component("shedding_dist_assume", "shedding_dist",
       {
+        shedding_dist <- take_input(
+          modeldata, "shedding_dist", "shedding_dist", type = "assumptions"
+        )
+        shedding_reference <- take_input(
+          modeldata, "shedding_dist", "shedding_reference",
+          type = "assumptions"
+        )
         shedding_dist <- check_dist(
           shedding_dist, "shedding load distribution", min_length = 2
           )
@@ -161,21 +165,10 @@ shedding_dist_assume <-
         ))
         modeldata$.init$shedding_dist_weights <- 1
 
-        modeldata$.str$shedding[["shedding_dist"]] <- list(
-          shedding_dist_assume = c(shedding_reference = shedding_reference)
-        )
-
         return(modeldata)
       },
-      required_assumptions = c("shedding_dist", "shedding_reference"),
-      modeldata = modeldata
+      requires_assumptions = c("shedding_dist", "shedding_reference")
     )
-
-    modeldata$.str$shedding[["shedding_dist"]] <- list(
-      shedding_dist_assume = c()
-    )
-
-    return(modeldata)
   }
 
 #' Estimate an uncertain shedding load distribution
@@ -220,8 +213,7 @@ shedding_dist_assume <-
 #'   separately, i.e. in each posterior sample, one of the prior distributions
 #'   is given almost all the weight.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 shedding_dist_estimate <-
   function(shedding_dist_mean_prior_mean = NULL,
@@ -231,10 +223,34 @@ shedding_dist_estimate <-
            shedding_dist_type = "gamma",
            shedding_reference = NULL,
            prior_weights = NULL,
-           weight_alpha = 1,
-           modeldata = modeldata_init()) {
-    modeldata <- tbp("shedding_dist_estimate",
+           weight_alpha = 1) {
+    model_component("shedding_dist_estimate", "shedding_dist",
      {
+       shedding_dist_mean_prior_mean <- take_input(
+         modeldata, "shedding_dist", "shedding_dist_mean_prior_mean",
+         type = "assumptions"
+       )
+       shedding_dist_mean_prior_sd <- take_input(
+         modeldata, "shedding_dist", "shedding_dist_mean_prior_sd",
+         type = "assumptions"
+       )
+       shedding_dist_cv_prior_mean <- take_input(
+         modeldata, "shedding_dist", "shedding_dist_cv_prior_mean",
+         type = "assumptions"
+       )
+       shedding_dist_cv_prior_sd <- take_input(
+         modeldata, "shedding_dist", "shedding_dist_cv_prior_sd",
+         type = "assumptions"
+       )
+       shedding_dist_type <- take_input(
+         modeldata, "shedding_dist", "shedding_dist_type",
+         type = "assumptions"
+       )
+       shedding_reference <- take_input(
+         modeldata, "shedding_dist", "shedding_reference",
+         type = "assumptions"
+       )
+
        # shedding distribution type
        shedding_dist_type <- stringr::str_to_lower(shedding_dist_type)
        supported_dists <- c("gamma", "exponential", "lognormal", "log-normal")
@@ -357,28 +373,17 @@ shedding_dist_estimate <-
          modeldata$.init$shedding_dist_cv <- numeric(0)
        }
 
-       modeldata$.str$shedding[["shedding_dist"]] <- list(
-         shedding_dist_estimate = c(shedding_reference = shedding_reference)
-       )
-
        return(modeldata)
      },
-     required_assumptions = c(
+     requires_assumptions = c(
        "shedding_dist_mean_prior_mean",
        "shedding_dist_mean_prior_sd",
        "shedding_dist_cv_prior_mean",
        "shedding_dist_cv_prior_sd",
        "shedding_dist_type",
        "shedding_reference"
-       ),
-     modeldata = modeldata
+       )
     )
-
-    modeldata$.str$shedding[["shedding_dist"]] <- list(
-      shedding_dist_estimate = c()
-    )
-
-    return(modeldata)
   }
 
 #' Assume the average load per case
@@ -394,30 +399,25 @@ shedding_dist_estimate <-
 #'   if concentration is measured in gc/mL (gc = gene copies), then
 #'   `load_per_case` should also be in gc.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #'
 #' @seealso {Helper for finding a suitable load per case assumption:}
 #'   [suggest_load_per_case()]
 #' @family load per case functions
 load_per_case_assume <-
-  function(load_per_case = NULL, modeldata = modeldata_init()) {
-    modeldata <- tbp("load_per_case_assume",
+  function(load_per_case = NULL) {
+    model_component("load_per_case_assume", "load_per_case",
       {
+        load_per_case <- take_input(
+          modeldata, "load_per_case", "load_per_case", type = "assumptions"
+        )
         modeldata$load_mean <- load_per_case
         modeldata$.metainfo$load_per_case <- load_per_case
         return(modeldata)
       },
-      required_assumptions = "load_per_case",
-      modeldata = modeldata
+      requires_assumptions = "load_per_case"
     )
-
-    modeldata$.str$shedding[["load_per_case"]] <- list(
-      load_per_case_assume = c()
-    )
-
-    return(modeldata)
   }
 
 #' Calibrate the average load per case using case count data
@@ -474,8 +474,7 @@ load_per_case_assume <-
 #'   argument allows to average over a set of relative shifts between the two
 #'   time series.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family load per case functions
 load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
@@ -484,14 +483,32 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
                                     shift_weights = 1/(abs(measurement_shift)+1),
                                     date_col = "date",
                                     case_col = "cases",
-                                    signif_fig = 2,
-                                    modeldata = modeldata_init()) {
-  modeldata <- tbp("load_per_case_calibrate",
+                                    signif_fig = 2) {
+  model_component("load_per_case_calibrate", "load_per_case",
    {
+     cases <- take_input(
+       modeldata, "load_per_case", "cases", type = "data"
+     )
+     min_cases <- take_input(
+       modeldata, "load_per_case", "min_cases", type = "assumptions"
+     )
      if (!is.null(cases)) {
-       modeldata <- tbc("load_per_case_cases_suggest", {
+         if (is.null(modeldata$.staging$measurements) ||
+             is.null(modeldata$.metainfo$measurements_cols)) {
+           cli::cli_abort(paste(
+             "Calibration of `load_per_case` with case data requires",
+             "observed concentration measurements."
+           ))
+         }
+         if (is.null(modeldata$.staging$flows) ||
+             is.null(modeldata$.metainfo$flows_cols)) {
+           cli::cli_abort(paste(
+             "Calibration of `load_per_case` with case data requires",
+             "observed flows (see flows_observe())."
+           ))
+         }
          measurements <- setnames(
-           copy(modeldata$.sewer_data$measurements_observe$measurements),
+           copy(modeldata$.staging$measurements),
            old = with(
              modeldata$.metainfo$measurements_cols,
              c(date_col, concentration_col)
@@ -500,7 +517,7 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
          )
 
          flows <- setnames(
-           copy(modeldata$.sewer_data$flows_observe$flows),
+           copy(modeldata$.staging$flows),
            old = with(
              modeldata$.metainfo$flows_cols,
              c(date_col, flow_col)
@@ -538,23 +555,18 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
          )
          modeldata$load_mean <- suggested_load
          modeldata$.metainfo$load_per_case <- suggested_load
-       },
-       required = c(
-         ".metainfo$measurements_cols", ".metainfo$flows_cols",
-         ".sewer_data$measurements_observe$measurements",
-         ".sewer_data$flows_observe$flows"
-         ),
-       modeldata = modeldata
-       )
      }
      else if (!is.null(min_cases)) {
-       modeldata <- tbc("load_per_case_min_cases_calibrate", {
-         max_shift <- modeldata$.metainfo$length_I - modeldata$T
-         lcc <- modeldata$.metainfo$load_curve_crude
+         load_curve_crude <- md_need(modeldata, ".metainfo$load_curve_crude")
+         date_triple_detect <- md_need(
+           modeldata, ".metainfo$date_triple_detect"
+         )
+         max_shift <- md_need(modeldata, ".metainfo$length_I") - modeldata$T
+         lcc <- load_curve_crude
          lcc <- lcc[(max_shift + 1):nrow(lcc),]
-         if (!is.na(modeldata$.metainfo$date_triple_detect)) {
+         if (!is.na(date_triple_detect)) {
            lcc <- lcc[
-             date >= modeldata$.metainfo$date_triple_detect,
+             date >= date_triple_detect,
              ]
          }
          lcc <- lcc[detect == TRUE,]
@@ -563,28 +575,9 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
          load_per_case <- signif(load_per_case, signif_fig)
          modeldata$load_mean <- load_per_case
          modeldata$.metainfo$load_per_case <- load_per_case
-       },
-       required = c(
-         ".metainfo$load_curve_crude",
-         ".metainfo$date_triple_detect",
-         ".metainfo$length_I",
-         "T"
-         ),
-       modeldata = modeldata
-       )
      }
-     return(modeldata)
-   },
-   required_assumptions = "min_cases|cases",
-   required_data = "min_cases|cases",
-   modeldata = modeldata
-  )
 
-  modeldata$.str$shedding[["load_per_case"]] <- list(
-    load_per_case_calibrate = c()
-  )
-
-  modeldata$.checks$check_load_per_case_function <- function(md, d, a) {
+     modeldata$.checks$check_load_per_case_function <- function(md, d, a) {
     if ("load_per_case" %in% names(a) && !is.null(a$load_per_case)) {
       cli::cli_inform(c("i"=paste0(
         "You supplied a `load_per_case` assumption via ",
@@ -594,9 +587,13 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
         "specify ", cli_help("load_per_case_assume"), " instead."
       )))
     }
-  }
+     }
 
-  return(modeldata)
+     return(modeldata)
+   },
+   requires_data = "min_cases|cases",
+   requires_assumptions = "min_cases|cases"
+  )
 }
 
 #' Do not model individual-level load variation
@@ -605,11 +602,11 @@ load_per_case_calibrate <- function(cases = NULL, min_cases = NULL,
 #'   total load shed per case, i.e. the individual shedding load is fixed to the
 #'   average shedding load.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family load variation models
-load_variation_none <- function(modeldata = modeldata_init()) {
+load_variation_none <- function() {
+  model_component("load_variation_none", "load_variation", {
   modeldata$load_vari <- 0
   modeldata$nu_zeta_prior <- numeric(0)
   modeldata$.init$nu_zeta <- numeric(0)
@@ -622,11 +619,8 @@ load_variation_none <- function(modeldata = modeldata_init()) {
   modeldata$.init$zeta_log_exact <- numeric(0)
   modeldata$.init$zeta_raw_approx <- numeric(0)
 
-  modeldata$.str$shedding[["load_variation"]] <- list(
-    load_variation_none = c()
-  )
-
   return(modeldata)
+  })
 }
 
 #' Estimate individual-level load variation
@@ -661,14 +655,13 @@ load_variation_none <- function(modeldata = modeldata_init()) {
 #'   - the population-level CV will be underestimated (especially if the prior
 #'   on the individual-level CV is strong)
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
 #' @family load variation models
 load_variation_estimate <- function(
     cv_prior_mu = 1,
-    cv_prior_sigma = 0,
-    modeldata = modeldata_init()) {
+    cv_prior_sigma = 0) {
+  model_component("load_variation_estimate", "load_variation", {
   modeldata$load_vari <- 1
   modeldata$nu_zeta_prior <- set_prior(
     "nu_zeta", "truncated normal",
@@ -678,11 +671,10 @@ load_variation_estimate <- function(
     modeldata$nu_zeta_prior, enforce_positive = TRUE
   ))
 
-  modeldata <- tbc("zeta_normal_approximation",
-    {
-      icc <- modeldata$.metainfo$infection_curve_crude
-      l_I <- modeldata$.metainfo$length_I
-      l_shedding <- modeldata$.metainfo$length_shedding
+  {
+      icc <- md_need(modeldata, ".metainfo$infection_curve_crude")
+      l_I <- md_need(modeldata, ".metainfo$length_I")
+      l_shedding <- md_need(modeldata, ".metainfo$length_shedding")
       if (nrow(icc) != l_I) {
         cli::cli_abort(
           "Calibration error: Incorrect length of crude infection curve."
@@ -702,7 +694,9 @@ load_variation_estimate <- function(
         modeldata$n_zeta_exact <- length(modeldata$zeta_exact)
 
         modeldata$.init$zeta_log_exact <- rep(
-            log(max(1.1, modeldata$.metainfo$initial_cases_crude)),
+            log(max(
+              1.1, md_need(modeldata, ".metainfo$initial_cases_crude")
+            )),
             modeldata$n_zeta_exact
           )
         modeldata$.init$zeta_raw_approx <- rep(
@@ -710,18 +704,8 @@ load_variation_estimate <- function(
           modeldata$n_zeta_normal_approx
         )
       }
-    },
-    required = c(
-      ".metainfo$initial_cases_crude",
-      ".metainfo$infection_curve_crude",
-      ".metainfo$length_I",
-      ".metainfo$length_shedding"),
-    modeldata = modeldata
-  )
-
-  modeldata$.str$shedding[["load_variation"]] <- list(
-    load_variation_estimate = c()
-  )
+  }
 
   return(modeldata)
+  })
 }

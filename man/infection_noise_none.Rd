@@ -4,29 +4,20 @@
 \alias{infection_noise_none}
 \title{Do not model infection noise}
 \usage{
-infection_noise_none(modeldata = modeldata_init())
-}
-\arguments{
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
+infection_noise_none()
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option does not model noise in the infection process and instead
 implements a deterministic renewal model.
 }
 \seealso{
-Other infection noise models:
-\code{\link[=infection_noise_estimate]{infection_noise_estimate()}}
+Other infection noise models: 
+\code{\link{infection_noise_estimate}()}
 }
 \concept{infection noise models}

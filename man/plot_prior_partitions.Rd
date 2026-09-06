@@ -7,8 +7,8 @@
 plot_prior_partitions(modeldata, n_draws = 1000, show_draws = 50, seed = 0)
 }
 \arguments{
-\item{modeldata}{A \code{modeldata} object as returned by
-\code{\link[=noise_estimate_dPCR_params]{noise_estimate_dPCR_params()}}.}
+\item{modeldata}{A model component as returned by
+\code{\link[=noise_estimate_dPCR_params]{noise_estimate_dPCR_params()}}, or an \code{EpiSewer} job/result object.}
 
 \item{n_draws}{Number of draws to simulate from the prior distributions.}
 

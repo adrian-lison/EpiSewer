@@ -4,20 +4,16 @@
 \alias{template_model_helpers}
 \title{Template function}
 \usage{
-template_model_helpers(modeldata)
-}
-\arguments{
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
+template_model_helpers()
 }
 \value{
-Nothing
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
-This function does not actually do anything. It only serves as a
-template for the documentation of other functions using inheritance of
-params.
+This function does not actually do anything. It only serves as
+a template for the documentation of other functions using inheritance.
 }
 \keyword{internal}

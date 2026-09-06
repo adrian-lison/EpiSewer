@@ -28,15 +28,15 @@
 #'   various factors such as depletion of susceptible individuals, changes in
 #'   behavior, or public health interventions.
 #'
-#' @return A `modeldata` object containing the data and specifications of the
+#' @return A module object containing the components of the
 #'   `forecast` module.
 #' @export
 #' @family module functions
 model_forecast <- function(horizon = horizon_none(),
                            damping = damping_assume(damping = 0.95)) {
-  verify_is_modeldata(horizon, "horizon")
-  verify_is_modeldata(damping, "damping")
-  return(modeldata_combine(horizon, damping))
+  verify_is_component(horizon, "horizon")
+  verify_is_component(damping, "damping")
+  return(new_module("forecast", list(horizon = horizon, damping = damping)))
 }
 
 #' Do not produce forecasts
@@ -45,17 +45,14 @@ model_forecast <- function(horizon = horizon_none(),
 #'   estimates and concentration predictions until the last observed date are
 #'   produced.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
-horizon_none <- function(modeldata = modeldata_init()) {
-  modeldata$h <- 0
-  modeldata$.metainfo$forecast_horizon <- 0
-
-  modeldata$.str$forecast[["horizon"]] <- list(
-    horizon_none = c()
-  )
-  return(modeldata)
+horizon_none <- function() {
+  model_component("horizon_none", "horizon", {
+    modeldata$h <- 0
+    modeldata$.metainfo$forecast_horizon <- 0
+    return(modeldata)
+  })
 }
 
 #' Specify the forecast horizon
@@ -71,17 +68,14 @@ horizon_none <- function(modeldata = modeldata_init()) {
 #'
 #' @inherit model_forecast details
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
-horizon_assume <- function(horizon, modeldata = modeldata_init()) {
-  modeldata$h <- horizon
-  modeldata$.metainfo$forecast_horizon <- horizon
-
-  modeldata$.str$forecast[["horizon"]] <- list(
-    horizon_assume = c()
-  )
-  return(modeldata)
+horizon_assume <- function(horizon) {
+  model_component("horizon_assume", "horizon", {
+    modeldata$h <- horizon
+    modeldata$.metainfo$forecast_horizon <- horizon
+    return(modeldata)
+  })
 }
 
 #' Do not dampen forecasts
@@ -90,15 +84,13 @@ horizon_assume <- function(horizon, modeldata = modeldata_init()) {
 #'   projected by the R estimation model will be continued until the end of the
 #'   forecast horizon.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
-damping_none <- function(modeldata = modeldata_init()) {
-  modeldata$forecast_damping <- 1
-  modeldata$.str$forecast[["damping"]] <- list(
-    damping_none = c()
-  )
-  return(modeldata)
+damping_none <- function() {
+  model_component("damping_none", "damping", {
+    modeldata$forecast_damping <- 1
+    return(modeldata)
+  })
 }
 
 #' Dampen forecasts
@@ -115,13 +107,11 @@ damping_none <- function(modeldata = modeldata_init()) {
 #'   `damping^1` on the first forecast day, by `damping^2` on the second
 #'   forecast day, and so on.
 #'
-#' @inheritParams template_model_helpers
-#' @inherit modeldata_init return
+#' @inherit template_model_helpers return
 #' @export
-damping_assume <- function(damping = 0.95, modeldata = modeldata_init()) {
-  modeldata$forecast_damping <- damping
-  modeldata$.str$forecast[["damping"]] <- list(
-    damping_assume = c()
-  )
-  return(modeldata)
+damping_assume <- function(damping = 0.95) {
+  model_component("damping_assume", "damping", {
+    modeldata$forecast_damping <- damping
+    return(modeldata)
+  })
 }

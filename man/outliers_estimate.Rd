@@ -4,12 +4,7 @@
 \alias{outliers_estimate}
 \title{Model outliers via an extreme value distribution}
 \usage{
-outliers_estimate(
-  gev_prior_mu = 0,
-  gev_prior_sigma = 2e-08,
-  gev_prior_xi = 4,
-  modeldata = modeldata_init()
-)
+outliers_estimate(gev_prior_mu = 0, gev_prior_sigma = 2e-08, gev_prior_xi = 4)
 }
 \arguments{
 \item{gev_prior_mu}{Prior (location) of the GEV distribution.}
@@ -17,20 +12,12 @@ outliers_estimate(
 \item{gev_prior_sigma}{Prior (scale) of the GEV distribution.}
 
 \item{gev_prior_xi}{Prior (shape) of the GEV distribution.}
-
-\item{modeldata}{A \code{modeldata} object to which the above model specifications
-should be added. Default is an empty model given by \code{\link[=modeldata_init]{modeldata_init()}}. Can
-also be an already partly specified model returned by other \code{EpiSewer}
-modeling functions.}
 }
 \value{
-A \code{modeldata} object containing data and specifications of the model
-to be fitted. Can be passed on to other \code{EpiSewer} modeling functions to
-add further data and model specifications.
-
-The \code{modeldata} object also includes information about parameter
-initialization (\code{.init}), meta data (\code{.metainfo}), and checks to be
-performed before model fitting (\code{.checks}).
+A \code{model_component} object describing this part of the model
+specification. Pass it to the corresponding module function (e.g.
+\code{\link[=model_measurements]{model_measurements()}}, \code{\link[=model_infections]{model_infections()}}), which in turn is supplied
+to \code{\link[=EpiSewer]{EpiSewer()}}.
 }
 \description{
 This option models outliers in sampled concentrations using a
@@ -60,7 +47,7 @@ loads and concentrations will be theoretically infinite if this modeling
 option is used. The median remains be well-behaved.
 }
 \seealso{
-Other outlier models:
-\code{\link[=outliers_none]{outliers_none()}}
+Other outlier models: 
+\code{\link{outliers_none}()}
 }
 \concept{outlier models}

@@ -118,7 +118,6 @@ reference:
   desc: Utility functions
   contents:
   - component_functions
-  - modeldata_init
   - get_checksums
   - summarize_fit
 

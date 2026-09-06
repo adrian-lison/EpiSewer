@@ -1214,7 +1214,33 @@ plot_sample_effects <- function(results,
 #' modeldata <- LOD_assume(limit = 2.56, prob = 0.95)
 #' plot_LOD(modeldata)
 plot_LOD <- function(modeldata) {
-  lod_model <- modeldata$.str$measurements$LO
+  if (inherits(modeldata, "model_component")) {
+    component <- modeldata
+    if (component$name == "LOD_none") {
+      cli::cli_abort(
+        "LOD cannot be plotted when using LOD_none()."
+      )
+    } else if (component$name != "LOD_assume") {
+      cli::cli_abort(
+        paste0(
+          "LOD plotting is currently only supported for LOD_assume(). ",
+          "The provided model uses ", component$name, "() instead."
+        )
+      )
+    }
+    if (is.null(component$args$limit)) {
+      cli::cli_abort(paste(
+        "To plot the LOD, please provide a limit to LOD_assume()."
+      ))
+    }
+    modeldata <- list(
+      LOD_model = 1,
+      LOD_scale = -log(1 - component$args$prob) / component$args$limit
+    )
+    lod_model <- list(LOD_assume = c())
+  } else {
+    lod_model <- modeldata$.str$measurements$LO
+  }
   if (is.null(lod_model)) {
     cli::cli_abort(
       "No LOD model is currently included in the modeldata."
@@ -1258,6 +1284,36 @@ plot_LOD <- function(modeldata) {
   return(plot)
 }
 
+#' List parameters supported by prior-posterior visualization
+#'
+#' @description Returns metadata for scalar model parameters whose prior
+#'   distributions can be visualized with [plot_prior_posterior()].
+#'
+#' @param print If `TRUE`, return a Markdown-formatted list of supported
+#'   parameters. Otherwise, return the parameter metadata as a data frame.
+#'
+#' @return A data frame containing metadata for supported parameters, or a
+#'   character string when `print = TRUE`.
+#' @keywords internal
+sewer_plotparams <- function(print = TRUE) {
+  params <- as.data.frame(matrix(c(
+    'measurement_noise_cv','nu_upsilon_a','Coefficient of variation (measurement noise)',1,identity,
+    'dPCR_maximum_partitions','max_partitions','Maximum number of partitions in dPCR',1e4,identity,
+    'dPCR_partition_loss_mean','partition_loss_mu','Mean relative partition loss in dPCR',function(x) x$job$data$partition_loss_max,function(x) plogis(x),
+    'dPCR_partition_loss_variation','partition_loss_sigma','Partition number variation in dPCR',1,identity,
+    'dPCR_conversion_factor','nu_upsilon_c','Conversion factor in dPCR',1e-5,identity,
+    'pre_replicate_cv','nu_psi','Coefficient of variation (pre-PCR noise)',1,identity,
+    'load_variation_cv','nu_zeta','Individual-level coefficient of load variation',1,identity,
+    'infection_overdispersion','I_xi','Overdispersion of infections',1,identity,
+    'seeding_intercept','iota_log_seed_intercept','Initial number of infections',1,exp
+  ), byrow = T, ncol = 5, dimnames = list(c(),c('short_name','raw_name','long_name',"scaling","transf"))))
+  if (print) {
+    return(c(paste(apply(params, 1, function(x) paste0("- `",x["short_name"],"` (",x["raw_name"],"): ",x["long_name"])), collapse = "\n")))
+  } else {
+    return(params)
+  }
+}
+
 #' Visually compare prior and posterior of a model parameter
 #'
 #' @param result Results object returned by [EpiSewer()] after model fitting. In
@@ -1272,7 +1328,7 @@ plot_LOD <- function(modeldata) {
 #'   specified in `EpiSewer` are supported.
 #'
 #' @details The following parameters can be visualized (if in the model):
-#' `r all_parameters(TRUE)`
+#' `r sewer_plotparams(TRUE)`
 #'
 #' @return A plot showing the density of the prior (grey) and posterior (blue)
 #'   for the respective parameter. Can be further manipulated using `ggplot2`
@@ -1292,7 +1348,7 @@ plot_prior_posterior <- function(result, param_name) {
       "{.code set_results_opts(fitted = TRUE)} when running `EpiSewer`."
       ))
   }
-  all_params <- all_parameters()
+  all_params <- sewer_plotparams(print=FALSE)
 
   if (param_name %in% all_params$short_name) {
     param_i <- which(all_params$short_name == param_name)
@@ -1453,8 +1509,8 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
 
 #' Plot prior distributions for total number of partitions
 #'
-#' @param modeldata A `modeldata` object as returned by
-#' [noise_estimate_dPCR_params()].
+#' @param modeldata A model component as returned by
+#' [noise_estimate_dPCR_params()], or an `EpiSewer` job/result object.
 #' @param n_draws Number of draws to simulate from the prior distributions.
 #' @param show_draws Number of example draws to show in the plots.
 #' @param seed Seed for random number generation to ensure reproducibility.
@@ -1464,7 +1520,15 @@ plot_growth_report <- function(result, date = NULL, partial_prob = 0.8) {
 #'   deviation of valid partitions.
 #' @keywords internal
 plot_prior_partitions <- function(modeldata, n_draws = 1000, show_draws = 50, seed = 0) {
-  if ("job" %in% names(modeldata)) {
+  if (inherits(modeldata, "model_component")) {
+    if (!identical(modeldata$name, "noise_estimate_dPCR_params")) {
+      cli::cli_abort(paste(c(
+        "Plotting the prior for the total number of partitions in dPCR only works",
+        "for components returned by `noise_estimate_dPCR_params()`."
+      )))
+    }
+    modeldata <- dPCR_partition_priors(modeldata$args)
+  } else if ("job" %in% names(modeldata)) {
     modeldata <- modeldata$job$data
   }
 

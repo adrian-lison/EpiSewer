@@ -57,12 +57,9 @@ EpiSewer <- function(
     fit_opts = set_fit_opts(),
     results_opts = set_results_opts(),
     run_fit = TRUE) {
-  modeldata <- modeldata_combine(
-    measurements, sampling, sewage, shedding, infections, forecast
-  )
-
-  modeldata <- modeldata_validate(
-    modeldata, data = data, assumptions = assumptions
+  modeldata <- modeldata_compile(
+    list(measurements, sampling, sewage, shedding, infections, forecast),
+    data = data, assumptions = assumptions
   )
 
   job <- EpiSewerJob(
@@ -128,8 +125,7 @@ EpiSewerJob <- function(job_name,
   # ToDo rlang::flatten is deprecated, replace
   data_arguments <- suppressWarnings(
     rlang::flatten(modeldata[!(names(modeldata) %in% c(
-      ".init", ".metainfo", ".checks", ".str",
-      ".sewer_data", ".sewer_assumptions"
+      ".init", ".metainfo", ".checks", ".str", ".spec"
     ))])
   )
   data_arguments_raw <- data_arguments[
@@ -450,6 +446,16 @@ sewer_assumptions <- function(generation_dist = NULL,
                               residence_dist = c(1),
                               ...) {
   assumptions <- c(as.list(environment()), list(...))
+  # record which assumptions were explicitly supplied by the user (only these
+  # are conflict-checked against assumptions given directly to components)
+  fn_env <- environment()
+  formal_names <- setdiff(names(formals()), "...")
+  explicit <- formal_names[!vapply(
+    formal_names,
+    function(nm) eval(call("missing", as.name(nm)), envir = fn_env),
+    logical(1)
+  )]
+  attr(assumptions, "explicit") <- c(explicit, names(list(...)))
   return(assumptions)
 }
 
