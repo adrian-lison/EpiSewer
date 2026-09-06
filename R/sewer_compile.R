@@ -300,6 +300,8 @@ settle_derivations <- function(md) {
       unit$requires, function(r) md_can(md, r), logical(1)
     ))
     if (satisfiable) {
+      # sufficient to request only the first argument
+      # -> the rest is provided by the same function
       md_need(md, unit$provides[[1]])
     }
   }
