@@ -87,7 +87,7 @@ summarize_fit <- function(fit, data, .metainfo, intervals = c(0.5, 0.95), ndraws
 
   ## add growth rate
   all_samples[, infectiousness := frollapply(
-      iota, length(gen_dist), weighted.mean,
+      iota, length(gen_dist), FUN = weighted.mean,
       weights = gen_dist
       ), by = ".draw"]
   all_samples[, growth_rate := (
