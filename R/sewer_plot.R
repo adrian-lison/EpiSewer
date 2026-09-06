@@ -1284,6 +1284,36 @@ plot_LOD <- function(modeldata) {
   return(plot)
 }
 
+#' List parameters supported by prior-posterior visualization
+#'
+#' @description Returns metadata for scalar model parameters whose prior
+#'   distributions can be visualized with [plot_prior_posterior()].
+#'
+#' @param print If `TRUE`, return a Markdown-formatted list of supported
+#'   parameters. Otherwise, return the parameter metadata as a data frame.
+#'
+#' @return A data frame containing metadata for supported parameters, or a
+#'   character string when `print = TRUE`.
+#' @keywords internal
+sewer_plotparams <- function(print = TRUE) {
+  params <- as.data.frame(matrix(c(
+    'measurement_noise_cv','nu_upsilon_a','Coefficient of variation (measurement noise)',1,identity,
+    'dPCR_maximum_partitions','max_partitions','Maximum number of partitions in dPCR',1e4,identity,
+    'dPCR_partition_loss_mean','partition_loss_mu','Mean relative partition loss in dPCR',function(x) x$job$data$partition_loss_max,function(x) plogis(x),
+    'dPCR_partition_loss_variation','partition_loss_sigma','Partition number variation in dPCR',1,identity,
+    'dPCR_conversion_factor','nu_upsilon_c','Conversion factor in dPCR',1e-5,identity,
+    'pre_replicate_cv','nu_psi','Coefficient of variation (pre-PCR noise)',1,identity,
+    'load_variation_cv','nu_zeta','Individual-level coefficient of load variation',1,identity,
+    'infection_overdispersion','I_xi','Overdispersion of infections',1,identity,
+    'seeding_intercept','iota_log_seed_intercept','Initial number of infections',1,exp
+  ), byrow = T, ncol = 5, dimnames = list(c(),c('short_name','raw_name','long_name',"scaling","transf"))))
+  if (print) {
+    return(c(paste(apply(params, 1, function(x) paste0("- `",x["short_name"],"` (",x["raw_name"],"): ",x["long_name"])), collapse = "\n")))
+  } else {
+    return(params)
+  }
+}
+
 #' Visually compare prior and posterior of a model parameter
 #'
 #' @param result Results object returned by [EpiSewer()] after model fitting. In
@@ -1298,7 +1328,7 @@ plot_LOD <- function(modeldata) {
 #'   specified in `EpiSewer` are supported.
 #'
 #' @details The following parameters can be visualized (if in the model):
-#' `r all_parameters(TRUE)`
+#' `r sewer_plotparams(TRUE)`
 #'
 #' @return A plot showing the density of the prior (grey) and posterior (blue)
 #'   for the respective parameter. Can be further manipulated using `ggplot2`
@@ -1318,7 +1348,7 @@ plot_prior_posterior <- function(result, param_name) {
       "{.code set_results_opts(fitted = TRUE)} when running `EpiSewer`."
       ))
   }
-  all_params <- all_parameters()
+  all_params <- sewer_plotparams(print=FALSE)
 
   if (param_name %in% all_params$short_name) {
     param_i <- which(all_params$short_name == param_name)
