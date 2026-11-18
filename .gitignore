@@ -19,3 +19,5 @@ data/result_example.rds
 local/
 docs
 
+/.quarto/
+**/*.quarto_ipynb
