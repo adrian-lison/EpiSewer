@@ -101,11 +101,7 @@ plot_infections <- function(results, draws = FALSE, ndraws = NULL,
   plot <- ggplot(data_to_plot[model!=base_model,],
                  aes(x = date)) +
     theme_bw() +
-    scale_x_date(
-      expand = c(0, 0),
-      date_breaks = "1 month",
-      date_labels = "%b\n%Y"
-    ) +
+    scale_x_date_adaptive(expand = c(0, 0)) +
     xlab("Date") +
     ylab("Infections") +
     theme(legend.title = element_blank()) +
@@ -289,11 +285,7 @@ plot_R <- function(results, draws = FALSE, ndraws = NULL,
   plot <- ggplot(data_to_plot[model!=base_model,],
                  aes(x = date)) +
     theme_bw() +
-    scale_x_date(
-      expand = c(0, 0),
-      date_breaks = "1 month",
-      date_labels = "%b\n%Y"
-    ) +
+    scale_x_date_adaptive(expand = c(0, 0)) +
     xlab("Date") +
     ylab(expression(R[t])) +
     theme(legend.title = element_blank()) +
@@ -794,10 +786,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
         }
       } +
       theme_bw() +
-      scale_x_date(
-        expand = expansion(add=c(0,0.5)),
-        date_breaks = "1 month", date_labels = "%b\n%Y"
-      ) +
+      scale_x_date_adaptive(expand = expansion(add=c(0,0.5))) +
       xlab("Date") +
       ylab(ifelse(normalized,"Normalized concentration","Concentration")) +
       coord_cartesian(xlim = as.Date(c(first_date, last_date)))
@@ -1086,10 +1075,7 @@ plot_time_series <- function(results, variable, variable_name = variable,
     {if(!is.null(yintercept)) geom_hline(yintercept = yintercept, linetype = "dashed") } +
     theme_bw() +
     theme(legend.title = element_blank()) +
-    scale_x_date(
-      expand = c(0, 0),
-      date_breaks = "1 month", date_labels = "%b\n%Y"
-    ) +
+    scale_x_date_adaptive(expand = c(0, 0)) +
     xlab("Date") +
     ylab(variable_name) +
     coord_cartesian(xlim = c(xmin, xmax))

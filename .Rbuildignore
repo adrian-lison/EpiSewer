@@ -15,5 +15,6 @@
 ^build_README\.R$
 ^docker$
 ^inst/stan/EpiSewer_main$
+^\.conda$
 ^\.lintr$
 ^vignettes/local$
