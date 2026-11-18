@@ -281,7 +281,26 @@ get_summary_vector_log <- function(fit, var, varnames = NULL,
   return(fsummary)
 }
 
+# Abort with an informative message if a result has no valid summary, e.g.
+# because summarizing the fit failed (stored as a "try-error").
+assert_valid_summary <- function(result) {
+  summary <- result$summary
+  if (
+    is.null(summary) || inherits(summary, "try-error") || !is.list(summary)
+  ) {
+    msg <- "The result has no valid summary."
+    if (inherits(summary, "try-error")) {
+      msg <- c(msg, "x" = as.character(summary))
+    } else if (!is.null(result$errors)) {
+      msg <- c(msg, "x" = "The model fit returned errors.")
+    }
+    cli::cli_abort(msg, call = NULL)
+  }
+  invisible(TRUE)
+}
+
 combine_summaries <- function(result_list, summary_name) {
+  lapply(result_list, assert_valid_summary)
   summary_list <- lapply(result_list, function(x) x$summary[[summary_name]])
   combined <- vctrs::vec_rbind(!!!summary_list, .names_to = "model")
   combined$model <- forcats::fct_inorder(
@@ -302,6 +321,7 @@ combine_summary_list <- function(summary_list) {
 
 combine_samples <- function(
     result_list, variable_name, draws = FALSE, ndraws = NULL) {
+  lapply(result_list, assert_valid_summary)
   summary_list <- lapply(result_list, function(x) {
     res <- x$summary$samples[
       , .SD, .SDcols = c("date", "type", "seeding", ".draw", ".chain", variable_name)
@@ -354,4 +374,20 @@ summarize_samples_dt <- function(dt, index_cols, variable, intervals, cols_end) 
   ]
   setcolorder(result, c(1, (max(cols_end)+1):ncol(result), cols_end))
   return(result)
+}
+
+# Remove one level of list nesting, keeping the names of the inner elements.
+# Only bare lists are spliced; other elements (including data.frames and
+# atomic vectors) are kept as they are. Replacement for the deprecated
+# rlang::flatten().
+flatten_one_level <- function(x) {
+  is_bare <- vapply(x, function(e) is.list(e) && !is.object(e), logical(1))
+  pieces <- Map(function(e, spliced) if (spliced) e else list(e), x, is_bare)
+  inner_names <- Map(function(e, nm, spliced) {
+    if (spliced) names(e) else nm
+  }, x, names(x), is_bare)
+  out <- unlist(unname(pieces), recursive = FALSE)
+  if (is.null(out)) out <- list()
+  names(out) <- unlist(inner_names)
+  out
 }

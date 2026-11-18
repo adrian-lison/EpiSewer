@@ -16,8 +16,14 @@ check_result_valid <- function(result) {
   if (!"summary" %in% names(result)) {
     stop("Result is missing summary.")
   }
-  if (length(result$summary) == 0) {
+  if (inherits(result$summary, "try-error")) {
+    stop("Summarizing the fit failed: ", as.character(result$summary))
+  }
+  if (!is.list(result$summary) || length(result$summary) == 0) {
     stop("Summary is empty.")
+  }
+  if (!all(c("R", "samples") %in% names(result$summary))) {
+    stop("Summary is missing R and/or samples.")
   }
   return(invisible(TRUE))
 }

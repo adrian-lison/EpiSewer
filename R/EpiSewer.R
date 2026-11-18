@@ -125,12 +125,11 @@ EpiSewerJob <- function(job_name,
   job[["job_name"]] <- job_name
   job[["jobarray_size"]] <- jobarray_size
 
-  # ToDo rlang::flatten is deprecated, replace
-  data_arguments <- suppressWarnings(
-    rlang::flatten(modeldata[!(names(modeldata) %in% c(
+  data_arguments <- flatten_one_level(
+    modeldata[!(names(modeldata) %in% c(
       ".init", ".metainfo", ".checks", ".str",
       ".sewer_data", ".sewer_assumptions"
-    ))])
+    ))]
   )
   data_arguments_raw <- data_arguments[
     stringr::str_detect(names(data_arguments), c("_prior_text"), negate = TRUE)
@@ -240,13 +239,25 @@ EpiSewerJobResult <- function(fit_res, job, stan_model, checksums) {
   result$checksums <- checksums
 
   if (!"errors" %in% names(fit_res)) {
-    result$summary <- try(summarize_fit(
-      fit = fit_res,
-      data = job$data,
-      .metainfo = job$metainfo,
-      intervals = job$results_opts$summary_intervals,
-      ndraws = job$results_opts$samples_ndraws
-    ))
+    result$summary <- tryCatch(
+      summarize_fit(
+        fit = fit_res,
+        data = job$data,
+        .metainfo = job$metainfo,
+        intervals = job$results_opts$summary_intervals,
+        ndraws = job$results_opts$samples_ndraws
+      ),
+      error = function(e) {
+        cli::cli_warn(c(
+          "Summarizing the fitted model failed, the result has no valid summary.",
+          "x" = conditionMessage(e)
+        ))
+        structure(
+          paste("Error in summarize_fit:", conditionMessage(e)),
+          class = "try-error", condition = e
+        )
+      }
+    )
     if (job$results_opts$fitted) {
       result$fitted <- fit_res
     }

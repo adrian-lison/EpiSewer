@@ -558,6 +558,7 @@ plot_concentration <- function(results = NULL, measurements = NULL, flows = NULL
     if ("summary" %in% names(results)) {
       results <- list(results) # only one result object passed, wrap in list
     }
+    lapply(results, assert_valid_summary)
     if (include_noise) {
       if (normalized) {
         concentration_pred <- combine_summary_list(lapply(results, function(result){
