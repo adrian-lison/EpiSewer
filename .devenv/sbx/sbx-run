@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Start the EpiSewer Docker Sandbox (run on the host, from anywhere in the repo).
+#
+# sbx derives a kit's name from its directory name (no leading dot allowed) and
+# uses that directory as the build context, which must contain env.yml. Instead
+# of a symlink in the repo (a cyclic symlink breaks pak/R CMD build), this script
+# mirrors .devenv/ into a cache directory named "episewer-sbx" and passes that.
+#
+# Usage: .devenv/sbx/sbx-run [--stage-only] [extra `sbx run` options]
+#   --stage-only   only refresh the staged kit and print its path
+# Env:  EPISEWER_SBX_NAME (default: episewer)
+#       EPISEWER_SBX_GLOBAL_KIT (default: ~/Documents/dev/sbx-kit-global-v3; skipped if missing)
+set -euo pipefail
+repo="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
+kit="${XDG_CACHE_HOME:-$HOME/.cache}/sbx-kits/episewer-sbx"
+
+mkdir -p "$kit"
+rsync -a --delete "$repo/.devenv/" "$kit/"
+
+if [ "${1:-}" = "--stage-only" ]; then
+  echo "$kit"
+  exit 0
+fi
+
+kits=(--kit "$kit")
+global="${EPISEWER_SBX_GLOBAL_KIT:-$HOME/Documents/dev/sbx-kit-global-v3}"
+[ -d "$global" ] && kits+=(--kit "$global")
+
+exec sbx run claude --clone --name "${EPISEWER_SBX_NAME:-episewer}" "${kits[@]}" \
+  --cpus 6 -m 12g -p 8000:8000 "$@" "$repo"
