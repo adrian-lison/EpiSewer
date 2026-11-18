@@ -16,3 +16,4 @@
 ^docker$
 ^inst/stan/EpiSewer_main$
 ^\.conda$
+^\.lintr$
