@@ -1,0 +1,5 @@
+# Conda packages from ../env.yml that are NOT installed in the sbx sandbox.
+# One package name per line (no version), optionally followed by "# reason".
+# If a package is needed by EpiSewer, also install it in env-post-sbx.R.
+radian          # interactive console, IDE-only
+r-httpgd        # graphics device for the VS Code plot viewer, IDE-only

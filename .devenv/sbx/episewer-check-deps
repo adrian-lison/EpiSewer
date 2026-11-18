@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Drift guard: check that every Imports/Suggests package in the EpiSewer
+# DESCRIPTION is installed in the sandbox env. With --install, install missing
+# ones from CRAN. Usage: episewer-check-deps [--install] [PKG_DIR]
+set -uo pipefail
+install=FALSE
+if [ "${1:-}" = "--install" ]; then install=TRUE; shift; fi
+dir="${1:-${WORKSPACE_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}}"
+if [ ! -f "$dir/DESCRIPTION" ]; then
+  echo "episewer-check-deps: no DESCRIPTION in $dir, skipping." >&2
+  exit 0
+fi
+Rscript --vanilla - "$dir" "$install" <<'RS'
+args <- commandArgs(trailingOnly = TRUE)
+deps <- desc::desc_get_deps(file.path(args[1], "DESCRIPTION"))
+deps <- deps[deps$type %in% c("Imports", "Suggests", "Depends", "LinkingTo"), ]
+pkgs <- setdiff(unique(deps$package), c("R", rownames(installed.packages(priority = "base"))))
+missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
+if (length(missing) == 0) {
+  message("episewer-check-deps: all ", length(pkgs), " DESCRIPTION dependencies installed.")
+  quit(status = 0)
+}
+message("episewer-check-deps: MISSING packages: ", paste(missing, collapse = ", "))
+if (as.logical(args[2])) {
+  install.packages(missing, repos = "https://cloud.r-project.org")
+  still <- missing[!vapply(missing, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(still) > 0) { message("Could not install: ", paste(still, collapse = ", ")); quit(status = 1) }
+  message("Installed missing packages. Consider adding them to .devenv/env.yml.")
+} else {
+  quit(status = 1)
+}
+RS

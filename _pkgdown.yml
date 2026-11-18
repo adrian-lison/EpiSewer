@@ -27,6 +27,11 @@ articles:
   contents:
   - model-definition
   - load_per_case
+# Temporary/local vignettes (vignettes/local/, gitignored) are built but not
+# listed on the site. Do not remove: pkgdown fails on unlisted vignettes.
+- title: internal
+  contents:
+  - starts_with("local/")
 reference:
 - title: EpiSewer
   contents:
