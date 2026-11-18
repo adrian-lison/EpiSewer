@@ -34,7 +34,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          pak-version: stable
+          pak-version: devel
           extra-packages: any::pkgdown, local::.
           needs: website
 
