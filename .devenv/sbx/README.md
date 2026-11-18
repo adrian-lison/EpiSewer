@@ -12,6 +12,7 @@ This folder and the kit files in `.devenv/` let Claude Code develop EpiSewer ins
 | `sbx/env-sbx-extra.yml` | Conda packages installed *only* in the sandbox, such as lintr and styler |
 | `sbx/env-post-sbx.R` | Sandbox counterpart of `env-post.R` (no vscDebugger) |
 | `sbx/episewer-check-deps` | Drift guard: are all DESCRIPTION dependencies installed? |
+| `sbx/episewer-site` | Builds the pkgdown site (or a single vignette with `--article NAME`) and serves it on sandbox port 8000 |
 | `sbx/context.md` | Instructions given to Claude inside the sandbox |
 
 `env.yml` stays the single definition of the environment, and the sandbox env is **env.yml − exclusions + extras**. If a package fails to install in the sandbox (for example, no linux-aarch64 build on conda-forge):
@@ -28,7 +29,7 @@ sbx login                      # once
 sbx run claude --clone --name episewer \
   --kit ./.devenv/sbx/episewer-sbx \
   --kit ~/Documents/dev/sbx-kit-global-v3 \
-  --cpus 6 -m 12g .
+  --cpus 6 -m 12g -p 8000:8000 .
 ```
 
 - The first run builds the kit image. The conda solve, the R packages and `emo` take about 10 minutes. Later runs use the cache.
@@ -36,6 +37,27 @@ sbx run claude --clone --name episewer \
   - **Commit or stash local changes first.** Only committed state is cloned.
 - Re-attach later with `sbx run --name episewer`.
 - Stop or remove the sandbox with `sbx stop episewer` or `sbx rm episewer`.
+
+## View the pkgdown site (README, vignettes) in your browser
+
+Ask Claude to build and serve the site. It runs `episewer-site`, which builds `docs/` and serves it on sandbox port 8000. Then open <http://localhost:8000>.
+
+To look at a single vignette, ask Claude to expose just that one. For example, "serve only the detailed-example vignette" runs `episewer-site --article detailed-example`. Only that vignette is built (about 15 s instead of 40 s) and served, and <http://localhost:8000> redirects to it.
+
+`-p 8000:8000` in the command above publishes the port when the sandbox is created. For a sandbox created without it, publish the port later. This works while the sandbox is running:
+
+```bash
+sbx port publish episewer 8000:8000      # list ports: sbx port ls episewer
+```
+
+### Temporary vignettes
+
+You can ask Claude for a **temporary** (or **local**) vignette, for example "make a temporary vignette showing the new plot options and serve it". Claude writes it to `vignettes/local/<name>.Rmd` and serves only that vignette.
+
+- `vignettes/local/` is gitignored and `.Rbuildignore`d, so temporary vignettes are never committed or shipped, even when you ask Claude to commit its changes.
+- In `_pkgdown.yml`, the `internal` articles section (`starts_with("local/")`) lets full site builds succeed while a temporary vignette exists, without listing it on the site.
+- To keep a temporary vignette, tell Claude to make it **official** or **public**. Claude moves it to `vignettes/`, adds it to the `articles:` index in `_pkgdown.yml`, checks the full site build and commits both.
+- In clone mode, temporary vignettes exist only inside the sandbox. They disappear when you remove the sandbox (`sbx rm`).
 
 ## Get Claude's work back
 

@@ -29,7 +29,7 @@ RUN micromamba create -y -p "$PREFIX" -f env.filtered.yml -f env-sbx-extra.yml \
 
 # Bake the conda activation environment (compilers etc.) into fixed config,
 # because conda activation scripts do not run inside the sandbox.
-COPY sbx/env-post-sbx.R sbx/episewer-check-deps ./
+COPY sbx/env-post-sbx.R sbx/episewer-check-deps sbx/episewer-site ./
 RUN set -e; \
     eval "$(micromamba shell hook -s posix)"; micromamba activate "$PREFIX"; \
     echo "CMDSTAN=$CMDSTAN  CC=${CC:-}  CXX=${CXX:-}"; \
@@ -45,7 +45,7 @@ RUN set -e; \
       '  options(Ncpus = n, mc.cores = n)' \
       '})' >> "$(R RHOME)/etc/Rprofile.site"; \
     Rscript env-post-sbx.R; \
-    install -m 0755 episewer-check-deps "$PREFIX/bin/episewer-check-deps"; \
+    install -m 0755 episewer-check-deps episewer-site "$PREFIX/bin/"; \
     # smoke test
     Rscript -e 'cat("CmdStan", as.character(cmdstanr::cmdstan_version()), "\n")'; \
     chown -R 1000:1000 "$PREFIX"

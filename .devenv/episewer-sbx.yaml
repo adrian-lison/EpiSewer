@@ -22,6 +22,14 @@ capabilities:
           - conda.anaconda.org
           - "*.anaconda.org"
           - mc-stan.org
+          # pkgdown::build_site(): JS/CSS assets from CDNs, and package lookup
+          # on Bioconductor (for the sidebar links)
+          - cdnjs.cloudflare.com
+          - cdn.jsdelivr.net
+          - www.bioconductor.org
+          # cross-package links in reference pages (other packages' pkgdown sites)
+          - "*.r-lib.org"
+          - "*.tidyverse.org"
 
   - type: com.docker.sandbox/lifecycle@1
     config:

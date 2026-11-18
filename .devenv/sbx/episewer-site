@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Build the EpiSewer pkgdown site (or a single vignette) and serve it over HTTP
+# inside the sandbox. The host reaches it through a published sandbox port
+# (see .devenv/sbx/README.md).
+#
+# Usage: episewer-site [--no-build | --article NAME | --stop]
+#   (default)       build the full site into docs/, then serve docs/
+#   --no-build      serve the existing docs/ without rebuilding
+#   --article NAME  build only vignette NAME (e.g. detailed-example, or a
+#                   temporary one in vignettes/local/) into a separate folder
+#                   and serve only that; / redirects to it
+#   --stop          stop the server
+# Port: $EPISEWER_SITE_PORT (default 8000)
+set -euo pipefail
+port="${EPISEWER_SITE_PORT:-8000}"
+pidfile="/tmp/episewer-site.pid"
+log="/tmp/episewer-site.log"
+article_dir="/tmp/episewer-site-article"
+cd "${WORKSPACE_DIR:-$(git rev-parse --show-toplevel)}"
+
+stop_server() {
+  if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; then
+    kill "$(cat "$pidfile")" && echo "Stopped site server (pid $(cat "$pidfile"))."
+  fi
+  rm -f "$pidfile"
+}
+
+serve_dir="docs"
+path="/"
+case "${1:-}" in
+  --stop) stop_server; exit 0 ;;
+  --no-build) ;;
+  --article)
+    name="${2:?Usage: episewer-site --article NAME}"
+    name="${name%.Rmd}"; name="${name#vignettes/}"
+    # temporary vignettes live in vignettes/local/ (gitignored)
+    if [ ! -f "vignettes/$name.Rmd" ] && [ -f "vignettes/local/$name.Rmd" ]; then
+      name="local/$name"
+    fi
+    if [ ! -f "vignettes/$name.Rmd" ]; then
+      echo "No vignette vignettes/$name.Rmd. Available:" >&2
+      (cd vignettes && ls *.Rmd local/*.Rmd 2>/dev/null) | sed 's/\.Rmd$//; s/^/  /' >&2
+      exit 1
+    fi
+    rm -rf "$article_dir"
+    # build_site() installs the package into a temporary library for the
+    # vignettes; build_article() does not, so do it here.
+    tmplib="$(mktemp -d)"
+    trap 'rm -rf "$tmplib"' EXIT
+    R CMD INSTALL --no-docs --no-test-load --library="$tmplib" . > /tmp/episewer-site-install.log 2>&1 \
+      || { echo "Package install failed, see /tmp/episewer-site-install.log" >&2; exit 1; }
+    R_LIBS="$tmplib${R_LIBS:+:$R_LIBS}" Rscript -e '
+      args <- commandArgs(trailingOnly = TRUE)
+      ov <- list(destination = args[2])
+      pkgdown::init_site(override = ov)
+      pkgdown::build_article(args[1], override = ov, new_process = FALSE)
+    ' "$name" "$article_dir"
+    printf '<!doctype html><meta http-equiv="refresh" content="0; url=articles/%s.html">\n' \
+      "$name" > "$article_dir/index.html"
+    serve_dir="$article_dir"
+    path="/articles/$name.html"
+    ;;
+  "") Rscript -e 'pkgdown::build_site(preview = FALSE, new_process = FALSE)' ;;
+  *) echo "Unknown option: $1" >&2; exit 2 ;;
+esac
+
+[ -f "$serve_dir/index.html" ] || { echo "$serve_dir/index.html missing - build the site first." >&2; exit 1; }
+
+stop_server
+setsid nohup python3 -m http.server "$port" --bind 0.0.0.0 --directory "$serve_dir" \
+  > "$log" 2>&1 < /dev/null &
+echo $! > "$pidfile"
+sleep 1
+if curl -fsS -o /dev/null "http://127.0.0.1:$port$path"; then
+  echo "Serving $serve_dir on sandbox port $port (log: $log)."
+  echo "On the host, open the published port, e.g. http://localhost:$port$path (check: sbx port ls <sandbox>)."
+else
+  echo "Server failed to start, see $log" >&2; exit 1
+fi
