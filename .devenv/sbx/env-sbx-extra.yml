@@ -1,0 +1,7 @@
+# Conda packages installed in the sbx sandbox in addition to ../env.yml
+name: episewer-sbx-extra
+channels:
+  - conda-forge
+dependencies:
+  - r-lintr
+  - r-styler
